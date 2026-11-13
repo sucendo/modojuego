@@ -10,21 +10,34 @@ assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.doesNotMatch(production,/part-024-bridgefull-preview\.txt/);
 function slice(s,start,end){const i=s.indexOf(start),j=s.indexOf(end,i);
  assert.ok(i>=0&&j>i,'not found '+start);const b=s.slice(i,j);new vm.Script(b);return b;}
+const policy=slice(core,'function apexSvgRunoffFallbackV1528(', 'function envProfile(');
 const snippet=slice(core,'function envProfile(', 'function finalizeEnvForTrack(');
-const mock=(cw,json={})=>new Function('trackData','readStoredCircuitJson','authoredStructureZoneAtS','trackRoadWidthAt',snippet+
- 'return envProfile;')({spec:{dir:'01-australia'},customWorld:cw},()=>json,()=>null,()=>12);
-const svg=mock({authoritative:true,surfaceZones:[{kind:'SAND',points:[[0,0],[1,0],[1,1]]}]});
-assert.equal(svg(50).runoffSurface,'GRASS','unpainted SVG margin must not be asphalt by default');
+const base={ '01-australia':{environment:{surfaces:{runoffSurface:'ASPHALT'}}} };
+const mock=(cw,json={},user=null)=>{
+ const td={spec:{dir:'01-australia'},customWorld:cw};
+ return new Function('trackData','readStoredCircuitJson','authoredStructureZoneAtS',
+  'trackRoadWidthAt','APEX_BASE_CIRCUIT_JSON_BY_ID','apexReadUserCircuitJson',
+  policy+snippet+'return envProfile;')(
+  td,()=>json,()=>null,()=>12,base,()=>user);
+};
+const active={authoritative:true,surfaceZones:[{kind:'SAND',points:[[0,0],[1,0],[1,1]]}]};
+const inherited={environment:{surfaces:{runoffSurface:'ASPHALT',offSurface:'GRASS'}}};
+const svg=mock(active,inherited);
+assert.equal(svg(50).runoffSurface,'GRASS',
+ 'inherited BASE asphalt is NOT an explicit SVG shoulder material');
 assert.equal(svg(50).offSurface,'GRASS');
-assert.equal(mock({authoritative:true,surfaceZones:[]})(50).runoffSurface,'ASPHALT',
- 'without authored surface evidence the legacy material is unchanged');
-assert.equal(mock({authoritative:false,surfaceZones:[{}]})(50).runoffSurface,'ASPHALT');
-assert.equal(mock({authoritative:true,surfaceZones:[{}]},{
- environment:{surfaces:{runoffSurface:'GRAVEL',offSurface:'DIRT'}}})(50).runoffSurface,'GRAVEL',
- 'explicit circuit profile remains authoritative');
-assert.equal(mock({authoritative:true,surfaceZones:[{}]},{
- environment:{surfaces:{runoffSurface:'ASPHALT'}}})(50).runoffSurface,'ASPHALT',
- 'explicit paved shoulders remain intact');
+assert.equal(mock({authoritative:true,surfaceZones:[]},inherited)(50).runoffSurface,'ASPHALT',
+ 'without authored zones retain legacy fallback');
+assert.equal(mock({authoritative:false,surfaceZones:[{}]},inherited)(50).runoffSurface,'ASPHALT');
+assert.equal(mock(active,{environment:{surfaces:{runoffSurface:'GRAVEL'}}},{
+ environment:{surfaces:{runoffSurface:'GRAVEL'}}})(50).runoffSurface,'GRAVEL',
+ 'explicit different user JSON material remains authoritative');
+assert.equal(mock(active,inherited,{
+ environment:{surfaces:{runoffSurface:'ASPHALT'}}})(50).runoffSurface,'GRASS',
+ 'a copied baseline JSON does not silently force all margins to be paved');
+assert.equal(mock(active,inherited,{
+ environment:{surfaces:{runoffSurface:'ASPHALT'},runoffFallbackPolicy:'JSON'}})(50).runoffSurface,'ASPHALT',
+ 'an explicit user opt-in can preserve generic asphalt');
 assert.match(core,/if\(left!==null\)paint\(left,cL\)/);
 assert.match(core,/if\(right!==null\)paint\(right,cR\)/);
 const revision=Number(world.match(/const APEX_CIRCUIT_COMPILE_REV=(\d+);/)?.[1]);
