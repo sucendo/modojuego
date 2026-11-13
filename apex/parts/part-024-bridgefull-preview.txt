@@ -250,6 +250,8 @@ window.apexRoadMarginInfoV1527=()=>{
  return{phase:'V15.2.7',circuit:trackData.spec?.dir,roadHalf:e.half,
   authored:!!cw?.authoritative,runoffSurface:e.runoffSurface,
   materialPolicy:cw?.authoritative&&cw.surfaceZones?.length?"svg-zones-with-grass-fallback":"legacy-profile",
+  compileRevision:trackData._compileStats?.revision||null,
+  compileCacheHit:!!trackData._compileStats?.cache?.hit,
   left:{asphaltEnd:apexVisualRunoffLimitV1527(s,e,1),terrainEnd:apexRoadFlatLimit(s,e,1)},
   right:{asphaltEnd:apexVisualRunoffLimitV1527(s,e,-1),terrainEnd:apexRoadFlatLimit(s,e,-1)},
   svgRunoffZones:zones.length,nearPatch:'road-only-svg-aligned'};
