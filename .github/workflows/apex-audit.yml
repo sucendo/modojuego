@@ -42,6 +42,8 @@ jobs:
         run: node apex/tests/asphalt-fragment-v151-preview.cjs
       - name: Grass and SVG asphalt V15.2 materials (preview only)
         run: node apex/tests/ground-material-v152-preview.cjs
+      - name: Near-camera asphalt V15.2.1 bank and GPU continuity (preview only)
+        run: node apex/tests/road-near-grain-v1521-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
         run: node apex/tests/pedestrian-bridge-fullspan-preview.cjs
       - name: Mobile trees 3D preview option (isolated)
@@ -121,6 +123,11 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/apex-browser" --no-package-lock --no-save playwright@1.62.1
           node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Near road V15.2.1 — banked near-plane texture pixels
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
+          APEX_AUDIT_DEVICE: ${{ matrix.device }}
+        run: node apex/tests/road-near-grain-v1521-browser.cjs
       - name: Ground V15.2 — verify grass and SVG runoff texture pixels
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
