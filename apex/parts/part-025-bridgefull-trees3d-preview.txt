@@ -3905,6 +3905,18 @@ window.apexGroundGrainV152Enabled=typeof URLSearchParams==='function'&&typeof lo
 window.apexGroundMaterialInfo=()=>({phase:'V15.2',enabled:window.apexGroundGrainV152Enabled,
  svgGround:!!apexPhase5GroundGPU.buffer,terrain:!!apexPhase5TerrainGPU.buffer,
  materialAttribute:true,version:'svg-surface-grain-world-metres'});
+window.apexPavedSurfaceInfoV1524=()=>{
+ const g=apexPhase5GroundGPU,r=apexPhase6RoadGPU,
+  atlas=trackData?.customWorld?._apexUnifiedGroundAtlas;
+ return{phase:'V15.2.4',preview:true,asphaltTexture:window.apexRoadGrainV151Enabled!==false,
+  extraGroundTexture:window.apexGroundGrainV152Enabled!==false,
+  bakedAtlas:!!g.buffer&&g.atlas===atlas,
+  svgRoadsBaked:g.atlas===atlas?(g.pavedRoads?.size||0):0,
+  exactPitBaked:g.atlas===atlas&&!!g.pavedPit,
+  legacyPitGpuVertices:r.dynamicRanges.filter(q=>q.kind==='pitlane').reduce((n,q)=>n+q.count,0),
+  groundTriangles:g.triangles||0,groundCalls:g.drawCalls||0,
+  fallback:g.unsupportedAtlas===atlas||!!g.failedGl,paintTextured:false};
+};
 // Compare with ?asphalt=0; this changes only the road GPU material, not its geometry.
 window.apexRoadGrainV151Enabled=typeof URLSearchParams==='function'&&typeof location!=='undefined'
  ?new URLSearchParams(location.search).get('asphalt')!=='0':true;
