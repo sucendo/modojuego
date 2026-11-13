@@ -2708,8 +2708,15 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
   left=inspect?null:(strip?strip.runoffLeft:apexGenericRunoffMaskedPolys(seg,1)),
   right=inspect?null:(strip?strip.runoffRight:apexGenericRunoffMaskedPolys(seg,-1)),
   cL=surfaceColor(a.env.runoffSurface,false),cR=surfaceColor(a.env.runoffSurface,true);
+ // V15.2.5: generic asphalt runoff must not be a smooth grey slab beside
+ // the per-pixel textured circuit. Reuse the phase-6 shader within near LOD,
+ // without changing the exact SVG masks, grades or painted markings.
+ const paved=webgl&&!inspect&&seg.z<245&&
+  ['ASPHALT','ROAD','CITY','PLAZA','SERVICE','PITLANE','PIT_WORK'].includes(String(a.env.runoffSurface||'').toUpperCase())&&
+  typeof apexPhase6QueueDynamicRoadPolygon==='function';
  const paint=(faces,col)=>{
   for(const p of faces){
+   if(paved&&apexPhase6QueueDynamicRoadPolygon(p,col,0,'runoff'))continue;
    const cp=p.map(v=>worldToCamera(v.x,v.y,v.z,cam)),
     x=p.reduce((t,v)=>t+v.x,0)/p.length,z=p.reduce((t,v)=>t+v.z,0)/p.length,
     tint=apexSurfaceTintV152(a.env.runoffSurface,col,x,z,seg.z);
@@ -2717,13 +2724,21 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
    else drawCamPoly(cp,pitch,tint,.58);
   }
  };
+ const paintFree=(side,col)=>{
+  if(paved){
+   const A=apexGenericRunoffSideGeometry(a,side),B=apexGenericRunoffSideGeometry(b,side),
+    q=side>0?[A.outer,A.inner,B.inner,B.outer]:[A.inner,A.outer,B.outer,B.inner];
+   if(apexPhase6QueueDynamicRoadPolygon(q,col,0,'runoff'))return true;
+  }
+  return false;
+ };
  if(inspect)apexInspectorDrawRunoff(seg,cam,pitch,webgl);
  else{
   if(left!==null)paint(left,cL);
-  else if(webgl)webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
+  else if(webgl){if(!paintFree(1,cL))webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);}
   else drawCamQuadTriangles(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
   if(right!==null)paint(right,cR);
-  else if(webgl)webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
+  else if(webgl){if(!paintFree(-1,cR))webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);}
   else drawCamQuadTriangles(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
   if(webgl&&left===null&&right===null)webglPushRunoffDetail(seg,pitch);
  
