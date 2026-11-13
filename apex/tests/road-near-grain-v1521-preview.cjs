@@ -66,14 +66,9 @@ assert.doesNotMatch(core.slice(core.indexOf('function apexWebglRoadBase('),core.
  /webglPushCamQuad\(V0\.l,lA,lB,V1\.l/,'hard three-band fallback has been retired');
 assert.match(render,/gl\.bufferSubData\(gl\.ARRAY_BUFFER,0,s\.dynamicData\.subarray/);
 assert.match(render,/gl\.drawArrays\(gl\.TRIANGLES,range\.first,range\.count\)/);
-assert.match(render,/s\.dynamicNearFallback/);
-const nearSrc=frame.slice(frame.indexOf('function webglPushNearPatch('),frame.indexOf('function webglCollectCircuitSegments('));
-assert.match(nearSrc,/qa=renderRibbonFrameAt\(mod\(player\.s\+a,L\)\)/);
-assert.match(nearSrc,/qb=renderRibbonFrameAt\(mod\(player\.s\+b,L\)\)/);
-assert.doesNotMatch(nearSrc,/q\.tx\*along/,'do not linearise the elevation across the patch');
-assert.match(nearSrc,/apexPhase6QueueDynamicRoadQuad\(quad,nearColor,bias,'near'\)/);
-assert.ok(frame.indexOf('apexPhase6BeginRoad(cam,cam.pitch)')<frame.lastIndexOf('webglPushNearPatch(cam,cam.pitch)'),
- 'GPU material batch must be active before near-patch submission');
+assert.doesNotMatch(frame,/function webglPushNearPatch/,'no overlapping near-camera road quad');
+assert.match(render,/const node=mod\(anchor\+sign\*i,count\)/);
+assert.match(frame,/webglPushCamQuad\(V0\.l,V0\.li,V1\.li,V1\.l/);
 console.log(JSON.stringify({test:'road-near-grain-v1521-preview',gpuNearClipping:true,
- movingEndpoints:true,trueBankAndGrade:true,nearPatchTextured:true,
+ movingEndpoints:true,trueBankAndGrade:true,fixedNearMesh:true,
  legacyBandingRemoved:true,dynamicBudget:true,previewOnly:true,ok:true}));

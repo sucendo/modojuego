@@ -11,9 +11,9 @@ assert.doesNotMatch(production,/part-024-bridgefull-preview/);
 function section(src,from,to){const a=src.indexOf(from),b=src.indexOf(to,a);
  assert.ok(a>=0&&b>a,'missing '+from);const part=src.slice(a,b);new vm.Script(part);return part;}
 const code=section(core,'function apexPitVisualMergeProfileV1526(', 'function nearestPitState(');
-const api=new Function('nearestTrackState','envProfile','renderRibbonFrameAt','trackSurfaceHeightAt',
+const api=new Function('nearestTrackState','envProfile','renderRibbonFrameAt','apexTrackEdgeSection',
  code+'return {profile:apexPitVisualMergeProfileV1526,point:apexPitVisualPointV1526,merge:apexPitMergeQuadV1526};')(
- (x,z)=>({s:x,lat:z}),()=>({half:5}),()=>({nx:0,nz:1}),()=>0);
+ (x,z)=>({s:x,lat:z}),()=>({half:5}),()=>({nx:0,nz:1}),(frame,env,side)=>({end:{x:0,y:0,z:side*env.half}}));
 const sg=(a,b,y=0)=>({x1:0,z1:a,y1:y,x2:20,z2:b,y2:y,width:6,leftWidth:3,rightWidth:3,len:Math.hypot(20,b-a)});
 const separated=api.merge(sg(16,16));
 assert.equal(separated.a.width,6);

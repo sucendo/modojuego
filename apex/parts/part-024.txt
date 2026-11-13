@@ -379,7 +379,7 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
  let out=natural,mainProtected=false;
  if(st&&Number.isFinite(st.s)&&Number.isFinite(st.lat)&&Math.abs(st.lat)<195){
   const env=envProfile(st.s),q=renderRibbonFrameAt(st.s),lat=Math.abs(st.lat),side=st.lat>=0?1:-1,
-        structure=apexPhase1StructureAtWorld(x,z,st.s),edgeY=apexRoadSideHeight(q,env,side),limit=apexRoadFlatLimit(st.s,env,side),
+        structure=apexPhase1StructureAtWorld(x,z,st.s),
         tunnel=apexTunnelCutAt(x,z),under=(structure&&structure.kind==='UNDER')||!!tunnel,
         over=(structure&&structure.kind==='OVER')&&!under;
 
@@ -389,11 +389,14 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
   if(under)return natural;
 
   if(!over){
-   if(lat<=env.half){out=q.y+Math.tan(q.bank||0)*st.lat-.18;mainProtected=true;}
-   else if(lat<=limit+.8){out=edgeY-.18;mainProtected=true;}
-   else{
-    const rise=Math.abs(natural-edgeY),blend=Math.max(cfg.blendM,1.5*rise/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
-    if(lat<limit+.8+blend)out=lerp(edgeY-.18,natural,terrainEase((lat-limit-.8)/blend));
+   const edge=apexTrackEdgeSection(q,env,side).end,
+    distance=(x-edge.x)*q.nx*side+(z-edge.z)*q.nz*side;
+   if(distance<=0){
+    out=q.y+Math.tan(q.bank||0)*st.lat-.18;
+    mainProtected=true;
+   }else{
+    const rise=Math.abs(natural-edge.y),blend=Math.max(cfg.blendM,1.5*rise/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
+    if(distance<blend)out=lerp(edge.y,natural,terrainEase(distance/blend));
    }
   }
  }
@@ -602,11 +605,13 @@ function apexAuthoredCurbVisual(){
   while(lo+1<hi){const mid=(lo+hi)>>1;if(stations[mid]<=target)lo=mid;else hi=mid;}
   const a=stations[lo],b=stations[hi],t=clamp((target-a)/(b-a),0,1);
   const qa=renderRibbonFrameAt(a),qb=renderRibbonFrameAt(b);
-  const ha=envProfile(a).half,hb=envProfile(b).half;
-  const ea=ribbonWorldPoint(qa,ha,side),eb=ribbonWorldPoint(qb,hb,side);
-  const oa=ribbonWorldPoint(qa,ha+width,side),ob=ribbonWorldPoint(qb,hb+width,side);
+  const A=apexTrackEdgeSection(qa,envProfile(a),side),B=apexTrackEdgeSection(qb,envProfile(b),side),
+   ea=A.end,eb=B.end;
+  const xOuter=lerp(ea.x+A.ux*width,eb.x+B.ux*width,t),
+   zOuter=lerp(ea.z+A.uz*width,eb.z+B.uz*width,t),
+   yOuter=lerp(ea.y+Math.tan(qa.bank||0)*side*width,eb.y+Math.tan(qb.bank||0)*side*width,t)+.018;
   const x=lerp(ea.x,eb.x,t),y=lerp(ea.y,eb.y,t)+.018,z=lerp(ea.z,eb.z,t);
-  return {inner:[x,y,z],outer:[lerp(oa.x,ob.x,t),lerp(oa.y,ob.y,t)+.018,lerp(oa.z,ob.z,t)]};
+  return {inner:[x,y,z],outer:[xOuter,yOuter,zOuter]};
  };
  // Derive each interval from the active SVG guide. Stored zones may belong
  // to an earlier version of the drawing or a different road mesh.
@@ -722,7 +727,7 @@ async function loadTrack(spec){
    // usuario a volver a importar manualmente el mismo archivo.
    if(customSvg.authoritative===true&&typeof customSvg.rawSvg==='string'&&customSvg.rawSvg.trim()){
      const wp=readStoredCustomWorldProfile(spec.dir);
-     if(!wp||wp.profileRevision<23091){try{await importEditableCircuitSvgText(customSvg.rawSvg,spec,{exactRepository:customSvg.exactRepository===true})}catch(e){console.warn('APEX: no se pudo migrar geometría SVG exacta',e)}}
+     if(!wp||wp.profileRevision<23092){try{await importEditableCircuitSvgText(customSvg.rawSvg,spec,{exactRepository:customSvg.exactRepository===true})}catch(e){console.warn('APEX: no se pudo migrar geometría SVG exacta',e)}}
    }
    const km=parseFloat(customSvg.km)||fallback.km||5.0,direction=String(customSvg.direction||fallback.direction||"CLOCKWISE").trim(),layoutId=String(customSvg.layoutId||fallback.layout||spec.dir||"custom-track").trim();
    if(Array.isArray(customSvg.points)&&customSvg.points.length>20){
@@ -1452,7 +1457,7 @@ function renderRibbonFrameAt(s,visual=true){
    if(width>=4.5&&width<=32&&leftSign>2&&rightSign< -2&&
       chord>=width*.65&&chord<=width*1.45&&
       Math.hypot(left.x-x,left.z-z)<width*1.2&&Math.hypot(right.x-x,right.z-z)<width*1.2){
-    frame.authoredRoadEdges={half,left:{x:left.x,z:left.z},right:{x:right.x,z:right.z}};
+    frame.authoredRoadEdges={half,left:{x:left.x,z:left.z,width:left.width},right:{x:right.x,z:right.z,width:right.width}};
    }
   }
  }
@@ -1462,12 +1467,35 @@ function ribbonWorldPoint(frame,width,side=1,yOff=0){
  const bank=Number.isFinite(frame.bank)?frame.bank:0;
  const bankY=Math.tan(bank)*width*side,edge=frame.authoredRoadEdges;
  if(edge&&edge.half>0&&width>=0){
-  // Road, white line, shoulder and SVG kerb share the SAME authored edge.
-  // Extrapolating outwards keeps adjacent surfaces watertight.
+  // Preserve the authored cross-section for road-aligned features.
+  // Widths greater than half extend the same cross-section.
   const p=side>0?edge.left:edge.right,k=width/edge.half;
   return{x:frame.x+(p.x-frame.x)*k,y:frame.y+bankY+yOff,z:frame.z+(p.z-frame.z)*k};
  }
  return{x:frame.x+frame.ox*width*side,y:frame.y+bankY+yOff,z:frame.z+frame.oz*width*side};
+}
+
+
+/* Authored guides are the centres of the painted strokes. A legacy road
+   width already describes the outer asphalt edge. All offsets are metres. */
+function apexTrackEdgeSection(q,env,side){
+ const edge=q.authoredRoadEdges, guide=edge&&(side>0?edge.left:edge.right),
+  center=guide?ribbonWorldPoint(q,edge.half,side):ribbonWorldPoint(q,env.half,side),
+  other=guide?(side>0?edge.right:edge.left):null,
+  dx=guide?guide.x-other.x:q.ox*side,dz=guide?guide.z-other.z:q.oz*side,
+  span=Math.hypot(dx,dz)||1,ux=dx/span,uz=dz/span,
+  slope=Math.tan(q.bank||0)*side*(guide?2*edge.half/span:1/span),
+  width=(guide?.width||.20)/Math.hypot(1,slope),
+  point=d=>({x:center.x+ux*d,y:center.y+slope*d,z:center.z+uz*d}),
+  outer=guide?width*.5:0;
+ return {end:point(outer),paintInner:point(outer-width),ux,uz};
+}
+function apexTrackCrossSection(q,env,curb){
+ const left=apexTrackEdgeSection(q,env,1),right=apexTrackEdgeSection(q,env,-1);
+ const curbEnd=(edge,active)=>active?
+  {x:edge.end.x+edge.ux*env.curb,y:edge.end.y,z:edge.end.z+edge.uz*env.curb}:edge.end;
+ const l=left.end,r=right.end,lo=curbEnd(left,curb.left),ro=curbEnd(right,curb.right);
+ return {l,r,lo,ro,li:left.paintInner,ri:right.paintInner};
 }
 
 // v5.211 · Pose canónica de la superficie 3D.
@@ -1853,55 +1881,37 @@ function apexTriangulateGroundFootprint(points){
 function apexRunoffRoadClipIndex(){
  if(!trackData)return null;
  if(trackData._apexRunoffRoadClipIndex)return trackData._apexRunoffRoadClipIndex;
- const positions=apexRoadMeshSamples(),cell=48,buckets=new Map(),
-       terrainBuckets=new Map(),pitBuckets=new Map(),bounds=[];
- // 2.2 m entre muestras para seguir curvas y bordes sin coste de una
- // subdivisión por cada vértice SVG de la pista.
- const samples=[];
- for(let i=0;i<positions.length;i++)
-  if(!samples.length||positions[i]-samples[samples.length-1]>=1.25||i===positions.length-1)
-   samples.push(positions[i]);
- const frame=(s)=>{
-  const q=renderRibbonFrameAt(s),e=envProfile(s),w=e.half+e.curb+.12,
-   l=ribbonWorldPoint(q,w,1),r=ribbonWorldPoint(q,w,-1);
-  const structure=apexPhase1StructureAtWorld(q.x,q.z,s);
-  const gradeSeparated=!!(e.tunnel||structure&&(structure.kind==='UNDER'||structure.kind==='OVER'));
-  // El terreno debe ceder bajo TODO el corredor que el motor dibuja,
-  // no sólo bajo asfalto+pianos. De lo contrario asoma entre escapatorias
-  // de respaldo y puede tapar las ruedas al salir de pista.
-  const outerL=apexFlatRunoffPoint(q,e,Math.max(w,apexRoadFlatLimit(s,e,1)),1),
-        outerR=apexFlatRunoffPoint(q,e,Math.max(w,apexRoadFlatLimit(s,e,-1)),-1);
-  return{l,r,outerL,outerR,gradeSeparated};
+ const samples=apexRoadMeshSamples(),cell=48,buckets=new Map(),
+       terrainBuckets=new Map(),pitBuckets=new Map(),bounds=[],seamBuckets=new Map();
+ const frame=s=>{
+  const q=renderRibbonFrameAt(s),e=envProfile(s),structure=apexPhase1StructureAtWorld(q.x,q.z,s);
+  return {...apexTrackCrossSection(q,e,curbInfo(s)),
+   gradeSeparated:!!(e.tunnel||structure&&(structure.kind==='UNDER'||structure.kind==='OVER'))};
  };
- const add=(poly,pit=false,terrainCut=true,terrainOnly=false)=>{
-  const bound=apexInspectorPolyBounds(poly),foot={poly,bounds:bound,terrainCut},id=bounds.length;
-  bounds.push(foot);
-  for(let ix=Math.floor(bound.minX/cell);ix<=Math.floor(bound.maxX/cell);ix++)
-   for(let iz=Math.floor(bound.minZ/cell);iz<=Math.floor(bound.maxZ/cell);iz++){
+ const index=(map,b,item)=>{
+  for(let ix=Math.floor(b.minX/cell);ix<=Math.floor(b.maxX/cell);ix++)
+   for(let iz=Math.floor(b.minZ/cell);iz<=Math.floor(b.maxZ/cell);iz++){
     const key=ix+':'+iz;
-    const addTo=(map)=>{let arr=map.get(key);if(!arr){arr=[];map.set(key,arr)}arr.push(id)};
-    // Los polígonos originales de pista son los únicos que recortan
-    // escapatorias SVG. El corredor ampliado sólo recorta TERRENO.
-    if(!terrainOnly)addTo(buckets);
-    if(terrainOnly||pit)addTo(terrainBuckets);
-    if(pit)addTo(pitBuckets);
+    if(!map.has(key))map.set(key,[]);
+    map.get(key).push(item);
    }
  };
+ const add=(poly,pit=false,terrainCut=true)=>{
+  const bounds2=apexInspectorPolyBounds(poly),id=bounds.length;
+  bounds.push({poly,bounds:bounds2,terrainCut});
+  index(buckets,bounds2,id);
+  if(terrainCut)index(terrainBuckets,bounds2,id);
+  if(pit)index(pitBuckets,bounds2,id);
+ };
+ const seam=(a,b)=>index(seamBuckets,apexInspectorPolyBounds([a,b]),{a,b});
  let prev=null;
  for(const ss of samples){
   const cur=frame(ss);
   if(prev){
-   const toObj=p=>({x:p.x,y:p.y,z:p.z});
-   const a=toObj(prev.l),b=toObj(prev.r),c=toObj(cur.r),d=toObj(cur.l);
-   // Un túnel o puente necesita conservar el terreno sobre/bajo la
-   // calzada: solo se recorta de la placa la vía ordinaria a ras de suelo.
    const terrainCut=!(prev.gradeSeparated||cur.gradeSeparated);
-   add([a,b,c],false,terrainCut);add([a,c,d],false,terrainCut);
-   if(terrainCut){
-    const L=toObj(prev.outerL),R=toObj(prev.outerR),
-          l=toObj(cur.outerL),r=toObj(cur.outerR);
-    add([L,R,r],false,true,true);add([L,r,l],false,true,true);
-   }
+   add([prev.lo,prev.ro,cur.ro],false,terrainCut);
+   add([prev.lo,cur.ro,cur.lo],false,terrainCut);
+   if(terrainCut){seam(prev.lo,cur.lo);seam(prev.ro,cur.ro);}
   }
   prev=cur;
  }
@@ -1910,8 +1920,31 @@ function apexRunoffRoadClipIndex(){
   add([{x:sg.x1+nx,y:sg.y1,z:sg.z1+nz},{x:sg.x1-nx,y:sg.y1,z:sg.z1-nz},
        {x:sg.x2-nx,y:sg.y2,z:sg.z2-nz},{x:sg.x2+nx,y:sg.y2,z:sg.z2+nz}],true);
  }
- return trackData._apexRunoffRoadClipIndex={cell,buckets,terrainBuckets,pitBuckets,
+ return trackData._apexRunoffRoadClipIndex={cell,buckets,terrainBuckets,pitBuckets,seamBuckets,
    faces:bounds,clipped:0,generated:0};
+}
+// Only vertices on the actual exposed longitudinal edge take its height.
+// Intersections with a triangle's extended edge or diagonal keep their grade.
+function apexTrackSeamHeight(idx,p){
+ const epsilon=.00001,cell=idx.cell;
+ let closest=epsilon,height=null;
+ for(let ix=Math.floor((p.x-epsilon)/cell);ix<=Math.floor((p.x+epsilon)/cell);ix++)
+  for(let iz=Math.floor((p.z-epsilon)/cell);iz<=Math.floor((p.z+epsilon)/cell);iz++){
+   for(const {a,b} of idx.seamBuckets.get(ix+':'+iz)||[]){
+    const dx=b.x-a.x,dz=b.z-a.z,length2=dx*dx+dz*dz;
+    if(length2<1e-12)continue;
+    const t=clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/length2,0,1),
+     d=Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz);
+    if(d<=closest){closest=d;height=lerp(a.y,b.y,t);}
+   }
+  }
+ return height;
+}
+function apexSnapTrackSeam(idx,poly){
+ return poly.map(p=>{
+  const y=apexTrackSeamHeight(idx,p);
+  return y===null||y===p.y?p:{...p,y};
+ });
 }
 function apexClipTerrainAtPit(poly){
  if(!trackData?.customWorld?.pitNetwork?.runs?.length)return null;
@@ -1928,10 +1961,8 @@ function apexClipTerrainAtPit(poly){
 }
 // Recorte por huellas 2D EXACTAS de pista+pianos y pitlane; mantiene el
 // terreno de túneles y pasos elevados. Se utiliza en AMBOS LOD de relieve.
-// IMPORTANTE: la resta es topológica (XZ). NO fijar Y al objeto sustraído:
-// sobre un desnivel distinto creaba cuñas 3D de varios metros, capaces de
-// tapar el coche y dejar triángulos flotantes en el borde de pista.
-// El coche mantiene intactos playerDriveSurfacePose() y la física de ruedas.
+// La resta es topológica (XZ). Sólo la arista longitudinal compartida
+// toma la cota de la cinta. Los demás vértices conservan su relieve.
 function apexClipTerrainAtDrive(poly){
  if(!trackData||!Array.isArray(poly)||poly.length<3)return null;
  const idx=apexRunoffRoadClipIndex(),bb=apexInspectorPolyBounds(poly),
@@ -1955,7 +1986,9 @@ function apexClipTerrainAtDrive(poly){
  // Conservar la malla original cuando no se recortó nada.
  const original=Math.abs(apexInspectorPolyArea(poly)),
   remainder=pieces.reduce((s,p)=>s+Math.abs(apexInspectorPolyArea(p)),0);
- return original-remainder>Math.max(.00005,original*1e-7)?pieces:null;
+ if(original-remainder>1e-8)return pieces.map(p=>apexSnapTrackSeam(idx,p));
+ const snapped=apexSnapTrackSeam(idx,poly);
+ return snapped.some((p,i)=>p!==poly[i])?[snapped]:null;
 }
 function apexClipRunoffSurfaceTriangles(triangles){
  const idx=apexRunoffRoadClipIndex();if(!idx||!Array.isArray(triangles))return triangles;
@@ -1977,26 +2010,16 @@ function apexClipRunoffSurfaceTriangles(triangles){
    if(!pieces.length)break;
   }
   for(const p of pieces){
-   if(p.length<3||Math.abs(apexInspectorPolyArea(p))<.002)continue;
+   if(p.length<3||Math.abs(apexInspectorPolyArea(p))<1e-8)continue;
    const from=p[0];
    for(let j=1;j<p.length-1;j++){
     const q=[from,p[j],p[j+1]];
-    if(Math.abs(apexInspectorPolyArea(q))<.002)continue;
+    if(Math.abs(apexInspectorPolyArea(q))<1e-8)continue;
     out.push(q.map(v=>{
-     // En el borde de la carretera compartimos cota con el límite del
-     // asfalto/piano y situamos la escapatoria sólo 4 cm por debajo.
+     const seam=apexTrackSeamHeight(idx,v);
+     if(seam!==null)return [v.x,seam,v.z];
      let y=v.y;
      const ns=nearestTrackState(v.x,v.z,null,{radius:80,allowGlobal:true,fallbackDist:75});
-     if(ns&&Number.isFinite(ns.lat)&&Number.isFinite(ns.s)){
-      const e=envProfile(ns.s),lat=Math.abs(ns.lat),edge=e.half+e.curb;
-      if(lat<=edge+.85){
-       const q=renderRibbonFrameAt(ns.s),bank=Math.tan(q.bank||0);
-       const asphalt=q.y+bank*ns.lat,shoulder=apexRoadSideHeight(q,e,ns.lat>=0?1:-1);
-       const w=clamp((lat-e.half)/Math.max(.05,e.curb),0,1);
-       const target=lerp(asphalt,shoulder,w)-.042;
-       y=lerp(v.y,target,1-clamp((lat-edge)/.85,0,1));
-      }
-     }
      const pit=apexNearestGradeSegment(v.x,v.z,'PIT',16);
      if(pit&&pit.dist<=pit.width*.5+3&&apexPitGradeOwnsPoint(ns,pit)){
       y=pit.y-.042;
@@ -2302,53 +2325,10 @@ function apexClipGenericRunoffPolygon(poly){
  // los polígonos no se pisan realmente.
  return origArea-area>Math.max(.00005,origArea*1e-7)?parts:null;
 }
-function apexGenericRunoffSideGeometry(st,side){
- const e=st.env,q=st.q,w=e.half+(st.curb&&(side>0?st.curb.left:st.curb.right)?e.curb:0),
-  inner=w>e.half?apexFlatRunoffPoint(q,e,w,side):ribbonWorldPoint(q,e.half,side),
-  outer=apexFlatRunoffPoint(q,e,apexRoadFlatLimit(st.s,e,side),side);
- return{inner,outer};
-}
-function apexGenericRunoffMaskedPolys(seg,side){
- const idx=trackData&&trackData._apexRunoffDriveSurfaceIndex;
- if(!idx||!idx.faces.length)return null;
- // Cachear TANTO la presencia COMO la ausencia de SVG. En circuitos grandes
- // la mayoría de tramos está libre: reexaminar esos triángulos 60 veces/s
- // consumía más CPU que la geometría dibujada.
- const cache=idx._genericMaskCache||(idx._genericMaskCache=new Map()),
-  key=side+':'+seg.a.s.toFixed(4)+':'+seg.b.s.toFixed(4);
- if(cache.has(key)){
-  idx._genericMaskCacheHits=(idx._genericMaskCacheHits||0)+1;
-  return cache.get(key);
- }
- idx._genericMaskQueries=(idx._genericMaskQueries||0)+1;
- const a=apexGenericRunoffSideGeometry(seg.a,side),
-  b=apexGenericRunoffSideGeometry(seg.b,side),
-  quad=side>0?[a.outer,a.inner,b.inner,b.outer]:[a.inner,a.outer,b.outer,b.inner],
-  toPoly=(v)=>v.map(p=>({x:p.x,y:p.y,z:p.z}));
- const tris=[toPoly([quad[0],quad[1],quad[2]]),toPoly([quad[0],quad[2],quad[3]])];
- const cuts=tris.map(t=>apexClipGenericRunoffPolygon(t));
- const out=(!cuts[0]&&!cuts[1])?null:[
-  ...(cuts[0]===null?[tris[0]]:cuts[0]),
-  ...(cuts[1]===null?[tris[1]]:cuts[1])
- ];
- // Mantener una ventana suficiente para los tramos de pista por delante y
- // detrás; la poda progresiva evita el borrado masivo de 1024 entradas.
- if(cache.size>=2048){
-  const it=cache.keys();
-  for(let j=0;j<256;j++){const key0=it.next();if(key0.done)break;cache.delete(key0.value)}
- }
- cache.set(key,out);
- return out;
-}
-// La antigua rutina separada de escapatorias se sustituyó por
-// apexUnifiedGroundDrawCorridor(): un solo dueño para asfalto, piano y runoff.
 window.apexRunoffFallbackMaskDiagnostics=()=>{
  const i=trackData&&trackData._apexRunoffDriveSurfaceIndex;
  return i?{authoredTriangles:i.faces.length,gridCells:i.buckets.size,
-  cachedMaskedSegments:i._genericMaskCache?i._genericMaskCache.size:0,
-  masksComputed:i._genericMaskQueries||0,
-  cacheHits:i._genericMaskCacheHits||0,
-  unmaskedCached:i._genericMaskCache?Array.from(i._genericMaskCache.values()).filter(v=>v===null).length:0}:null;
+  cachedMaskedSegments:0}:null;
 };
 function apexSampleRunoffSurfaceAtWorld(x,z){
  const index=trackData&&trackData._apexRunoffDriveSurfaceIndex;
@@ -2457,36 +2437,10 @@ function apexBuildUnifiedGroundAtlas(cw){
  if(!cw)return null;
  const svg=trackData&&trackData._apexRunoffDriveSurfaceIndex,
   plate=cw._terrainContourGrid&&cw._terrainContourGrid.plateMesh?cw._terrainContourGrid:null;
- const atlas={cw,svg,plate,strips:new Map(),built:0,reused:0,evicted:0,
+ const atlas={cw,svg,plate,
   svgFaces:svg&&svg.faces?svg.faces.length:0};
  cw._apexUnifiedGroundAtlas=atlas;
  return atlas;
-}
-function apexUnifiedGroundStrip(seg){
- const cw=trackData&&trackData.customWorld,atlas=cw&&cw._apexUnifiedGroundAtlas;
- if(!seg||!seg.a||!seg.b)return null;
- // No guardar paquetes ni crear claves en circuitos sin escapatorias SVG.
- if(!atlas||!atlas.svgFaces)return null;
- const key=seg.a.s.toFixed(4)+':'+seg.b.s.toFixed(4);
- const cached=atlas.strips.get(key);
- if(cached){atlas.reused++;return cached}
- const {a,b}=seg;
- const L=apexGenericRunoffMaskedPolys(seg,1),R=apexGenericRunoffMaskedPolys(seg,-1);
- const strip={key,s0:a.s,s1:b.s,runoffLeft:L,runoffRight:R,
-  roadMaterial:'ASPHALT',kerbMaterial:'KERB',
-  runoffMaterial:String(a.env.runoffSurface||'ASPHALT').toUpperCase(),
-  // Las coordenadas visuales salen de roadStep; el mismo segmento define
-  // todas las aristas, evitando reconstruir vertices de pianos y carretera.
-  authoredLeft:L!==null,authoredRight:R!==null};
- // Los dos extremos que siguen al jugador cambian constantemente. Nunca
- // llenar la cache con los mismos segmentos relativos a poses efimeras.
- if(Math.abs(a.sd||0)<1e-5||Math.abs(b.sd||0)<1e-5)return strip;
- if(atlas.strips.size>=2048){
-  const it=atlas.strips.keys();
-  for(let j=0;j<256;j++){const x=it.next();if(x.done)break;atlas.strips.delete(x.value);atlas.evicted++}
- }
- atlas.strips.set(key,strip);atlas.built++;
- return strip;
 }
 function apexWebglRoadBase(seg,pitch,forceCPU=false){
  const a=seg.a,b=seg.b,V0=a.v,V1=b.v,
@@ -2496,8 +2450,8 @@ function apexWebglRoadBase(seg,pitch,forceCPU=false){
    road=webglCircuitRoadColor(seg);
   seg._apexPhase6RoadStyle=style;
   if(!forceCPU&&apexPhase6QueueRoadBase(seg,colors,road,cheap,show))return pressure;
-  if(show&&(a.curb.left||b.curb.left))webglPushCamQuad(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
-  if(show&&(a.curb.right||b.curb.right))webglPushCamQuad(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
+  if(a.curb.left||b.curb.left)webglPushCamQuad(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
+  if(a.curb.right||b.curb.right)webglPushCamQuad(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
 
   if(cheap)webglPushCamQuad(V0.l,V0.r,V1.r,V1.l,pitch,road);
   else{
@@ -2512,38 +2466,15 @@ function apexWebglRoadBase(seg,pitch,forceCPU=false){
 function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
  const a=seg.a,b=seg.b,V0=a.v,V1=b.v;
  if(!V0||!V1)return null;
- const inspect=apexInspectionActive(),
-  strip=inspect?null:apexUnifiedGroundStrip(seg),
-  left=inspect?null:(strip?strip.runoffLeft:apexGenericRunoffMaskedPolys(seg,1)),
-  right=inspect?null:(strip?strip.runoffRight:apexGenericRunoffMaskedPolys(seg,-1)),
-  cL=surfaceColor(a.env.runoffSurface,false),cR=surfaceColor(a.env.runoffSurface,true);
- const paint=(faces,col)=>{
-  for(const p of faces){
-   const cp=p.map(v=>worldToCamera(v.x,v.y,v.z,cam));
-   if(webgl)webglPushCamPoly(cp,pitch,col,.58);
-   else drawCamPoly(cp,pitch,col,.58);
-  }
- };
- if(inspect)apexInspectorDrawRunoff(seg,cam,pitch,webgl);
- else{
-  if(left!==null)paint(left,cL);
-  else if(webgl)webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
-  else drawCamQuadTriangles(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
-  if(right!==null)paint(right,cR);
-  else if(webgl)webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
-  else drawCamQuadTriangles(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
-  if(webgl&&left===null&&right===null)webglPushRunoffDetail(seg,pitch);
- 
- }
  const seed=Math.floor(((a.s+b.s)*.5)/2.4),colors=circuitCurbPair(seed);
- if(webgl)return{mask:left!==null||right!==null,renderPressure:apexWebglRoadBase(seg,pitch)};
+ if(webgl)return{mask:false,renderPressure:apexWebglRoadBase(seg,pitch)};
 
- if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.left||b.curb.left))
+ if(a.curb.left||b.curb.left)
   drawCamQuadTriangles(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
- if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.right||b.curb.right))
+ if(a.curb.right||b.curb.right)
   drawCamQuadTriangles(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
  drawCamQuadTriangles(V0.l,V0.r,V1.r,V1.l,pitch,palette().road);
- return{mask:left!==null||right!==null};
+ return{mask:false};
 }
 /* Pasada unica para las superficies SVG de rodadura: antes pertenecian al
    bucle de 'landmarks' y se pintaban junto a edificios/vegetacion, mientras
@@ -2595,8 +2526,7 @@ function apexRenderUnifiedAuthoredGround(cam,pitch,webgl=false){
 window.apexUnifiedGroundAtlasDiagnostics=()=>{
  const a=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
    t=a&&a.plate;
- return a?{ready:true,svgFaces:a.svgFaces,stripPackets:a.strips.size,
-  compiled:a.built,reused:a.reused,evicted:a.evicted,
+ return a?{ready:true,svgFaces:a.svgFaces,
   terrainCells:t?[(t.nx-1),(t.nz-1)]:null,
   terrainCutCache:t&&t._apexUnifiedTerrainPieces?t._apexUnifiedTerrainPieces.size:0,
   authoredDrawn:a.lastDrawn||0,authoredCulled:a.lastCulled||0,
@@ -4619,25 +4549,17 @@ window.apexCameraGradeDiagnostics=()=>{
  return{circuit:trackData.spec&&trackData.spec.dir,s:Number(player.s.toFixed(2)),cameraGradePitchPx:Number(finite(player.cameraGradePitch,0).toFixed(2)),targetPx:Number(apexRoadGradeCameraPitchTarget(player.s,sign,player.lat).toFixed(2)),samples:out};
 };
 
-function apexFlatRunoffPoint(q,e,width,side,yOff=0){
- const p=ribbonWorldPoint(q,width,side,yOff);
- p.y=apexRoadSideHeight(q,e,side)+yOff;
- return p;
-}
 function roadStep(s,sd,cam,pitch){
- const env=envProfile(s),curb=curbInfo(s),half=env.half,outer=half+env.curb+env.runoff,q=renderRibbonFrameAt(s);
- const WP=(width,side,yOff=0)=>ribbonWorldPoint(q,width,side,yOff),
-       wc=P=>worldToCamera(P.x,P.y,P.z,cam);
- const C=worldToCamera(q.x,q.y,q.z,cam),
-       L=wc(WP(half,1)),R=wc(WP(half,-1)),
-       LO=wc(apexFlatRunoffPoint(q,env,half+env.curb,1,0)),RO=wc(apexFlatRunoffPoint(q,env,half+env.curb,-1,0)),
-       LX=wc(apexFlatRunoffPoint(q,env,apexRoadFlatLimit(s,env,1),1)),RX=wc(apexFlatRunoffPoint(q,env,apexRoadFlatLimit(s,env,-1),-1));
+ const env=envProfile(s),curb=curbInfo(s),q=renderRibbonFrameAt(s),
+  {l,r,lo,ro,li,ri}=apexTrackCrossSection(q,env,curb),
+  wc=P=>worldToCamera(P.x,P.y,P.z,cam);
+ const C=wc(q),L=wc(l),R=wc(r),LO=wc(lo),RO=wc(ro),LX=LO,RX=RO;
  // Los muros físicos siguen usando la geometría original; en la base actual no se renderizan.
  const wl=wallGeometryAtS(s,1),wr=wallGeometryAtS(s,-1);
  const LXT=worldToCamera(wl.top.x,wl.top.y,wl.top.z,cam),RXT=worldToCamera(wr.top.x,wr.top.y,wr.top.z,cam);
  return {
    s,env,curb,sd,d:Math.abs(sd),z:C.z,i:q.i,q,
-   v:{c:C,l:L,r:R,lo:LO,ro:RO,lx:LX,rx:RX,lxt:LXT,rxt:RXT},
+   v:{c:C,l:L,r:R,lo:LO,ro:RO,lx:LX,rx:RX,li:wc(li),ri:wc(ri),lxt:LXT,rxt:RXT},
    c:projectRoadLocal(C.x,C.y,C.z,pitch),l:projectRoadLocal(L.x,L.y,L.z,pitch),r:projectRoadLocal(R.x,R.y,R.z,pitch),
    lo:projectRoadLocal(LO.x,LO.y,LO.z,pitch),ro:projectRoadLocal(RO.x,RO.y,RO.z,pitch),
    lx:projectRoadLocal(LX.x,LX.y,LX.z,pitch),rx:projectRoadLocal(RX.x,RX.y,RX.z,pitch),
@@ -5343,11 +5265,10 @@ function drawRoadSegment(seg,cam,pitch){
    drawCamQuadTriangles(a0,a1,b1,b0,pitch,'rgba(255,255,255,.015)');
  }
 
- // 5) Líneas blancas de borde.
- if(seg.z>4&&((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())||seg.z<mobileControlProfile().edgeMax)){
-   const e=.016;
-   drawCamQuadTriangles(V0.l,camMix(V0.l,V0.r,e),camMix(V1.l,V1.r,e),V1.l,pitch,'rgba(247,248,249,.90)');
-   drawCamQuadTriangles(camMix(V0.r,V0.l,e),V0.r,V1.r,camMix(V1.r,V1.l,e),pitch,'rgba(247,248,249,.90)');
+ // Match the asphalt vertices, including on near-plane and bank transitions.
+ if(seg.z<mobileControlProfile().edgeMax||apexInspectionFullScene()){
+   drawCamQuadTriangles(V0.l,V0.li,V1.li,V1.l,pitch,'#f7f8f9',.58);
+   drawCamQuadTriangles(V0.ri,V0.r,V1.r,V1.ri,pitch,'#f7f8f9',.58);
  }
 
  // 6) Línea de pitlane base.

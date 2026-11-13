@@ -14,48 +14,30 @@ function snippet(s,start,end){
  assert.ok(a>=0&&b>a,'missing '+start);const block=s.slice(a,b);
  new vm.Script(block);return block;
 }
-const geo=snippet(core,'function apexVisualRunoffLimitV1527(', 'window.apexRoadMarginInfoV1527=');
-const env={half:6,curb:.75,runoff:3.2};
-const make=authoritative=>new Function('apexRoadFlatLimit','trackData',geo+
- 'return apexVisualRunoffLimitV1527;')(()=>27,{customWorld:{authoritative}}); 
-const svg=make(true),legacy=make(false);
-assert.ok(Math.abs(svg(200,env,1)-9.95)<1e-5,'asphalt cannot extend 27m to an SVG wall');
-assert.ok(Math.abs(svg(200,env,-1)-9.95)<1e-5,'symmetric visual cap');
-assert.equal(legacy(200,env,1),27,'legacy tracks retain their supported shoulder');
-const nearCanvas=snippet(world,'function drawNearRoadSafetyPatch(', 'function drawRoad(');
-const nearWebgl=snippet(frame,'function webglPushNearPatch(', 'function webglCollectCircuitSegments(');
-for(const near of [nearCanvas,nearWebgl]){
- assert.match(near,/ribbonWorldPoint\(frame,Math\.abs\(lat\),lat>=0\?1:-1\)/,
- 'near track follows authored SVG edges and true banking');
- assert.doesNotMatch(near,/surfaceColor\(env\.runoffSurface/,'do not repaint flat runway margins');
- assert.doesNotMatch(near,/apexClipGenericRunoffPolygon\(/,
- 'near patch no longer draws duplicate clipped runoff');
- assert.match(near,/player\.driveNetwork==='PIT'/,'do not draw near road patch over pit');
+for(const file of ['part-024-bridgefull-preview.txt','part-024.txt']){
+ const source=read('parts/'+file);
+ const edge=snippet(source,'function apexTrackEdgeSection(', '// v5.211');
+ const geometry=new Function('ribbonWorldPoint',edge+'return apexTrackCrossSection;')(
+  (q,w,side)=>({x:q.x+w*side,y:q.y+Math.tan(q.bank)*w*side,z:q.z}));
+ for(const bank of [-.38,0,.38]){
+  const q={x:10,y:17,z:20,ox:1.2,oz:0,bank,authoredRoadEdges:{
+   half:6,left:{x:17,z:20,width:.28},right:{x:5,z:20,width:.15}}};
+  const env={half:5,curb:.8,runoff:8};
+  const g=geometry(q,env,{left:false,right:false});
+  const width=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+  assert.ok(Math.abs(width(g.l,g.li)-.28)<1e-10);
+  assert.ok(Math.abs(width(g.r,g.ri)-.15)<1e-10);
+  assert.ok(Math.abs((g.l.x+g.li.x)*.5-16)<1e-10);
+  assert.equal(g.l,g.lo,'asphalt and terrain share the paint exterior');
+  assert.equal(g.r,g.ro);
+  const legacy=geometry({...q,authoredRoadEdges:null},env,{left:false,right:false});
+  assert.equal(legacy.l.x,15,'legacy road width is its asphalt boundary');
+  assert.ok(Math.abs(width(legacy.l,legacy.li)-.20)<1e-10);
+ }
+ assert.doesNotMatch(source,/apexVisualRunoffLimitV1527/);
+ assert.match(source,/const samples=apexRoadMeshSamples\(\),cell=48/);
 }
-const corridor=snippet(core,'function apexUnifiedGroundDrawCorridor(', 'function apexRenderUnifiedAuthoredGround(');
-const roadStep=snippet(core,'function roadStep(', 'function clipPolyNear(');
-assert.match(corridor,/autoAsphalt=String\(a\.env\.runoffSurface\|\|''\)\.toUpperCase\(\)==='ASPHALT'/);
-assert.match(corridor,/shared=autoAsphalt\?apexRoadMaterialColorV15\(seg\):null/);
-assert.match(corridor,/if\(left!==null\)paint\(left,cL\)/,
- 'authored SVG masking must take priority');
-assert.match(corridor,/if\(right!==null\)paint\(right,cR\)/);
-assert.match(roadStep,/apexVisualRunoffLimitV1527\(s,env,1\)/);
-assert.match(roadStep,/apexVisualRunoffLimitV1527\(s,env,-1\)/);
-assert.match(core,/outer=apexFlatRunoffPoint\(q,e,apexVisualRunoffLimitV1527\(st\.s,e,side\),side\)/);
-const cut=snippet(core,'function apexRunoffRoadClipIndex(', 'function apexClipTerrainAtPit(');
-assert.match(cut,/Math\.max\(w,apexVisualRunoffLimitV1527\(s,e,1\)\)/,
- 'terrain cut must not extend beyond the painted left asphalt');
-assert.match(cut,/Math\.max\(w,apexVisualRunoffLimitV1527\(s,e,-1\)\)/,
- 'terrain cut must not extend beyond the painted right asphalt');
-assert.doesNotMatch(cut,/Math\.max\(w,apexRoadFlatLimit\(s,e,1\)\)/,
- 'old far-wall cuts expose the sky through unpainted shoulders');
-assert.match(cut,/const mesh=apexPitMergeQuadV1526\(sg\)/,
- 'pit terrain cut must use the exact tapered merge mesh');
-assert.doesNotMatch(cut,/const w=sg\.width\*\.5\/sg\.len/,
- 'old rectangular pit cut leaves holes after merge');
-assert.match(frame,/apexPhase6QueueDynamicRoadQuad\(quad,nearColor,bias,'near'\)/);
-assert.match(frame,/qa=renderRibbonFrameAt\(mod\(player\.s\+a,L\)\)/);
-assert.match(core,/window\.apexRoadMarginInfoV1527=/);
-console.log(JSON.stringify({test:'road-margins-v1527-preview',svgAsphaltBounded:true,
- authoredRunoffPreserved:true,nearRectanglesRemoved:true,bankAndSVGEdges:true,
- canvasAndWebGL:true,physicsUnchanged:true,prodUntouched:true,ok:true}));
+assert.doesNotMatch(world,/function drawNearRoadSafetyPatch/);
+assert.doesNotMatch(frame,/function webglPushNearPatch/);
+console.log(JSON.stringify({test:'road-margins',fixedStations:true,bankedWidths:true,
+ sharedBoundary:true,legacyWidthPreserved:true,ok:true}));

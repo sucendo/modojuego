@@ -384,7 +384,7 @@ function apexTerrainFinePatch(g,ix,iz,kind){
    for(const part of authored??[poly]){
     const drive=apexClipTerrainAtDrive(part);
     for(const q of drive??[part])
-     if(q.length>=3&&Math.abs(apexInspectorPolyArea(q))>.0001)quads.push(q);
+     if(q.length>=3&&Math.abs(apexInspectorPolyArea(q))>1e-8)quads.push(q);
    }
   }
  }
@@ -474,7 +474,7 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
 // ---------- v5.230.62.2 · COMPILADOR ESTÁTICO + CACHE PERSISTENTE ----------
 // El objetivo es pagar el coste de interpretación/teselación ANTES de conducir y
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
-const APEX_CIRCUIT_COMPILE_REV=230693;
+const APEX_CIRCUIT_COMPILE_REV=230695;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){
@@ -704,11 +704,12 @@ function terrainSpread(st){
 }
 function terrainEase(t){t=clamp(t,0,1);return t*t*(3-2*t)}
 function terrainPointCamera(st,side,extra,cam,heightBlend=0,drop=0){
- const q=st.q,blend=terrainEase(heightBlend),dir=terrainSideDir(q,blend),w=apexRoadFlatLimit(st.s,st.env||envProfile(st.s),side)+extra;
- const baseGround=terrainGroundY(st),wx=q.x+dir.x*w*side,wz=q.z+dir.z*w*side,ground=apexTerrainHeightAtWorld(wx,wz,baseGround),preserveTunnel=!!(st&&st.env&&st.env.tunnel)||terrainTunnelPreserveAtS(st&&st.s);
+ const q=st.q,env=st.env,blend=terrainEase(heightBlend),dir=terrainSideDir(q,blend),
+  edge=apexTrackCrossSection(q,env,st.curb),start=side>0?edge.lo:edge.ro;
+ const baseGround=terrainGroundY(st),wx=start.x+dir.x*extra*side,wz=start.z+dir.z*extra*side,ground=apexTerrainHeightAtWorld(wx,wz,baseGround),preserveTunnel=!!(st&&st.env&&st.env.tunnel)||terrainTunnelPreserveAtS(st&&st.s);
  // Regla normal: el terreno enlaza suavemente con la carretera. Regla túnel: se anula
  // esa interpolación y se conserva la cota natural desde la propia boca del túnel.
- const edgeY=apexRoadSideHeight(q,st.env||envProfile(st.s),side);
+ const edgeY=start.y;
  const y=(preserveTunnel?ground:apexPhase1GroundBlend(wx,wz,lerp(edgeY,ground,blend)))-drop;
  const P={x:wx,y,z:wz};
  return worldToCamera(P.x,P.y,P.z,cam);
@@ -793,7 +794,6 @@ function drawTerrainSegmentMobile(seg,cam,pitch){
  const aLN=terrainPointCamera(a, 1,nearExtra,cam,.04,.035),bLN=terrainPointCamera(b, 1,nearExtraB,cam,.04,.035);
  const aRN=terrainPointCamera(a,-1,nearExtra,cam,.04,.035),bRN=terrainPointCamera(b,-1,nearExtraB,cam,.04,.035);
  const base=terrainShade(visual.near,false,seed&1);
- drawCamQuadTriangles(a.v.lx,a.v.rx,b.v.rx,b.v.lx,pitch,base,.58);
  drawCamQuadTriangles(a.v.lx,aLN,bLN,b.v.lx,pitch,base,.58);
  drawCamQuadTriangles(aRN,a.v.rx,b.v.rx,bRN,pitch,base,.58);
  if(!plateWorld&&((t>.24&&seg.z<mp.terrainMid)||supportOnly)){
@@ -866,12 +866,9 @@ function apexRoadWorldNode(s,node=-1){
  let w=node>=0?cache.nodes.get(node):null;
  if(w){apexRoadPreparationPerf.hits++;}
  else{
-  const at=node>=0?samples[node]:s,env=envProfile(at),curb=curbInfo(at),q=renderRibbonFrameAt(at),half=env.half;
-  w={env,curb,q,points:[{x:q.x,y:q.y,z:q.z},
-   ribbonWorldPoint(q,half,1),ribbonWorldPoint(q,half,-1),
-   apexFlatRunoffPoint(q,env,half+env.curb,1),apexFlatRunoffPoint(q,env,half+env.curb,-1),
-   apexFlatRunoffPoint(q,env,apexRoadFlatLimit(at,env,1),1),
-   apexFlatRunoffPoint(q,env,apexRoadFlatLimit(at,env,-1),-1)]};
+  const at=node>=0?samples[node]:s,env=envProfile(at),curb=curbInfo(at),q=renderRibbonFrameAt(at),
+   {l,r,lo,ro,li,ri}=apexTrackCrossSection(q,env,curb);
+  w={env,curb,q,points:[q,l,r,lo,ro,lo,ro,li,ri]};
   apexRoadPreparationPerf.misses++;
   if(node>=0){
    if(cache.nodes.size>=(mobilePerformanceMode()?2048:4096)){
@@ -887,48 +884,27 @@ function apexWebglRoadStep(s,sd,cam,pitch,node=-1){
  const p=w.points,c=worldToCamera(p[0].x,p[0].y,p[0].z,cam),
   cv=i=>worldToCamera(p[i].x,p[i].y,p[i].z,cam);
  return{meshNode:node,s,sd,d:Math.abs(sd),env:w.env,curb:w.curb,q:w.q,i:w.q.i,z:c.z,
-  v:{c,l:cv(1),r:cv(2),lo:cv(3),ro:cv(4),lx:cv(5),rx:cv(6)}};
+  v:{c,l:cv(1),r:cv(2),lo:cv(3),ro:cv(4),lx:cv(5),rx:cv(6),li:cv(7),ri:cv(8)}};
 }
 window.apexRoadPreparationDiagnostics=()=>({...apexRoadPreparationPerf,
  cachedNodes:trackData&&trackData._apexWebglRoadNodes?trackData._apexWebglRoadNodes.nodes.size:0});
 function collectRoadBranch(sign,cam,pitch,maxD=540,near=.64,makeStep=roadStep){
  const samples=apexRoadMeshSamples(),L=trackData.km*1000;
  if(apexInspectionFullScene()){if(sign<0)return[];return samples.map((p,i)=>makeStep(p,p,cam,pitch,i));}
- const center=mod(player.s,L),raw=[makeStep(center,0,cam,pitch)];let lo=0,hi=samples.length;
+ const center=mod(player.s,L);
+ let lo=0,hi=samples.length;
  while(lo<hi){const m=(lo+hi)>>1;if(samples[m]<=center)lo=m+1;else hi=m;}
- // Exclude duplicate seam sample; walk fixed nodes around the lap in either direction.
- const count=samples.length-1;let index=sign>0?lo:lo-1;
- for(let walked=0;walked<count;walked++,index+=sign){const ss=samples[mod(index,count)],d=sign>0?mod(ss-center,L):mod(center-ss,L);if(d<.0001)continue;if(d>maxD)break;const st=makeStep(center+sign*d,sign*d,cam,pitch,mod(index,count));if(st&&Number.isFinite(roadStepFrontExtent(st)))raw.push(st);}
- const end=makeStep(center+sign*Math.min(maxD,L-.001),sign*Math.min(maxD,L-.001),cam,pitch);if(end&&Number.isFinite(roadStepFrontExtent(end)))raw.push(end);
+ // Both directions meet at one fixed mesh node. Camera near-plane clipping
+ // handles the crossing without a second, longer quad over the real road.
+ const count=samples.length-1,anchor=lo-1,raw=[];
+ for(let i=0;i<count;i++){
+  const node=mod(anchor+sign*i,count),ss=samples[node],
+   d=i===0?0:sign>0?mod(ss-center,L):mod(center-ss,L);
+  const st=makeStep(ss,sign*d,cam,pitch,node);
+  if(st&&Number.isFinite(roadStepFrontExtent(st)))raw.push(st);
+  if(d>=maxD)break;
+ }
  return raw;
-}
-
-function drawNearRoadSafetyPatch(cam,pitch){
- if(apexInspectionActive())return;
- if(!player||!trackData)return;
- // Parche local de ~34 m alrededor del coche. Se dibuja antes de la cinta normal y
- // evita huecos de near-plane cuando el cockpit queda casi perpendicular al trazado.
- const q=poseAt(player.s),env=envProfile(player.s),roadHalf=env.half,outer=roadHalf+env.curb+env.runoff;
- const point=(along,lat)=>({x:q.x+q.tx*along+q.nx*lat,
-  y:q.y+Math.tan(q.bank||0)*clamp(lat,-roadHalf,roadHalf),
-  z:q.z+q.tz*along+q.nz*lat});
- const make=(along,lat)=>{const p=point(along,lat);return worldToCamera(p.x,p.y,p.z,cam)};
- const a=-17,b=17,outerL=apexRoadFlatLimit(player.s,env,1),outerR=apexRoadFlatLimit(player.s,env,-1);
- const o1=make(a,outerL),o2=make(a,-outerR),o3=make(b,-outerR),o4=make(b,outerL);
- const r1=make(a, roadHalf),r2=make(a,-roadHalf),r3=make(b,-roadHalf),r4=make(b, roadHalf);
- // Runoff completo primero; luego el asfalto principal. El clipping 3D contra near
- // rellena el primer plano incluso cuando uno de los bordes queda detrás de cámara.
- const idx=trackData._apexRunoffDriveSurfaceIndex;
- if(idx&&idx.faces.length){
-  const paint=(quad,col)=>{
-   const clipped=apexClipGenericRunoffPolygon(quad);
-   const polys=clipped===null?[quad]:clipped;
-   for(const poly of polys)drawCamPoly(poly.map(p=>worldToCamera(p.x,p.y,p.z,cam)),pitch,col,.34);
-  };
-  paint([point(a,outerL),point(a,roadHalf),point(b,roadHalf),point(b,outerL)],surfaceColor(env.runoffSurface,false));
-  paint([point(a,-roadHalf),point(a,-outerR),point(b,-outerR),point(b,-roadHalf)],surfaceColor(env.runoffSurface,true));
- }else drawCamQuadTriangles(o1,o2,o3,o4,pitch,surfaceColor(env.runoffSurface,false),.34);
- drawCamQuadTriangles(r1,r2,r3,r4,pitch,palette().road,.34);
 }
 
 function drawRoad(camArg=null){
@@ -968,7 +944,6 @@ function drawRoad(camArg=null){
  // La escapatoria SVG se dibuja DESPUES de la malla natural y antes
  // de cualquier superficie generica o cinta, sin segunda pasada oculta.
  apexRenderUnifiedAuthoredGround(cam,pitch,false);
- drawNearRoadSafetyPatch(cam,pitch);
 
  // PASADA 2 — pista y rivales en profundidad global.
  const cw=trackData&&trackData.customWorld,hasExactWalls=!!(cw&&cw.authoritative&&Array.isArray(cw.wallSegments)&&cw.wallSegments.length),wallItems=hasExactWalls?collectExactWallRenderItems(cam):[];
@@ -1837,7 +1812,7 @@ function drawMirrorSceneAdaptive(x,y,w,h,side,lite=false){
  const pal=palette(),{snap,cfg}=apexMirrorSnapshot(side,w,h),envNow=envProfile(player.s),tv=terrainVisualProfile({s:player.s,env:envNow}),groundCol=surfaceColor(tv&&tv.far?tv.far:'GRASS',false);
  const bg=ctx.createLinearGradient(0,y,0,y+h);bg.addColorStop(0,lite?pal.sky1:'#e8eff4');bg.addColorStop(lite?.48:.24,pal.sky2);bg.addColorStop(lite?.50:.555,shadeColor(groundCol,lite?5:-2));bg.addColorStop(1,shadeColor(groundCol,-12));ctx.fillStyle=bg;ctx.fillRect(x,y,w,h);ctx.fillStyle='rgba(255,255,255,.09)';ctx.fillRect(x,y,w,h*.12);
  let drawn=0;
- for(const seg of snap.secs){const a=seg.a,b=seg.b,seed=((a.q.i/6)|0),road=lite?pal.road:'#3a3e43',[mcA,mcB]=circuitCurbPair(seed);drawn+=drawMirrorPoly([a.lx,a.lo,b.lo,b.lx],x,y,w,h,surfaceColor(a.env.runoffSurface,false))?1:0;drawn+=drawMirrorPoly([a.ro,a.rx,b.rx,b.ro],x,y,w,h,surfaceColor(a.env.runoffSurface,true))?1:0;if(a.curb.left||b.curb.left)drawn+=drawMirrorPoly([a.lo,a.l,b.l,b.lo],x,y,w,h,mcA)?1:0;if(a.curb.right||b.curb.right)drawn+=drawMirrorPoly([a.r,a.ro,b.ro,b.r],x,y,w,h,mcB)?1:0;drawn+=drawMirrorPoly([a.l,a.r,b.r,b.l],x,y,w,h,road)?1:0;if(!lite&&seed%6===0)drawMirrorPoly([mixPt(a.l,a.r,.496),mixPt(a.l,a.r,.504),mixPt(b.l,b.r,.504),mixPt(b.l,b.r,.496)],x,y,w,h,'rgba(250,250,250,.14)');}
+ for(const seg of snap.secs){const a=seg.a,b=seg.b,seed=((a.q.i/6)|0),road=lite?pal.road:'#3a3e43',[mcA,mcB]=circuitCurbPair(seed);if(a.curb.left||b.curb.left)drawn+=drawMirrorPoly([a.lo,a.l,b.l,b.lo],x,y,w,h,mcA)?1:0;if(a.curb.right||b.curb.right)drawn+=drawMirrorPoly([a.r,a.ro,b.ro,b.r],x,y,w,h,mcB)?1:0;drawn+=drawMirrorPoly([a.l,a.r,b.r,b.l],x,y,w,h,road)?1:0;if(!lite&&seed%6===0)drawMirrorPoly([mixPt(a.l,a.r,.496),mixPt(a.l,a.r,.504),mixPt(b.l,b.r,.504),mixPt(b.l,b.r,.496)],x,y,w,h,'rgba(250,250,250,.14)');}
  if(!drawn){ctx.fillStyle='#4a4f55';ctx.beginPath();ctx.moveTo(x+w*.20,y+h*.98);ctx.lineTo(x+w*.38,y+h*.56);ctx.lineTo(x+w*.62,y+h*.56);ctx.lineTo(x+w*.80,y+h*.98);ctx.closePath();ctx.fill();}
  // Skyline/boxes/gradas: visibles a distancia y además actúan como oclusores de rivales.
  for(const f of snap.landmarkFaces)apexDrawMirrorProjectedPoly(f.poly,x,y,f.fill);
@@ -3582,7 +3557,7 @@ function apexPhase6QueueRoadBase(seg,colors,road,cheap,show){
  if(id<0||Math.min(seg.a.v.l.z,seg.a.v.r.z,seg.a.v.lo.z,seg.a.v.ro.z,seg.b.v.l.z,seg.b.v.r.z,seg.b.v.lo.z,seg.b.v.ro.z)<2){s.cpuSegments++;return false;}
  const a=seg.a.meshNode*6,b=seg.b.meshNode*6;
  // Validate opacity before suppressing the CPU base (custom kerb palettes).
- const curbLeft=show&&(seg.a.curb.left||seg.b.curb.left),curbRight=show&&(seg.a.curb.right||seg.b.curb.right);
+ const curbLeft=seg.a.curb.left||seg.b.curb.left,curbRight=seg.a.curb.right||seg.b.curb.right;
  if(webglCssColor(road)[3]<.999||curbLeft&&webglCssColor(colors[0])[3]<.999||curbRight&&webglCssColor(colors[1])[3]<.999){s.cpuSegments++;return false;}
  s.queued.push(seg); // Complete CPU replay is available if sealing fails.
  try{
@@ -4793,10 +4768,3 @@ function webglPushTerrainSegment(seg,cam,pitch){
    }
  }
 }
-
-function webglPushRunoffDetail(seg,pitch){
- const a=seg.a,b=seg.b,env=a.env,V0=a.v,V1=b.v;if(!env||!V0||!V1)return;
- // Driving corridor detail is protected: no global LOD culling here.
- const full=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene()),budget=full?{q:1,pressure:0,farScale:1}:apexSceneDetailBudget(),mobile=mobilePerformanceMode();
- const maxZ=full?apexInspectionFarDistance():Math.round((mobile?lerp(105,190,budget.q):lerp(300,430,budget.q))*budget.farScale*(budget.pressure>=2?.86:1));if(seg.z>maxZ)return;
- const surf=String(env.runoffSurface||'ASPHALT').toUpperCase(),seed=Math.floor(((a.s+b.s)*
