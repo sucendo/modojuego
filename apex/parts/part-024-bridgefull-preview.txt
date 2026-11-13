@@ -2010,9 +2010,14 @@ function apexRunoffRoadClipIndex(){
   prev=cur;
  }
  for(const sg of apexPitSegments()){
-  const w=sg.width*.5/sg.len,nx=-(sg.z2-sg.z1)*w,nz=(sg.x2-sg.x1)*w;
-  add([{x:sg.x1+nx,y:sg.y1,z:sg.z1+nz},{x:sg.x1-nx,y:sg.y1,z:sg.z1-nz},
-       {x:sg.x2-nx,y:sg.y2,z:sg.z2-nz},{x:sg.x2+nx,y:sg.y2,z:sg.z2+nz}],true);
+  // V15.2.7: pit terrain cut MUST equal the visible V15.2.6 merge footprint.
+  // Otherwise the original rectangular, full-width pit cutter removes terrain
+  // where the pit surface already tapered away, exposing the sky beside the
+  // white separation line and along the main circuit.
+  const mesh=apexPitMergeQuadV1526(sg);
+  if(!mesh)continue;
+  const poly=mesh.quad.map(p=>({x:p.x,y:p.y,z:p.z}));
+  if(Math.abs(apexInspectorPolyArea(poly))>.001)add(poly,true);
  }
  return trackData._apexRunoffRoadClipIndex={cell,buckets,terrainBuckets,pitBuckets,
    faces:bounds,clipped:0,generated:0};
