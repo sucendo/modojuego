@@ -1632,6 +1632,28 @@ function poseAt(s){
 }
 
 
+// V15.2.8: BASE JSON carries ASPHALT as a historical generic fallback.
+// It is not evidence that every SVG shoulder is paved. Prefer the authored
+// polygons, unless a user has explicitly changed the fallback material.
+// Cache the preference per loaded circuit: no localStorage/JSON work per frame.
+function apexSvgRunoffFallbackV1528(id,cw,surfaces){
+ const value=String(surfaces?.runoffSurface||'ASPHALT').toUpperCase();
+ if(!cw?.authoritative||!cw.surfaceZones?.length)return value;
+ let policy=trackData?._apexSvgRunoffPolicyV1528;
+ if(!policy||policy.id!==id){
+  const base=typeof APEX_BASE_CIRCUIT_JSON_BY_ID!=='undefined'?
+   APEX_BASE_CIRCUIT_JSON_BY_ID?.[id]:null,
+   baseMaterial=String(base?.environment?.surfaces?.runoffSurface||
+    base?.track?.surfaces?.runoffSurface||'ASPHALT').toUpperCase();
+  const custom=typeof apexReadUserCircuitJson==='function'?apexReadUserCircuitJson(id):null,
+   chosen=String(custom?.environment?.surfaces?.runoffSurface||
+    custom?.track?.surfaces?.runoffSurface||'').toUpperCase(),
+   forced=custom?.environment?.runoffFallbackPolicy==='JSON';
+  policy={id,explicit:!!(forced||(chosen&&chosen!==baseMaterial))};
+  if(trackData)trackData._apexSvgRunoffPolicyV1528=policy;
+ }
+ return policy.explicit?value:'GRASS';
+}
 function envProfile(s=(player&&Number.isFinite(player.s)?player.s:0)){
  const id=trackData&&trackData.spec?trackData.spec.dir:"",j=readStoredCircuitJson(id)||{},je=j.environment||{},js=je.surfaces||((j.track||{}).surfaces)||{},
  // V15.2.8: imported SVG surface zones, not a default grey shoulder on
@@ -1639,7 +1661,8 @@ function envProfile(s=(player&&Number.isFinite(player.s)?player.s:0)){
  // when an authored circuit actually supplies material polygons. An explicit
  // JSON surface profile keeps priority, as do authored asphalt/gravel polygons.
  cw=trackData?.customWorld,svgOwnsRunoff=!!(cw?.authoritative&&cw.surfaceZones?.length),
- style={runoffSurface:svgOwnsRunoff?"GRASS":"ASPHALT",offSurface:"GRASS",...js},
+ style={offSurface:"GRASS",...js,
+  runoffSurface:apexSvgRunoffFallbackV1528(id,cw,js)},
  zone=authoredStructureZoneAtS(s);
  const env={half:trackRoadWidthAt(s)*.5,curb:.75,runoff:3.2,runoffSurface:style.runoffSurface,offSurface:style.offSurface,wall:false,wallH:1.05,scenery:"OPEN",leftWall:false,rightWall:false,containment:false,containmentLeft:false,containmentRight:false,tunnel:false,limitExtra:8.0};
  if(zone&&zone.kind==="UNDER"){env.tunnel=true;env.scenery="SVG_TUNNEL";env.structureHeight=zone.height||0;env.structureTopRiseM=Number.isFinite(zone.roofRiseM)?zone.roofRiseM:0;env.structureWidth=zone.width||0;env.runoff=.65;env.runoffSurface="ASPHALT";env.offSurface="ASPHALT"}
