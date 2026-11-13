@@ -34,7 +34,7 @@ assert.match(road,/window\.apexGrassV1522Enabled=.*URLSearchParams/);
 assert.match(road,/get\('grassNearGpu'\)!=='0'/);
 assert.equal((road.match(/gl\.uniform1f\(u\.uGrassTexture,window\.apexGrassV1522Enabled===false\?0:1\)/g)||[]).length,2);
 assert.match(core,/function apexSurfaceTintV152\(/);
-const tintStart=core.indexOf('function apexSurfaceTintV152('),
+const tintStart=core.indexOf('function apexGrassValueNoiseV1523('),
  tintEnd=core.indexOf('function apexUnifiedGroundDrawCorridor(',tintStart);
 const fn=new Function('apexRoadSvgNormalizeColorV15','apexRoadTextureHashV15','apexWeatherWetFactor','shadeColor',
  core.slice(tintStart,tintEnd)+'return apexSurfaceTintV152;')(
