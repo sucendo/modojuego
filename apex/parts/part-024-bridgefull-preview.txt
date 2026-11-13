@@ -234,6 +234,25 @@ function apexRoadFlatLimit(s,env,side){
  if(!hit||!Number.isFinite(hit.lat)||Math.sign(hit.lat)!==side)return base;
  return Math.max(env.half+.12,Math.abs(hit.lat));
 }
+// V15.2.7: the wall defines the supported terrain plateau, NOT the painted
+// asphalt. For authored SVG circuits, generated shoulders have a bounded width;
+// polygons with an explicit surface material retain their exact authored shape.
+function apexVisualRunoffLimitV1527(s,env,side){
+ const physical=apexRoadFlatLimit(s,env,side);
+ if(!trackData?.customWorld?.authoritative)return physical;
+ const edge=env.half+env.curb,visual=edge+Math.max(.55,env.runoff);
+ return Math.max(edge+.025,Math.min(physical,visual));
+}
+window.apexRoadMarginInfoV1527=()=>{
+ if(!trackData)return{ready:false};
+ const s=player?.s??0,e=envProfile(s),cw=trackData.customWorld,
+  zones=(cw?.landmarks||[]).filter(it=>it?.type==='surfaceZone');
+ return{phase:'V15.2.7',circuit:trackData.spec?.dir,roadHalf:e.half,
+  authored:!!cw?.authoritative,runoffSurface:e.runoffSurface,
+  left:{asphaltEnd:apexVisualRunoffLimitV1527(s,e,1),terrainEnd:apexRoadFlatLimit(s,e,1)},
+  right:{asphaltEnd:apexVisualRunoffLimitV1527(s,e,-1),terrainEnd:apexRoadFlatLimit(s,e,-1)},
+  svgRunoffZones:zones.length,nearPatch:'road-only-svg-aligned'};
+};
 function apexRoadShoulderYAt(s,lat){
  const q=renderRibbonFrameAt(s),env=envProfile(s),side=lat>=0?1:-1;
  return q.y+Math.tan(Number.isFinite(q.bank)?q.bank:0)*clamp(lat,-env.half,env.half);
@@ -2441,7 +2460,7 @@ function apexClipGenericRunoffPolygon(poly){
 function apexGenericRunoffSideGeometry(st,side){
  const e=st.env,q=st.q,w=e.half+(st.curb&&(side>0?st.curb.left:st.curb.right)?e.curb:0),
   inner=w>e.half?apexFlatRunoffPoint(q,e,w,side):ribbonWorldPoint(q,e.half,side),
-  outer=apexFlatRunoffPoint(q,e,apexRoadFlatLimit(st.s,e,side),side);
+  outer=apexFlatRunoffPoint(q,e,apexVisualRunoffLimitV1527(st.s,e,side),side);
  return{inner,outer};
 }
 function apexGenericRunoffMaskedPolys(seg,side){
@@ -2782,7 +2801,13 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
   strip=inspect?null:apexUnifiedGroundStrip(seg),
   left=inspect?null:(strip?strip.runoffLeft:apexGenericRunoffMaskedPolys(seg,1)),
   right=inspect?null:(strip?strip.runoffRight:apexGenericRunoffMaskedPolys(seg,-1)),
-  cL=surfaceColor(a.env.runoffSurface,false),cR=surfaceColor(a.env.runoffSurface,true);
+  // The auto-generated asphalt shoulder is not a separately authored surface.
+  // Share both hue AND per-segment road colour with the main textured ribbon.
+  // SVG runoff polygons still provide their own material and colour.
+  autoAsphalt=String(a.env.runoffSurface||'').toUpperCase()==='ASPHALT',
+  shared=autoAsphalt?apexRoadMaterialColorV15(seg):null,
+  cL=shared||surfaceColor(a.env.runoffSurface,false),
+  cR=shared||surfaceColor(a.env.runoffSurface,true);
  // V15.2.5: generic asphalt runoff must not be a smooth grey slab beside
  // the per-pixel textured circuit. Reuse the phase-6 shader within near LOD,
  // without changing the exact SVG masks, grades or painted markings.
@@ -5603,7 +5628,7 @@ function roadStep(s,sd,cam,pitch){
  const C=worldToCamera(q.x,q.y,q.z,cam),
        L=wc(WP(half,1)),R=wc(WP(half,-1)),
        LO=wc(apexFlatRunoffPoint(q,env,half+env.curb,1,0)),RO=wc(apexFlatRunoffPoint(q,env,half+env.curb,-1,0)),
-       LX=wc(apexFlatRunoffPoint(q,env,apexRoadFlatLimit(s,env,1),1)),RX=wc(apexFlatRunoffPoint(q,env,apexRoadFlatLimit(s,env,-1),-1));
+       LX=wc(apexFlatRunoffPoint(q,env,apexVisualRunoffLimitV1527(s,env,1),1)),RX=wc(apexFlatRunoffPoint(q,env,apexVisualRunoffLimitV1527(s,env,-1),-1));
  // Los muros físicos siguen usando la geometría original; en la base actual no se renderizan.
  const wl=wallGeometryAtS(s,1),wr=wallGeometryAtS(s,-1);
  const LXT=worldToCamera(wl.top.x,wl.top.y,wl.top.z,cam),RXT=worldToCamera(wr.top.x,wr.top.y,wr.top.z,cam);
