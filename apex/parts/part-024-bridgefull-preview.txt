@@ -2744,10 +2744,12 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
    suelo, sus propietarios y el orden: terreno -> SVG -> carretera/pianos. */
 function apexRenderUnifiedAuthoredGround(cam,pitch,webgl=false){
  const cw=trackData&&trackData.customWorld,atlas=cw&&cw._apexUnifiedGroundAtlas;
- if(!atlas||!atlas.svgFaces)return false;
+ if(!atlas)return false;
+ // Fase 5: allow paved city roads / pit asphalt even without runoff polygons.
  // Fase 5: si el buffer GPU esta preparado, evitamos TODA la
  // proyeccion de triangulos SVG en CPU y conservamos fallback Canvas/CPU.
  if(webgl&&typeof apexPhase5PrepareGpuGround==='function'&&apexPhase5PrepareGpuGround(cam,pitch))return true;
+ if(!atlas.svgFaces)return false;
  const all=trackLandmarks();
  if(!all||!all.length)return false;
  const entries=apexCompiledLandmarkEntries(all),
@@ -4302,7 +4304,7 @@ function drawWorldLandmarks(cam,pitch){
        const p0=P[j],p1=P[j+1],dx=p1[0]-p0[0],dz=p1[1]-p0[1],ln=Math.hypot(dx,dz);if(ln<.08)continue;
        const nx=-dz/ln,nz=dx/ln,y0=Number.isFinite(Y[j])?Y[j]:apexTerrainHeightAtWorld(p0[0],p0[1],0),y1=Number.isFinite(Y[j+1])?Y[j+1]:apexTerrainHeightAtWorld(p1[0],p1[1],0),lift=.045;
        const A=project(p0[0]+nx*hw,y0+lift,p0[1]+nz*hw,it.maxDs||1700),B=project(p0[0]-nx*hw,y0+lift,p0[1]-nz*hw,it.maxDs||1700),C=project(p1[0]-nx*hw,y1+lift,p1[1]-nz*hw,it.maxDs||1700),D=project(p1[0]+nx*hw,y1+lift,p1[1]+nz*hw,it.maxDs||1700);
-       poly([A,B,C,D],apexSurfaceTintV152(it.roadKind||'ROAD',shadeColor(col,-5),(p0[0]+p1[0])*.5,(p0[1]+p1[1])*.5,(A?.z||0+B?.z||0)*.5),null,1,1);
+       poly([A,B,C,D],apexSurfaceTintV152(it.roadKind||'ROAD',shadeColor(col,-5),(p0[0]+p1[0])*.5,(p0[1]+p1[1])*.5,Math.hypot((p0[0]+p1[0])*.5-cam.x,(p0[1]+p1[1])*.5-cam.z)),null,1,1);
        if(detailAlpha>.12){line(A,D,"rgba(220,225,229,.30)",Math.max(1,.75*s),1);line(B,C,"rgba(220,225,229,.30)",Math.max(1,.75*s),1);}
      }
      continue;
