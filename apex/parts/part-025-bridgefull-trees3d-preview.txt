@@ -575,8 +575,11 @@ window.apexCircuitCompileDiagnostics=()=>trackData&&trackData._compileStats?trac
 function drawTerrainPlateMesh(cam,pitch){
  const _terrainT0=performance.now();
  apexForEachTerrainPlateCell(cam,(A,B,C,D,c,g,poly)=>{
-   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
-   if(poly&&poly.length>=3)drawCamPoly(poly,pitch,fill,.58);else drawCamQuadTriangles(A,B,C,D,pitch,fill,.58);
+   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
+    fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col,
+    cellX=g.minX+(c.ix+c.x1)*g.cell*.5,cellZ=g.minZ+(c.iz+c.z1)*g.cell*.5,
+    tint=g.tone==='GREEN'?apexSurfaceTintV152('GRASS',fill,cellX,cellZ,Math.sqrt(c.dist2||0)):fill;
+   if(poly&&poly.length>=3)drawCamPoly(poly,pitch,tint,.58);else drawCamQuadTriangles(A,B,C,D,pitch,tint,.58);
  });
  renderProfileAdd('terrainMs',performance.now()-_terrainT0);
 }
@@ -585,9 +588,11 @@ function webglPushTerrainPlateMesh(cam,pitch){
   staticCells=[];let newFine=0;apexGpuFrameStats.deferredFineCells=0;
  const draw=(A,B,C,D,c,g,poly)=>{
   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
-   fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
-  if(poly&&poly.length>=3)webglPushCamPoly(poly,pitch,fill,.58);
-  else webglPushCamQuad(A,B,C,D,pitch,fill,.58);
+   fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col,
+   cellX=g.minX+(c.ix+c.x1)*g.cell*.5,cellZ=g.minZ+(c.iz+c.z1)*g.cell*.5,
+   tint=g.tone==='GREEN'?apexSurfaceTintV152('GRASS',fill,cellX,cellZ,Math.sqrt(c.dist2||0)):fill;
+  if(poly&&poly.length>=3)webglPushCamPoly(poly,pitch,tint,.58);
+  else webglPushCamQuad(A,B,C,D,pitch,tint,.58);
  };
  apexForEachTerrainPlateCell(cam,draw,gpuEligible?(cell,g,quad,clean)=>{
   // El plano cercano sigue con el recorte CPU, evitando artefactos
