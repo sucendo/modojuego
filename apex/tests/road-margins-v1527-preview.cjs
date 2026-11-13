@@ -49,6 +49,10 @@ assert.match(cut,/Math\.max\(w,apexVisualRunoffLimitV1527\(s,e,-1\)\)/,
  'terrain cut must not extend beyond the painted right asphalt');
 assert.doesNotMatch(cut,/Math\.max\(w,apexRoadFlatLimit\(s,e,1\)\)/,
  'old far-wall cuts expose the sky through unpainted shoulders');
+assert.match(cut,/const mesh=apexPitMergeQuadV1526\(sg\)/,
+ 'pit terrain cut must use the exact tapered merge mesh');
+assert.doesNotMatch(cut,/const w=sg\.width\*\.5\/sg\.len/,
+ 'old rectangular pit cut leaves holes after merge');
 assert.match(frame,/apexPhase6QueueDynamicRoadQuad\(quad,nearColor,bias,'near'\)/);
 assert.match(frame,/qa=renderRibbonFrameAt\(mod\(player\.s\+a,L\)\)/);
 assert.match(core,/window\.apexRoadMarginInfoV1527=/);
