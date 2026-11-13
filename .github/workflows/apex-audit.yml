@@ -52,6 +52,8 @@ jobs:
         run: node apex/tests/runoff-grain-v1525-preview.cjs
       - name: Pitlane exit and entry merge geometry V15.2.6 (preview only)
         run: node apex/tests/pit-merge-geometry-v1526-preview.cjs
+      - name: Authored margins and no near-camera asphalt slabs V15.2.7 (preview only)
+        run: node apex/tests/road-margins-v1527-preview.cjs
       - name: Near-camera asphalt V15.2.1 bank and GPU continuity (preview only)
         run: node apex/tests/road-near-grain-v1521-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
