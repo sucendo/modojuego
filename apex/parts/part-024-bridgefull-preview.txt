@@ -2686,7 +2686,10 @@ function apexSvgTerrainBaseColorV152(){
 function apexPitAsphaltColorV152(fallback='#555b61'){
  if(!trackData)return fallback;
  apexRoadSvgBaseColorV15();
- const base=trackData._apexV152PitSvgColor||fallback;
+ // A pit centreline stroke is not an asphalt surface override. Unless the
+ // SVG explicitly specifies a pit surface colour, use the same base tone as
+ // the active racing asphalt so the pit-exit wedge cannot become a grey patch.
+ const base=trackData._apexV152PitSvgColor||apexRoadSvgBaseColorV15()||fallback;
  return shadeColor(base,-Math.round(apexWeatherDarkness()*16+apexWeatherWetFactor()*13));
 }
 function apexRoadTextureHashV15(x,z,seed=0){
