@@ -2665,13 +2665,17 @@ function apexSurfaceTintV152(surface,color,x,z,distance=0){
  const kind=String(surface||'').trim().toUpperCase(),
   grass=['GRASS','DRYGRASS','PARK','FOREST'].includes(kind),
   asphalt=['ASPHALT','ROAD','CITY','PLAZA'].includes(kind);
- if((!grass&&!asphalt)||distance>280||!Number.isFinite(x)||!Number.isFinite(z))return color;
- const base=apexRoadSvgNormalizeColorV15(color)||color,
-  large=apexRoadTextureHashV15(Math.floor(x/(grass?5.2:2.2)),Math.floor(z/(grass?5.2:2.2)),grass?31:21),
-  small=apexRoadTextureHashV15(Math.floor(x/(grass?.9:.55)),Math.floor(z/(grass?.9:.55)),grass?67:17),
-  fade=distance<100?1:Math.max(0,1-(distance-100)/180),
-  noise=(large-.5)*.8+(small-.5)*.5,
-  amt=Math.round(noise*(grass?16:11)*fade*(1-(grass?.22:.62)*apexWeatherWetFactor()));
+ if((!grass&&!asphalt)||distance>(grass?740:280)||!Number.isFinite(x)||!Number.isFinite(z))return color;
+ const base=apexRoadSvgNormalizeColorV15(color)||color;
+ if(grass&&typeof window!=='undefined'&&window.apexGrassV1522Enabled===false)return color;
+ const large=apexRoadTextureHashV15(Math.floor(x/(grass?16:2.2)),Math.floor(z/(grass?16:2.2)),grass?31:21),
+  small=apexRoadTextureHashV15(Math.floor(x/(grass?3.5:.55)),Math.floor(z/(grass?3.5:.55)),grass?67:17),
+  broad=grass?apexRoadTextureHashV15(Math.floor(x/55),Math.floor(z/55),97):.5,
+  fade=grass?(distance<160?1:Math.max(0,1-(distance-160)/580)):
+   (distance<100?1:Math.max(0,1-(distance-100)/180)),
+  noise=grass?(broad-.5)*1.2+(large-.5)*.84+(small-.5)*.33:
+   (large-.5)*.8+(small-.5)*.5,
+  amt=Math.round(noise*(grass?34:11)*fade*(1-(grass?.19:.62)*apexWeatherWetFactor()));
  return shadeColor(base,amt);
 }
 function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
