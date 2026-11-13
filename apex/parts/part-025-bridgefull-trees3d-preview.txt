@@ -3233,6 +3233,9 @@ void main(){
     float blades=groundHash(floor(vec2(w.x*11.0,w.y*6.5)));
     grain+=(blades-0.5)*0.22*tuftFade;
    }
+   // Tone-map local foliage: grass can vary, but must never overwhelm
+   // the authored SVG colour (maximum ~20% brighter or darker).
+   grain=clamp(grain,-0.20,0.20);
    grain*=uGrassTexture*(1.0-0.19*clamp(uGroundWet,0.0,1.0));
   }else{
    // Authored asphalt runoff: same grain family as the circuit track.
