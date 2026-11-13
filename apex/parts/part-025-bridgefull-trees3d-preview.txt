@@ -3589,7 +3589,9 @@ const apexPhase6RoadGPU={gl:null,program:null,attrs:null,uniforms:null,buffer:nu
  mesh:null,failedGl:null,active:false,pending:null,groups:[],groupMap:new Map(),groupCount:0,
  queued:[],indices:null,uploadedIndices:null,indexCount:0,indexCapacity:0,bytes:0,
  indexArrayGrows:0,groupCapacityBytes:0,frames:0,uploads:0,uploadBytes:0,drawCalls:0,triangles:0,gpuSegments:0,cpuSegments:0,
- failures:0,lastError:null,lodTransitions:0};
+ failures:0,lastError:null,lodTransitions:0,
+ dynamicBuffer:null,dynamicData:new Float32Array(16*6*7),dynamicVertices:0,
+ dynamicRanges:[],dynamicQueued:[],dynamicNearFallback:null,dynamicSegments:0,dynamicDrawCalls:0};
 async function apexPhase6CompileRoadMesh(){
  const owner=trackData,samples=apexRoadMeshSamples(),count=samples.length;
  delete owner._apexPhase6RoadMesh;
@@ -3618,8 +3620,9 @@ async function apexPhase6CompileRoadMesh(){
 }
 function apexPhase6RoadRelease(full=false){
  const s=apexPhase6RoadGPU,gl=s.gl;
- if(gl){if(s.buffer)gl.deleteBuffer(s.buffer);if(s.indexBuffer)gl.deleteBuffer(s.indexBuffer);if(full&&s.program)gl.deleteProgram(s.program);}
- s.buffer=null;s.indexBuffer=null;s.mesh=null;s.cam=null;s.active=false;s.pending=null;s.bytes=0;s.indexCount=0;
+ if(gl){if(s.buffer)gl.deleteBuffer(s.buffer);if(s.indexBuffer)gl.deleteBuffer(s.indexBuffer);if(s.dynamicBuffer)gl.deleteBuffer(s.dynamicBuffer);if(full&&s.program)gl.deleteProgram(s.program);}
+ s.buffer=null;s.indexBuffer=null;s.dynamicBuffer=null;s.mesh=null;s.cam=null;s.active=false;s.pending=null;s.bytes=0;s.indexCount=0;
+ s.dynamicVertices=0;s.dynamicRanges.length=0;s.dynamicQueued.length=0;s.dynamicNearFallback=null;s.dynamicSegments=0;s.dynamicDrawCalls=0;
  s.indices=null;s.uploadedIndices=null;s.indexCapacity=0;s.groups.length=0;s.groupMap.clear();s.queued.length=0;s.groupCount=0;s.groupCapacityBytes=0;
  s.drawCalls=0;s.triangles=0;s.gpuSegments=0;s.cpuSegments=0;
  if(full){s.gl=null;s.program=null;s.attrs=null;s.uniforms=null;}
@@ -3628,20 +3631,22 @@ function apexPhase6RoadError(e){const s=apexPhase6RoadGPU,gl=s.gl;s.failures++;s
 function apexPhase6BeginRoad(cam,pitch){
  const s=apexPhase6RoadGPU,gl=webglState.gl,mesh=trackData&&trackData._apexPhase6RoadMesh;
  s.active=false;s.pending=null;s.drawCalls=0;s.triangles=0;s.gpuSegments=0;s.cpuSegments=0;
+ s.dynamicVertices=0;s.dynamicRanges.length=0;s.dynamicQueued.length=0;s.dynamicNearFallback=null;s.dynamicSegments=0;s.dynamicDrawCalls=0;
  if(!gl||!webglState.ready||s.failedGl===gl||apexInspectionActive()||!mesh||mesh.samples!==apexRoadMeshSamples())return false;
  try{
   if(s.gl!==gl){apexPhase6RoadRelease(true);s.gl=gl;s.failedGl=null;}
   if(s.mesh!==mesh){
    apexPhase6RoadRelease(false);s.mesh=mesh;
    if(!s.program){const shader=apexPhase5GpuProgram(gl,true);s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;}
-   s.buffer=gl.createBuffer();s.indexBuffer=gl.createBuffer();if(!s.buffer||!s.indexBuffer)throw Error('Road GPU buffer allocation failed');
+   s.buffer=gl.createBuffer();s.indexBuffer=gl.createBuffer();s.dynamicBuffer=gl.createBuffer();if(!s.buffer||!s.indexBuffer||!s.dynamicBuffer)throw Error('Road GPU buffer allocation failed');
    gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);
    s.indexCapacity=Math.min(mesh.count-1,mobilePerformanceMode()?2200:4400)*36;
    s.indices=new Uint32Array(s.indexCapacity);s.uploadedIndices=new Uint32Array(s.indexCapacity);s.indexArrayGrows+=2;
    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,s.indexBuffer);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,s.indices.byteLength,gl.DYNAMIC_DRAW);
+   gl.bindBuffer(gl.ARRAY_BUFFER,s.dynamicBuffer);gl.bufferData(gl.ARRAY_BUFFER,s.dynamicData.byteLength,gl.DYNAMIC_DRAW);
    // Check allocation only during setup/warmup, never poll the GPU per frame.
    if(typeof gl.getError==='function'){const error=gl.getError();if(error!==0)throw Error('Road GPU allocation error: '+error);}
-   s.bytes=mesh.data.byteLength+s.indices.byteLength;apexGpuFrameStats.staticUploadBytes+=mesh.data.byteLength;apexGpuFrameStats.bufferAllocations+=2;
+   s.bytes=mesh.data.byteLength+s.indices.byteLength+s.dynamicData.byteLength;apexGpuFrameStats.staticUploadBytes+=mesh.data.byteLength;apexGpuFrameStats.bufferAllocations+=3;
   }
   s.groupMap.clear();s.groupCount=0;s.queued.length=0;
   for(const g of s.groups)g.count=0;
@@ -3680,11 +3685,42 @@ function apexPhase6RoadQuad(group,a,b,c,d){
  if(group.count+6>group.data.length){let size=group.data.length*2;while(size<group.count+6)size*=2;if(size>s.indexCapacity)size=s.indexCapacity;if(size<group.count+6||s.groupCapacityBytes+(size-group.data.length)*4>Math.max(262144,s.indexCapacity*8))throw Error('Road index group memory budget exceeded');s.groupCapacityBytes+=(size-group.data.length)*4;const next=new Uint32Array(size);next.set(group.data);group.data=next;s.indexArrayGrows++;}
  const i=group.count,v=group.data;v[i]=a;v[i+1]=b;v[i+2]=c;v[i+3]=a;v[i+4]=c;v[i+5]=d;group.count+=6;
 }
+// V15.2.1: Near eye and moving ribbon ends must get the SAME world-anchored
+// asphalt shader as fixed GPU segments. Keep exact ribbon coordinates (including
+// bank/grade); a generic screen-space colour fill created visible flat patches.
+function apexPhase6QueueDynamicRoadQuad(points,color,depthBias=0,kind='moving'){
+ const s=apexPhase6RoadGPU;
+ if(!s.active||!s.dynamicBuffer||!Array.isArray(points)||points.length!==4||s.dynamicVertices+6>s.dynamicData.length/7)return false;
+ const rgba=webglCssColor(color);
+ if(rgba[3]<.999||!points.every(p=>p&&[p.x,p.y,p.z].every(Number.isFinite)))return false;
+ const first=s.dynamicVertices,indices=[0,1,2,0,2,3];
+ for(const idx of indices){
+  const p=points[idx],off=s.dynamicVertices++*7;
+  s.dynamicData[off]=p.x;s.dynamicData[off+1]=p.y;s.dynamicData[off+2]=p.z;
+  s.dynamicData[off+3]=rgba[0];s.dynamicData[off+4]=rgba[1];s.dynamicData[off+5]=rgba[2];s.dynamicData[off+6]=rgba[3];
+ }
+ const previous=s.dynamicRanges[s.dynamicRanges.length-1];
+ if(previous&&previous.depthBias===depthBias&&previous.kind===kind)previous.count+=6;
+ else s.dynamicRanges.push({first,count:6,depthBias,kind});
+ return true;
+}
+function apexPhase6QueueDynamicRoadSegment(seg,color){
+ const s=apexPhase6RoadGPU;
+ if(!s.active)return false;
+ const a=apexRoadWorldNode(seg.a.s,seg.a.meshNode),b=apexRoadWorldNode(seg.b.s,seg.b.meshNode);
+ // Same source vertices as apexWebglRoadStep, not a linearised horizontal patch.
+ const ok=apexPhase6QueueDynamicRoadQuad([a.points[1],a.points[2],b.points[2],b.points[1]],color,0,'moving');
+ if(ok){s.dynamicQueued.push(seg);s.dynamicSegments++;}
+ return ok;
+}
 function apexPhase6QueueRoadBase(seg,colors,road,cheap,show){
  const s=apexPhase6RoadGPU,id=s.active?apexPhase6RoadSegmentId(seg):-1;
  // Only fixed neighbouring nodes safely in front of near use GPU. No stale
  // sector may replace a moving endpoint, a tunnel clip or an inspector patch.
- if(id<0||Math.min(seg.a.v.l.z,seg.a.v.r.z,seg.a.v.lo.z,seg.a.v.ro.z,seg.b.v.l.z,seg.b.v.r.z,seg.b.v.lo.z,seg.b.v.ro.z)<2){s.cpuSegments++;return false;}
+ // WebGL performs homogeneous near-plane clipping itself. Reject only faces
+ // entirely behind the camera, not every slope/bank crossing the near plane.
+ const furthest=Math.max(seg.a.v.l.z,seg.a.v.r.z,seg.a.v.lo.z,seg.a.v.ro.z,seg.b.v.l.z,seg.b.v.r.z,seg.b.v.lo.z,seg.b.v.ro.z);
+ if(id<0||furthest<.50){s.cpuSegments++;return false;}
  const a=seg.a.meshNode*6,b=seg.b.meshNode*6;
  // Validate opacity before suppressing the CPU base (custom kerb palettes).
  const curbLeft=show&&(seg.a.curb.left||seg.b.curb.left),curbRight=show&&(seg.a.curb.right||seg.b.curb.right);
@@ -3693,7 +3729,9 @@ function apexPhase6QueueRoadBase(seg,colors,road,cheap,show){
  try{
   if(curbLeft)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[0],false),a+2,a,b,b+2);
   if(curbRight)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[1],false),a+1,a+3,b+3,b+1);
-  if(cheap)apexPhase6RoadQuad(apexPhase6RoadGroup(road),a,a+1,b+1,b);
+  // The fragment shader supplies surface variation. A single base strip
+  // avoids legacy three-band discontinuities on steep near-camera slopes.
+  if(cheap||window.apexRoadGrainV151Enabled!==false)apexPhase6RoadQuad(apexPhase6RoadGroup(road),a,a+1,b+1,b);
   else{
    apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,-3)),a,a+4,b+4,b);
    apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,2)),a+4,a+5,b+5,b+4);
@@ -3707,7 +3745,7 @@ function apexPhase6SealRoad(){
  try{
   if(!s.active)throw Error(s.lastError||'Road GPU frame unavailable');
   let count=0;for(let i=0;i<s.groupCount;i++){const g=s.groups[i];if(count+g.count>s.indexCapacity)throw Error('Road index budget exceeded');g.first=count;s.indices.set(g.data.subarray(0,g.count),count);count+=g.count;}
-  if(!count){s.indexCount=0;s.triangles=0;s.pending=null;s.active=false;return true;}
+  if(!count){s.indexCount=0;s.triangles=0;s.pending=s.dynamicVertices?{cam:s.cam,pitch:s.pitch,roll:s.roll,offset:webglFloatCount}:null;s.active=false;return true;}
   let changed=count!==s.indexCount;
   if(!changed)for(let i=0;i<count;i++)if(s.indices[i]!==s.uploadedIndices[i]){changed=true;break;}
   if(changed){s.gl.bindBuffer(s.gl.ELEMENT_ARRAY_BUFFER,s.indexBuffer);s.gl.bufferSubData(s.gl.ELEMENT_ARRAY_BUFFER,0,s.indices.subarray(0,count));s.uploadedIndices.set(s.indices.subarray(0,count));s.uploads++;s.uploadBytes+=count*4;apexGpuFrameStats.staticUploadBytes+=count*4;}
@@ -3715,6 +3753,8 @@ function apexPhase6SealRoad(){
  }catch(e){
   // Replay only suppressed bases, once, before all transparent road effects.
   for(const seg of s.queued)apexWebglRoadBase(seg,s.pitch,true);
+  for(const seg of s.dynamicQueued)apexWebglRoadBase(seg,s.pitch,true);
+  if(s.dynamicNearFallback){const p=s.dynamicNearFallback;webglPushCamQuad(...p.quad,p.pitch,p.color,.34,p.bias);}
   apexPhase6RoadError(e);return false;
  }
 }
@@ -3736,6 +3776,21 @@ function apexPhase6DrawRoad(){
   if(u.uRoadTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uRoadTexture,g.asphalt?textureOn:0);
   gl.vertexAttrib4f(s.attrs.color,g.rgba[0],g.rgba[1],g.rgba[2],g.rgba[3]);gl.drawElements(gl.TRIANGLES,g.count,gl.UNSIGNED_INT,g.first*4);calls++;
  }
+ // Moving endpoints and the near-car safety patch share the same asphalt
+ // fragment shader and the same exact world-space ribbon geometry.
+ if(s.dynamicVertices&&s.dynamicBuffer){
+  gl.bindBuffer(gl.ARRAY_BUFFER,s.dynamicBuffer);
+  gl.bufferSubData(gl.ARRAY_BUFFER,0,s.dynamicData.subarray(0,s.dynamicVertices*7));
+  gl.enableVertexAttribArray(s.attrs.color);
+  gl.vertexAttribPointer(s.attrs.world,3,gl.FLOAT,false,28,0);
+  gl.vertexAttribPointer(s.attrs.color,4,gl.FLOAT,false,28,12);
+  if(u.uRoadTexture!=null)gl.uniform1f(u.uRoadTexture,textureOn);
+  for(const range of s.dynamicRanges){
+   gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),range.depthBias);
+   gl.drawArrays(gl.TRIANGLES,range.first,range.count);calls++;s.dynamicDrawCalls++;
+  }
+  gl.disableVertexAttribArray(s.attrs.color);
+ }
  s.drawCalls=calls;return true;
 }
 // Debug-only A/B comparison: ?ground=0 leaves coloured grass and runoffs flat.
@@ -3749,7 +3804,9 @@ window.apexRoadGrainV151Enabled=typeof URLSearchParams==='function'&&typeof loca
  ?new URLSearchParams(location.search).get('asphalt')!=='0':true;
 window.apexAsphaltMaterialInfo=()=>({phase:'V15.1.1',enabled:window.apexRoadGrainV151Enabled,
  shader:!!apexPhase6RoadGPU.program,svgColor:typeof apexRoadSvgBaseColorV15==='function'?apexRoadSvgBaseColorV15():null,
- roadGroups:apexPhase6RoadGPU.groupCount,version:'world-fragment-aggregate'});
+ roadGroups:apexPhase6RoadGPU.groupCount,dynamicSegments:apexPhase6RoadGPU.dynamicSegments,
+ nearPatchTextured:!!apexPhase6RoadGPU.dynamicNearFallback,dynamicDrawCalls:apexPhase6RoadGPU.dynamicDrawCalls,
+ version:'world-fragment-near-continuity'});
 window.apexPhase6RoadDiagnostics=()=>{const s=apexPhase6RoadGPU,mesh=trackData&&trackData._apexPhase6RoadMesh;
  return{resident:!!s.buffer,compiled:!!mesh,sectors:mesh?mesh.sectors.length:0,vertices:mesh?mesh.data.length/3:0,
   bytes:s.bytes,cpuIndexBytes:s.indices?s.indices.byteLength*2+s.groupCapacityBytes:0,indexCapacity:s.indexCapacity,triangles:s.triangles,drawCalls:s.drawCalls,gpuSegments:s.gpuSegments,cpuSegments:s.cpuSegments,
