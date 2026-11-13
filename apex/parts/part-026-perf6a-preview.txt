@@ -15,8 +15,7 @@ function webglPushRoadSegment(seg,cam,pitch,baseReady=false){
  // The paint shares the edge vertices with the asphalt. Depth bias
  // separates the two materials without changing the world-space boundary.
  if(seg.z<mobileControlProfile().edgeMax||apexInspectionFullScene()){
-   webglPushCamQuad(V0.l,V0.li,V1.li,V1.l,pitch,'#f8f9f7',.58,-.025);
-   webglPushCamQuad(V0.ri,V0.r,V1.r,V1.ri,pitch,'#f8f9f7',.58,-.025);
+   apexDrawTrackEdgePaint(seg,cam,pitch,true);
  }
 }
 function webglCollectCircuitSegments(cam,pitch){

@@ -68,7 +68,7 @@ assert.match(render,/gl\.bufferSubData\(gl\.ARRAY_BUFFER,0,s\.dynamicData\.subar
 assert.match(render,/gl\.drawArrays\(gl\.TRIANGLES,range\.first,range\.count\)/);
 assert.doesNotMatch(frame,/function webglPushNearPatch/,'no overlapping near-camera road quad');
 assert.match(render,/const node=mod\(anchor\+sign\*i,count\)/);
-assert.match(frame,/webglPushCamQuad\(V0\.l,V0\.li,V1\.li,V1\.l/);
+assert.match(frame,/apexDrawTrackEdgePaint\(seg,cam,pitch,true/);
 console.log(JSON.stringify({test:'road-near-grain-v1521-preview',gpuNearClipping:true,
  movingEndpoints:true,trueBankAndGrade:true,fixedNearMesh:true,
  legacyBandingRemoved:true,dynamicBudget:true,previewOnly:true,ok:true}));

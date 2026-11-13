@@ -6,12 +6,12 @@ ALL_F1',wallStyle:r.wallStyle||'wall_f1',color:r.wallColor||null,fence:r.fence,f
 function apexPitSegments(){
  const cw=trackData&&trackData.customWorld,n=cw&&cw.pitNetwork;if(!n||!Array.isArray(n.runs))return[];
  if(Array.isArray(n._segments))return n._segments;const segs=[];
- for(const r of n.runs||[]){const pts=r.points||[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.02)continue;const aw=Number.isFinite(+a.width)?+a.width:(r.width||5.9),bw=Number.isFinite(+b.width)?+b.width:(r.width||5.9),al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;segs.push({runId:r.id,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len})}}
+ for(const r of n.runs||[]){const pts=r.points||[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.02)continue;const aw=Number.isFinite(+a.width)?+a.width:(r.width||5.9),bw=Number.isFinite(+b.width)?+b.width:(r.width||5.9),al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;segs.push({runId:r.id,exitS:pts[pts.length-1].pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len})}}
  n._segments=segs;return segs;
 }
 // V15.2.6 — pit merge geometry, visual only. A pitlane crossing the main
 // ribbon cannot retain its full rectangular footprint: clip at the authored
-// road edge, leaving the main road in charge of its own asphalt. Both the
+// road edge with a narrow overlap for the pit exit to own the join. Both the
 // static WebGL atlas and the Canvas/paint layer use these very same profiles.
 // No steering, speed-limiter, racing-line or collision state is changed.
 function apexPitVisualMergeProfileV1526(sg,end=0){
@@ -22,7 +22,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   nx=-dz/len,nz=dx/len;
  const left=Math.max(.05,Number(end?sg.visualLeftB:sg.visualLeftA)||sg.leftWidth||sg.width*.5),
   right=Math.max(.05,Number(end?sg.visualRightB:sg.visualRightA)||sg.rightWidth||sg.width*.5);
- let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null;
+ let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false;
  const st=nearestTrackState(x,z,null);
  if(st&&Number.isFinite(st.lat)&&Number.isFinite(st.s)){
   const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),
@@ -35,11 +35,16 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   if(Math.abs(trackY-y)<1.25&&Math.abs(dot)>.075){
    // Track-facing edge can be the left OR right of the pit path.
    side=dot>=0?1:-1;
-   const vLo=off+dot*lo,vHi=off+dot*hi;
+   merge=Number.isFinite(sg.exitS)&&sg.exitS-(end?sg.s2:sg.s1)<=45;
+   // Keep the authored exit over the track edge only within the merge.
+   const overlap=merge?.55:0;
+   trackSlope=Math.tan(frame.bank||0)*dot*bankSide;
+   trackY-=Math.tan(frame.bank||0)*bankSide*overlap;
+   const vLo=off+overlap+dot*lo,vHi=off+overlap+dot*hi;
    outerExcess=Math.max(vLo,vHi); // where the outside edge meets the track
    if(vLo<=0||vHi<=0){
     clipped=true;
-    const cut=Math.max(lo,Math.min(hi,-off/dot));
+    const cut=Math.max(lo,Math.min(hi,-(off+overlap)/dot));
     if(vLo<=0&&vHi<=0)lo=hi=dot>=0?hi:lo;
     else if(dot>0)lo=cut;
     else hi=cut;
@@ -48,14 +53,15 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  }
  const width=Math.max(0,hi-lo);
  const p={lo,hi,near:side>0?lo:hi,far:side>0?hi:lo,
-  side,clipped,width,nx,nz,x,z,y,trackY,outerExcess};
+  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,outerExcess};
  sg[key]=p;return p;
 }
 function apexPitVisualPointV1526(p,lat,lift=.012){
  // Match the main road altitude at the trimmed intersection. Elsewhere the
  // authored pit grade wins. This removes raised rectangular merge patches.
  const blend=p.clipped?Math.max(0,1-Math.abs(lat-p.near)/.30):0;
- const y=p.y+(p.trackY-p.y)*blend;
+ const target=p.trackY+(lat-p.near)*(p.trackSlope||0);
+ const y=p.y+(target-p.y)*blend;
  return{x:p.x+p.nx*lat,y:y+lift,z:p.z+p.nz*lat};
 }
 function apexPitMergeQuadV1526(sg){
@@ -78,7 +84,7 @@ function apexPitMergeQuadV1526(sg){
  };
  if(a.width<.012)a=tip(b,a);
  if(b.width<.012)b=tip(a,b);
- return{a,b,quad:[apexPitVisualPointV1526(a,a.hi),apexPitVisualPointV1526(a,a.lo),
+ return{a,b,overlap:a.merge&&a.clipped||b.merge&&b.clipped,quad:[apexPitVisualPointV1526(a,a.hi),apexPitVisualPointV1526(a,a.lo),
                     apexPitVisualPointV1526(b,b.lo),apexPitVisualPointV1526(b,b.hi)]};
 }
 function nearestPitState(x,z,hint=null){
@@ -2036,7 +2042,11 @@ function apexRunoffRoadClipIndex(){
   const mesh=apexPitMergeQuadV1526(sg);
   if(!mesh)continue;
   const poly=mesh.quad.map(p=>({x:p.x,y:p.y,z:p.z}));
-  if(Math.abs(apexInspectorPolyArea(poly))>.001)add(poly,true);
+  if(Math.abs(apexInspectorPolyArea(poly))>1e-8){
+   add(poly,true);
+   seam(poly[0],poly[3]);seam(poly[1],poly[2]);
+   seam(poly[0],poly[1]);seam(poly[2],poly[3]);
+  }
  }
  return trackData._apexRunoffRoadClipIndex={cell,buckets,terrainBuckets,pitBuckets,seamBuckets,
    faces:bounds,clipped:0,generated:0};
@@ -2081,6 +2091,28 @@ function apexClipTerrainAtPit(poly){
 // terreno de túneles y pasos elevados. Se utiliza en AMBOS LOD de relieve.
 // La resta es topológica (XZ). Sólo la arista longitudinal compartida
 // toma la cota de la cinta. Los demás vértices conservan su relieve.
+function apexDrawTrackEdgePaint(seg,cam,pitch,webgl){
+ const a=seg.a,b=seg.b,draw=(poly,color)=>{
+  if(webgl)webglPushCamPoly(poly,pitch,color,.58,-.025);
+  else drawCamPoly(poly,pitch,color,.58);
+ };
+ if(!trackData?.customWorld?.pitNetwork?.runs?.length){
+  draw([a.v.l,a.v.li,b.v.li,b.v.l],'#f7f8f9');
+  draw([a.v.ri,a.v.r,b.v.r,b.v.ri],'#f7f8f9');
+  return;
+ }
+ const index=apexRunoffRoadClipIndex(),cache=index.edgePaint||(index.edgePaint=new Map()),
+  key=a.s+':'+b.s;
+ let pieces=cache.get(key);
+ if(!pieces){
+  const section=st=>apexTrackCrossSection(st.q,st.env,st.curb),A=section(a),B=section(b);
+  pieces=[[A.l,A.li,B.li,B.l],[A.ri,A.r,B.r,B.ri]]
+   .flatMap(poly=>apexClipTerrainAtPit(poly)??[poly]);
+  if(cache.size>=2048)cache.delete(cache.keys().next().value);
+  cache.set(key,pieces);
+ }
+ for(const poly of pieces)draw(poly.map(p=>worldToCamera(p.x,p.y,p.z,cam)),'#f7f8f9');
+}
 function apexClipTerrainAtDrive(poly){
  if(!trackData||!Array.isArray(poly)||poly.length<3)return null;
  const idx=apexRunoffRoadClipIndex(),bb=apexInspectorPolyBounds(poly),
@@ -6292,8 +6324,7 @@ function drawRoadSegment(seg,cam,pitch){
 
  // Match the asphalt vertices, including on near-plane and bank transitions.
  if(seg.z<mobileControlProfile().edgeMax||apexInspectionFullScene()){
-   drawCamQuadTriangles(V0.l,V0.li,V1.li,V1.l,pitch,'#f7f8f9',.58);
-   drawCamQuadTriangles(V0.ri,V0.r,V1.r,V1.ri,pitch,'#f7f8f9',.58);
+   apexDrawTrackEdgePaint(seg,cam,pitch,false);
  }
 
  // 6) Línea de pitlane base.
@@ -6437,7 +6468,7 @@ function collectExactPitRenderItems(cam){
    const merged=apexPitMergeQuadV1526(sg);
    if(merged){
     const {a:pa,b:pb,quad}=merged,toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
-    add(...quad.map(toCam),null,null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PITLANE'});
+    add(...quad.map(toCam),null,null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PITLANE',merge:merged.overlap});
     // Separate physical paint, never a 2-D screen-space outline. Keep the
     // track-facing pit-exit line; taper its width with the wedge itself.
     const stripe=(nearSide)=>{
@@ -6449,7 +6480,7 @@ function collectExactPitRenderItems(cam){
      };
      const A=lineEnd(pa),B=lineEnd(pb);
      if(Math.max(pa.width,pb.width)<.035)return;
-     add(A[0],A[1],B[1],B[0],nearSide?'#f6f7f8':'#e4e8ec');
+     add(A[0],A[1],B[1],B[0],nearSide?'#f6f7f8':'#e4e8ec',null,{kind:'PIT_PAINT',merge:merged.overlap});
     };
     stripe(true);
     // At the merge, a second white edge over the racing surface looks like
@@ -6486,7 +6517,7 @@ function drawExactPitRenderItem(item,pitch){
  if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return;}
  // All white/yellow marks are their own 3-D quads. Never redraw the full
  // pit outline across the main road after the merge.
- poly(p,item.material?apexSurfaceTintV152(item.material.kind||'PITLANE',item.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152('#565c62'),item.material.x,item.material.z,item.z):item.color||'#565c62');
+ poly(p,item.material&&item.material.kind!=='PIT_PAINT'?apexSurfaceTintV152(item.material.kind||'PITLANE',item.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152('#565c62'),item.material.x,item.material.z,item.z):item.color||'#565c62');
 }
 
 function drawGridMarkings(cam,pitch){

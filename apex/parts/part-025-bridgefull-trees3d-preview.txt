@@ -351,20 +351,18 @@ function apexTerrainFinePatch(g,ix,iz,kind){
  const x0=g.minX+ix*g.cell,z0=g.minZ+iz*g.cell,
        x1=Math.min(g.maxX,x0+g.cell),z1=Math.min(g.maxZ,z0+g.cell),n=kind==='PORTAL'?20:(kind==='TUNNEL'?18:kind==='PIT'?8:4),
        dx=(x1-x0)/n,dz=(z1-z0)/n,points=[],quads=[];
- const cw=trackData&&trackData.customWorld,base=cw&&cw.terrainBase,
-   baseRings=base&&base.rings||[];
  for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){
-  const x=x0+dx*i,z=z0+dz*j,inside=baseRings.some(r=>apexPointInsideClosedContour(x,z,r));
+  const x=x0+dx*i,z=z0+dz*j;
   // La altura de la malla fina debe coincidir con la consulta del coche
   // (apexUnifiedSurfaceAtWorld/TERRAIN), no remezclar rawVals por separado.
   // No se toca la altura ni la física del vehículo.
   const y=apexWorldGroundY(x,z);
-  points.push({x,y,z,inside});
+  points.push({x,y,z});
  }
  for(let j=0;j<n;j++)for(let i=0;i<n;i++){
   const A=points[j*(n+1)+i],B=points[j*(n+1)+i+1],C=points[(j+1)*(n+1)+i+1],D=points[(j+1)*(n+1)+i];
   const x=(A.x+C.x)*.5,z=(A.z+C.z)*.5;
-  if(!baseRings.some(r=>apexPointInsideClosedContour(x,z,r)))continue;
+  // Match the coarse plate cell coverage so a LOD change cannot expose the sky.
 
   // v5.230.62 · RECORTE LOCAL DE EMBOCADURA.
   // Sólo quitamos la superficie que físicamente atravesaría el hueco de la boca.
@@ -477,7 +475,7 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
 // V15.2.8: invalidate stored IndexedDB fine terrain geometry after the V15.2.6–27
 // road/pit-cut fixes. Old cells are incompatible and can expose sky-coloured
 // bands where the new shoulder draws less material than the cached terrain cut.
-const APEX_CIRCUIT_COMPILE_REV=230696;
+const APEX_CIRCUIT_COMPILE_REV=230697;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){
@@ -968,12 +966,15 @@ function drawRoad(camArg=null){
  const pitItems=collectExactPitRenderItems(cam),boardItems=collectBrakeBoardSprites(cam,pitch).map(v=>({kind:'board',z:v.z,data:v}));
  const items=[
    ...segments.map(seg=>({kind:'road',z:seg.z,data:seg})),
-   ...pitItems,
+   ...pitItems.filter(it=>!it.data.material?.merge),
    ...apexCollectAuthoredCurbs(cam),
    ...wallItems,
    ...boardItems,
    ...collectRivalSprites(cam,pitch).map(v=>({kind:'rival',z:v.z,data:v}))
  ].sort((A,B)=>B.z-A.z);
+ const exit=pitItems.filter(it=>it.data.material?.merge);
+ let lastExitRoad=null;
+ for(const it of items)if(it.kind==='road'&&exit.some(pit=>Math.abs(pit.data.z-it.z)<12))lastExitRoad=it;
  for(const it of items){
    if(it.kind==='road')drawRoadSegment(it.data,cam,pitch);
    else if(it.kind==='pitExact')drawExactPitRenderItem(it.data,pitch);
@@ -981,6 +982,10 @@ function drawRoad(camArg=null){
    else if(it.kind==='wall')drawWallRenderItem(it.data,pitch);
    else if(it.kind==='board')drawBrakeBoardSprite(it.data);
    else {const _carT0=performance.now();drawRivalSprite(it.data);_roadCarsMs+=performance.now()-_carT0;}
+   if(it===(lastExitRoad||items[0])){
+    for(const pit of exit)if(pit.data.material.kind==='PITLANE')drawExactPitRenderItem(pit.data,pitch);
+    for(const pit of exit)if(pit.data.material.kind==='PIT_PAINT')drawExactPitRenderItem(pit.data,pitch);
+   }
  }
  apexDrawGenericPortalFaces(cam,pitch);
  const _roadGross=performance.now()-_roadT0;
@@ -3303,7 +3308,7 @@ function apexPavedExtraGpuZonesV1524(){
    // The static GPU atlas uses the SAME pit merge mesh as Canvas and
    // the painted 3-D separator, never the legacy full-width rectangle.
    const merge=apexPitMergeQuadV1526(sg);
-   if(merge)lane.push(merge.quad.map(p=>[p.x,p.y,p.z]));
+   if(merge&&!merge.overlap)lane.push(merge.quad.map(p=>[p.x,p.y,p.z]));
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
     const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8),
      outer=t=>inner+side*apexPitWorkWidthAt(work,t);
@@ -4334,8 +4339,8 @@ function webglPushExactPitLane(cam,pitch){
   const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;
   if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}
   const paved=d.material&&(!d.color||d.material.kind==='PIT_WORK');
-  if(!(baked&&paved))
-   webglPushCamQuad(A,B,C,D,pitch,d.material?apexSurfaceTintV152(d.material.kind||'PITLANE',d.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152(),d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);
+  if(!(baked&&paved&&!d.material.merge))
+   webglPushCamQuad(A,B,C,D,pitch,paved?apexSurfaceTintV152(d.material.kind||'PITLANE',d.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152(),d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.material?.merge?(paved?-.055:-.075):d.color==='#ffe16a'?-.034:-.022);
   // Markings are own 3-D quads assembled by collectExactPitRenderItems().
   // Never paint a second full-width white edge on the main racing line.
  }
