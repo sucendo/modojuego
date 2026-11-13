@@ -55,6 +55,7 @@ assert.ok(i>=0&&j>i,'static GPU shader not found');
     asphaltDelta:+rms(roadWithGrassOn,roadWithGrassOff).toFixed(2),glError:gl.getError()};
    gl.deleteBuffer(buffer);gl.deleteProgram(program.program);return out;
   },shader.slice(i,j));
+  console.log(JSON.stringify({test:'grass-visibility-v1522-measurements',...r}));
   assert.equal(r.glError,0,'WebGL draw error');
   for(const m of r.scales){
    assert.equal(m.flatUnique,1,'grass=0 should remain flat');
