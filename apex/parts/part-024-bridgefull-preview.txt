@@ -1968,11 +1968,13 @@ function apexRunoffRoadClipIndex(){
    l=ribbonWorldPoint(q,w,1),r=ribbonWorldPoint(q,w,-1);
   const structure=apexPhase1StructureAtWorld(q.x,q.z,s);
   const gradeSeparated=!!(e.tunnel||structure&&(structure.kind==='UNDER'||structure.kind==='OVER'));
-  // El terreno debe ceder bajo TODO el corredor que el motor dibuja,
-  // no sólo bajo asfalto+pianos. De lo contrario asoma entre escapatorias
-  // de respaldo y puede tapar las ruedas al salir de pista.
-  const outerL=apexFlatRunoffPoint(q,e,Math.max(w,apexRoadFlatLimit(s,e,1)),1),
-        outerR=apexFlatRunoffPoint(q,e,Math.max(w,apexRoadFlatLimit(s,e,-1)),-1);
+  // V15.2.7: only the VISIBLE road + shoulder may punch a hole in the
+  // terrain plate. The physical flat-to-wall support can extend much farther,
+  // but cutting all that terrain while painting just 3.2 m of runoff leaves
+  // transparent/sky-coloured ribbons beside the circuit (especially Melbourne).
+  // Authored SVG runoff has its own clipped surface, independently.
+  const outerL=apexFlatRunoffPoint(q,e,Math.max(w,apexVisualRunoffLimitV1527(s,e,1)),1),
+        outerR=apexFlatRunoffPoint(q,e,Math.max(w,apexVisualRunoffLimitV1527(s,e,-1)),-1);
   return{l,r,outerL,outerR,gradeSeparated};
  };
  const add=(poly,pit=false,terrainCut=true,terrainOnly=false)=>{
