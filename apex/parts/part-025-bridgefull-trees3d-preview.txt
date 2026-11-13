@@ -3729,7 +3729,9 @@ function apexPhase6QueueRoadBase(seg,colors,road,cheap,show){
  try{
   if(curbLeft)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[0],false),a+2,a,b,b+2);
   if(curbRight)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[1],false),a+1,a+3,b+3,b+1);
-  if(cheap)apexPhase6RoadQuad(apexPhase6RoadGroup(road),a,a+1,b+1,b);
+  // The fragment shader supplies surface variation. A single base strip
+  // avoids legacy three-band discontinuities on steep near-camera slopes.
+  if(cheap||window.apexRoadGrainV151Enabled!==false)apexPhase6RoadQuad(apexPhase6RoadGroup(road),a,a+1,b+1,b);
   else{
    apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,-3)),a,a+4,b+4,b);
    apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,2)),a+4,a+5,b+5,b+4);
