@@ -45,7 +45,7 @@ assert.equal(p.uniforms.uGroundTexture,'uGroundTexture');
 assert.match(shaders[0],/vGroundKind=aSurfaceKind/);
 assert.match(shaders[1],/vGroundKind<1\.5/);
 assert.match(shaders[1],/fwidth|dFdx/);
-assert.match(shaders[1],/groundHash\(floor\(w\*6\.2\)\)/);
+assert.match(shaders[1],/grassPatchV1522\(w\*0\.062\)/);
 assert.match(shaders[1],/groundHash\(floor\(w\*20\.0\)\)/);
 shaders.length=0;p=shaderFactory(fakeGl,false,false);
 assert.equal(p.uniforms.uGroundTexture,undefined);
@@ -55,7 +55,7 @@ const tint=new Function('apexRoadSvgNormalizeColorV15','apexRoadTextureHashV15',
  helper+'return apexSurfaceTintV152;')(
  c=>c,(x,z,seed)=>(((x*173+z*397+seed*37)%97+97)%97)/97,()=>0,
  (color,n)=>color+':'+n);
-assert.equal(tint('GRASS','#45804f',20,50,300),'#45804f','distant Canvas LOD is flat');
+assert.equal(tint('GRASS','#45804f',20,50,800),'#45804f','very distant Canvas LOD is flat');
 assert.equal(tint('WATER','#115599',20,50,5),'#115599','unrelated materials remain exact');
 assert.equal(tint('GRASS','#45804f',20,50,5),tint('GRASS','#45804f',20,50,5));
 console.log(JSON.stringify({phase:'V15.2',grass:true,asphaltRunoff:true,pitSvg:true,terrainSvg:true,canvasFallback:true,glslWorldLod:true,prodUntouched:true,ok:true}));
