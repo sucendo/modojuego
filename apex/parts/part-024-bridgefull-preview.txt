@@ -2661,21 +2661,43 @@ function apexWebglRoadBase(seg,pitch,forceCPU=false){
   return pressure;
 }
 // V15.2: inexpensive Canvas/CPU fallback. WebGL uses a finer per-pixel shader.
+// V15.2.3: smoothly interpolated, deterministic world-space value noise.
+// Avoid hash-per-cell grass colour jumps in Canvas and the CPU WebGL fallback.
+function apexGrassValueNoiseV1523(x,z,metres,seed){
+ const px=x/metres,pz=z/metres,ix=Math.floor(px),iz=Math.floor(pz);
+ let fx=px-ix,fz=pz-iz;
+ fx=fx*fx*(3-2*fx);fz=fz*fz*(3-2*fz);
+ const a=apexRoadTextureHashV15(ix,iz,seed),
+  b=apexRoadTextureHashV15(ix+1,iz,seed),
+  c=apexRoadTextureHashV15(ix,iz+1,seed),
+  d=apexRoadTextureHashV15(ix+1,iz+1,seed);
+ return (a+(b-a)*fx)*(1-fz)+(c+(d-c)*fx)*fz;
+}
 function apexSurfaceTintV152(surface,color,x,z,distance=0){
  const kind=String(surface||'').trim().toUpperCase(),
   grass=['GRASS','DRYGRASS','PARK','FOREST'].includes(kind),
   asphalt=['ASPHALT','ROAD','CITY','PLAZA'].includes(kind);
  if((!grass&&!asphalt)||distance>(grass?740:280)||!Number.isFinite(x)||!Number.isFinite(z))return color;
  const base=apexRoadSvgNormalizeColorV15(color)||color;
- if(grass&&typeof window!=='undefined'&&window.apexGrassV1522Enabled===false)return color;
- const large=apexRoadTextureHashV15(Math.floor(x/(grass?16:2.2)),Math.floor(z/(grass?16:2.2)),grass?31:21),
-  small=apexRoadTextureHashV15(Math.floor(x/(grass?3.5:.55)),Math.floor(z/(grass?3.5:.55)),grass?67:17),
-  broad=grass?apexRoadTextureHashV15(Math.floor(x/55),Math.floor(z/55),97):.5,
-  fade=grass?(distance<160?1:Math.max(0,1-(distance-160)/580)):
-   (distance<100?1:Math.max(0,1-(distance-100)/180)),
-  noise=grass?(broad-.5)*1.2+(large-.5)*.84+(small-.5)*.33:
-   (large-.5)*.8+(small-.5)*.5,
-  amt=Math.round(noise*(grass?34:11)*fade*(1-(grass?.19:.62)*apexWeatherWetFactor()));
+ if(grass){
+  if(typeof window!=='undefined'&&window.apexGrassV1522Enabled===false)return color;
+  const far=apexGrassValueNoiseV1523(x,z,58,97),
+   meadow=apexGrassValueNoiseV1523(x,z,17,31),
+   clumps=apexGrassValueNoiseV1523(x,z,4.5,67),
+   fade=distance<160?1:Math.max(0,1-(distance-160)/580),
+   wet=1-.19*apexWeatherWetFactor(),
+   variation=(far-.5)*.8+(meadow-.5)*.82+(clumps-.5)*.37,
+   // CPU polygons cannot interpolate pixel colours. Keep their tint subtle
+   // and continuous across neighbouring sample positions.
+   amount=Math.max(-13,Math.min(13,Math.round(variation*19*fade*wet)));
+  return shadeColor(base,amount);
+ }
+ // Asphalt/pit/runoffs keep their existing texture and colour untouched.
+ const large=apexRoadTextureHashV15(Math.floor(x/2.2),Math.floor(z/2.2),21),
+  small=apexRoadTextureHashV15(Math.floor(x/.55),Math.floor(z/.55),17),
+  fade=distance<100?1:Math.max(0,1-(distance-100)/180),
+  noise=(large-.5)*.8+(small-.5)*.5,
+  amt=Math.round(noise*11*fade*(1-.62*apexWeatherWetFactor()));
  return shadeColor(base,amt);
 }
 function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){

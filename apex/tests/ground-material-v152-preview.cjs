@@ -45,12 +45,12 @@ assert.equal(p.uniforms.uGroundTexture,'uGroundTexture');
 assert.match(shaders[0],/vGroundKind=aSurfaceKind/);
 assert.match(shaders[1],/vGroundKind<1\.5/);
 assert.match(shaders[1],/fwidth|dFdx/);
-assert.match(shaders[1],/grassPatchV1522\(w\*0\.062\)/);
+assert.match(shaders[1],/grassPatchV1522\(organicW\*0\.062\)/);
 assert.match(shaders[1],/groundHash\(floor\(w\*20\.0\)\)/);
 shaders.length=0;p=shaderFactory(fakeGl,false,false);
 assert.equal(p.uniforms.uGroundTexture,undefined);
 assert.doesNotMatch(shaders[1],/groundHash/,'non-ground rendering must stay unchanged');
-const helper=part(core,'function apexSurfaceTintV152(', 'function apexUnifiedGroundDrawCorridor(');
+const helper=part(core,'function apexGrassValueNoiseV1523(', 'function apexUnifiedGroundDrawCorridor(');
 const tint=new Function('apexRoadSvgNormalizeColorV15','apexRoadTextureHashV15','apexWeatherWetFactor','shadeColor',
  helper+'return apexSurfaceTintV152;')(
  c=>c,(x,z,seed)=>(((x*173+z*397+seed*37)%97+97)%97)/97,()=>0,

@@ -44,6 +44,8 @@ jobs:
         run: node apex/tests/ground-material-v152-preview.cjs
       - name: Grass V15.2.2 visual range and fallback (preview only)
         run: node apex/tests/grass-visibility-v1522-preview.cjs
+      - name: Grass V15.2.3 smooth organic noise and no tile seams (preview only)
+        run: node apex/tests/grass-organic-v1523-preview.cjs
       - name: Near-camera asphalt V15.2.1 bank and GPU continuity (preview only)
         run: node apex/tests/road-near-grain-v1521-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)

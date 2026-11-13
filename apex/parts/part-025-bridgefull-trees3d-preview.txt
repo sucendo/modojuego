@@ -3213,29 +3213,33 @@ void main(){
    float smallFade=1.0-smoothstep(1.2,3.6,px);
    float meadowFade=1.0-smoothstep(4.5,12.0,px);
    float farFade=1.0-smoothstep(13.0,34.0,px);
+   // V15.2.3: organic continuity in all octaves. The previous 48 cm
+   // tufts / blades were raw floor() hashes, producing visible square tiles.
+   // A low frequency, continuous displacement softens axis-aligned contours.
+   float warp=(grassPatchV1522(w*0.036+vec2(13.7,7.1))-0.5);
+   vec2 organicW=w+vec2(2.8*warp,-2.1*warp);
    if(farFade>0.001){
-    float farPatches=grassPatchV1522(w*0.018);  // ~55 m: colour variation at distance
+    float farPatches=grassPatchV1522(w*0.018); // ~55 m, horizon
     grain+=(farPatches-0.5)*0.36*farFade;
    }
    if(meadowFade>0.001){
-    float meadows=grassPatchV1522(w*0.062);   // ~16 m: natural meadow patches
+    float meadows=grassPatchV1522(organicW*0.062); // ~16 m, soft meadow
     grain+=(meadows-0.5)*0.62*meadowFade;
    }
    if(smallFade>0.001){
-    float clumps=grassPatchV1522(w*0.25);    // ~4 m: soft mottled growth
+    float clumps=grassPatchV1522(organicW*0.25); // ~4 m, irregular mottle
     grain+=(clumps-0.5)*0.52*smallFade;
    }
    if(clumpFade>0.001){
-    float tuft=groundHash(floor(w*2.1));     // ~48 cm clumps
-    grain+=(tuft-0.5)*0.34*clumpFade;
+    float tufts=grassPatchV1522(organicW*2.1); // ~48 cm, interpolated
+    grain+=(tufts-0.5)*0.34*clumpFade;
    }
    if(tuftFade>0.001){
-    float blades=groundHash(floor(vec2(w.x*11.0,w.y*6.5)));
+    float blades=grassPatchV1522(vec2(organicW.x*11.0,organicW.y*6.5));
     grain+=(blades-0.5)*0.22*tuftFade;
    }
-   // Tone-map local foliage: grass can vary, but must never overwhelm
-   // the authored SVG colour (maximum ~20% brighter or darker).
-   grain=clamp(grain,-0.20,0.20);
+   // SVG tint always dominates: max +/-16% of authored RGB.
+   grain=clamp(grain,-0.16,0.16);
    grain*=uGrassTexture*(1.0-0.19*clamp(uGroundWet,0.0,1.0));
   }else{
    // Authored asphalt runoff: same grain family as the circuit track.
