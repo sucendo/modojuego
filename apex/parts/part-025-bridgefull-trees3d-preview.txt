@@ -913,32 +913,24 @@ function collectRoadBranch(sign,cam,pitch,maxD=540,near=.64,makeStep=roadStep){
  return raw;
 }
 
+// V15.2.7: near-plane safety covers ONLY the authentic track ribbon.
+// Generic runoff is already owned by apexUnifiedGroundDrawCorridor(), while
+// authored SVG runoff is owned by the static ground atlas. Painting broad
+// tangent-plane margins a second time created rectangular grey/cyan slabs.
 function drawNearRoadSafetyPatch(cam,pitch){
- if(apexInspectionActive())return;
- if(!player||!trackData)return;
- // Parche local de ~34 m alrededor del coche. Se dibuja antes de la cinta normal y
- // evita huecos de near-plane cuando el cockpit queda casi perpendicular al trazado.
- const q=poseAt(player.s),env=envProfile(player.s),roadHalf=env.half,outer=roadHalf+env.curb+env.runoff;
- const point=(along,lat)=>({x:q.x+q.tx*along+q.nx*lat,
-  y:q.y+Math.tan(q.bank||0)*clamp(lat,-roadHalf,roadHalf),
-  z:q.z+q.tz*along+q.nz*lat});
- const make=(along,lat)=>{const p=point(along,lat);return worldToCamera(p.x,p.y,p.z,cam)};
- const a=-17,b=17,outerL=apexRoadFlatLimit(player.s,env,1),outerR=apexRoadFlatLimit(player.s,env,-1);
- const o1=make(a,outerL),o2=make(a,-outerR),o3=make(b,-outerR),o4=make(b,outerL);
- const r1=make(a, roadHalf),r2=make(a,-roadHalf),r3=make(b,-roadHalf),r4=make(b, roadHalf);
- // Runoff completo primero; luego el asfalto principal. El clipping 3D contra near
- // rellena el primer plano incluso cuando uno de los bordes queda detrás de cámara.
- const idx=trackData._apexRunoffDriveSurfaceIndex;
- if(idx&&idx.faces.length){
-  const paint=(quad,col)=>{
-   const clipped=apexClipGenericRunoffPolygon(quad);
-   const polys=clipped===null?[quad]:clipped;
-   for(const poly of polys)drawCamPoly(poly.map(p=>worldToCamera(p.x,p.y,p.z,cam)),pitch,col,.34);
-  };
-  paint([point(a,outerL),point(a,roadHalf),point(b,roadHalf),point(b,outerL)],surfaceColor(env.runoffSurface,false));
-  paint([point(a,-roadHalf),point(a,-outerR),point(b,-outerR),point(b,-roadHalf)],surfaceColor(env.runoffSurface,true));
- }else drawCamQuadTriangles(o1,o2,o3,o4,pitch,surfaceColor(env.runoffSurface,false),.34);
- drawCamQuadTriangles(r1,r2,r3,r4,pitch,palette().road,.34);
+ if(apexInspectionActive()||!player||!trackData)return;
+ const q=renderRibbonFrameAt(player.s),env=envProfile(player.s),
+  half=env.half,trackLimit=half+env.curb+.6;
+ if(player.driveNetwork==='PIT'||Math.abs(player.lat)>trackLimit||
+  Math.hypot(player.x-q.x,player.z-q.z)>trackLimit)return;
+ const L=trackData.km*1000,qa=renderRibbonFrameAt(mod(player.s-5,L)),
+  qb=renderRibbonFrameAt(mod(player.s+7,L));
+ const point=(frame,lat)=>{
+  const p=ribbonWorldPoint(frame,Math.abs(lat),lat>=0?1:-1);
+  return worldToCamera(p.x,p.y,p.z,cam);
+ };
+ drawCamQuadTriangles(point(qa,half),point(qa,-half),point(qb,-half),point(qb,half),
+  pitch,apexRoadMaterialColorV15({a:{q:qa},b:{q:qb},z:3}),.34);
 }
 
 function drawRoad(camArg=null){
