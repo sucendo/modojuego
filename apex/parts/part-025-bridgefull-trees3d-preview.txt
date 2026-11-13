@@ -3320,10 +3320,13 @@ function apexPavedExtraGpuZonesV1524(){
   for(const sg of apexPitSegments()){
    const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=sg.len||Math.hypot(dx,dz);
    if(len<.02)continue;
-   const nx=-dz/len,nz=dx/len,hw=sg.width*.5;
+   const nx=-dz/len,nz=dx/len;
    const a=lat=>[sg.x1+nx*lat,sg.y1+.012,sg.z1+nz*lat],
     b=lat=>[sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat];
-   lane.push([a(hw),a(-hw),b(-hw),b(hw)]);
+   // The static GPU atlas uses the SAME pit merge mesh as Canvas and
+   // the painted 3-D separator, never the legacy full-width rectangle.
+   const merge=apexPitMergeQuadV1526(sg);
+   if(merge)lane.push(merge.quad.map(p=>[p.x,p.y,p.z]));
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
     const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8),
      outer=t=>inner+side*apexPitWorkWidthAt(work,t);
@@ -4351,10 +4354,8 @@ function webglPushExactPitLane(cam,pitch){
   const paved=d.material&&(!d.color||d.material.kind==='PIT_WORK');
   if(!(baked&&paved))
    webglPushCamQuad(A,B,C,D,pitch,d.material?apexSurfaceTintV152(d.material.kind||'PITLANE',d.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152(),d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);
-  if(d.color)continue; // markings are always solid paint on top of textured asphalt
-  const e0=camMix(A,B,.018),e1=camMix(D,C,.018),f0=camMix(B,A,.018),f1=camMix(C,D,.018);
-  webglPushCamQuad(A,e0,e1,D,pitch,'rgba(248,249,250,.92)',.58,-.034);
-  webglPushCamQuad(f0,B,C,f1,pitch,'rgba(248,249,250,.82)',.58,-.034);
+  // Markings are own 3-D quads assembled by collectExactPitRenderItems().
+  // Never paint a second full-width white edge on the main racing line.
  }
 }
 
