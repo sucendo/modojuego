@@ -32,9 +32,11 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   // Only cut same-level, locally parallel/intersecting roads. A pit crossing
   // at a different height (bridge/underpass) is a distinct road.
   if(Math.abs(trackY-y)<1.25&&Math.abs(dot)>.075){
+   // Track-facing edge can be the left OR right of the pit path.
+   side=dot>=0?1:-1;
    const vLo=off+dot*lo,vHi=off+dot*hi;
    if(vLo<=0||vHi<=0){
-    clipped=true;side=dot>=0?1:-1;
+    clipped=true;
     const cut=Math.max(lo,Math.min(hi,-off/dot));
     if(vLo<=0&&vHi<=0)lo=hi=dot>=0?hi:lo;
     else if(dot>0)lo=cut;
