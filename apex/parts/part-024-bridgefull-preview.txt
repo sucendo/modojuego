@@ -2652,14 +2652,12 @@ function apexWebglRoadBase(seg,pitch,forceCPU=false){
   if(show&&(a.curb.left||b.curb.left))webglPushCamQuad(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
   if(show&&(a.curb.right||b.curb.right))webglPushCamQuad(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
 
-  if(cheap)webglPushCamQuad(V0.l,V0.r,V1.r,V1.l,pitch,road);
-  else{
-   const lA=camMix(V0.l,V0.r,.30),lB=camMix(V1.l,V1.r,.30),
-    rA=camMix(V0.l,V0.r,.70),rB=camMix(V1.l,V1.r,.70);
-   webglPushCamQuad(V0.l,lA,lB,V1.l,pitch,shadeColor(road,-3));
-   webglPushCamQuad(lA,rA,rB,lB,pitch,shadeColor(road,2));
-   webglPushCamQuad(rA,V0.r,V1.r,rB,pitch,shadeColor(road,-4));
-  }
+  // V15.2.1: moving ends / banked near-plane faces use exactly the same
+  // fragment asphalt material as static phase-6 ribbon (and never flat strips).
+  if(!forceCPU&&apexPhase6QueueDynamicRoadSegment(seg,road))return pressure;
+  // Only an unavailable GPU falls back to the simple colour quad; avoid
+  // hard three-band stripes that could look like texture holes on slopes.
+  webglPushCamQuad(V0.l,V0.r,V1.r,V1.l,pitch,road);
   return pressure;
 }
 // V15.2: inexpensive Canvas/CPU fallback. WebGL uses a finer per-pixel shader.
