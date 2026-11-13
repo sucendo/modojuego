@@ -42,6 +42,8 @@ jobs:
         run: node apex/tests/asphalt-fragment-v151-preview.cjs
       - name: Grass and SVG asphalt V15.2 materials (preview only)
         run: node apex/tests/ground-material-v152-preview.cjs
+      - name: Grass V15.2.2 visual range and fallback (preview only)
+        run: node apex/tests/grass-visibility-v1522-preview.cjs
       - name: Near-camera asphalt V15.2.1 bank and GPU continuity (preview only)
         run: node apex/tests/road-near-grain-v1521-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
@@ -128,6 +130,11 @@ jobs:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
           APEX_AUDIT_DEVICE: ${{ matrix.device }}
         run: node apex/tests/road-near-grain-v1521-browser.cjs
+      - name: Grass V15.2.2 — verify visible near/mid/far grass pixels
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
+          APEX_AUDIT_DEVICE: ${{ matrix.device }}
+        run: node apex/tests/grass-visibility-v1522-browser.cjs
       - name: Ground V15.2 — verify grass and SVG runoff texture pixels
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
