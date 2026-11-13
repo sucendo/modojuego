@@ -31,7 +31,7 @@ assert.ok(a>=0&&b>a);
    function paint(kind,texture,wet,colour){
     gl.vertexAttrib1f(attrs.material,kind);
     gl.vertexAttrib4f(attrs.color,...colour,1);
-    gl.uniform1f(u.uGroundTexture,texture);gl.uniform1f(u.uGroundWet,wet);
+    gl.uniform1f(u.uGroundTexture,texture);gl.uniform1f(u.uGroundWet,wet);gl.uniform1f(u.uGrassTexture,1);
     gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
     gl.readPixels(0,0,256,256,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
