@@ -42,6 +42,13 @@ assert.match(corridor,/if\(right!==null\)paint\(right,cR\)/);
 assert.match(roadStep,/apexVisualRunoffLimitV1527\(s,env,1\)/);
 assert.match(roadStep,/apexVisualRunoffLimitV1527\(s,env,-1\)/);
 assert.match(core,/outer=apexFlatRunoffPoint\(q,e,apexVisualRunoffLimitV1527\(st\.s,e,side\),side\)/);
+const cut=snippet(core,'function apexRunoffRoadClipIndex(', 'function apexClipTerrainAtPit(');
+assert.match(cut,/Math\.max\(w,apexVisualRunoffLimitV1527\(s,e,1\)\)/,
+ 'terrain cut must not extend beyond the painted left asphalt');
+assert.match(cut,/Math\.max\(w,apexVisualRunoffLimitV1527\(s,e,-1\)\)/,
+ 'terrain cut must not extend beyond the painted right asphalt');
+assert.doesNotMatch(cut,/Math\.max\(w,apexRoadFlatLimit\(s,e,1\)\)/,
+ 'old far-wall cuts expose the sky through unpainted shoulders');
 assert.match(frame,/apexPhase6QueueDynamicRoadQuad\(quad,nearColor,bias,'near'\)/);
 assert.match(frame,/qa=renderRibbonFrameAt\(mod\(player\.s\+a,L\)\)/);
 assert.match(core,/window\.apexRoadMarginInfoV1527=/);
