@@ -30,7 +30,7 @@ assert.match(core,/td\._apexV152GrassSvgColor=apexRoadSvgNormalizeColorV15/);
 assert.match(core,/td\._apexV152PitSvgColor=apexRoadSvgNormalizeColorV15/);
 assert.match(core,/function apexSurfaceTintV152\(/);
 assert.match(core,/function apexPitAsphaltColorV152\(/);
-assert.match(render,/d\.material\?apexSurfaceTintV152\('ASPHALT',apexPitAsphaltColorV152\(\)/);
+assert.match(render,/d\.material\?apexSurfaceTintV152\(d\.material\.kind\|\|'PITLANE'/);
 assert.match(core,/apexSurfaceTintV152\(it\.surfaceKind,color,x,z,depth\)/);
 assert.match(render,/get\('ground'\)!=='0'/);
 const create=part(render,'function apexPhase5GpuProgram(', 'function apexPhase5GpuGroundError(');
