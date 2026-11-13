@@ -3333,7 +3333,12 @@ function apexPavedExtraGpuZonesV1524(){
     apron.push([a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner)]);
    }
   }
-  if(lane.length)pit=emit(lane,'#555b61',3)>0;
+  if(lane.length){
+   // GPU ground receives the same authored asphalt as Canvas/WebGL fallback.
+   // uPavedDark handles weather once; no pre-darkened colour or flat grey merge.
+   const base=trackData?._apexV152PitSvgColor||apexRoadSvgBaseColorV15()||'#555b61';
+   pit=emit(lane,base,3)>0;
+  }
   if(apron.length)emit(apron,'#454d56',2);
  }
  return{zones,roads,pit,extraTriangles};
