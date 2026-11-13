@@ -54,6 +54,8 @@ jobs:
         run: node apex/tests/pit-merge-geometry-v1526-preview.cjs
       - name: Authored margins and no near-camera asphalt slabs V15.2.7 (preview only)
         run: node apex/tests/road-margins-v1527-preview.cjs
+      - name: SVG-owned runoff and compiled terrain cache invalidation V15.2.8 (preview only)
+        run: node apex/tests/svg-runoff-cache-v1528-preview.cjs
       - name: Near-camera asphalt V15.2.1 bank and GPU continuity (preview only)
         run: node apex/tests/road-near-grain-v1521-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
