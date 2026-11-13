@@ -23,13 +23,13 @@ const {chromium}=require(modulePath),root=path.resolve(__dirname,'../..'),
   await page.evaluate(async()=>__apexAudit.load('01-australia',false));
   await page.waitForFunction(()=>{const r=window.apexAsphaltMaterialInfo?.();
    return r&&r.shader&&r.dynamicDrawCalls>0&&r.nearPatchTextured;},{timeout:90000});
-  const result=await page.evaluate(()=>({
-   material:apexAsphaltMaterialInfo(),
-   phase6:apexPhase6RoadDiagnostics(),
-   glError:webglState.gl?.getError(),
-   backend:rendererBackendId(),
-   race:mode
-  }));
+  const result=await page.evaluate(()=>{
+   // Runtime internals are scoped inside the assembled simulator script.
+   // The browser hook has authoritative access and exposes a public snapshot.
+   const status=window.__apexAudit.snapshot();
+   return{material:window.apexAsphaltMaterialInfo(),
+    phase6:status.road,glError:status.glError,backend:status.backend,race:status.mode};
+  });
   assert.equal(result.backend,'webgl2');assert.equal(result.race,'race');
   assert.equal(result.glError,0,'6A WebGL must remain error-free');
   assert.ok(result.material.dynamicDrawCalls>0);
