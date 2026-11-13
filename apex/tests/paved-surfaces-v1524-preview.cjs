@@ -27,10 +27,13 @@ const mark={type:'marking',color:'#ffffff'};
 const trackData={customWorld:{pitNetwork:{runs:[{points:[]}],
  serviceLayout:{offset:10,start:0,end:100}}}};
 const extra=new Function('trackLandmarks','trackData','webglCssColor','shadeColor',
- 'apexPitSegments','apexPitWorkWidthAt','apexRoadSvgNormalizeColorV15',extraSrc+'return apexPavedExtraGpuZonesV1524;')(
+ 'apexPitSegments','apexPitWorkWidthAt','apexRoadSvgNormalizeColorV15','apexPitMergeQuadV1526',extraSrc+'return apexPavedExtraGpuZonesV1524;')(
  ()=>[road,mark],trackData,()=>[.3,.35,.4,1],color=>color,
  ()=>[{x1:0,z1:0,y1:1,x2:20,z2:0,y2:1,len:20,width:6,s1:0,s2:20}],
- ()=>3,color=>color)();
+ ()=>3,color=>color,sg=>({quad:[
+  {x:sg.x1,y:sg.y1+.012,z:sg.z1+3},{x:sg.x1,y:sg.y1+.012,z:sg.z1-3},
+  {x:sg.x2,y:sg.y2+.012,z:sg.z2-3},{x:sg.x2,y:sg.y2+.012,z:sg.z2+3}
+ ]}))();
 assert.equal(extra.pit,true,'exact pit needs its own textured base');
 assert.equal(extra.roads.size,1,'authored city roads are compiled once');
 assert.ok(extra.roads.has(road));
@@ -38,7 +41,7 @@ assert.equal(extra.extraTriangles,6,'road, pitlane and work apron each add two t
 assert.deepEqual(extra.zones.map(z=>z.kind),[2,3,2],
  'pit surface uses weather-tinted asphalt; pit-work has distinct colour');
 assert.ok(extra.zones.every(z=>z.tris.every(t=>t.every(v=>v.length===3))));
-assert.match(render,/if\(d\.color\)continue; \/\/ markings are always solid paint/);
+assert.match(render,/Markings are own 3-D quads assembled by collectExactPitRenderItems/);
 assert.match(render,/if\(it\.type==='road'&&apexPhase5GroundGPU\.atlas===groundAtlas/);
 assert.match(render,/if\(!seg\?\._apexPitGpuV1524\)webglPushCamQuad/);
 assert.match(render,/uPavedDark/);
