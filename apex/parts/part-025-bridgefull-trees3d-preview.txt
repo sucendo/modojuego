@@ -3802,6 +3802,25 @@ function apexPhase6QueueDynamicRoadQuad(points,color,depthBias=0,kind='moving'){
  else s.dynamicRanges.push({first,count:6,depthBias,kind});
  return true;
 }
+// V15.2.5: masked runoff polygons receive the same world-space asphalt
+// fragment material as the road ribbon; never change the SVG/physical cut.
+function apexPhase6QueueDynamicRoadPolygon(points,color,depthBias=0,kind='runoff'){
+ const s=apexPhase6RoadGPU,n=Array.isArray(points)?points.length:0,count=(n-2)*3;
+ if(!s.active||!s.dynamicBuffer||n<3||n>18||s.dynamicVertices+count>s.dynamicData.length/7)return false;
+ const rgba=webglCssColor(color);
+ if(rgba[3]<.999||!points.every(p=>p&&[p.x,p.y,p.z].every(Number.isFinite)))return false;
+ const first=s.dynamicVertices;
+ for(let i=1;i<n-1;i++)for(const p of [points[0],points[i],points[i+1]]){
+  const off=s.dynamicVertices++*7;
+  s.dynamicData[off]=p.x;s.dynamicData[off+1]=p.y;s.dynamicData[off+2]=p.z;
+  s.dynamicData[off+3]=rgba[0];s.dynamicData[off+4]=rgba[1];
+  s.dynamicData[off+5]=rgba[2];s.dynamicData[off+6]=rgba[3];
+ }
+ const prev=s.dynamicRanges[s.dynamicRanges.length-1];
+ if(prev&&prev.depthBias===depthBias&&prev.kind===kind)prev.count+=count;
+ else s.dynamicRanges.push({first,count,depthBias,kind});
+ return true;
+}
 function apexPhase6QueueDynamicRoadSegment(seg,color){
  const s=apexPhase6RoadGPU;
  if(!s.active)return false;
@@ -3916,6 +3935,7 @@ window.apexPavedSurfaceInfoV1524=()=>{
   svgRoadsBaked:g.atlas===atlas?(g.pavedRoads?.size||0):0,
   exactPitBaked:g.atlas===atlas&&!!g.pavedPit,
   legacyPitGpuVertices:r.dynamicRanges.filter(q=>q.kind==='pitlane').reduce((n,q)=>n+q.count,0),
+  runoffTexturedTriangles:r.dynamicRanges.filter(q=>q.kind==='runoff').reduce((n,q)=>n+q.count/3,0),
   groundTriangles:g.triangles||0,groundCalls:g.drawCalls||0,
   fallback:g.unsupportedAtlas===atlas||!!g.failedGl,paintTextured:false};
 };
