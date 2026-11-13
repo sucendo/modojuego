@@ -16,7 +16,7 @@ function pick(src,name){
 }
 const names={
  23:['apexInspectorPolyArea','apexInspectorPolyBounds','apexInspectorFootHeight','apexInspectorHalfPoly','apexInspectorSubtractFoot'],
- 24:['apexTrackSeamHeight','apexSnapTrackSeam','apexClipTerrainAtDrive','apexClipGenericRunoffPolygon'],
+ 24:['apexClipTerrainAtDrive','apexClipGenericRunoffPolygon'],
  25:['apexTerrainFinePatch','apexUnifiedTerrainCellPieces']
 };
 const source=Object.entries(names).flatMap(([part,fns])=>fns.map(name=>pick(parts[part],name))).join('\n');
@@ -24,7 +24,7 @@ const point=(x,z,y=0)=>({x,y,z});
 const rectangle=(x0,x1,y=0)=>[point(x0,0,y),point(x1,0,y),point(x1,10,y),point(x0,10,y)];
 const bbox=poly=>({minX:Math.min(...poly.map(p=>p.x)),maxX:Math.max(...poly.map(p=>p.x)),minZ:0,maxZ:10});
 const square=rectangle(0,10),road=rectangle(4,6,1.5),runoff=rectangle(6,8,2.25);
-const roadIndex={cell:20,seamBuckets:new Map(),buckets:new Map([['0:0',[0]]]),faces:[{poly:road,bounds:bbox(road),terrainCut:true}]};
+const roadIndex={cell:20,buckets:new Map([['0:0',[0]]]),faces:[{poly:road,bounds:bbox(road),terrainCut:true}]};
 const svgIndex={
  cell:20,buckets:new Map([['0:0',[0]]]),
  faces:[{foot:{poly:runoff,bounds:bbox(runoff)},minX:6,maxX:8,minZ:0,maxZ:10}],
@@ -35,12 +35,12 @@ const trackData={
  _apexRunoffDriveSurfaceIndex:svgIndex
 };
 const inputs=[
- 'clamp','lerp','trackData','apexRunoffRoadClipIndex','apexRunoffOverflowCandidates',
+ 'trackData','apexRunoffRoadClipIndex','apexRunoffOverflowCandidates',
  'nearestTrackState','apexWorldGroundY',
  'apexPointInsideClosedContour','apexPortalTerrainCutAtWorld',
  'apexClipTerrainQuadByTunnel','apexClipTerrainAtPit'
 ];
-const values=[(v,a,b)=>Math.max(a,Math.min(b,v)),(a,b,t)=>a+(b-a)*t,trackData,()=>roadIndex,()=>[],(x,z)=>({s:0,lat:x-5}),()=>0,
+const values=[trackData,()=>roadIndex,()=>[],(x,z)=>({s:0,lat:x-5}),()=>0,
  ()=>true,()=>null,(A,B,C,D)=>[[A,B,C,D]],()=>null];
 const factory=new Function(...inputs,source+
  '\nreturn {road:apexClipTerrainAtDrive,svg:apexClipGenericRunoffPolygon,area:apexInspectorPolyArea,fine:apexTerrainFinePatch,coarse:apexUnifiedTerrainCellPieces};');
@@ -98,9 +98,12 @@ assert.equal(audit.fine(grid,0,0,'TRACK'),fine,'Fine LOD must be cached');
 
 roadIndex.faces[0].terrainCut=false;
 assert.equal(audit.road(square),null,'Bridges and tunnels must preserve underlying terrain');
-assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230695/,'Old compiled meshes must be invalidated');
+assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230693/,'Old compiled meshes must be invalidated');
 assert.match(parts[25],/const y=apexWorldGroundY\(x,z\);/,'Fine terrain must sample the same ground height as the vehicle');
-assert.doesNotMatch(parts[26],/webglPushNearPatch/);
+assert.match(parts[26],/Math\.hypot\(player\.x-q\.x,player\.z-q\.z\)>trackLimit/,
+ 'Near-camera patch must not cover the car off the main road');
+assert.match(parts[26],/webglPushCamPoly\(poly\.map\(p=>worldToCamera\(p\.x,p\.y,p\.z,cam\)\),pitch,color,\.34,bias\)/,
+ 'Near-camera polygon must retain the same depth bias after clipping');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'circuits/manifest.json'),'utf8'));
 for(const gp of ['01-australia','14-spain']){
  const entry=manifest.circuits[gp];
@@ -108,4 +111,4 @@ for(const gp of ['01-australia','14-spain']){
  assert.ok(fs.existsSync(path.join(root,'circuits',entry.svg)),'Missing saved SVG '+gp);
 }
 console.log(JSON.stringify({test:'terrain-surface-ownership',finePolygons:fine.length,
- coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230695,ok:true}));
+ coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230693,ok:true}));

@@ -70,14 +70,14 @@ function compare(expected,actual){assert.deepEqual(actual.map(key).sort(),expect
  // A custom alpha palette retains the original CPU blending path.
  c.apexPhase6BeginRoad(cam,0);cpu.length=0;const curbPair=c.circuitCurbPair;c.circuitCurbPair=()=>['rgba(220,20,30,.5)','#f3f4f5'];c.apexWebglRoadBase(cheapSegments[0],0);assert.equal(cpu.length,6);c.circuitCurbPair=curbPair;c.apexPhase6SealRoad();
  console.log('PASS phase6: mobile single-quad asphalt and transparent custom kerbs');
- // The road batch contributes only road and kerbs. SVG surfaces are
- // rendered separately by the ground atlas.
+ // The existing SVG runoff ownership/clipped faces remain in the CPU corridor.
  c.mobile=false;c.apexPhase6BeginRoad(cam,0);cpu.length=0;
- vm.runInContext(func(source,'apexUnifiedGroundDrawCorridor'),c);
- c.apexUnifiedGroundDrawCorridor(all[0],cam,0,true);
- assert.equal(cpu.length,0);
- assert.equal(c.apexPhase6SealRoad(),true);
- assert.equal(vm.runInContext('apexPhase6RoadGPU.triangles',c),10);
+ const clipped=[{x:200,y:4,z:300},{x:204,y:4.1,z:300},{x:202,y:4.2,z:304}];
+ c.apexUnifiedGroundStrip=()=>({runoffLeft:[clipped],runoffRight:[]});c.worldToCamera=(x,y,z)=>({x,y,z});
+ c.webglPushCamPoly=(poly,pitch,color)=>cpu.push({color:c.webglCssColor(color),verts:poly.map(p=>[p.x,p.y,p.z])});
+ vm.runInContext(func(source,'apexUnifiedGroundDrawCorridor').replace('function apexUnifiedGroundDrawCorridor','function newCorridor'),c);
+ c.newCorridor(all[0],cam,0,true);assert.equal(cpu.length,1);assert.deepEqual(cpu[0].verts,clipped.map(p=>[p.x,p.y,p.z]));assert.equal(c.apexPhase6SealRoad(),true);
+ assert.equal(vm.runInContext('apexPhase6RoadGPU.triangles',c),10);console.log('PASS phase6: existing clipped SVG runoff emitted once with unchanged heights');
  // Explicit hysteresis on mobile: no rapid switching around old 42 m threshold.
  c.mobile=true;c.apexPhase6BeginRoad(cam,0);vm.runInContext('apexPhase6RoadGPU.mesh.lod.fill(0);apexPhase6RoadGPU.mesh.curbLod.fill(0)',c);const lod=segment(0,1);lod.z=40;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,false);lod.z=43;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,false);lod.z=50;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,true);lod.z=40;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,true);lod.z=34;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,false);
  c.apexPhase6RoadRelease(true);console.log('PASS phase6: mobile LOD hysteresis with unchanged essential geometry');

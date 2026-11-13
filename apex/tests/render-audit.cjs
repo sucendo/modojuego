@@ -24,17 +24,12 @@ function road(src,optimized){
  wallGeometryAtS:(s,side)=>(stats.walls++,{top:{x:s+side*12,y:3,z:0}}),
  projectRoadLocal:(x,y,z)=>(stats.screen++,{x,y,z}),
  });
- load(c,src,['ribbonWorldPoint',...(optimized?['apexTrackEdgeSection','apexTrackCrossSection']:['apexFlatRunoffPoint']),'roadStep',...(optimized?['apexRoadWorldNode','apexWebglRoadStep']:[])],optimized?['apexRoadPreparationPerf']:[]);
+ load(c,src,['ribbonWorldPoint','apexFlatRunoffPoint','roadStep',...(optimized?['apexRoadWorldNode','apexWebglRoadStep']:[])],optimized?['apexRoadPreparationPerf']:[]);
  c.run=(s,node)=>vm.runInContext(`${optimized?'apexWebglRoadStep':'roadStep'}(${s},10,{x:1,y:2,z:3},0,${node})`,c);
  c.stats=stats;return c;
 }
 const oldRoad=road(baseline,false),newRoad=road(current,true);
-for(let i=0;i<1000;i++){
- const a=oldRoad.run(i*5,i),b=newRoad.run(i*5,i);
- for(const key of ['c','l','r'])for(const axis of ['x','y','z'])assert.ok(Math.abs(a.v[key][axis]-b.v[key][axis])<1e-10);
- assert.deepEqual(b.v.lo,b.v.lx);
- assert.deepEqual(b.v.r,b.v.rx);
-}
+for(let i=0;i<1000;i++){const a=oldRoad.run(i*5,i),b=newRoad.run(i*5,i);for(const key of ['c','l','r','lo','ro','lx','rx'])for(const axis of ['x','y','z'])assert.ok(Math.abs(a.v[key][axis]-b.v[key][axis])<1e-10);}
 for(let f=0;f<9;f++)for(let i=0;i<1000;i++){oldRoad.run(i*5,i);newRoad.run(i*5,i);}
 assert.equal(oldRoad.stats.screen,90000);assert.equal(newRoad.stats.screen,0);assert.equal(oldRoad.stats.walls,20000);assert.equal(newRoad.stats.walls,0);assert.equal(newRoad.stats.env,1000);
 // Moving branch ends must never reuse world geometry.

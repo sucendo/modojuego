@@ -1998,7 +1998,7 @@ async function importEditableCircuitSvgText(text,spec,options={}){
    const drivableEls=activeRoleEls(apexSvgFindAll(ctx.root,['drivable_area','drivable-area']));
    let drivableArea=apexImportedDrivableArea(ctx,drivableEls);
    const pitWidth=((pitEls[0]&&parseFloat(pitEls[0].getAttribute('data-apex-width')))||5.9),pitSpeedKph=((pitEls[0]&&parseFloat(pitEls[0].getAttribute('data-apex-speed-kph')))||0);
-   const pitLaneSamples=apexSvgGuideSamplesExact(ctx,pitEls,pitWidth),wallLeftSamples=apexSvgGuideSamplesExact(ctx,wallLeftEls,0),wallRightSamples=apexSvgGuideSamplesExact(ctx,wallRightEls,0),edgeLeftSamples=apexSvgGuideSamplesExact(ctx,edgeLeftEls,null),edgeRightSamples=apexSvgGuideSamplesExact(ctx,edgeRightEls,null);
+   const pitLaneSamples=apexSvgGuideSamplesExact(ctx,pitEls,pitWidth),wallLeftSamples=apexSvgGuideSamplesExact(ctx,wallLeftEls,0),wallRightSamples=apexSvgGuideSamplesExact(ctx,wallRightEls,0),edgeLeftSamples=apexSvgGuideSamplesExact(ctx,edgeLeftEls,0),edgeRightSamples=apexSvgGuideSamplesExact(ctx,edgeRightEls,0);
    const pitRuns=apexSvgWorldRunsExact(ctx,pitEls,2.6),pitNetwork=apexBuildPitNetwork(pitRuns,pitWidth),wallLeftRuns=apexSvgWorldRunsExact(ctx,wallLeftEls,2.5),wallRightRuns=apexSvgWorldRunsExact(ctx,wallRightEls,2.5),wallSegments=[...apexBuildExactWallSegments(wallLeftRuns,1),...apexBuildExactWallSegments(wallRightRuns,-1)];
    if(pitSpeedKph>0)pitNetwork.speedKph=clamp(pitSpeedKph,30,120);
    const excluded=new Set([...pitEls,...wallLeftEls,...wallRightEls,...edgeLeftEls,...edgeRightEls,...drivableEls,...cornerImport.elements,...terrainImport.elements,...(terrainBase?[...ctx.root.querySelectorAll('[data-apex-role="terrain-base"]')]:[]),...timingImport.elements.filter(el=>!['start-line','finish-line'].includes(String(el.getAttribute('data-apex-role')||'').toLowerCase())),ctx.trackEl]);
@@ -2028,7 +2028,7 @@ async function importEditableCircuitSvgText(text,spec,options={}){
      }
    }
    const geometryPayload={points:ctx.points,km:ctx.km,direction:ctx.direction,layoutId,turns,laps,circuitType:'RACE',source:options.base?'BASE_SVG':'EXACT_USER_SVG',authoritative:true,rawSvg:options.base?new XMLSerializer().serializeToString(rootDoc):String(text),exactRepository:options.exactRepository===true,racingLine:racingLine.length>40?racingLine:null,verticalProfile,timingData,timingControls,cornerMarkers,brakeBoardsAuthoritative};
-   const worldPayload={profileRevision:23092,curbGeometryAuthoritative:circuitLandmarks.some(apexIsCurbAuthoringMark)||!!ctx.root.querySelector('#APEX_ACTIVE_CURBS')||rootDoc.getAttribute('data-apex-curbs-authoritative')==='true',authoritative:true,terrainBase,landmarks:circuitLandmarks,brakeBoards,brakeBoardsAuthoritative,cornerMarkers,pitLaneSamples,pitNetwork,wallLeftSamples,wallRightSamples,wallSegments,edgeLeftSamples,edgeRightSamples,structureZones,barrierSegments,surfaceZones,terrainContours,terrainContoursAuthoritative,terrainReference,drivableArea,curbZones};
+   const worldPayload={profileRevision:23091,curbGeometryAuthoritative:circuitLandmarks.some(apexIsCurbAuthoringMark)||!!ctx.root.querySelector('#APEX_ACTIVE_CURBS')||rootDoc.getAttribute('data-apex-curbs-authoritative')==='true',authoritative:true,terrainBase,landmarks:circuitLandmarks,brakeBoards,brakeBoardsAuthoritative,cornerMarkers,pitLaneSamples,pitNetwork,wallLeftSamples,wallRightSamples,wallSegments,edgeLeftSamples,edgeRightSamples,structureZones,barrierSegments,surfaceZones,terrainContours,terrainContoursAuthoritative,terrainReference,drivableArea,curbZones};
    // SVG, huellas, muros y alturas se guardan JUNTOS en una transacción IndexedDB.
    // Nunca duplicamos el SVG (que puede contener una fotografía base64) en localStorage.
    let savedStorage='BASE_MEMORY';
@@ -2337,7 +2337,51 @@ function apexInspectorSubtractFoot(poly,foot,snap=false){
  const a=foot.poly[i],b=foot.poly[(i+1)%foot.poly.length],outer=apexInspectorHalfPoly(inside,a,b,side,false,snap?foot:null);
  if(outer.length)out.push(outer);inside=apexInspectorHalfPoly(inside,a,b,side,true,snap?foot:null);
  }
- return inside.length?out:[poly];
+ return out;
+}
+function apexInspectorSurfaceIndex(){
+ if(trackData._inspectionSurfaceIndex)return trackData._inspectionSurfaceIndex;
+ const identity={x:0,y:0,z:0,nx:1,nz:0,tx:0,tz:1},steps=collectRoadBranch(1,identity,0),size=32,buckets=new Map(),roads=new Map(),footprints=[];
+ const add=(poly,kind,structure)=>{
+ if(Math.abs(apexInspectorPolyArea(poly))<1e-8)return;
+ const bounds=apexInspectorPolyBounds(poly),foot={poly,bounds,kind,structure};footprints.push(foot);
+ for(let x=Math.floor(bounds.minX/size);x<=Math.floor(bounds.maxX/size);x++)for(let z=Math.floor(bounds.minZ/size);z<=Math.floor(bounds.maxZ/size);z++){const key=x+','+z;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(foot);}
+ };
+ const quad=(A,B,C,D,kind,structure)=>{add([A,B,C],kind,structure);add([A,C,D],kind,structure);};
+ for(let i=0;i<steps.length-1;i++){
+ const a=steps[i],b=steps[i+1],A=a.v,B=b.v,structure=!!(a.env.tunnel||b.env.tunnel||apexPhase1StructureAtWorld(a.q.x,a.q.z,a.s)||apexPhase1StructureAtWorld(b.q.x,b.q.z,b.s));
+ // Asphalt + kerbs are protected from all neighbouring runoff ribbons.
+ quad(a.curb.left?A.lo:A.l,b.curb.left?B.lo:B.l,b.curb.right?B.ro:B.r,a.curb.right?A.ro:A.r,'ROAD',structure);
+ quad(a.curb.left?A.lo:A.l,b.curb.left?B.lo:B.l,b.curb.right?B.ro:B.r,a.curb.right?A.ro:A.r,'PAVED',structure);
+ const left=[A.lx,a.curb.left?A.lo:A.l,b.curb.left?B.lo:B.l,B.lx],right=[a.curb.right?A.ro:A.r,A.rx,B.rx,b.curb.right?B.ro:B.r];
+ for(const poly of [left,right])quad(poly[0],poly[1],poly[2],poly[3],'PAVED',structure);
+ roads.set(a.s,{left,right,env:a.env,structure});
+ }
+ return trackData._inspectionSurfaceIndex={size,buckets,roads,footprints,runoffs:new Map()};
+}
+function apexInspectorSurfaceCandidates(poly){
+ const idx=apexInspectorSurfaceIndex(),b=apexInspectorPolyBounds(poly),found=new Set();
+ for(let x=Math.floor(b.minX/idx.size);x<=Math.floor(b.maxX/idx.size);x++)for(let z=Math.floor(b.minZ/idx.size);z<=Math.floor(b.maxZ/idx.size);z++)for(const f of idx.buckets.get(x+','+z)||[])found.add(f);
+ return [...found].filter(f=>b.minX<f.bounds.maxX&&b.maxX>f.bounds.minX&&b.minZ<f.bounds.maxZ&&b.maxZ>f.bounds.minZ);
+}
+function apexInspectorCutSurface(poly,kind){
+ const b=apexInspectorPolyBounds(poly),candidates=apexInspectorSurfaceCandidates(poly).filter(f=>kind==='TERRAIN'?f.kind==='PAVED'&&!f.structure:f.kind==='ROAD'&&f.bounds.minY<=b.maxY+1&&f.bounds.maxY>=b.minY-1);
+ let out=[poly];
+ for(const foot of candidates){const next=[];for(const part of out)next.push(...apexInspectorSubtractFoot(part,foot,kind==='TERRAIN'));out=next;if(!out.length)break;}
+ return out;
+}
+function apexInspectorRunoffPolys(s){
+ const idx=apexInspectorSurfaceIndex();if(idx.runoffs.has(s))return idx.runoffs.get(s);
+ const step=idx.roads.get(s);if(!step)return[];
+ const out=[];
+ for(const [quad,right] of [[step.left,false],[step.right,true]])for(const tri of [[quad[0],quad[1],quad[2]],[quad[0],quad[2],quad[3]]])for(const poly of apexInspectorCutSurface(tri,'RUNOFF')){
+  const clipped=apexClipGenericRunoffPolygon(poly);
+  for(const part of clipped??[poly])for(const piece of apexClipTerrainAtPit(part)??[part])out.push({poly:piece,color:surfaceColor(step.env.runoffSurface,right)});
+ }
+ idx.runoffs.set(s,out);return out;
+}
+function apexInspectorDrawRunoff(seg,cam,pitch,webgl){
+ for(const item of apexInspectorRunoffPolys(seg.a.s)){const poly=item.poly.map(p=>worldToCamera(p.x,p.y,p.z,cam));if(webgl)webglPushCamPoly(poly,pitch,item.color,.58);else drawCamPoly(poly,pitch,item.color,.58);}
 }
 function apexInspectorTerrainCellPolys(g,ix,iz){
  if(!g._inspectionClosedCells||g._inspectionClosedOwner!==trackData){g._inspectionClosedCells=new Map();g._inspectionClosedOwner=trackData;}
@@ -2347,15 +2391,15 @@ function apexInspectorTerrainCellPolys(g,ix,iz){
  const kind=apexTerrainCellNeedsDetail(g,(A.x+C.x)*.5,(A.z+C.z)*.5,g.cell);
  const detailed=kind==='PORTAL'||kind==='TUNNEL'||kind==='PIT';
  const source=detailed?apexTerrainFinePatch(g,ix,iz,kind):[[A,B,C],[A,C,D]],out=[];
- for(const poly of source){
-  const clean=apexClipGenericRunoffPolygon(poly);
-  for(const piece of clean??[poly])
-   for(const q of apexClipTerrainAtDrive(piece)??[piece])if(q.length>=3)out.push(q);
+ for(const poly of source)for(const part of apexInspectorCutSurface(poly,'TERRAIN')){
+  const clean=apexClipGenericRunoffPolygon(part);
+  for(const piece of clean??[part])for(const q of (detailed?null:apexClipTerrainAtPit(piece))??[piece])if(q.length>=3)out.push(q);
  }
  g._inspectionClosedCells.set(key,out);return out;
 }
 async function apexInspectorPrepareSurfaceClosure(){
- const g=apexPlateTerrainGrid();let chunk=performance.now();
+ const g=apexPlateTerrainGrid(),idx=apexInspectorSurfaceIndex();let chunk=performance.now(),runoffDone=0;
+ for(const key of idx.roads.keys()){apexInspectorRunoffPolys(key);runoffDone++;if(performance.now()-chunk>12){apexRaceLoadingUpdate('RECORTANDO ESCAPATORIAS…',.88+.04*runoffDone/idx.roads.size);await apexCompilerYield();chunk=performance.now();}}
  if(!g)return;
  let done=0,total=(g.nx-1)*(g.nz-1);
  for(let iz=0;iz<g.nz-1;iz++)for(let ix=0;ix<g.nx-1;ix++){
@@ -3301,7 +3345,7 @@ function guideContinuousSample(samples,s,L,maxGap=18,maxWorldGap=24){
  const worldGap=(Number.isFinite(prev.x)&&Number.isFinite(next.x))?Math.hypot(next.x-prev.x,next.z-prev.z):0;
  if(sameSeg&&gap>1e-5&&gap<=maxGap&&fromPrev<=gap+1e-6&&toNext<=gap+1e-6&&(!worldGap||worldGap<=maxWorldGap)){
    const t=clamp(fromPrev/gap,0,1),mix=(a,b)=>Number.isFinite(a)&&Number.isFinite(b)?lerp(a,b,t):(Number.isFinite(a)?a:b);
-   return {s:target,lat:mix(prev.lat,next.lat),width:mix(prev.width,next.width),x:mix(prev.x,next.x),z:mix(prev.z,next.z),segment:prev.segment};
+   return {s:target,lat:mix(prev.lat,next.lat),width:Math.max(prev.width||0,next.width||0),x:mix(prev.x,next.x),z:mix(prev.z,next.z),segment:prev.segment};
  }
  let best=null,bestD=Infinity;for(const q of [prev,next]){const d=Math.abs(wrapDeltaS(target,q.s,L));if(d<bestD){bestD=d;best=q}}
  // Sólo una tolerancia mínima en el extremo geométrico, suficiente para el muestreo
@@ -3512,16 +3556,7 @@ function apexSvgGuideSamplesExact(ctx,elements,width=0){
  const out=[];let seg=0;
  for(const el of elements){
    const runs=apexSvgElementWorldRunsExact(ctx,el,3.5);
-   // The SVG default stroke is a drawing aid. A physical width or an
-   // authored stroke takes precedence over the simulator's 20 cm fallback.
-   const style=width===null?getComputedStyle(el):null,
-    stroke=parseFloat(style?.strokeWidth),metric=width===null?apexSvgRelativeMatrix(ctx.root,el):null,
-    explicit=apexSvgNumAttr(el,'data-apex-width'),
-    authored=width===null&&style.strokeDasharray==='none'&&
-     (el.hasAttribute('stroke-width')||el.style.strokeWidth||stroke!==1);
-   for(const pts of runs){let hint=null;for(const pt of pts){const ns=nearestTrackState(pt[0],pt[1],hint,{radius:140,allowGlobal:true,fallbackDist:110}),normal=authored&&metric?poseFlatAt(ns.s):null;hint=ns.index;out.push({s:ns.s,lat:ns.lat,width:width??(explicit>0?explicit:authored&&stroke>0?
-     stroke*ctx.scale*(style.vectorEffect==='non-scaling-stroke'||!metric?1:
-      Math.hypot(metric.a*normal.nx-metric.b*normal.nz,metric.c*normal.nx-metric.d*normal.nz)):0),x:pt[0],z:pt[1],segment:seg})}seg++}
+   for(const pts of runs){let hint=null;for(const pt of pts){const ns=nearestTrackState(pt[0],pt[1],hint,{radius:140,allowGlobal:true,fallbackDist:110});hint=ns.index;out.push({s:ns.s,lat:ns.lat,width:width||0,x:pt[0],z:pt[1],segment:seg})}seg++}
  }
  out.sort((a,b)=>a.s-b.s);return out;
 }

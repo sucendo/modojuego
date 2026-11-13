@@ -14,8 +14,10 @@ function snippet(s,start,end){
  assert.ok(a>=0&&b>a,'missing '+start);const block=s.slice(a,b);
  new vm.Script(block);return block;
 }
-for(const file of ['part-024-bridgefull-preview.txt','part-024.txt']){
- const source=read('parts/'+file);
+assert.match(preview,/part-023-perf6a-preview\.txt/);
+assert.doesNotMatch(prod,/part-023-perf6a-preview\.txt/);
+{
+ const source=core;
  const edge=snippet(source,'function apexTrackEdgeSection(', '// v5.211');
  const geometry=new Function('ribbonWorldPoint',edge+'return apexTrackCrossSection;')(
   (q,w,side)=>({x:q.x+w*side,y:q.y+Math.tan(q.bank)*w*side,z:q.z}));

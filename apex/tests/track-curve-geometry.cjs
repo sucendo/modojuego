@@ -89,7 +89,7 @@ assert.equal(physical.authoredRoadEdges,undefined,'Physical pose retains origina
 assert.ok(Number.isFinite(physical.ox)&&Number.isFinite(physical.oz),'Original physical reference stays finite');
 sandbox.guideContinuousSample=()=>null;
 assert.equal(renderRibbonFrameAt(4788).authoredRoadEdges,undefined,'Missing guide must fall back safely');
-assert.ok(source.includes('const A=apexTrackEdgeSection(qa,envProfile(a),side)'),'Kerbs must share SVG-derived road boundary');
+assert.ok(source.includes('const oa=ribbonWorldPoint(qa,ha+width,side)'),'Kerbs must share SVG-derived road boundary');
 const compiled=fs.readFileSync('apex/parts/part-025.txt','utf8');
-assert.match(compiled,/const APEX_CIRCUIT_COMPILE_REV=230695;/,'Stale compiled meshes must be invalidated');
+assert.match(compiled,/const APEX_CIRCUIT_COMPILE_REV=230693;/,'Stale compiled meshes must be invalidated');
 console.log(JSON.stringify({test:'track-curve-geometry',points:points.length,station:'T20 4788 m',reversals,maxVector:Number(maxVector.toFixed(4)),svgEdges:authoritative,ok:true}));
