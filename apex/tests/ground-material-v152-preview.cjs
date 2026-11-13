@@ -45,7 +45,7 @@ assert.equal(p.uniforms.uGroundTexture,'uGroundTexture');
 assert.match(shaders[0],/vGroundKind=aSurfaceKind/);
 assert.match(shaders[1],/vGroundKind<1\.5/);
 assert.match(shaders[1],/fwidth|dFdx/);
-assert.match(shaders[1],/grassPatchV1522\(w\*0\.062\)/);
+assert.match(shaders[1],/grassPatchV1522\(organicW\*0\.062\)/);
 assert.match(shaders[1],/groundHash\(floor\(w\*20\.0\)\)/);
 shaders.length=0;p=shaderFactory(fakeGl,false,false);
 assert.equal(p.uniforms.uGroundTexture,undefined);
