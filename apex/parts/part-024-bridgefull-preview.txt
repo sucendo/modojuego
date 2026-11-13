@@ -22,7 +22,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   nx=-dz/len,nz=dx/len;
  const left=Math.max(.05,Number(end?sg.visualLeftB:sg.visualLeftA)||sg.leftWidth||sg.width*.5),
   right=Math.max(.05,Number(end?sg.visualRightB:sg.visualRightA)||sg.rightWidth||sg.width*.5);
- let lo=-right,hi=left,near=lo,far=hi,clipped=false,trackY=y,side=1;
+ let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null;
  const st=nearestTrackState(x,z,null);
  if(st&&Number.isFinite(st.lat)&&Number.isFinite(st.s)){
   const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),edge=Math.max(2,Number(env.half)||5),
@@ -35,6 +35,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
    // Track-facing edge can be the left OR right of the pit path.
    side=dot>=0?1:-1;
    const vLo=off+dot*lo,vHi=off+dot*hi;
+   outerExcess=Math.max(vLo,vHi); // where the outside edge meets the track
    if(vLo<=0||vHi<=0){
     clipped=true;
     const cut=Math.max(lo,Math.min(hi,-off/dot));
@@ -45,8 +46,8 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   }
  }
  const width=Math.max(0,hi-lo);
- const p={lo,hi,near:clipped?(side>0?lo:hi):(side>0?lo:hi),
-  far:side>0?hi:lo,side,clipped,width,nx,nz,x,z,y,trackY};
+ const p={lo,hi,near:side>0?lo:hi,far:side>0?hi:lo,
+  side,clipped,width,nx,nz,x,z,y,trackY,outerExcess};
  sg[key]=p;return p;
 }
 function apexPitVisualPointV1526(p,lat,lift=.012){
@@ -57,8 +58,25 @@ function apexPitVisualPointV1526(p,lat,lift=.012){
  return{x:p.x+p.nx*lat,y:y+lift,z:p.z+p.nz*lat};
 }
 function apexPitMergeQuadV1526(sg){
- const a=apexPitVisualMergeProfileV1526(sg,0),b=apexPitVisualMergeProfileV1526(sg,1);
+ let a=apexPitVisualMergeProfileV1526(sg,0),b=apexPitVisualMergeProfileV1526(sg,1);
  if(a.width<.012&&b.width<.012)return null;
+ // The last SVG pit sample can already be INSIDE the race track. The lane
+ // must stop precisely at its road-edge crossing, not draw a long, flat
+ // triangular tongue across the racing surface.
+ const tip=(visible,hidden)=>{
+  if(visible.width<.012||hidden.width>=.012||
+     !Number.isFinite(visible.outerExcess)||!Number.isFinite(hidden.outerExcess)||
+     visible.outerExcess<=0||hidden.outerExcess>=0)return hidden;
+  const t=Math.max(0,Math.min(1,visible.outerExcess/
+    (visible.outerExcess-hidden.outerExcess)));
+  const p=apexPitVisualPointV1526(visible,visible.far),
+   q=apexPitVisualPointV1526(hidden,hidden.far),
+   x=p.x+(q.x-p.x)*t,z=p.z+(q.z-p.z)*t,
+   y=p.y+(q.y-p.y)*t-.012;
+  return{...hidden,x,z,y,trackY:y,width:0,lo:0,hi:0,near:0,far:0};
+ };
+ if(a.width<.012)a=tip(b,a);
+ if(b.width<.012)b=tip(a,b);
  return{a,b,quad:[apexPitVisualPointV1526(a,a.hi),apexPitVisualPointV1526(a,a.lo),
                     apexPitVisualPointV1526(b,b.lo),apexPitVisualPointV1526(b,b.hi)]};
 }
