@@ -26,7 +26,8 @@ try{
       const i=cursor++;
       if(i>=count)return;
       const n=String(i).padStart(3,"0");
-      const partPath=i===24?"parts/part-024-bridgefull-preview.txt":
+      const partPath=i===23?"parts/part-023-perf6a-preview.txt":
+                    i===24?"parts/part-024-bridgefull-preview.txt":
                     i===25?"parts/part-025-bridgefull-trees3d-preview.txt":
                     i===26?"parts/part-026-perf6a-preview.txt":"parts/part-"+n+".txt";
       const r=await fetch(partPath,{cache:"no-cache"});

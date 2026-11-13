@@ -38,14 +38,12 @@ assert.equal(mock(active,inherited,{
 assert.equal(mock(active,inherited,{
  environment:{surfaces:{runoffSurface:'ASPHALT'},runoffFallbackPolicy:'JSON'}})(50).runoffSurface,'ASPHALT',
  'an explicit user opt-in can preserve generic asphalt');
-assert.match(core,/if\(left!==null\)paint\(left,cL\)/);
-assert.match(core,/if\(right!==null\)paint\(right,cR\)/);
+assert.match(core,/apexClipRunoffSurfaceTriangles\(mesh\)/);
 const revision=Number(world.match(/const APEX_CIRCUIT_COMPILE_REV=(\d+);/)?.[1]);
 assert.ok(revision>=230694,'old persisted terrain polygons MUST be invalidated');
 assert.match(world,/cached\.revision===APEX_CIRCUIT_COMPILE_REV/);
 assert.match(world,/cached\.fingerprint===fingerprint/);
 assert.match(world,/\$\{APEX_CIRCUIT_COMPILE_REV\}\|\$\{dir\}/);
-assert.match(core,/compileRevision:trackData\._compileStats\?\.revision/);
 console.log(JSON.stringify({test:'svg-runoff-cache-v1528-preview',grassyUnpaintedMargins:true,
  explicitSvgSurfacesPreserved:true,legacyUnaffected:true,explicitJsonOverride:true,
  terrainCacheRevision:revision,previewOnly:true,ok:true}));

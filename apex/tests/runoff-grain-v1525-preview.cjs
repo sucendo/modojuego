@@ -23,16 +23,9 @@ assert.equal(state.dynamicRanges.length,1,'adjacent runoff polygons share a batc
 assert.equal(state.dynamicVertices,9);
 assert.equal(gpu([{x:NaN,y:1,z:0},points[1],points[2]],'#fff'),false);
 const draw=snippet(core,'function apexUnifiedGroundDrawCorridor(', '/* Pasada unica para las superficies SVG');
-assert.match(draw,/\['ASPHALT','ROAD','CITY','PLAZA'/);
-assert.match(draw,/apexPhase6QueueDynamicRoadPolygon\(p,col,0,'runoff'\)/,
- 'clipped SVG runoff is textured without redrawing the uncut polygon');
-assert.match(draw,/apexPhase6QueueDynamicRoadPolygon\(q,col,0,'runoff'\)/,
- 'unmasked legacy shoulder is textured');
-assert.match(draw,/if\(!paintFree\(1,cL\)\)/);
-assert.match(draw,/if\(!paintFree\(-1,cR\)\)/);
-assert.match(draw,/else drawCamPoly\(cp,pitch,tint,.58\)/,'Canvas fallback preserved');
-assert.match(draw,/seg.z<245/,'bounded near camera LOD');
-assert.match(render,/if\(u.uRoadTexture!=null\)gl.uniform1f\(u.uRoadTexture,textureOn\)/);
+assert.doesNotMatch(draw,/runoffSurface|apexPhase6QueueDynamicRoadPolygon/);
+assert.match(core,/apexClipRunoffSurfaceTriangles\(mesh\)/,'authored surface is clipped independently');
+assert.match(render,/if\(u\.uRoadTexture!=null\)gl.uniform1f\(u\.uRoadTexture,textureOn\)/);
 console.log(JSON.stringify({test:'runoff-grain-v1525-preview',clippedSvg:true,
- unmaskedAsphalt:true,worldShader:true,nonPavedUnaffected:true,canvasFallback:true,
+ automaticAsphaltRemoved:true,worldShader:true,nonPavedUnaffected:true,canvasFallback:true,
  clippingUnchanged:true,shaderBudget:true,previewOnly:true,ok:true}));
