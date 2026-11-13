@@ -3336,7 +3336,8 @@ function apexPavedExtraGpuZonesV1524(){
   if(lane.length){
    // GPU ground receives the same authored asphalt as Canvas/WebGL fallback.
    // uPavedDark handles weather once; no pre-darkened colour or flat grey merge.
-   const base=trackData?._apexV152PitSvgColor||apexRoadSvgBaseColorV15()||'#555b61';
+   const authoredRoad=apexRoadSvgBaseColorV15(); // also initializes SVG pit overrides
+   const base=trackData?._apexV152PitSvgColor||authoredRoad||'#555b61';
    pit=emit(lane,base,3)>0;
   }
   if(apron.length)emit(apron,'#454d56',2);
