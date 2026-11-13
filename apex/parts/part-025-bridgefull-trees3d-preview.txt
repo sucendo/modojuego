@@ -727,11 +727,14 @@ function terrainVisualProfile(st){
  return {near,mid:near,far:near,detail:"NONE"};
 }
 function terrainWaterSideProfile(st){return {leftNear:null,leftMid:null,leftFar:null,rightNear:null,rightMid:null,rightFar:null}}
-function terrainShade(surface,far=false,alt=false){
- const c=surfaceColor(surface,alt);
- return far?shadeColor(c,-12):shadeColor(c,alt?5:0);
+function terrainShade(surface,far=false,alt=false,worldX=null,worldZ=null,dist=0){
+ const c=surfaceColor(surface,alt),base=far?shadeColor(c,-12):shadeColor(c,alt?5:0);
+ return Number.isFinite(worldX)&&Number.isFinite(worldZ)?
+  apexSurfaceTintV152(surface,base,worldX,worldZ,dist):base;
 }
 function drawTerrainSegment(seg,cam,pitch){
+ const grassShade=(surface,far=false,alt=false)=>terrainShade(surface,far,alt,
+  a.q?.x,a.q?.z,seg.z);
  const a=seg.a,b=seg.b;if(!a||!b||!a.v||!b.v)return;
  if(apexPlateTerrainGrid()||['OVER','UNDER'].includes((authoredStructureZoneAtS(a.s)||{}).kind)||['OVER','UNDER'].includes((authoredStructureZoneAtS(b.s)||{}).kind))return;
  const visual=terrainVisualProfile(a),water=terrainWaterSideProfile(a);
@@ -746,11 +749,11 @@ function drawTerrainSegment(seg,cam,pitch){
  const aLF=terrainPointCamera(a, 1,sa.far, cam,1.00,.12), bLF=terrainPointCamera(b, 1,sb.far, cam,1.00,.12);
  const aRF=terrainPointCamera(a,-1,sa.far, cam,1.00,.12), bRF=terrainPointCamera(b,-1,sb.far, cam,1.00,.12);
 
- const inTunnel=!!((a.env&&a.env.tunnel)||(b.env&&b.env.tunnel)),baseL=inTunnel?'#4b5055':terrainShade(water.leftNear||visual.near,false,seed&1),baseR=inTunnel?'#474c51':terrainShade(water.rightNear||visual.near,false,(seed+1)&1),
-       midL=terrainShade(water.leftMid||visual.mid,false,(seed>>1)&1),midR=terrainShade(water.rightMid||visual.mid,false,((seed>>1)+1)&1),
-       farL=terrainShade(water.leftFar||visual.far,true,(seed>>2)&1),farR=terrainShade(water.rightFar||visual.far,true,((seed>>2)+1)&1);
+ const inTunnel=!!((a.env&&a.env.tunnel)||(b.env&&b.env.tunnel)),baseL=inTunnel?'#4b5055':grassShade(water.leftNear||visual.near,false,seed&1),baseR=inTunnel?'#474c51':grassShade(water.rightNear||visual.near,false,(seed+1)&1),
+       midL=grassShade(water.leftMid||visual.mid,false,(seed>>1)&1),midR=grassShade(water.rightMid||visual.mid,false,((seed>>1)+1)&1),
+       farL=grassShade(water.leftFar||visual.far,true,(seed>>2)&1),farR=grassShade(water.rightFar||visual.far,true,((seed>>2)+1)&1);
 
- drawCamQuadTriangles(a.v.lx,a.v.rx,b.v.rx,b.v.lx,pitch,terrainShade(visual.near,false,seed&1),.58);
+ drawCamQuadTriangles(a.v.lx,a.v.rx,b.v.rx,b.v.lx,pitch,grassShade(visual.near,false,seed&1),.58);
  drawCamQuadTriangles(a.v.lx,aLN,bLN,b.v.lx,pitch,baseL,.58);
  drawCamQuadTriangles(aRN,a.v.rx,b.v.rx,bRN,pitch,baseR,.58);
  drawCamQuadTriangles(aLN,aLM,bLM,bLN,pitch,midL,.58);
@@ -787,6 +790,8 @@ function drawTerrainSegment(seg,cam,pitch){
 }
 
 function drawTerrainSegmentMobile(seg,cam,pitch){
+ const grassShade=(surface,far=false,alt=false)=>terrainShade(surface,far,alt,
+  a.q?.x,a.q?.z,seg.z);
  const a=seg.a,b=seg.b;if(!a||!b||!a.v||!b.v)return;
  if(apexPlateTerrainGrid()||['OVER','UNDER'].includes((authoredStructureZoneAtS(a.s)||{}).kind)||['OVER','UNDER'].includes((authoredStructureZoneAtS(b.s)||{}).kind))return;
  const mp=mobileControlProfile(),supportOnly=seg.z>mp.terrainMax;
@@ -797,7 +802,7 @@ function drawTerrainSegmentMobile(seg,cam,pitch){
  const nearExtra=Math.min(sa.near,lerp(7.4,10.2,t)),nearExtraB=Math.min(sb.near,lerp(7.4,10.2,t));
  const aLN=terrainPointCamera(a, 1,nearExtra,cam,.04,.035),bLN=terrainPointCamera(b, 1,nearExtraB,cam,.04,.035);
  const aRN=terrainPointCamera(a,-1,nearExtra,cam,.04,.035),bRN=terrainPointCamera(b,-1,nearExtraB,cam,.04,.035);
- const base=terrainShade(visual.near,false,seed&1);
+ const base=grassShade(visual.near,false,seed&1);
  drawCamQuadTriangles(a.v.lx,a.v.rx,b.v.rx,b.v.lx,pitch,base,.58);
  drawCamQuadTriangles(a.v.lx,aLN,bLN,b.v.lx,pitch,base,.58);
  drawCamQuadTriangles(aRN,a.v.rx,b.v.rx,bRN,pitch,base,.58);
@@ -805,13 +810,13 @@ function drawTerrainSegmentMobile(seg,cam,pitch){
    const supportMid=supportOnly?Math.max(22,lerp(13,30,t)):lerp(13,30,t),midExtraA=Math.min(sa.mid,supportMid),midExtraB=Math.min(sb.mid,supportMid);
    const aLM=terrainPointCamera(a, 1,midExtraA,cam,.66,.06),bLM=terrainPointCamera(b, 1,midExtraB,cam,.66,.06);
    const aRM=terrainPointCamera(a,-1,midExtraA,cam,.66,.06),bRM=terrainPointCamera(b,-1,midExtraB,cam,.66,.06);
-   const mid=terrainShade(visual.mid,false,(seed>>1)&1);
+   const mid=grassShade(visual.mid,false,(seed>>1)&1);
    drawCamQuadTriangles(aLN,aLM,bLM,bLN,pitch,mid,.58);drawCamQuadTriangles(aRM,aRN,bRN,bRM,pitch,mid,.58);
    if(t>.68&&seg.z<mp.terrainFull){
      const farExtraA=Math.min(sa.far,lerp(28,62,t)),farExtraB=Math.min(sb.far,lerp(28,62,t));
      const aLF=terrainPointCamera(a, 1,farExtraA,cam,1,.10),bLF=terrainPointCamera(b, 1,farExtraB,cam,1,.10);
      const aRF=terrainPointCamera(a,-1,farExtraA,cam,1,.10),bRF=terrainPointCamera(b,-1,farExtraB,cam,1,.10);
-     const far=terrainShade(visual.far,true,(seed>>2)&1);
+     const far=grassShade(visual.far,true,(seed>>2)&1);
      drawCamQuadTriangles(aLM,aLF,bLF,bLM,pitch,far,.58);drawCamQuadTriangles(aRF,aRM,bRM,bRF,pitch,far,.58);
    }
  }
@@ -5168,6 +5173,8 @@ function webglCircuitRoadColor(seg){
  return apexRoadMaterialColorV15(seg);
 }
 function webglPushTerrainSegment(seg,cam,pitch){
+ const grassShade=(surface,far=false,alt=false)=>terrainShade(surface,far,alt,
+  a.q?.x,a.q?.z,seg.z);
  const a=seg.a,b=seg.b;if(!a||!b||!a.v||!b.v)return;
  if(apexPlateTerrainGrid()||['OVER','UNDER'].includes((authoredStructureZoneAtS(a.s)||{}).kind)||['OVER','UNDER'].includes((authoredStructureZoneAtS(b.s)||{}).kind))return;
  const mp=mobileControlProfile(),inspectionFull=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene()),mobile=mobilePerformanceMode()&&!inspectionFull;let lod=webglCircuitLod('terrain',seg.z,24);if(seg.z<(mobile?105:250))lod=0;else if(seg.z<(mobile?190:480))lod=Math.min(lod,1);
@@ -5177,7 +5184,7 @@ function webglPushTerrainSegment(seg,cam,pitch){
  const visual=terrainVisualProfile(a),water=terrainWaterSideProfile(a),seed=Math.floor((Math.abs(a.s)+Math.abs(b.s))*.17),sa=terrainSpread(a),sb=terrainSpread(b),t=renderQualityT(),authoredTunnelA=terrainAuthoredTunnelReliefAtS(a.s),authoredTunnelB=terrainAuthoredTunnelReliefAtS(b.s),authoredTunnel=authoredTunnelA||authoredTunnelB;
  const nearA=mobile?Math.min(sa.near,lerp(7.4,10.2,t)):sa.near,nearB=mobile?Math.min(sb.near,lerp(7.4,10.2,t)):sb.near;
  const aLN=terrainPointCamera(a,1,nearA,cam,.04,.035),bLN=terrainPointCamera(b,1,nearB,cam,.04,.035),aRN=terrainPointCamera(a,-1,nearA,cam,.04,.035),bRN=terrainPointCamera(b,-1,nearB,cam,.04,.035);
- const inTunnel=!!((a.env&&a.env.tunnel)||(b.env&&b.env.tunnel)),baseL=inTunnel?'#4b5055':terrainShade(water.leftNear||visual.near,false,seed&1),baseR=inTunnel?'#474c51':terrainShade(water.rightNear||visual.near,false,(seed+1)&1);
+ const inTunnel=!!((a.env&&a.env.tunnel)||(b.env&&b.env.tunnel)),baseL=inTunnel?'#4b5055':grassShade(water.leftNear||visual.near,false,seed&1),baseR=inTunnel?'#474c51':grassShade(water.rightNear||visual.near,false,(seed+1)&1);
  // v5.230.35: no base quad bajo la carretera; dentro del túnel ocultamos juntas verdes.
  webglPushCamQuad(a.v.lx,aLN,bLN,b.v.lx,pitch,baseL);webglPushCamQuad(aRN,a.v.rx,b.v.rx,bRN,pitch,baseR);
  if(lod<=2&&(!mobile||t>.24||supportOnly)){
@@ -5185,17 +5192,17 @@ function webglPushTerrainSegment(seg,cam,pitch){
    // Para túneles con cotas SVG usamos la distancia real calculada por terrainSpread.
    const supportMid=supportOnly?Math.max(24,lerp(13,30,t)):lerp(13,30,t),midA=(mobile&&!authoredTunnelA)?Math.min(sa.mid,supportMid):sa.mid,midB=(mobile&&!authoredTunnelB)?Math.min(sb.mid,supportMid):sb.mid;
    const aLM=terrainPointCamera(a,1,midA,cam,.72,.07),bLM=terrainPointCamera(b,1,midB,cam,.72,.07),aRM=terrainPointCamera(a,-1,midA,cam,.72,.07),bRM=terrainPointCamera(b,-1,midB,cam,.72,.07);
-   const midL=terrainShade(water.leftMid||visual.mid,false,(seed>>1)&1),midR=terrainShade(water.rightMid||visual.mid,false,((seed>>1)+1)&1);
+   const midL=grassShade(water.leftMid||visual.mid,false,(seed>>1)&1),midR=grassShade(water.rightMid||visual.mid,false,((seed>>1)+1)&1);
    if(!apexPlateTerrainGrid()){webglPushCamQuad(aLN,aLM,bLM,bLN,pitch,midL);webglPushCamQuad(aRM,aRN,bRN,bRM,pitch,midR);}
    if(!apexPlateTerrainGrid()&&lod<=1&&(!mobile||t>.68||authoredTunnel)){
      // Igual para la banda exterior: si hay relieve authored, no lo cortamos a 62 m.
      const farA=(mobile&&!authoredTunnelA)?Math.min(sa.far,lerp(28,62,t)):sa.far,farB=(mobile&&!authoredTunnelB)?Math.min(sb.far,lerp(28,62,t)):sb.far;
      const aLF=terrainPointCamera(a,1,farA,cam,1,.12),bLF=terrainPointCamera(b,1,farB,cam,1,.12),aRF=terrainPointCamera(a,-1,farA,cam,1,.12),bRF=terrainPointCamera(b,-1,farB,cam,1,.12);
-     const farL=terrainShade(water.leftFar||visual.far,true,(seed>>2)&1),farR=terrainShade(water.rightFar||visual.far,true,((seed>>2)+1)&1);
+     const farL=grassShade(water.leftFar||visual.far,true,(seed>>2)&1),farR=grassShade(water.rightFar||visual.far,true,((seed>>2)+1)&1);
      if(authoredTunnel&&seg.z<520){
        // Muestra intermedia aproximadamente al 76 % del alcance. Es suficiente para conservar
        // una cresta/cumbre estrecha sin aumentar la malla global del circuito.
-       const ridgeA=lerp(midA,farA,.56),ridgeB=lerp(midB,farB,.56),aLR=terrainPointCamera(a,1,ridgeA,cam,.90,.09),bLR=terrainPointCamera(b,1,ridgeB,cam,.90,.09),aRR=terrainPointCamera(a,-1,ridgeA,cam,.90,.09),bRR=terrainPointCamera(b,-1,ridgeB,cam,.90,.09),ridgeL=terrainShade(water.leftFar||visual.far,false,(seed>>3)&1),ridgeR=terrainShade(water.rightFar||visual.far,false,((seed>>3)+1)&1);
+       const ridgeA=lerp(midA,farA,.56),ridgeB=lerp(midB,farB,.56),aLR=terrainPointCamera(a,1,ridgeA,cam,.90,.09),bLR=terrainPointCamera(b,1,ridgeB,cam,.90,.09),aRR=terrainPointCamera(a,-1,ridgeA,cam,.90,.09),bRR=terrainPointCamera(b,-1,ridgeB,cam,.90,.09),ridgeL=grassShade(water.leftFar||visual.far,false,(seed>>3)&1),ridgeR=grassShade(water.rightFar||visual.far,false,((seed>>3)+1)&1);
        webglPushCamQuad(aLM,aLR,bLR,bLM,pitch,ridgeL);webglPushCamQuad(aLR,aLF,bLF,bLR,pitch,farL);webglPushCamQuad(aRR,aRM,bRM,bRR,pitch,ridgeR);webglPushCamQuad(aRF,aRR,bRR,bRF,pitch,farR);
      }else{
        webglPushCamQuad(aLM,aLF,bLF,bLM,pitch,farL);webglPushCamQuad(aRF,aRM,bRM,bRF,pitch,farR);
