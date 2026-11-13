@@ -879,6 +879,9 @@ function webgl2RenderFrame(){
  if(visual){
    webglScreenRoll=viewRoll;
    segments=renderProfileMeasure("roadPrepareMs",()=>webglCollectCircuitSegments(cam,cam.pitch));
+   // Prepare ahead of landmarks so road ribbons baked in the shared SVG/pit atlas
+   // are not drawn a second time by the legacy flat-colour landmark path.
+   if(trackData?.customWorld?._apexUnifiedGroundAtlas)renderProfileMeasure("groundPrepareMs",()=>apexPhase5PrepareGpuGround(cam,cam.pitch));
    renderProfileMeasure("environmentMs",()=>{webglPushCircuitLandmarks(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingEmbankments(cam,cam.pitch)});
    if(apexPlateTerrainGrid())webglPushTerrainPlateMesh(cam,cam.pitch);
    const terrainSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of terrainSegments)if(!apexInspectionActive()||!apexPlateTerrainGrid())webglPushTerrainSegment(seg,cam,cam.pitch);apexWebglFallbackStructureBanks(terrainSegments,cam,cam.pitch);
@@ -890,6 +893,7 @@ function webgl2RenderFrame(){
    const roadSegments=terrainSegments;renderProfileMeasure("roadDrawMs",()=>{
     if(roadGpuReady){
      for(const seg of roadSegments)apexUnifiedGroundDrawCorridor(seg,cam,cam.pitch,true);
+     apexPhase6QueueLegacyPitAsphalt(roadSegments);
      renderProfileMeasure("roadGpuPrepareMs",()=>apexPhase6SealRoad());
      for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch,true);
     }else for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);
