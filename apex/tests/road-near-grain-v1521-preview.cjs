@@ -31,9 +31,9 @@ assert.equal(state.dynamicQueued.length,1);
 assert.equal(state.dynamicSegments,1);
 assert.equal(state.dynamicRanges.length,1);
 assert.equal(state.dynamicData[0],11);
-assert.equal(state.dynamicData[1],9+11*.08); // actual world slope, not camera plane
+assert.ok(Math.abs(state.dynamicData[1]-(9+11*.08))<1e-5); // float32 slope
 assert.equal(state.dynamicData[7],18); // opposite edge of banked ribbon
-assert.equal(state.dynamicData[8],8.4+11*.08);
+assert.ok(Math.abs(state.dynamicData[8]-(8.4+11*.08))<1e-5);
 const near=[{x:0,y:3,z:0},{x:7,y:2,z:0},{x:7,y:5,z:12},{x:0,y:6,z:12}];
 assert.equal(library.quad(near,'#123456',.42,'near'),true);
 assert.equal(state.dynamicVertices,12);
