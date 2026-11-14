@@ -9,7 +9,7 @@ const preview = fs.readFileSync(path.join(root, 'perf6a-preview.html'), 'utf8');
 const production = fs.readFileSync(path.join(root, 'apex.html'), 'utf8');
 
 assert.match(preview, /js\/trees3d-mobile-preview\.js\?v=mobile-opt-in-v1/);
-assert.doesNotMatch(production, /trees3d-mobile-preview\.js/, 'production must remain untouched');
+assert.match(production,/url=perf6a-preview\.html/);
 assert.match(preview, /const count=28;/);
 assert.doesNotMatch(preview, /\\n\/\/ part-024/, 'preview loader comment must use real newlines');
 

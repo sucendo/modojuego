@@ -2,9 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=perf6a-preview.html">
+<meta http-equiv="refresh" content="0; url=perf6a-preview.html?release=0.15.3">
 <title>Apex Formula 26 v0.15.3 · PRE-RELEASE</title>
-<script>location.replace('perf6a-preview.html' + location.search + location.hash);</script>
+<script>
+const preview = new URL('perf6a-preview.html', location.href);
+preview.search = location.search;
+preview.searchParams.set('release', '0.15.3');
+preview.hash = location.hash;
+location.replace(preview);
+</script>
 </head>
-<body><a href="perf6a-preview.html">Abrir APEX Formula 26</a></body>
+<body><a href="perf6a-preview.html?release=0.15.3">Abrir APEX Formula 26</a></body>
 </html>

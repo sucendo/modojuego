@@ -7,7 +7,7 @@ const core=read('parts/part-024-bridgefull-preview.txt');
 const world=read('parts/part-025-bridgefull-trees3d-preview.txt');
 const preview=read('perf6a-preview.html'),production=read('apex.html');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.doesNotMatch(production,/part-024-bridgefull-preview\.txt/);
+assert.match(production,/url=perf6a-preview\.html/);
 function slice(s,start,end){const i=s.indexOf(start),j=s.indexOf(end,i);
  assert.ok(i>=0&&j>i,'not found '+start);const b=s.slice(i,j);new vm.Script(b);return b;}
 const policy=slice(core,'function apexSvgRunoffFallbackV1528(', 'function envProfile(');

@@ -8,7 +8,7 @@ const core=read('parts/part-024-bridgefull-preview.txt'),
  frame=read('parts/part-026-perf6a-preview.txt'),
  html=read('perf6a-preview.html'),prod=read('apex.html');
 assert.match(html,/part-026-perf6a-preview\.txt/);
-assert.doesNotMatch(prod,/part-026-perf6a-preview\.txt/);
+assert.match(prod,/url=perf6a-preview\.html/);
 const functionBody=(s,name,next)=>{
  const start=s.indexOf('function '+name+'('),end=s.indexOf(next,start);
  assert.ok(start>=0&&end>start,name+' missing');

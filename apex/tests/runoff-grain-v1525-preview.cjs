@@ -6,7 +6,7 @@ const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p
 const core=read('parts/part-024-bridgefull-preview.txt'),render=read('parts/part-025-bridgefull-trees3d-preview.txt');
 const preview=read('perf6a-preview.html'),production=read('apex.html');
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(production,/part-025-bridgefull-trees3d-preview\.txt/);
+assert.match(production,/url=perf6a-preview\.html/);
 const snippet=(text,a,b)=>{const i=text.indexOf(a),j=text.indexOf(b,i);assert.ok(i>=0&&j>i);const s=text.slice(i,j);new vm.Script(s);return s};
 const enqueue=snippet(render,'function apexPhase6QueueDynamicRoadPolygon(', 'function apexPhase6QueueDynamicRoadSegment(');
 const state={active:true,dynamicBuffer:{},dynamicData:new Float32Array(70*7),

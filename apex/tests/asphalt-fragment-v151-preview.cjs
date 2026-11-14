@@ -6,7 +6,7 @@ const glSource=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d
 const preview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
 const production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(production,/bridgefull-trees3d-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 const extract=(name,next)=>{
  const i=glSource.indexOf('function '+name+'('),j=glSource.indexOf(next,i);
  assert.ok(i>=0&&j>i,'missing '+name);

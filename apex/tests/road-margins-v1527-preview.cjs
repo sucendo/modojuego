@@ -8,14 +8,14 @@ const core=read('parts/part-024-bridgefull-preview.txt'),
  frame=read('parts/part-026-perf6a-preview.txt'),
  preview=read('perf6a-preview.html'),prod=read('apex.html');
 assert.match(preview,/part-026-perf6a-preview\.txt/);
-assert.doesNotMatch(prod,/part-026-perf6a-preview\.txt/);
+assert.match(prod,/url=perf6a-preview\.html/);
 function snippet(s,start,end){
  const a=s.indexOf(start),b=s.indexOf(end,a);
  assert.ok(a>=0&&b>a,'missing '+start);const block=s.slice(a,b);
  new vm.Script(block);return block;
 }
 assert.match(preview,/part-023-perf6a-preview\.txt/);
-assert.doesNotMatch(prod,/part-023-perf6a-preview\.txt/);
+assert.match(prod,/url=perf6a-preview\.html/);
 {
  const source=core;
  const edge=snippet(source,'function apexTrackEdgeSection(', '// v5.211');

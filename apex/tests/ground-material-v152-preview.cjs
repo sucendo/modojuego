@@ -8,7 +8,7 @@ const core=fs.readFileSync(path.join(root,'parts/part-024-bridgefull-preview.txt
  production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(production,/bridgefull-trees3d-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 const part=(source,begin,end)=>{
  const a=source.indexOf(begin),b=source.indexOf(end,a);
  assert.ok(a>=0&&b>a,'missing: '+begin);const snippet=source.slice(a,b);
@@ -30,7 +30,7 @@ assert.match(core,/td\._apexV152GrassSvgColor=apexRoadSvgNormalizeColorV15/);
 assert.match(core,/td\._apexV152PitSvgColor=apexRoadSvgNormalizeColorV15/);
 assert.match(core,/function apexSurfaceTintV152\(/);
 assert.match(core,/function apexPitAsphaltColorV152\(/);
-assert.match(render,/d\.material\?apexSurfaceTintV152\(d\.material\.kind\|\|'PITLANE'/);
+assert.match(render,/paved\?apexSurfaceTintV152\(d\.material\.kind\|\|'PITLANE'/);
 assert.match(core,/apexSurfaceTintV152\(it\.surfaceKind,color,x,z,depth\)/);
 assert.match(render,/get\('ground'\)!=='0'/);
 const create=part(render,'function apexPhase5GpuProgram(', 'function apexPhase5GpuGroundError(');

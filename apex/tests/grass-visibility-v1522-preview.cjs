@@ -5,7 +5,7 @@ const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p
 const road=read('parts/part-025-bridgefull-trees3d-preview.txt'),core=read('parts/part-024-bridgefull-preview.txt'),
  preview=read('perf6a-preview.html'),main=read('apex.html');
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(main,/bridgefull-trees3d-preview/);
+assert.match(main,/url=perf6a-preview\.html/);
 const snippet=(source,a,b)=>{const i=source.indexOf(a),j=source.indexOf(b,i);assert.ok(i>=0&&j>i,a);return source.slice(i,j)};
 const shader=snippet(road,'function apexPhase5GpuProgram(', 'function apexPhase5GpuGroundError(');
 const make=new Function('webglCompile',shader+'return apexPhase5GpuProgram;');

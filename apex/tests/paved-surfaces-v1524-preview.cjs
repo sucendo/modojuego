@@ -8,7 +8,7 @@ const core=read('parts/part-024-bridgefull-preview.txt'),
  frame=read('parts/part-026-perf6a-preview.txt'),
  preview=read('perf6a-preview.html'),production=read('apex.html');
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(production,/part-025-bridgefull-trees3d-preview\.txt/);
+assert.match(production,/url=perf6a-preview\.html/);
 function extract(src,start,end){
  const a=src.indexOf(start),b=src.indexOf(end,a);
  assert.ok(a>=0&&b>a,'Missing '+start);

@@ -9,7 +9,7 @@ const preview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
 const production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(production,/part-024-bridgefull-preview|part-025-bridgefull-trees3d-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 
 // Tribunas v3: el arriostramiento debe tener presupuesto acotado y mismo backend.
 assert.match(canvas,/function apexGrandstandTrussV3\(it,frame,h,gb\)/);

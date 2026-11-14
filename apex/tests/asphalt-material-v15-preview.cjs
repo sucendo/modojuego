@@ -10,7 +10,7 @@ const begin=canvas.indexOf('// 6A V15.1: asphalt colour'),end=canvas.indexOf('fu
 assert.ok(begin>=0&&end>begin,'shared preview V15.1 material must precede the road renderer');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(production,/part-024-bridgefull-preview|part-025-bridgefull-trees3d-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 const source=canvas.slice(begin,end);
 new vm.Script(source);
 assert.match(canvas,/drawCamQuadTriangles\(V0\.l,V0\.r,V1\.r,V1\.l,pitch,apexRoadMaterialColorV15\(seg\)\)/);

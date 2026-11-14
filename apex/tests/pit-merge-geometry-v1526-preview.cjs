@@ -7,7 +7,7 @@ const core=read('parts/part-024-bridgefull-preview.txt'),
  render=read('parts/part-025-bridgefull-trees3d-preview.txt'),
  production=read('apex.html'),preview=read('perf6a-preview.html');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.doesNotMatch(production,/part-024-bridgefull-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 function section(src,from,to){const a=src.indexOf(from),b=src.indexOf(to,a);
  assert.ok(a>=0&&b>a,'missing '+from);const part=src.slice(a,b);new vm.Script(part);return part;}
 const code=section(core,'function apexPitVisualMergeProfileV1526(', 'function nearestPitState(');

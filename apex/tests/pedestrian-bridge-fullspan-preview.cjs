@@ -12,7 +12,7 @@ assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
 assert.match(preview,/part-026-perf6a-preview\.txt/);
 assert.match(preview,/js\/trees3d-mobile-preview\.js/);
-assert.doesNotMatch(production,/part-024-bridgefull-preview|part-025-bridgefull-trees3d-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 
 const i=canvas.indexOf('function apexPedestrianBridgeDeckSections(');
 const j=canvas.indexOf('function apexPedestrianBridgeVisual(it){',i);

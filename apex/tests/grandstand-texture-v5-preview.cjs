@@ -8,7 +8,7 @@ const canvas=read('parts/part-024-bridgefull-preview.txt'),
  sponsor=read('js/sponsor-textures.js');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(production,/part-024-bridgefull-preview|part-025-bridgefull-trees3d-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 assert.match(sponsor,/function registerCanvas\(key,canvas\)/);
 assert.match(sponsor,/registerCanvas,ensureTexture/);
 assert.match(sponsor,/gl\.LINEAR_MIPMAP_LINEAR/);

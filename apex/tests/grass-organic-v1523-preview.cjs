@@ -10,7 +10,7 @@ const gpu=read('parts/part-025-bridgefull-trees3d-preview.txt');
 const preview=read('perf6a-preview.html'),main=read('apex.html');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.doesNotMatch(main,/bridgefull-trees3d-preview/);
+assert.match(main,/url=perf6a-preview\.html/);
 const a=cpu.indexOf('function apexGrassValueNoiseV1523('),b=cpu.indexOf('function apexUnifiedGroundDrawCorridor(',a);
 assert.ok(a>=0&&b>a);
 const helpers=cpu.slice(a,b);

@@ -11,7 +11,7 @@ const production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
 assert.match(preview,/trees3d-mobile-preview\.js/);
-assert.doesNotMatch(production,/part-024-bridgefull-preview|part-025-bridgefull-trees3d-preview/);
+assert.match(production,/url=perf6a-preview\.html/);
 const a=canvas.indexOf('const apexGrandstandCrowdPreviewStats=');
 const b=canvas.indexOf('function apexGrandstandFrameStats(it){',a);
 assert.ok(a>=0&&b>a,'shared preview crowd helper must exist before the grandstand renderer');
