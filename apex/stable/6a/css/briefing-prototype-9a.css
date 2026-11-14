@@ -1,0 +1,336 @@
+/* APEX 9A.9 — Preparación visual del ZIP aprobado (2026-10-22).
+   Únicamente la capa de presentación. Conserva los formularios y la lógica 9A. */
+#apex9aPreparation.apex9aBriefingProto[hidden],#apex9aCompetitionSetup.apex9aBriefingProto[hidden]{display:none!important}
+#apex9aPreparation.apex9aBriefingProto,#apex9aCompetitionSetup.apex9aBriefingProto{
+ display:block;position:fixed;inset:0;z-index:955;background:
+ radial-gradient(circle at 19% 18%,rgba(16,65,94,.19),transparent 30%),
+ linear-gradient(180deg,#081422 0%,#020912 55%,#07111e 100%);
+ color:#edf6ff;padding:0;margin:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+ font-family:Arial,Helvetica,sans-serif;
+}
+.apex9aBriefingProto *,.apex9aBriefingProto *::before,.apex9aBriefingProto *::after{box-sizing:border-box}
+.apex9aBriefingProto .apex9aBriefingShell{
+ width:min(1620px,100%);max-height:none;min-height:100dvh;margin:0 auto;padding:clamp(12px,1.5vw,24px);
+ overflow:visible;position:relative;background:none;border:0;box-shadow:none;
+}
+.apex9aBriefingProto .apex9aBriefHeader{
+ display:flex;align-items:center;gap:15px;justify-content:space-between;
+ margin:0 0 13px;padding:0 0 10px;border-bottom:1px solid #37506a;
+}
+.apex9aBriefingProto .apex9aBriefHeader>div{min-width:0}
+.apex9aBriefingProto .apex9aBriefHeader small{
+ display:block;text-align:right;font-size:clamp(10px,.9vw,14px);
+ letter-spacing:.17em;color:#9dbdd1;font-weight:800;
+}
+.apex9aBriefingProto .apex9aBriefHeader h2{
+ margin:10px 0 0;font-size:clamp(31px,3.2vw,56px);
+ letter-spacing:.10em;font-weight:1000;font-style:italic;line-height:1.07;
+}
+.apex9aBriefingProto .apex9aBriefHeader .apexBriefSubtitle{
+ font-size:clamp(10px,1vw,16px);letter-spacing:.17em;color:#a8c2d4;margin:6px 0 0;
+}
+.apex9aBriefingProto .apex9aBriefHeader button{
+ order:-1;align-self:flex-start;min-width:0;max-width:220px;width:auto;height:auto;padding:9px 12px;
+ background:#071726;border:1px solid #48667d;color:#f5faff;
+ font-size:12px;font-weight:900;text-align:center;cursor:pointer;
+}
+/* Tres paneles principales: ficha de GP | meteorología | preparación de ruedas. */
+.apex9aBriefingProto .apex9aBriefGrid{
+ display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.88fr) minmax(0,1.78fr);
+ gap:clamp(9px,.9vw,16px);align-items:start;
+}
+.apex9aBriefingProto .apex9aPrepCard{
+ min-width:0;min-height:540px;max-height:none;overflow:hidden;
+ padding:0;background:linear-gradient(180deg,rgba(9,19,32,.97),rgba(3,11,19,.98));
+ border:1px solid #53708399;border-radius:8px;
+ box-shadow:inset 0 1px #ffffff10,0 14px 32px #0004;
+}
+.apex9aBriefingProto .apex9aPrepCard>h3{
+ margin:0;padding:13px 14px;font-size:clamp(14px,1.13vw,21px);
+ line-height:1.15;letter-spacing:.06em;font-weight:900;
+ border-bottom:1px solid #5673868c;background:linear-gradient(#21304480,#0a1a2a60);
+}
+.apex9aBriefingProto .apex9aPrepCard>p{font-size:12px;line-height:1.45;color:#d1e0ec;margin:11px 14px}
+.apex9aBriefingProto .apex9aPrepCard>label,
+.apex9aBriefingProto .apex9aPrepCard>.apex9aMirrorLabel{
+ display:block;margin:12px 14px 5px;font-size:11px;letter-spacing:.08em;color:#b7d2e4;
+}
+.apex9aBriefingProto .apex9aPrepCard select{
+ display:block;width:calc(100% - 28px);margin:5px 14px 11px;max-width:none;
+ padding:10px 11px;border:1px solid #56738b;border-radius:2px;
+ color:#f1f8ff;background:#091927;font:inherit;font-size:12px;
+}
+.apex9aBriefingProto .apex9aPrepCard select:focus-visible,
+.apex9aBriefingProto button:focus-visible{outline:2px solid #ff6079;outline-offset:2px}
+.apex9aBriefingProto .apex9aPrepCard select:disabled{opacity:.5}
+.apex9aBriefingProto .apexBriefTrackHeading{
+ padding:13px 14px 10px;display:flex;align-items:flex-start;gap:11px;
+}
+.apex9aBriefingProto .apexBriefBadge{
+ display:grid;place-items:center;min-width:43px;height:30px;border-radius:4px;
+ color:#fa435c;background:#102438;font-weight:1000;border:1px solid #48627a;
+}
+.apex9aBriefingProto .apexBriefHeadingCopy{min-width:0}
+.apex9aBriefingProto .apexBriefTrackTitle{
+ display:block;font-size:clamp(17px,1.5vw,29px);line-height:1.2;
+ font-weight:1000;overflow-wrap:anywhere;
+}
+.apex9aBriefingProto .apexBriefTrackCaption{
+ display:block;margin:5px 0 0;color:#a9c6db;font-size:11px;letter-spacing:.07em;
+}
+.apex9aBriefingProto .apexBriefHeroPhoto{
+ height:clamp(160px,21vw,242px);
+ margin:0 14px;background:#102030 center /cover no-repeat;
+ border:1px solid #a5b5c026;box-shadow:inset 0 0 0 1px #ffffff0b;
+}
+.apex9aBriefingProto .apexBriefStatsRow{
+ display:grid;grid-template-columns:.85fr .85fr 1.2fr;
+ gap:5px;padding:14px 15px 11px;
+}
+.apex9aBriefingProto .apexBriefStat{min-width:0}
+.apex9aBriefingProto .apexBriefStat small{
+ display:block;font-size:10px;color:#91b4cd;letter-spacing:.09em;font-weight:800;
+}
+.apex9aBriefingProto .apexBriefStat strong{
+ display:block;font-size:clamp(13px,1.2vw,22px);margin-top:5px;
+ color:#eff8ff;line-height:1.2;overflow-wrap:anywhere;
+}
+.apex9aBriefingProto .apexBriefTrackStrip{
+ display:flex;justify-content:space-between;gap:6px;align-items:center;
+ padding:12px 14px;border-top:1px solid #5b72815e;color:#9dbccf;
+ font-size:11px;font-weight:900;letter-spacing:.06em;margin-top:12px;
+}
+.apex9aBriefingProto .apex9aBriefCircuitCard>strong{
+ display:block;margin:11px 14px 7px;line-height:1.25;font-size:16px;
+}
+.apex9aBriefingProto .apex9aBriefCircuitCard .apex9aMirrorLabel{display:block}
+.apex9aBriefingProto .apex9aBriefCircuitCard #apex9aTrackDetails{
+ overflow:auto;max-height:180px;margin:9px 14px;padding:7px;
+ border:1px solid #426075;background:#061421b2;
+}
+.apex9aBriefingProto .apex9aBriefCircuitCard #apex9aTrackDetails .circuitInfoCard{
+ background:transparent;padding:0;border:0;
+}
+.apex9aBriefingProto .apex9aBriefCircuitCard #apex9aCompProgress{
+ padding:4px 14px;max-height:340px;overflow:auto;
+}
+.apex9aBriefingProto .apex9aBriefCircuitCard .apex9aVehicleVisual{
+ padding:5px 14px 10px;background:linear-gradient(90deg,#03111c,#0d2437,#04111c);
+ min-height:95px;
+}
+.apex9aBriefingProto .apex9aBriefCircuitCard .apex9aVehicleVisual img{
+ width:100%;height:95px;max-height:95px;object-fit:contain;
+ filter:drop-shadow(0 6px 11px #000a);
+}
+.apex9aBriefingProto .apex9aBriefCircuitCard #apex9aPrepDistanceRow label{margin:10px 14px 5px}
+
+/* Parte central: banner de meteorología y estado de pista sin datos simulados falsos. */
+.apex9aBriefingProto .apex9aBriefWeatherCard{background:linear-gradient(#101d2deb,#06101af2)}
+.apex9aBriefingProto .apexBriefWeatherBanner{
+ display:flex;gap:12px;align-items:center;margin:14px;
+ min-height:98px;padding:13px;background:
+ linear-gradient(90deg,#04101db3,#081d2a66),
+ url('../assets/9a/weather-clouds.webp') center/cover no-repeat;
+ border:1px solid #67899b71;
+}
+.apex9aBriefingProto .apexBriefWeatherIcon{font-size:37px;min-width:42px;text-align:center}
+.apex9aBriefingProto .apexBriefWeatherBanner small{
+ display:block;color:#afc7d8;font-size:10px;letter-spacing:.08em;
+}
+.apex9aBriefingProto .apexBriefWeatherBanner strong{
+ display:block;margin-top:5px;font-size:clamp(17px,1.25vw,27px);
+}
+.apex9aBriefingProto .apexBriefWeatherData{
+ margin:10px 14px;display:grid;grid-template-columns:1fr 1fr;
+ border:1px solid #49677c69;
+}
+.apex9aBriefingProto .apexBriefWeatherData>.apexBriefStat{
+ padding:13px;border-right:1px solid #49677c69;
+}
+.apex9aBriefingProto .apexBriefWeatherData>.apexBriefStat:last-child{border-right:0}
+.apex9aBriefingProto .apexBriefWeatherData strong{font-size:clamp(12px,.93vw,17px)}
+.apex9aBriefingProto .apex9aBriefWeatherCard>strong{
+ display:block;margin:8px 14px;font-size:clamp(15px,1.2vw,21px);
+}
+.apex9aBriefingProto .apex9aBriefWeatherCard .apex9aTrackStateArt{
+ margin:13px 14px;max-height:none;border:1px solid #56758a8e;
+ background:linear-gradient(90deg,#05111db3,#03142666),
+ url('../assets/9a/track-state-bg.webp') center/cover no-repeat;
+ display:flex;align-items:center;padding:10px;min-height:74px;
+}
+.apex9aBriefingProto .apex9aBriefWeatherCard .apex9aTrackStateArt img{
+ width:102px;height:60px;object-fit:cover;border:1px solid #a8c4d03a;
+}
+.apex9aBriefingProto .apex9aBriefWeatherCard #apex9aWeatherHonesty,
+.apex9aBriefingProto .apex9aBriefWeatherCard #apex9aCompForecast{
+ padding:8px 10px;margin:9px 14px;background:#051522aa;border-left:2px solid #60859a;
+}
+.apex9aBriefingProto .apex9aBriefWeatherCard .apex9aInfo,
+.apex9aBriefingProto .apex9aBriefWeatherCard .apex9aFootnote{margin:8px 14px;color:#a7bacb;font-size:11px;line-height:1.45}
+
+/* Parte derecha: cinco neumáticos, botones de estrategia y distancia. */
+.apex9aBriefingProto .apex9aBriefSetupCard{padding-bottom:10px}
+.apex9aBriefingProto .apex9aBriefTyres{
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;
+ margin:0 0 8px;padding:0;background:#06111b;
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyre{
+ display:flex;flex-direction:column;justify-content:flex-start;align-items:center;
+ min-width:0;min-height:207px;padding:10px 5px 14px;gap:8px;
+ color:#f4faff;border:0;border-right:1px solid #51677e4a;
+ background:linear-gradient(180deg,#07131ee8,#0b1824bd);
+ cursor:pointer;
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyre:last-child{border-right:0}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyre.selected{
+ outline:2px solid #efc743;outline-offset:-2px;
+ box-shadow:inset 0 0 0 1px #f5cf6aaa,0 0 17px #d9b13b33;
+ background:linear-gradient(180deg,#1e2428,#0c1925);
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual{
+ display:grid;place-items:center;width:100%;max-width:120px;
+ height:clamp(66px,8.5vw,124px);border:0!important;background:none!important;
+ box-shadow:none!important;border-radius:0;
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual img{
+ position:static;display:block;width:100%;height:100%;max-width:120px;
+ object-fit:contain;filter:drop-shadow(0 9px 10px #000a);
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyre b{
+ font-size:clamp(12px,1.08vw,19px);line-height:1.2;color:#f4faff;
+}
+.apex9aBriefingProto .apex9aBriefTyres .apexBriefTyreDescription{
+ display:block;max-width:125px;color:#c7d9e6;text-align:center;
+ font-size:clamp(9px,.71vw,12px);line-height:1.25;
+}
+.apex9aBriefingProto .apex9aBriefSetupCard>p#apex9aTyreNotice{
+ margin:0 14px 9px;color:#91b3ca;font-size:10px;
+}
+.apex9aBriefingProto .apexBriefStrategySection,.apex9aBriefingProto .apexBriefDistanceSection{
+ border:1px solid #4c6578a3;margin:13px 14px 9px;
+ background:linear-gradient(180deg,#071525dc,#091827b2);
+}
+.apex9aBriefingProto .apexBriefStrategySection h3,.apex9aBriefingProto .apexBriefDistanceSection h3{
+ margin:0;padding:10px 12px;border-bottom:1px solid #4b63777d;
+ font-size:clamp(13px,1vw,19px);line-height:1.15;
+}
+.apex9aBriefingProto .apexBriefStrategies{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:11px;
+}
+.apex9aBriefingProto .apexBriefChoices button{
+ display:grid;align-content:center;justify-items:center;gap:6px;padding:9px 6px;
+ min-height:78px;min-width:0;border:1px solid #5471889c;border-radius:5px;
+ color:#f3f9ff;background:linear-gradient(180deg,#0b1d2b,#030d16);
+ text-align:center;cursor:pointer;
+}
+.apex9aBriefingProto .apexBriefChoices button strong{font-size:clamp(10px,.9vw,16px)}
+.apex9aBriefingProto .apexBriefChoices button small{
+ color:#c5d7e6;font-size:clamp(9px,.7vw,12px);line-height:1.3;
+}
+.apex9aBriefingProto .apexBriefChoices button.selected{
+ border-color:#f2c950;box-shadow:inset 0 0 0 1px #e6c75b80;
+}
+.apex9aBriefingProto .apexBriefChoices button:disabled{opacity:.33;cursor:not-allowed}
+.apex9aBriefingProto .apexBriefDistance{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:10px;
+}
+.apex9aBriefingProto .apexBriefDistance button{min-height:47px}
+.apex9aBriefingProto .apex9aBriefSetupCard #apex9aStrategyRow,
+.apex9aBriefingProto .apex9aBriefSetupCard #apex9aCompStrategy,
+.apex9aBriefingProto .apex9aBriefSetupCard #apex9aCompStops{
+ margin-left:14px;margin-right:14px;
+}
+.apex9aBriefingProto .apex9aBriefSetupCard label{
+ display:block;margin:11px 14px 7px;color:#b7d3e5;font-size:11px;font-weight:900;
+}
+.apex9aBriefingProto .apex9aBriefSetupCard #apex9aStrategyRow select{
+ width:calc(100% - 28px);margin:6px 14px;
+}
+.apex9aBriefingProto .apexBriefRecTitle{
+ display:flex;align-items:center;gap:13px;margin:14px 14px 0;
+ color:#f1ce49;font-size:12px;letter-spacing:.09em;
+}
+.apex9aBriefingProto .apexBriefBars{color:#eac448;letter-spacing:.23em;font-size:23px}
+.apex9aBriefingProto .apex9aBriefRecommendation{
+ border-left:3px solid #efc744;margin:7px 14px 12px;padding:11px 12px;
+ background:#081824;color:#dce6ec;font-size:12px;line-height:1.4;
+}
+.apex9aBriefingProto .apex9aPrepActions{
+ display:flex;justify-content:flex-end;gap:12px;margin:14px 0 0;
+ padding:11px 3px 0;border-top:1px solid #405972;
+}
+.apex9aBriefingProto .apex9aPrepActions button{
+ border:1px solid #637c92;background:#0c2032;color:#eff9ff;
+ min-height:47px;padding:12px 20px;font-weight:900;
+}
+.apex9aBriefingProto .apex9aPrepActions .apex9aBriefStart{
+ border-color:#fe7082;border-radius:30px;
+ background:linear-gradient(180deg,#a5152a,#ef2c42);
+ box-shadow:0 9px 23px #980f2788;padding:14px 30px;
+}
+.apex9aBriefingProto .apex9aPrepActions .apex9aBriefStart:disabled{opacity:.5;cursor:not-allowed}
+.apex9aBriefingProto .apex9aStages{margin:0 0 14px;gap:6px}
+.apex9aBriefingProto .apex9aStages span{
+ padding:7px 3px;font-size:11px;background:#12243a;color:#e2f2fc;border-top:3px solid #e53551;
+}
+.apex9aBriefingProto .apex9aChampInfo{margin:10px 14px;padding:8px}
+.apex9aBriefingProto #apex9aCompCircuitPickerRow{padding-bottom:3px}
+.apex9aBriefingProto .apex9aBriefCircuitCard>#apex9aCompCircuit{margin:13px 14px}
+/* Responsive: mantener botones táctiles, no ocultar contenido y evitar scroll horizontal. */
+@media(max-width:1160px){
+ .apex9aBriefingProto .apex9aBriefGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .apex9aBriefingProto .apex9aBriefSetupCard{grid-column:1/-1;min-height:0}
+ .apex9aBriefingProto .apex9aBriefSetupCard .apex9aBriefTyres .apex9aTyre{min-height:178px}
+ .apex9aBriefingProto .apex9aPrepCard{min-height:400px}
+}
+@media(max-width:700px){
+ .apex9aBriefingProto .apex9aBriefingShell{padding:11px 9px}
+ .apex9aBriefingProto .apex9aBriefHeader{align-items:stretch;flex-direction:column-reverse;gap:12px}
+ .apex9aBriefingProto .apex9aBriefHeader button{order:0;max-width:none;align-self:flex-start}
+ .apex9aBriefingProto .apex9aBriefHeader small{text-align:left}
+ .apex9aBriefingProto .apex9aBriefHeader h2{font-size:clamp(25px,6.5vw,38px)}
+ .apex9aBriefingProto .apex9aBriefGrid{grid-template-columns:minmax(0,1fr);gap:10px}
+ .apex9aBriefingProto .apex9aBriefSetupCard{grid-column:auto}
+ .apex9aBriefingProto .apex9aPrepCard{min-height:0}
+ .apex9aBriefingProto .apexBriefHeroPhoto{height:180px}
+ .apex9aBriefingProto .apex9aBriefTyres .apex9aTyre{
+  min-height:128px;padding:6px 2px;gap:5px;
+ }
+ .apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual{height:clamp(46px,12vw,78px)}
+ .apex9aBriefingProto .apex9aBriefTyres .apex9aTyre b{font-size:clamp(8px,2.1vw,13px)}
+ .apex9aBriefingProto .apex9aBriefTyres .apexBriefTyreDescription{font-size:8px}
+ .apex9aBriefingProto .apexBriefWeatherData{grid-template-columns:1fr 1fr}
+ .apex9aBriefingProto .apex9aPrepActions{position:static;flex-wrap:wrap}
+ .apex9aBriefingProto .apex9aPrepActions button{flex:1;min-width:120px}
+ .apex9aBriefingProto .apexBriefStrategies{gap:5px;padding:7px}
+ .apex9aBriefingProto .apexBriefStrategies button{min-height:67px}
+ .apex9aBriefingProto .apex9aStages span{font-size:9px}
+}
+
+/* Cierre 9A.9: control de retorno sin texto fragmentado en vertical. */
+.apex9aBriefingProto .apex9aBriefHeader>div{flex:1 1 auto;min-width:0}
+.apex9aBriefingProto .apex9aBriefHeader>button{
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+ font:800 13px/1.2 Arial,Helvetica,sans-serif!important;
+ letter-spacing:.05em;min-width:190px;width:max-content;max-width:100%;
+ padding:13px 16px;white-space:nowrap;overflow:hidden;
+}
+@media(max-width:980px){
+ .apex9aBriefingProto .apex9aBriefHeader{flex-direction:column-reverse;align-items:stretch;gap:10px}
+ .apex9aBriefingProto .apex9aBriefHeader>button{align-self:flex-start}
+ .apex9aBriefingProto .apex9aBriefHeader small{text-align:left}
+ .apex9aBriefingProto .apex9aBriefHeader h2{font-size:clamp(26px,4.3vw,40px);overflow-wrap:break-word}
+}
+
+/* Cierre 9A.9: reservar altura independiente para arte y nombre del neumático. */
+@media(min-width:701px){
+ .apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual{
+   flex:0 0 148px;height:148px!important;max-height:none;
+ }
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual img{
+ max-height:100%;max-width:100%;object-fit:contain;
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyre b{
+ display:block;position:relative;z-index:1;margin-top:34px!important;
+}

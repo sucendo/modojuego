@@ -2,11 +2,9 @@
 // 6A V15.1.1 real fragment-grain regression; no FPS or browser pixel claims.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const glSource=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d-preview.txt'),'utf8');
-const preview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
+const glSource=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
+const preview=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 const production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
 const extract=(name,next)=>{
  const i=glSource.indexOf('function '+name+'('),j=glSource.indexOf(next,i);
  assert.ok(i>=0&&j>i,'missing '+name);

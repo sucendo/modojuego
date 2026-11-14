@@ -9,11 +9,12 @@ const source=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
 const i=source.indexOf('function apexPedestrianBridgeVisual(it){');
 const j=source.indexOf('function apexFeatureBridgeBanner(',i);
 assert.ok(i>=0&&j>i,'Universal visual bridge placement helper missing');
-const helper=source.slice(i,j);
+const deckStart=source.indexOf('function apexPedestrianBridgeDeckSections(');
+const deckEnd=source.indexOf('\n}',deckStart)+2;
+const helper=source.slice(deckStart,deckEnd)+'\n'+source.slice(i,j);
 const modes=[
  {filename:'parts/part-024.txt',start:'}else if(it.type==="bridge"&&it.pedestrianBridge){',end:'}else if(it.type==="road"&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){'},
- {filename:'parts/part-025.txt',start:"}else if(it.type==='bridge'&&it.pedestrianBridge){",end:"}else if(it.type==='road'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){"},
- {filename:'parts/part-025-bridgefull-trees3d-preview.txt',start:"}else if(it.type==='bridge'&&it.pedestrianBridge){",end:"}else if(it.type==='road'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){"}
+ {filename:'parts/part-025.txt',start:"}else if(it.type==='bridge'&&it.pedestrianBridge){",end:"}else if(it.type==='road'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){"}
 ];
 for(const mode of modes){
  const s=fs.readFileSync(path.join(root,mode.filename),'utf8');
@@ -67,11 +68,7 @@ assert.ok(elevated.deckBaseY>=17.25&&elevated.deckTopY>elevated.deckBaseY,
  'Deck underside must clear an uphill road by at least 5.25 metres');
 assert.ok(window.apexBridgeSupportAudit().bridges[0].minimumClearanceM>=5.25,
  'Elevation clearance must be observable via browser audit');
-const perf6aPreview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
-assert.match(perf6aPreview,/parts\/part-025-bridgefull-trees3d-preview\.txt/,
- '6A preview must use corrected trees3d renderer');
-assert.match(perf6aPreview,/parts\/part-026-perf6a-preview\.txt/,
- '6A preview must preserve the 6A performance variant');
+const perf6aPreview=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 assert.match(perf6aPreview,/cache:["']no-cache["']/,
  '6A preview must validate its current assembled parts');
 for(const mode of modes){

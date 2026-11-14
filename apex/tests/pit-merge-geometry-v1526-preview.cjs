@@ -3,11 +3,9 @@
 // 3-D separator are universal. No driving physics or automatic limiter edits.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const core=read('parts/part-024-bridgefull-preview.txt'),
- render=read('parts/part-025-bridgefull-trees3d-preview.txt'),
- production=read('apex.html'),preview=read('perf6a-preview.html');
-assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
+const core=read('parts/part-024.txt'),
+ render=read('parts/part-025.txt'),
+ production=read('apex.html'),preview=read('apex.html');
 function section(src,from,to){const a=src.indexOf(from),b=src.indexOf(to,a);
  assert.ok(a>=0&&b>a,'missing '+from);const part=src.slice(a,b);new vm.Script(part);return part;}
 const code=section(core,'function apexPitVisualMergeProfileV1526(', 'function nearestPitState(');

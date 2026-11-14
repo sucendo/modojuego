@@ -3,14 +3,11 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const base=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(base,p),'utf8');
-const canvas=read('parts/part-024-bridgefull-preview.txt'),
- webgl=read('parts/part-025-bridgefull-trees3d-preview.txt'),
- preview=read('perf6a-preview.html'),production=read('apex.html');
+const canvas=read('parts/part-024.txt'),
+ webgl=read('parts/part-025.txt'),
+ preview=read('apex.html'),production=read('apex.html');
 const begin=canvas.indexOf('// 6A V15.1: asphalt colour'),end=canvas.indexOf('function apexWebglRoadBase(',begin);
 assert.ok(begin>=0&&end>begin,'shared preview V15.1 material must precede the road renderer');
-assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
 const source=canvas.slice(begin,end);
 new vm.Script(source);
 assert.match(canvas,/drawCamQuadTriangles\(V0\.l,V0\.r,V1\.r,V1\.l,pitch,apexRoadMaterialColorV15\(seg\)\)/);

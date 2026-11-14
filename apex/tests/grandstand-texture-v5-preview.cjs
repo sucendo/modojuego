@@ -2,13 +2,10 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const canvas=read('parts/part-024-bridgefull-preview.txt'),
- webgl=read('parts/part-025-bridgefull-trees3d-preview.txt'),
- preview=read('perf6a-preview.html'),production=read('apex.html'),
+const canvas=read('parts/part-024.txt'),
+ webgl=read('parts/part-025.txt'),
+ preview=read('apex.html'),production=read('apex.html'),
  sponsor=read('js/sponsor-textures.js');
-assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
 assert.match(sponsor,/function registerCanvas\(key,canvas\)/);
 assert.match(sponsor,/registerCanvas,ensureTexture/);
 assert.match(sponsor,/gl\.LINEAR_MIPMAP_LINEAR/);

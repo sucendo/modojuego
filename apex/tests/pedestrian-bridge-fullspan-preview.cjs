@@ -4,15 +4,11 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const canvas=fs.readFileSync(path.join(root,'parts/part-024-bridgefull-preview.txt'),'utf8');
-const webgl=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d-preview.txt'),'utf8');
-const preview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
+const canvas=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
+const webgl=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
+const preview=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 const production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
-assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(preview,/part-026-perf6a-preview\.txt/);
 assert.match(preview,/js\/trees3d-mobile-preview\.js/);
-assert.match(production,/url=perf6a-preview\.html/);
 
 const i=canvas.indexOf('function apexPedestrianBridgeDeckSections(');
 const j=canvas.indexOf('function apexPedestrianBridgeVisual(it){',i);

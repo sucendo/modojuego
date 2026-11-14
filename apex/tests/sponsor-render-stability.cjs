@@ -5,7 +5,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const textureSource=read('js/sponsor-textures.js');
 const renderSource=read('parts/part-025.txt'),worldSource=read('parts/part-024.txt');
-const submitSource=read('parts/part-026.txt'),html=read('perf6a-preview.html');
+const submitSource=read('parts/part-026.txt'),html=read('apex.html');
 const assets=['team-equipalia','sct','mdtel','sct-wall',
  'apex26-start-finish','radiquero-pedestrian-bridge','mdtel-white-24m'];
 assert.ok(html.includes('js/sponsor-textures.js'),'Texture loader is missing');

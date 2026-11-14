@@ -3,12 +3,10 @@
 // near-plane clips and moving ribbon endpoints, without changing tyre physics.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const core=read('parts/part-024-bridgefull-preview.txt'),
- render=read('parts/part-025-bridgefull-trees3d-preview.txt'),
- frame=read('parts/part-026-perf6a-preview.txt'),
- html=read('perf6a-preview.html'),prod=read('apex.html');
-assert.match(html,/part-026-perf6a-preview\.txt/);
-assert.match(prod,/url=perf6a-preview\.html/);
+const core=read('parts/part-024.txt'),
+ render=read('parts/part-025.txt'),
+ frame=read('parts/part-026.txt'),
+ html=read('apex.html'),prod=read('apex.html');
 const functionBody=(s,name,next)=>{
  const start=s.indexOf('function '+name+'('),end=s.indexOf(next,start);
  assert.ok(start>=0&&end>start,name+' missing');

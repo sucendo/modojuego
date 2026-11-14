@@ -2,13 +2,10 @@
 // V15.2 static regression. No frame-rate claims.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
-const core=fs.readFileSync(path.join(root,'parts/part-024-bridgefull-preview.txt'),'utf8'),
- render=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d-preview.txt'),'utf8'),
- preview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8'),
+const core=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8'),
+ render=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8'),
+ preview=fs.readFileSync(path.join(root,'apex.html'),'utf8'),
  production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
-assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
 const part=(source,begin,end)=>{
  const a=source.indexOf(begin),b=source.indexOf(end,a);
  assert.ok(a>=0&&b>a,'missing: '+begin);const snippet=source.slice(a,b);

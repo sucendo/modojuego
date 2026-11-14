@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const playwright=process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES&&path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'));
 if(!playwright)throw Error('PLAYWRIGHT_MODULE_PATH missing');
 const {chromium}=require(playwright);
-const root=path.resolve(__dirname,'..'),src=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d-preview.txt'),'utf8');
+const root=path.resolve(__dirname,'..'),src=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
 const a=src.indexOf('function apexPhase5GpuProgram('),b=src.indexOf('function apexPhase5GpuGroundError(',a);
 assert.ok(a>=0&&b>a);
 (async()=>{

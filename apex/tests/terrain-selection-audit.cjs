@@ -50,6 +50,7 @@ const pit=fixture(current);
 pit.c.trackData.customWorld={pitNetwork:{runs:[{}]}};
 pit.c.apexClipGenericRunoffPolygon=()=>null;
 pit.c.apexRoadMeshSamples=()=>[];
+pit.c.apexPitMergeQuadV1526=()=>({quad:[{x:7,y:-2,z:-5},{x:13,y:-2,z:-5},{x:13,y:-4,z:35},{x:7,y:-4,z:35}]});
 pit.c.apexPitSegments=()=>[{x1:10,z1:-5,y1:-2,x2:10,z2:35,y2:-4,width:6,len:40}];
 for(const [part,names] of [[23,['apexInspectorPolyBounds','apexInspectorPolyArea','apexInspectorHalfPoly','apexInspectorSubtractFoot']],[24,['apexRunoffRoadClipIndex','apexClipTerrainAtPit']]]){
  const source=fs.readFileSync(path.join(root,`apex/parts/part-0${part}.txt`),'utf8');

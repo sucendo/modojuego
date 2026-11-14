@@ -3,12 +3,10 @@
 // Offline static/geometry checks; no claim of verified mobile FPS.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const core=read('parts/part-024-bridgefull-preview.txt'),
- render=read('parts/part-025-bridgefull-trees3d-preview.txt'),
- frame=read('parts/part-026-perf6a-preview.txt'),
- preview=read('perf6a-preview.html'),production=read('apex.html');
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
+const core=read('parts/part-024.txt'),
+ render=read('parts/part-025.txt'),
+ frame=read('parts/part-026.txt'),
+ preview=read('apex.html'),production=read('apex.html');
 function extract(src,start,end){
  const a=src.indexOf(start),b=src.indexOf(end,a);
  assert.ok(a>=0&&b>a,'Missing '+start);

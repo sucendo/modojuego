@@ -5,7 +5,7 @@ const modulePath=process.env.PLAYWRIGHT_MODULE_PATH||
  (process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES&&path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'));
 if(!modulePath)throw Error('PLAYWRIGHT_MODULE_PATH is required');
 const {chromium}=require(modulePath),root=path.resolve(__dirname,'..'),
- shader=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d-preview.txt'),'utf8');
+ shader=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
 const i=shader.indexOf('function apexPhase5GpuProgram('),j=shader.indexOf('function apexPhase5GpuGroundError(',i);
 assert.ok(i>=0&&j>i,'static GPU shader not found');
 (async()=>{

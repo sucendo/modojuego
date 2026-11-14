@@ -18,17 +18,17 @@ const samples=Array.from({length:129},(_,i)=>i*(2*Math.PI*120)/128),td={samples,
 function world(s){const angle=s/120,bank=Math.sin(angle*3)*.16,width=6+Math.sin(angle),x=120*Math.sin(angle),z=400+120*Math.cos(angle),y=9*Math.sin(angle*2),ox=Math.sin(angle),oz=Math.cos(angle);
  const point=(w,flat=false)=>({x:x+ox*w,y:y+Math.tan(bank)*(flat?Math.max(-width,Math.min(width,w)):w),z:z+oz*w});
  return {q:{x,y,z},env:{half:width},curb:{left:true,right:true},points:[{x,y,z},point(width),point(-width),point(width+.75,true),point(-width-.75,true),point(width+4,true),point(-width-4,true)]};}
-const c=vm.createContext({console,performance,Float32Array,Uint32Array,Uint8Array,Map,window:{},Math,Number,trackData:td,webglState:{gl,ready:true},webglScreenRoll:0,webglFloatCount:0,webglColorCache:new Map(),apexGpuFrameStats:{staticUploadBytes:0,bufferAllocations:0},
+const c=vm.createContext({console,performance,Float32Array,Uint32Array,Uint8Array,Map,window:{apexRoadGrainV151Enabled:false},Math,Number,trackData:td,webglState:{gl,ready:true},webglScreenRoll:0,webglFloatCount:0,webglColorCache:new Map(),apexGpuFrameStats:{staticUploadBytes:0,bufferAllocations:0},
  W:1280,H:720,WEBGL_DEPTH_NEAR:.45,WEBGL_DEPTH_FAR:2200,driverEyeHeight:()=>1.1,sceneHFov:()=>1.2,sceneHorizon:()=>320,
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),lerp:(a,b,t)=>a+(b-a)*t,
  mobile:false,mobilePerformanceMode:()=>c.mobile,mobileControlProfile:()=>({curbMax:600}),mobileRenderPressure:()=>.5,
  apexInspectionActive:()=>false,apexInspectionFullScene:()=>false,apexRoadMeshSamples:()=>td.samples,apexRoadWorldNode:world,apexCompilerYield:async()=>{},
  apexPhase5GpuProgram:()=>({program:{},attrs:{world:0,color:1},uniforms:{}}),
- palette:()=>({road:c.roadColor||'#484d52'}),circuitCurbPair:seed=>(seed&1)?['#f3f4f5','#d93a48']:['#d93a48','#f3f4f5'],
+ apexRoadMaterialColorV15:()=>c.roadColor||'#484d52',palette:()=>({road:c.roadColor||'#484d52'}),circuitCurbPair:seed=>(seed&1)?['#f3f4f5','#d93a48']:['#d93a48','#f3f4f5'],
  apexUnifiedGroundStrip:()=>({runoffLeft:[],runoffRight:[]}),surfaceColor:()=> '#000000',
  webglPushCamQuad:(a,b,d,e,pitch,color)=>{for(const vertices of [[a,b,d],[a,d,e]])cpu.push({color:c.webglCssColor(color),verts:vertices.map(p=>[p.x,p.y,p.z])});},
 });
-const names=['camMix','shadeColor','webglCssColor','webglCircuitRoadColor','apexPhase6CompileRoadMesh','apexPhase6RoadRelease','apexPhase6RoadError','apexPhase6BeginRoad','apexPhase6RoadSegmentId','apexPhase6RoadStyle','apexPhase6RoadGroup','apexPhase6RoadQuad','apexPhase6QueueRoadBase','apexPhase6SealRoad','apexPhase6DrawRoad','apexWebglRoadBase'];
+const names=['apexPhase6QueueDynamicRoadQuad','apexPhase6QueueDynamicRoadSegment','camMix','shadeColor','webglCssColor','webglCircuitRoadColor','apexPhase6CompileRoadMesh','apexPhase6RoadRelease','apexPhase6RoadError','apexPhase6BeginRoad','apexPhase6RoadSegmentId','apexPhase6RoadStyle','apexPhase6RoadGroup','apexPhase6RoadQuad','apexPhase6QueueRoadBase','apexPhase6SealRoad','apexPhase6DrawRoad','apexWebglRoadBase'];
 vm.runInContext(decl('apexPhase6RoadGPU')+'\n'+names.map(n=>func(source,n)).join('\n'),c);
 vm.runInContext(func(old,'apexUnifiedGroundDrawCorridor').replace('function apexUnifiedGroundDrawCorridor','function referenceCorridor'),c);
 function step(i){const w=world(samples[i===128?0:i]),p=w.points;return{meshNode:i,s:samples[i],sd:10,q:w.q,env:w.env,curb:w.curb,v:{c:p[0],l:p[1],r:p[2],lo:p[3],ro:p[4],lx:p[5],rx:p[6]}};}
@@ -57,10 +57,10 @@ function compare(expected,actual){assert.deepEqual(actual.map(key).sort(),expect
  // Climate changes update material constants without rebuilding vertex buffers.
  c.roadColor='#242a31';triangles.length=0;cpu.length=0;c.apexPhase6BeginRoad(cam,0);for(const seg of all)c.apexWebglRoadBase(seg,0);c.apexPhase6SealRoad();c.apexPhase6DrawRoad();const wet=[...triangles];for(const seg of all)c.referenceCorridor(seg,cam,0,true);compare(cpu,wet);assert.equal(stats.allocations,allocations);
  // Moving ends, near-plane crossings and alpha colours retain CPU geometry.
- cpu.length=0;c.apexPhase6BeginRoad(cam,0);const moving=segment(0,1);moving.a.meshNode=-1;c.apexWebglRoadBase(moving,0);assert.equal(cpu.length,10);
- const near=segment(0,1);near.a.v.l={...near.a.v.l,z:.5};c.apexWebglRoadBase(near,0);assert.equal(cpu.length,20);
+ cpu.length=0;c.apexPhase6BeginRoad(cam,0);const moving=segment(0,1);moving.a.meshNode=-1;c.apexWebglRoadBase(moving,0);assert.equal(cpu.length,4);
+ const near=segment(0,1);near.a.v.l={...near.a.v.l,z:.5};c.apexWebglRoadBase(near,0);assert.equal(cpu.length,4);
  // Fail while sealing: replay only suppressed bases, never runoff or a second road.
- cpu.length=0;c.apexPhase6BeginRoad(cam,0);c.apexWebglRoadBase(all[0],0);const originalSub=gl.bufferSubData;gl.bufferSubData=()=>{throw Error('injected upload failure');};vm.runInContext('apexPhase6RoadGPU.indexCount=-1',c);assert.equal(c.apexPhase6SealRoad(),false);assert.equal(cpu.length,10);gl.bufferSubData=originalSub;
+ cpu.length=0;c.apexPhase6BeginRoad(cam,0);c.apexWebglRoadBase(all[0],0);const originalSub=gl.bufferSubData;gl.bufferSubData=()=>{throw Error('injected upload failure');};vm.runInContext('apexPhase6RoadGPU.indexCount=-1',c);assert.equal(c.apexPhase6SealRoad(),false);assert.equal(cpu.length,6);gl.bufferSubData=originalSub;
  vm.runInContext('apexPhase6RoadGPU.failedGl=null',c);c.apexPhase6BeginRoad(cam,0);c.apexPhase6RoadRelease(true);assert.equal(vm.runInContext('apexPhase6RoadGPU.buffer===null&&apexPhase6RoadGPU.indexBuffer===null&&apexPhase6RoadGPU.mesh===null',c),true);
  console.log('PASS phase6: weather palette, moving endpoints, near clipping, same-frame failure replay, complete buffer release');
  // Mobile cheap mode uses only one asphalt quad, never both asphalt meshes.
@@ -68,16 +68,15 @@ function compare(expected,actual){assert.deepEqual(actual.map(key).sort(),expect
  const cheapSegments=all.map(seg=>({...seg,z:100}));for(const seg of cheapSegments)c.apexWebglRoadBase(seg,0);c.apexPhase6SealRoad();c.apexPhase6DrawRoad();const cheapGpu=[...triangles];
  for(const seg of cheapSegments)c.referenceCorridor(seg,cam,0,true);compare(cpu,cheapGpu);assert.equal(cheapGpu.length,128*6);
  // A custom alpha palette retains the original CPU blending path.
- c.apexPhase6BeginRoad(cam,0);cpu.length=0;const curbPair=c.circuitCurbPair;c.circuitCurbPair=()=>['rgba(220,20,30,.5)','#f3f4f5'];c.apexWebglRoadBase(cheapSegments[0],0);assert.equal(cpu.length,6);c.circuitCurbPair=curbPair;c.apexPhase6SealRoad();
+ c.apexPhase6BeginRoad(cam,0);cpu.length=0;const curbPair=c.circuitCurbPair;c.circuitCurbPair=()=>['rgba(220,20,30,.5)','#f3f4f5'];c.apexWebglRoadBase(cheapSegments[0],0);assert.equal(cpu.length,4);c.circuitCurbPair=curbPair;c.apexPhase6SealRoad();
  console.log('PASS phase6: mobile single-quad asphalt and transparent custom kerbs');
- // The existing SVG runoff ownership/clipped faces remain in the CPU corridor.
+ // The ground atlas owns SVG surfaces; the road batch contributes road and kerbs.
  c.mobile=false;c.apexPhase6BeginRoad(cam,0);cpu.length=0;
- const clipped=[{x:200,y:4,z:300},{x:204,y:4.1,z:300},{x:202,y:4.2,z:304}];
- c.apexUnifiedGroundStrip=()=>({runoffLeft:[clipped],runoffRight:[]});c.worldToCamera=(x,y,z)=>({x,y,z});
- c.webglPushCamPoly=(poly,pitch,color)=>cpu.push({color:c.webglCssColor(color),verts:poly.map(p=>[p.x,p.y,p.z])});
- vm.runInContext(func(source,'apexUnifiedGroundDrawCorridor').replace('function apexUnifiedGroundDrawCorridor','function newCorridor'),c);
- c.newCorridor(all[0],cam,0,true);assert.equal(cpu.length,1);assert.deepEqual(cpu[0].verts,clipped.map(p=>[p.x,p.y,p.z]));assert.equal(c.apexPhase6SealRoad(),true);
- assert.equal(vm.runInContext('apexPhase6RoadGPU.triangles',c),10);console.log('PASS phase6: existing clipped SVG runoff emitted once with unchanged heights');
+ vm.runInContext(func(source,'apexUnifiedGroundDrawCorridor'),c);
+ c.apexUnifiedGroundDrawCorridor(all[0],cam,0,true);
+ assert.equal(cpu.length,0);
+ assert.equal(c.apexPhase6SealRoad(),true);
+ assert.equal(vm.runInContext('apexPhase6RoadGPU.triangles',c),10);
  // Explicit hysteresis on mobile: no rapid switching around old 42 m threshold.
  c.mobile=true;c.apexPhase6BeginRoad(cam,0);vm.runInContext('apexPhase6RoadGPU.mesh.lod.fill(0);apexPhase6RoadGPU.mesh.curbLod.fill(0)',c);const lod=segment(0,1);lod.z=40;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,false);lod.z=43;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,false);lod.z=50;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,true);lod.z=40;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,true);lod.z=34;assert.equal(c.apexPhase6RoadStyle(lod,.2).cheap,false);
  c.apexPhase6RoadRelease(true);console.log('PASS phase6: mobile LOD hysteresis with unchanged essential geometry');

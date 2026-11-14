@@ -1,26 +1,3 @@
-.5)/4.1),near=seg.z<(mobile?lerp(58,85,budget.q):lerp(130,185,budget.q));
- const leftInner0=a.curb.left?V0.lo:V0.l,leftInner1=b.curb.left?V1.lo:V1.l,rightInner0=a.curb.right?V0.ro:V0.r,rightInner1=b.curb.right?V1.ro:V1.r;
- const cuts=(budget.pressure>=2&&!near)?[.34,.68]:(near?[.18,.36,.56,.76]:[.28,.56,.78]);
- const L=[V0.lx,...cuts.map(t=>camMix(V0.lx,leftInner0,t)),leftInner0],LB=[V1.lx,...cuts.map(t=>camMix(V1.lx,leftInner1,t)),leftInner1];
- const R=[rightInner0,...cuts.map(t=>camMix(rightInner0,V0.rx,t)),V0.rx],RB=[rightInner1,...cuts.map(t=>camMix(rightInner1,V1.rx,t)),V1.rx];
- const gravel=['rgba(198,180,138,.20)','rgba(150,133,99,.16)','rgba(111,98,74,.14)','rgba(211,193,151,.17)','rgba(132,116,86,.13)'];
- const asphalt=['rgba(255,255,255,.024)','rgba(0,0,0,.035)','rgba(255,255,255,.017)','rgba(0,0,0,.027)','rgba(255,255,255,.015)'];
- const grass=['rgba(60,101,51,.14)','rgba(126,151,91,.08)','rgba(42,82,40,.12)','rgba(154,173,109,.065)','rgba(48,91,44,.10)'];
- const cols=surf==='GRAVEL'?gravel:(surf==='ASPHALT'?asphalt:grass);
- for(let i=0;i<L.length-1;i++){
-   const col=cols[(i+seed)%cols.length];
-   webglPushCamQuad(L[i],L[i+1],LB[i+1],LB[i],pitch,col,.56,-.012-i*.0005);
-   webglPushCamQuad(R[i],R[i+1],RB[i+1],RB[i],pitch,col,.56,-.012-i*.0005);
- }
- if(near&&surf==='GRAVEL'){
-   // Shallow rake bands break up the large flat gravel polygons without textures.
-   const t=.46,la0=camMix(V0.lx,leftInner0,t),la1=camMix(V1.lx,leftInner1,t),ra0=camMix(rightInner0,V0.rx,t),ra1=camMix(rightInner1,V1.rx,t);
-   const w=.035+(seed%3)*.012;
-   webglPushCamQuad(camMix(V0.lx,leftInner0,t-w),camMix(V0.lx,leftInner0,t+w),camMix(V1.lx,leftInner1,t+w),camMix(V1.lx,leftInner1,t-w),pitch,'rgba(75,66,51,.16)',.56,-.016);
-   webglPushCamQuad(camMix(rightInner0,V0.rx,t-w),camMix(rightInner0,V0.rx,t+w),camMix(rightInner1,V1.rx,t+w),camMix(rightInner1,V1.rx,t-w),pitch,'rgba(75,66,51,.16)',.56,-.016);
- }
-}
-
 function webglPushRoadSegment(seg,cam,pitch,baseReady=false){
  const a=seg.a,b=seg.b,env=a.env,V0=a.v,V1=b.v;if(!V0||!V1)return;
  // Una sola pasada de geometría base, igual a Canvas; sombras,
@@ -35,40 +12,11 @@ function webglPushRoadSegment(seg,cam,pitch,baseReady=false){
    const h0a=camMix(V0.l,V0.r,.18),h1a=camMix(V0.l,V0.r,.25),h0b=camMix(V1.l,V1.r,.18),h1b=camMix(V1.l,V1.r,.25);
    webglPushCamQuad(h0a,h1a,h1b,h0b,pitch,"rgba(255,255,255,.025)");
  }
- // Líneas blancas de borde.
- if(seg.z>4&&((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())||seg.z<mobileControlProfile().edgeMax)){
-   const e=.016;webglPushCamQuad(V0.l,camMix(V0.l,V0.r,e),camMix(V1.l,V1.r,e),V1.l,pitch,"rgba(248,249,247,.94)",.58,-.025);
-   webglPushCamQuad(camMix(V0.r,V0.l,e),V0.r,V1.r,camMix(V1.r,V1.l,e),pitch,"rgba(248,249,247,.94)",.58,-.025);
+ // The paint shares the edge vertices with the asphalt. Depth bias
+ // separates the two materials without changing the world-space boundary.
+ if(seg.z<mobileControlProfile().edgeMax||apexInspectionFullScene()){
+   apexDrawTrackEdgePaint(seg,cam,pitch,true);
  }
-}
-function webglPushNearPatch(cam,pitch){
- if(!player||!trackData)return;
- const q=renderRibbonFrameAt(player.s),env=envProfile(player.s),roadHalf=env.half,outerL=apexRoadFlatLimit(player.s,env,1),outerR=apexRoadFlatLimit(player.s,env,-1),bank=Number.isFinite(q.bank)?q.bank:0;
- // Esta tapa sólo tiene sentido junto al asfalto principal. Si el coche
- // está en una escapatoria, su plataforma real puede tener otra cota;
- // evitar extender hacia el monoplaza una lamina sintética de pista.
- const trackLimit=roadHalf+env.curb+.6;
- if(player.driveNetwork==='PIT'||Math.abs(player.lat)>trackLimit||
-   Math.hypot(player.x-q.x,player.z-q.z)>trackLimit)return;
- const point=(along,lat)=>({x:q.x+q.tx*along+q.ox*lat,
-  y:q.y+Math.tan(bank)*clamp(lat,-roadHalf,roadHalf),
-  z:q.z+q.tz*along+q.oz*lat});
- const make=(along,lat)=>{const p=point(along,lat);return worldToCamera(p.x,p.y,p.z,cam)};
- // Only fills the tiny near-camera hole. It sits slightly farther in the depth buffer,
- // so the authored road/terrain segments always win wherever they overlap.
- const a=-4.5,b=7.0,bias=.42;
- const lOa=make(a,outerL),lOb=make(b,outerL),lRa=make(a,roadHalf),lRb=make(b,roadHalf);
- const rRa=make(a,-roadHalf),rRb=make(b,-roadHalf),rOa=make(a,-outerR),rOb=make(b,-outerR);
- const paint=(corners,color,normal)=>{
-  const clipped=apexClipGenericRunoffPolygon(corners);
-  if(clipped===null){webglPushCamQuad(...normal,pitch,color,.34,bias);return;}
-  for(const poly of clipped)webglPushCamPoly(poly.map(p=>worldToCamera(p.x,p.y,p.z,cam)),pitch,color,.34,bias);
- };
- paint([point(a,outerL),point(a,roadHalf),point(b,roadHalf),point(b,outerL)],
-  surfaceColor(env.runoffSurface,false),[lOa,lRa,lRb,lOb]);
- paint([point(a,-roadHalf),point(a,-outerR),point(b,-outerR),point(b,-roadHalf)],
-  surfaceColor(env.runoffSurface,true),[rRa,rOa,rOb,rRb]);
- webglPushCamQuad(lRa,rRa,rRb,lRb,pitch,shadeColor(palette().road,-2),.34,bias);
 }
 function webglCollectCircuitSegments(cam,pitch){
  const near=.64,mp=mobileControlProfile(),mainSign=(player&&player.reverse)?-1:1,inspectionFull=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene()),fullD=inspectionFull&&trackData?trackData.km*1000*.515:0,branches=inspectionFull?[collectRoadBranch(1,cam,pitch,fullD,near,apexWebglRoadStep),collectRoadBranch(-1,cam,pitch,fullD,near,apexWebglRoadStep)]:mobilePerformanceMode()?[collectRoadBranch(mainSign,cam,pitch,mp.roadForward,near,apexWebglRoadStep),collectRoadBranch(-mainSign,cam,pitch,mp.roadRear,near,apexWebglRoadStep)]:[collectRoadBranch(1,cam,pitch,mp.roadForward,near,apexWebglRoadStep),collectRoadBranch(-1,cam,pitch,mp.roadRear,near,apexWebglRoadStep)],segments=[];
@@ -177,11 +125,37 @@ function webglRivalLod(a){
 
 /* v0.13.1: flanco circular estratificado. La franja de compuesto es un ANILLO,
    no un abanico desde el buje. El esquema funciona desde 360° y en LOD 0/1/2. */
+/* Fase 6A. Dentro del cierre principal del juego: ninguna funcion
+   del renderizador es accesible globalmente, por eso no funcionaba el parche externo.
+   Sólo la copia experimental de part-026 incluye esta opción. */
+const apexPerf6aEnabled=new URLSearchParams(window.location.search).get('perf6a')==='1';
+const apexPerf6aStats={wheels:0,projections:0,reused:0,lod:[0,0,0]};
+window.apexPerf6aInfo=function(){
+ return {phase:'6A',enabled:apexPerf6aEnabled,installed:true,drawnWheels:apexPerf6aStats.wheels,
+   reusedProjections:apexPerf6aStats.reused,uniqueProjections:apexPerf6aStats.projections,
+   byLod:apexPerf6aStats.lod.slice(),
+   note:'Counters are cumulative. Compare performance telemetry in equivalent runs with perf6a=0 and perf6a=1.'};
+};
 function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,lod=1){
+ if(apexPerf6aEnabled){apexPerf6aStats.wheels++;apexPerf6aStats.lod[Math.max(0,Math.min(2,lod|0))]++;}
  const brand=teamBranding(teamKey)||{},stripe=b.tyreColor||brand.tyreColor||'#f0cf34',
   N=lod>=2?16:(lod===1?10:6),tau=Math.PI*2;
  const point=(side,r,ang,offset=0)=>webglRivalLocal(b,cx+side*(halfW+offset),cy+Math.sin(ang)*radius*r,cz+Math.cos(ang)*radius*r);
- const WC=p=>worldToCamera(p.x,p.y,p.z,cam);
+ // Cache exact world->camera vertex projections inside each individual wheel.
+ const cache=apexPerf6aEnabled?new Map():null;
+ const WC=p=>{
+   if(!cache)return worldToCamera(p.x,p.y,p.z,cam);
+   const k=p.x+','+p.y+','+p.z;
+   const v=cache.get(k);
+   if(v){apexPerf6aStats.reused++;return v;}
+   const projected=worldToCamera(p.x,p.y,p.z,cam);
+   cache.set(k,projected);
+   apexPerf6aStats.projections++;
+   return projected;
+ };
+ const wheelQuad=apexPerf6aEnabled
+  ?(cam,pitch,A,B,C,D,color,near,bias)=>webglPushCamQuad(WC(A),WC(B),WC(C),WC(D),pitch,color,near,bias)
+  :webglPushRivalWorldQuad;
  const outerL=[],outerR=[];
  for(let i=0;i<N;i++){
   const a=i*tau/N;outerL.push(point(-1,1,a,-0.002));outerR.push(point(1,1,a,-0.002));
@@ -191,7 +165,7 @@ function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,
  for(let i=0;i<N;i++){
   const j=(i+1)%N,top=Math.sin((i+.5)*tau/N);
   const color=top>.55?'#1b2026':top<-.45?'#090c10':'#12171c';
-  tris+=webglPushRivalWorldQuad(cam,pitch,outerL[i],outerR[i],outerR[j],outerL[j],color,.56,-.004);
+  tris+=wheelQuad(cam,pitch,outerL[i],outerR[i],outerR[j],outerL[j],color,.56,-.004);
  }
  // La cara exterior oculta no aporta pixels. Reducir esta mitad del trabajo
  // evita duplicar los círculos de llanta de 22 coches en móviles.
@@ -204,7 +178,7 @@ function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,
   // El neumático ocupa toda la cara hasta el buje; ninguna región amarilla maciza.
   for(let i=0;i<N;i++){
    const a=i*tau/N,c=(i+1)*tau/N;
-   tris+=webglPushCamPoly([worldToCamera(face.x,face.y,face.z,cam),
+   tris+=webglPushCamPoly([WC(face),
       WC(point(sg,.985,a,.004)),
       WC(point(sg,.985,c,.004))],
       pitch,'#11151a',.56,-.006);
@@ -213,7 +187,7 @@ function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,
   const ring=(r0,r1,color,offset=.006)=>{
    for(let i=0;i<N;i++){
     const a=i*tau/N,c=(i+1)*tau/N;
-    tris+=webglPushRivalWorldQuad(cam,pitch,point(sg,r0,a,offset),point(sg,r1,a,offset),
+    tris+=wheelQuad(cam,pitch,point(sg,r0,a,offset),point(sg,r1,a,offset),
              point(sg,r1,c,offset),point(sg,r0,c,offset),color,.56,-.009);
    }
   };
@@ -225,7 +199,7 @@ function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,
   // Llantas negras: resaltar sólo el canto, no pintar el disco como el neumático.
   for(let i=0;i<N;i++){
    const a=i*tau/N,c=(i+1)*tau/N;
-   tris+=webglPushCamPoly([worldToCamera(center.x,center.y,center.z,cam),
+   tris+=webglPushCamPoly([WC(center),
       WC(point(sg,.69,a,.012)),
       WC(point(sg,.69,c,.012))],
       pitch,lod>=2?'#252b33':'#20252c',.56,-.012);
@@ -236,7 +210,7 @@ function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,
    // Seis aspas discretas, separadas del aro de color.
    for(let k=0;k<6;k++){
     const a=k*tau/6+spin*.22;
-    tris+=webglPushRivalWorldQuad(cam,pitch,
+    tris+=wheelQuad(cam,pitch,
       point(sg,.34,a-.07,.020),point(sg,.57,a-.095,.020),
       point(sg,.57,a+.095,.020),point(sg,.34,a+.07,.020),
       k%2?'#121820':'#39434c',.56,-.013);
@@ -245,7 +219,7 @@ function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,
   const hub=point(sg,0,0,.023);
   for(let i=0;i<N;i++){
    const a=i*tau/N,c=(i+1)*tau/N;
-   tris+=webglPushCamPoly([worldToCamera(hub.x,hub.y,hub.z,cam),
+   tris+=webglPushCamPoly([WC(hub),
      WC(point(sg,.115,a,.023)),
      WC(point(sg,.115,c,.023))],
      pitch,lod>=2?'#8c97a3':'#58636f',.56,-.015);
@@ -843,13 +817,18 @@ function webgl2RenderFrame(){
  if(visual){
    webglScreenRoll=viewRoll;
    segments=renderProfileMeasure("roadPrepareMs",()=>webglCollectCircuitSegments(cam,cam.pitch));
+   // Prepare ahead of landmarks so road ribbons baked in the shared SVG/pit atlas
+   // are not drawn a second time by the legacy flat-colour landmark path.
+   if(trackData?.customWorld?._apexUnifiedGroundAtlas)renderProfileMeasure("groundPrepareMs",()=>apexPhase5PrepareGpuGround(cam,cam.pitch));
    renderProfileMeasure("environmentMs",()=>{webglPushCircuitLandmarks(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingEmbankments(cam,cam.pitch)});
    if(apexPlateTerrainGrid())webglPushTerrainPlateMesh(cam,cam.pitch);
    const terrainSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of terrainSegments)if(!apexInspectionActive()||!apexPlateTerrainGrid())webglPushTerrainSegment(seg,cam,cam.pitch);apexWebglFallbackStructureBanks(terrainSegments,cam,cam.pitch);
    renderProfileMeasure("groundPrepareMs",()=>apexRenderUnifiedAuthoredGround(cam,cam.pitch,true));
-   if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=terrainSegments;renderProfileMeasure("roadDrawMs",()=>{
-    if(renderProfileMeasure("roadGpuPrepareMs",()=>apexPhase6BeginRoad(cam,cam.pitch))){
+   const roadGpuReady=renderProfileMeasure("roadGpuPrepareMs",()=>apexPhase6BeginRoad(cam,cam.pitch));
+   const roadSegments=terrainSegments;renderProfileMeasure("roadDrawMs",()=>{
+    if(roadGpuReady){
      for(const seg of roadSegments)apexUnifiedGroundDrawCorridor(seg,cam,cam.pitch,true);
+     apexPhase6QueueLegacyPitAsphalt(roadSegments);
      renderProfileMeasure("roadGpuPrepareMs",()=>apexPhase6SealRoad());
      for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch,true);
     }else for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);

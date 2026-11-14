@@ -4,8 +4,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const part23=fs.readFileSync(path.join(root,'parts/part-023-perf6a-preview.txt'),'utf8');
-const part24=fs.readFileSync(path.join(root,'parts/part-024-bridgefull-preview.txt'),'utf8');
+const part23=fs.readFileSync(path.join(root,'parts/part-023.txt'),'utf8');
+const part24=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
 function get(s,name){
  const p=s.indexOf('function '+name+'('),e=s.indexOf('\n}\n',p);
  assert.ok(p>=0&&e>p,'Cannot isolate function: '+name);

@@ -3,11 +3,9 @@
 // invalidation after changing visible track/pit/plate boundaries.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const core=read('parts/part-024-bridgefull-preview.txt');
-const world=read('parts/part-025-bridgefull-trees3d-preview.txt');
-const preview=read('perf6a-preview.html'),production=read('apex.html');
-assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
+const core=read('parts/part-024.txt');
+const world=read('parts/part-025.txt');
+const preview=read('apex.html'),production=read('apex.html');
 function slice(s,start,end){const i=s.indexOf(start),j=s.indexOf(end,i);
  assert.ok(i>=0&&j>i,'not found '+start);const b=s.slice(i,j);new vm.Script(b);return b;}
 const policy=slice(core,'function apexSvgRunoffFallbackV1528(', 'function envProfile(');

@@ -18,7 +18,7 @@ const {chromium}=require(modulePath),root=path.resolve(__dirname,'../..'),
     at=body.lastIndexOf('requestAnimationFrame(loop);');
    assert.ok(at>=0);await route.fulfill({body:body.slice(0,at)+hook+body.slice(at),contentType:'text/plain'});
   });
-  await page.goto('http://127.0.0.1:8765/apex/perf6a-preview.html');
+  await page.goto('http://127.0.0.1:8765/apex/apex.html');
   await page.waitForFunction(()=>window.__apexAudit,{timeout:120000});
   await page.evaluate(async()=>__apexAudit.load('01-australia',false));
   await page.waitForFunction(()=>{const r=window.apexAsphaltMaterialInfo?.();

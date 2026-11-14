@@ -2,10 +2,8 @@
 // V15.2.2 preview-only regression for visible grass in static, near-eye and CPU fallback paths.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const road=read('parts/part-025-bridgefull-trees3d-preview.txt'),core=read('parts/part-024-bridgefull-preview.txt'),
- preview=read('perf6a-preview.html'),main=read('apex.html');
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(main,/url=perf6a-preview\.html/);
+const road=read('parts/part-025.txt'),core=read('parts/part-024.txt'),
+ preview=read('apex.html'),main=read('index.html');
 const snippet=(source,a,b)=>{const i=source.indexOf(a),j=source.indexOf(b,i);assert.ok(i>=0&&j>i,a);return source.slice(i,j)};
 const shader=snippet(road,'function apexPhase5GpuProgram(', 'function apexPhase5GpuGroundError(');
 const make=new Function('webglCompile',shader+'return apexPhase5GpuProgram;');

@@ -3,13 +3,10 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const canvas=fs.readFileSync(path.join(root,'parts/part-024-bridgefull-preview.txt'),'utf8');
-const webgl=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d-preview.txt'),'utf8');
-const preview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
+const canvas=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
+const webgl=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
+const preview=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 const production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
-assert.match(preview,/part-024-bridgefull-preview\.txt/);
-assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
-assert.match(production,/url=perf6a-preview\.html/);
 
 // Tribunas v3: el arriostramiento debe tener presupuesto acotado y mismo backend.
 assert.match(canvas,/function apexGrandstandTrussV3\(it,frame,h,gb\)/);
@@ -20,15 +17,6 @@ assert.match(webgl,/railPosts=Math\.min\(mobilePerformanceMode\(\)\?5:8/);
 assert.match(canvas,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
 assert.match(webgl,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
 // Público v4: regresión de alturas, carrera rápida y ambos renderizadores.
-const productionCanvas=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
-const productionWebgl=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
-for(const source of [canvas,productionCanvas]){
- assert.match(source,/function apexGrandstandSeatTopV4\(h,prof,gb,depthFraction\)/);
- assert.match(source,/const s=String\(currentSession\|\|'race'\)\.toLowerCase\(\)/);
-}
-for(const source of [productionCanvas,productionWebgl]){
- assert.match(source,/ySeat=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
-}
 assert.match(canvas,/seatY=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
 assert.match(canvas,/seatY=apexGrandstandSeatTopV4\(h,prof,gb,depth\/dep\)/);
 assert.match(webgl,/apexGrandstandPreviewCrowd\(it,prof,frame,h,gb,att\)/);

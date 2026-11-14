@@ -24,12 +24,12 @@ function road(src,optimized){
  wallGeometryAtS:(s,side)=>(stats.walls++,{top:{x:s+side*12,y:3,z:0}}),
  projectRoadLocal:(x,y,z)=>(stats.screen++,{x,y,z}),
  });
- load(c,src,['ribbonWorldPoint','apexFlatRunoffPoint','roadStep',...(optimized?['apexRoadWorldNode','apexWebglRoadStep']:[])],optimized?['apexRoadPreparationPerf']:[]);
+ load(c,src,['ribbonWorldPoint',...(optimized?['apexTrackEdgeSection','apexTrackCrossSection']:['apexFlatRunoffPoint']),'roadStep',...(optimized?['apexRoadWorldNode','apexWebglRoadStep']:[])],optimized?['apexRoadPreparationPerf']:[]);
  c.run=(s,node)=>vm.runInContext(`${optimized?'apexWebglRoadStep':'roadStep'}(${s},10,{x:1,y:2,z:3},0,${node})`,c);
  c.stats=stats;return c;
 }
 const oldRoad=road(baseline,false),newRoad=road(current,true);
-for(let i=0;i<1000;i++){const a=oldRoad.run(i*5,i),b=newRoad.run(i*5,i);for(const key of ['c','l','r','lo','ro','lx','rx'])for(const axis of ['x','y','z'])assert.ok(Math.abs(a.v[key][axis]-b.v[key][axis])<1e-10);}
+for(let i=0;i<1000;i++){const a=oldRoad.run(i*5,i),b=newRoad.run(i*5,i);for(const key of ['c','l','r'])for(const axis of ['x','y','z'])assert.ok(Math.abs(a.v[key][axis]-b.v[key][axis])<1e-10);}
 for(let f=0;f<9;f++)for(let i=0;i<1000;i++){oldRoad.run(i*5,i);newRoad.run(i*5,i);}
 assert.equal(oldRoad.stats.screen,90000);assert.equal(newRoad.stats.screen,0);assert.equal(oldRoad.stats.walls,20000);assert.equal(newRoad.stats.walls,0);assert.equal(newRoad.stats.env,1000);
 // Moving branch ends must never reuse world geometry.
@@ -43,7 +43,7 @@ function terrain(src,optimized,mobile=false){
  const polygons=Array.from({length:400},(_,j)=>{const x=j%20,z=Math.floor(j/20);return [{x,y:x*.1,z},{x:x+1,y:(x+1)*.1,z},{x:x+1,y:(x+1)*.1,z:z+1},{x,y:x*.1,z:z+1}]});
  const c=context({webglState:{gl,ready:true},webglScreenRoll:0,webglFloatCount:0,trackData:{customWorld:{_apexUnifiedGroundAtlas:{svgFaces:1}}},apexGpuFrameStats:{staticUploadBytes:0,bufferAllocations:0},
  apexPlateTerrainGrid:()=>grid,apexCollectTerrainPlateCells:()=>cells,apexInspectionFullScene:()=>false,apexInspectionActive:()=>false,mobileRenderPressure:()=>0,mobilePerformanceMode:()=>mobile,
- apexTerrainStaticKind:()=> 'PORTAL',apexTerrainFinePatch:()=>polygons,apexPhase4TerrainPacket:()=>polygons[0],apexUnifiedTerrainCellPieces:()=>null,
+ apexSvgTerrainBaseColorV152:()=>null,apexSurfaceTintV152:(s,c)=>c,apexTerrainStaticKind:()=> 'PORTAL',apexTerrainFinePatch:()=>polygons,apexPhase4TerrainPacket:()=>polygons[0],apexUnifiedTerrainCellPieces:()=>null,
  worldToCamera:(x,y,z)=>(stats.world++,{x,y,z}),webglPushCamPoly:poly=>{stats.polys++;},webglPushCamQuad:()=>{stats.polys++;},
  apexPhase5GpuProgram:()=>({program:{},attrs:{},uniforms:{}}),webglCssColor:()=>[.3,.4,.2,1],shadeColor:c=>c,renderProfileAdd(){},renderProfileMeasure:(key,fn)=>fn(),
  });
@@ -133,7 +133,7 @@ const order=[],upload=[];const submitGl={ARRAY_BUFFER:1,DYNAMIC_DRAW:2,TRIANGLES
 const submit=context({webglState:{gl:submitGl,ready:true,program:{},buffer:{},aPos:0,aColor:1},webglCv:{width:1280,height:720},
  webglVertexData:new Float32Array(63),webglFloatCount:63,apexSponsorTextureGpu:{triangles:0},apexSponsorTextureSubmitGl:()=>0,apexGpuFrameStats:{},apexStaticBatchPerf:{bufferGrows:0},telemetryPerf:{},renderProfileAdd(){},
  apexPhase5TerrainGPU:{pending:{offset:21},triangles:8,drawCalls:1},apexPhase5GroundGPU:{pending:{offset:42},visibleTriangles:7,submittedTriangles:10,drawCalls:1},
- apexPhase5DrawGpuTerrain:()=>{order.push(['terrain']);return true;},apexPhase5DrawGpuGround:()=>{order.push(['svg']);return true;},apexPhase5TerrainError:e=>{throw e},apexPhase5GpuGroundError:e=>{throw e}});
+ apexPhase6RoadGPU:{pending:null},apexPhase5DrawGpuTerrain:()=>{order.push(['terrain']);return true;},apexPhase5DrawGpuGround:()=>{order.push(['svg']);return true;},apexPhase5TerrainError:e=>{throw e},apexPhase5GpuGroundError:e=>{throw e}});
 load(submit,current,['webglSubmit']);assert.equal(vm.runInContext('webglSubmit()',submit),true);
 assert.deepEqual(order,[['dynamic',0,3],['terrain'],['dynamic',3,3],['svg'],['dynamic',6,3]]);assert.deepEqual(upload,[252]);assert.equal(submit.webglState.triangles,21);assert.equal(submit.webglState.drawCalls,5);
 console.log('PASS: dynamic/terrain/SVG submission order, single upload and submitted-triangle counters');

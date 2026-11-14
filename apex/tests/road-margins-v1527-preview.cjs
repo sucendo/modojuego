@@ -3,19 +3,15 @@
 // walls; authored runoff keeps its geometry and material, including banking.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
-const core=read('parts/part-024-bridgefull-preview.txt'),
- world=read('parts/part-025-bridgefull-trees3d-preview.txt'),
- frame=read('parts/part-026-perf6a-preview.txt'),
- preview=read('perf6a-preview.html'),prod=read('apex.html');
-assert.match(preview,/part-026-perf6a-preview\.txt/);
-assert.match(prod,/url=perf6a-preview\.html/);
+const core=read('parts/part-024.txt'),
+ world=read('parts/part-025.txt'),
+ frame=read('parts/part-026.txt'),
+ preview=read('apex.html'),prod=read('apex.html');
 function snippet(s,start,end){
  const a=s.indexOf(start),b=s.indexOf(end,a);
  assert.ok(a>=0&&b>a,'missing '+start);const block=s.slice(a,b);
  new vm.Script(block);return block;
 }
-assert.match(preview,/part-023-perf6a-preview\.txt/);
-assert.match(prod,/url=perf6a-preview\.html/);
 {
  const source=core;
  const edge=snippet(source,'function apexTrackEdgeSection(', '// v5.211');

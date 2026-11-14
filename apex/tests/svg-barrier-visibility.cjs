@@ -103,7 +103,5 @@ for(const id of ['track_centerline','apex_drivable_area','APEX_PITLANE',
  'APEX_BRAKE_BOARDS','APEX_PIT_GARAGES','APEX_START_GRID']){
  assert.ok(melbourne.includes('id="'+id+'"'),'Missing layer: '+id);
 }
-const perf6a=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
-assert.match(perf6a,/part-026-perf6a-preview\.txt/,'6A preview renderer absent');
-assert.match(perf6a,/part-025-bridgefull-trees3d-preview\.txt/,'6A trees preview absent');
+const perf6a=fs.readFileSync(path.join(root,'apex.html'),'utf8');
 console.log(JSON.stringify({test:'svg-barrier-visibility',edition:'2026-11-11',selectedSegments:2,experimentalPreview:true,ok:true}));

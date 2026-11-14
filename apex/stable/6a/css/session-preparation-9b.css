@@ -1,0 +1,42 @@
+/* APEX 9B: preparación por sesión, sin alterar motor ni HUD. */
+#apex9bPreparation[hidden]{display:none!important}
+#apex9bPreparation{position:fixed;inset:0;z-index:3100;overflow:auto;background:linear-gradient(120deg,#07101a,#142137);color:#f1f5fb;font-family:system-ui,sans-serif}
+#apex9bPreparation *{box-sizing:border-box}
+.apex9bShell{max-width:1540px;min-height:100%;margin:auto;padding:clamp(14px,3vw,36px);display:flex;flex-direction:column;gap:22px}
+.apex9bHeader{display:flex;justify-content:space-between;gap:15px;border-bottom:2px solid #d62c39;padding-bottom:16px}
+.apex9bHeader small{color:#fa4b58;letter-spacing:.2em}
+.apex9bHeader h2{font-style:italic;font-size:clamp(25px,3.3vw,48px);margin:4px 0}
+.apex9bHeader p{color:#a9b7cc;font-size:13px}
+#apex9bClose{border:1px solid #5b697a;background:#182534;color:#fff;cursor:pointer;padding:9px 17px;font-size:22px}
+.apex9bColumns{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:18px;flex:1}
+.apex9bCard{min-width:0;background:linear-gradient(160deg,#172335,#0a121e);border:1px solid #35465c;border-top:3px solid #c73342;border-radius:8px;padding:clamp(14px,1.7vw,25px)}
+.apex9bCard h3{font-size:13px;letter-spacing:.14em;margin:0 0 20px;color:#f65463}
+#apex9bCircuit{display:block;text-transform:uppercase;font-size:clamp(19px,2vw,28px);margin-bottom:12px}
+.apex9bCircuitArt{min-height:165px;border-radius:6px;background:url('../assets/9a/race-gp.webp') center/cover;border:1px solid #37465b}
+.apex9bTrackSvg{max-height:180px;overflow:hidden;margin-top:14px}
+.apex9bTrackSvg svg{display:block;max-width:100%;max-height:175px;margin:auto}
+.apex9bCard p{color:#c7d0df;line-height:1.5}
+.apex9bWeatherBanner{display:flex;flex-direction:column;justify-content:center;min-height:130px;border:1px solid #4b5f74;border-radius:6px;padding:16px;background:linear-gradient(110deg,#0b1c30,#1b3446)}
+.apex9bWeatherBanner strong{font-size:clamp(20px,2vw,30px);text-transform:uppercase}
+.apex9bWeatherBanner small{font-size:10px;color:#9bb8cc}
+#apex9bPreparation label{display:block;margin:15px 0 8px;font-size:11px;font-weight:800;letter-spacing:.1em;color:#a9b8ca}
+#apex9bPreparation select,#apex9bPreparation input{background:#0c1626;border:1px solid #4d6078;border-radius:4px;color:#fff;padding:10px;min-height:40px;width:100%}
+#apex9bPreparation button:focus-visible,#apex9bPreparation select:focus-visible,#apex9bPreparation input:focus-visible{outline:2px solid #f34c5c;outline-offset:2px}
+.apex9bMuted{font-size:12px;color:#98a9bb!important}
+.apex9bTyres{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.apex9bTyre{min-width:0;cursor:pointer;background:#101c2c;border:1px solid #455770;color:white;padding:5px 2px;border-radius:4px}
+.apex9bTyre.active{border-color:#f44656;background:#3c1d2b}
+.apex9bTyre img{width:100%;height:70px;object-fit:contain}
+.apex9bTyre span{display:block;font-size:10px;overflow-wrap:anywhere}
+.apex9bStints{display:grid;gap:7px;margin-top:14px}
+.apex9bStint{display:grid;grid-template-columns:65px 1fr 1fr;gap:7px;align-items:center}
+.apex9bStint b{font-size:11px}
+.apex9bAdvice{border-left:3px solid #f13b4c;background:#182738;padding:12px;font-size:13px}
+.apex9bActions{display:flex;gap:14px;justify-content:space-between}
+.apex9bActions button{cursor:pointer;background:#1a2938;border:1px solid #57687c;color:white;border-radius:4px;padding:14px 20px;font-weight:800}
+.apex9bActions button.primary{background:#d12c3e;border-color:#e44456}
+.apex9bActions button:disabled{opacity:.4;cursor:not-allowed}
+.sessionStage .apex9bHubInfo{margin-top:6px;font-size:11px;color:#91b7ca;font-weight:500}
+.sessionStage.current .apex9bHubInfo{color:#fc596b;font-weight:800}
+@media(max-width:980px){.apex9bColumns{grid-template-columns:1fr 1fr}.apex9bCard:last-child{grid-column:1/-1}}
+@media(max-width:650px),(max-height:450px){.apex9bShell{padding:12px;gap:10px}.apex9bColumns{grid-template-columns:1fr;gap:10px}.apex9bCard:last-child{grid-column:auto}.apex9bCircuitArt{min-height:95px}.apex9bTyre img{height:50px}.apex9bActions{flex-wrap:wrap}.apex9bActions button{flex:1;min-width:145px}}

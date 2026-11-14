@@ -22,7 +22,7 @@ La versión visible y el build interno son conceptos separados. `APP_VERSION` id
 
 Build actual: `2026.11.14.153` (v0.15.3).
 
-El index público carga la compilación 6A, incluidas las mejoras de terreno, materiales, tribunas, árboles y reincorporación de boxes.
+El index público carga el simulador mantenido en `apex.html` con una única serie de fragmentos en `parts/`. La copia estable 6A se abre desde `perf6a-preview.html` y congela los archivos del commit `765d0b2` dentro de `stable/6a/`. Esta carpeta es una instantánea de la versión publicada. El desarrollo continúa en los archivos de la raíz de APEX.
 
 Histórico del build `2026.10.20.07`: v0.13.23 mantiene los formatos guardados y los 28 fragmentos. Primera etapa de fase 7: consistencia de entradas/fuerzas e integración lateral estable, sin cambios de circuito ni contacto/suspensión. El build 04 añade selección estable de bloques de terreno móvil y validación Chromium mediante CI. Los builds 05–07 corrigen la comunicación de bloqueos SVG al automático y sus transiciones de recuperación; añaden comparación con main, pérdida/restauración WebGL y FP1/clasificación en Chromium. Véanse `AUDITORIA_V01323.md` y `CIERRE_FASE7_V01323.md` para resultados y límites de validación.
 

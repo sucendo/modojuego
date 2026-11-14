@@ -1,9 +1,7 @@
 'use strict';
 const fs=require('node:fs'),assert=require('node:assert/strict'),vm=require('node:vm');
-const canvas=fs.readFileSync('apex/parts/part-024-bridgefull-preview.txt','utf8');
-const webgl=fs.readFileSync('apex/parts/part-025-bridgefull-trees3d-preview.txt','utf8');
-const prodCanvas=fs.readFileSync('apex/parts/part-024.txt','utf8');
-const prodWebgl=fs.readFileSync('apex/parts/part-025.txt','utf8');
+const canvas=fs.readFileSync('apex/parts/part-024.txt','utf8');
+const webgl=fs.readFileSync('apex/parts/part-025.txt','utf8');
 const svg=fs.readFileSync('apex/circuits/svg/apex26_01-australia_circuito-propuesta-20261111-v2.svg','utf8');
 function extract(source,name){
  const start=source.indexOf('function '+name+'(');
@@ -72,6 +70,4 @@ assert.match(canvas,/if\(it\.fence\)apexSvgConcreteFenceCanvas\(/,'Canvas only d
 assert.match(webgl,/if\(kind==='CONCRETE'\)\{webglPushSvgConcreteFence\(/,'WebGL concrete uses F1 profile, not pale translucent sheet');
 assert.match(webgl,/Math\.min\(mobile\?12:18/,'Mobile post budget must be capped');
 assert.match(svg,/data-apex-barrier="CONCRETE"/,'Melbourne actually defines concrete barriers');
-assert.ok(!prodCanvas.includes('apexSvgConcreteFenceProfile'),'Production Canvas stays untouched');
-assert.ok(!prodWebgl.includes('webglPushSvgConcreteFence'),'Production WebGL stays untouched');
 console.log(JSON.stringify({ok:true,canvasNear,glNear,melbourneConcrete:true,productionIsolated:true}));
