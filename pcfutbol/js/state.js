@@ -34,6 +34,7 @@ export const GameState = {
   world: {
     leagues: [],
   },
+  transferHistory: [],
 };
 
 /**
@@ -83,6 +84,7 @@ export function newGame(options = {}) {
     maxMatchday: 0,
   };
   GameState.world = { leagues: [] };
+  GameState.transferHistory = [];
 
   GameState.user.roleMode = roleMode;
   GameState.user.clubId = selectedClubId;
@@ -125,6 +127,7 @@ export function applyLoadedState(raw) {
   
   // Mundo (otras ligas)
   GameState.world = raw.world || GameState.world || { leagues: [] };
+  GameState.transferHistory = Array.isArray(raw.transferHistory) ? raw.transferHistory : [];
 
   normalizeGameState();
   if (!GameState.fixtures || GameState.fixtures.length === 0) {
