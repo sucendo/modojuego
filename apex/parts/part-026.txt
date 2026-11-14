@@ -2179,7 +2179,8 @@ function rivalKinematicParityTarget(rv,diff,lod=1){
  let target=top;
  const horizon=lod===2?250:lod===1?238:222,step=lod===2?12:lod===1?14:18;
  for(let d=step;d<=horizon;d+=step){
-   let cs=cornerSafeSpeed(rv.s+d)*Math.sqrt(apexTyreGripScale(rv))*diffEq*(.915+.050*(rv.bravery||.9)+.035*(rv.cornerSkill||rv.skill))*perf.aero*driverPace;
+   const ss=rv.s+d,legacy=cornerSafeSpeed(ss),bankFactor=apexBankedSpeedFactor(curvatureAt(ss),ss,Math.min(90,legacy),1.86*apexTyreGripScale(rv));
+   let cs=legacy*bankFactor*Math.sqrt(apexTyreGripScale(rv))*diffEq*(.915+.050*(rv.bravery||.9)+.035*(rv.cornerSkill||rv.skill))*perf.aero*driverPace;
    if(apexWeatherIsWet())cs*=.845;
    const allowed=Math.sqrt(Math.max(0,cs*cs+2*decel*d));
    if(allowed<target)target=allowed;
@@ -2212,8 +2213,11 @@ function rivalBaseTargetSpeed(rv,diff,lod=1,plan=null){
 function applyRivalNearDynamics(rv,target,plan,dt,lod){
  if(rv.impactMode&&rv.impactMode!=='NONE')return target;
  if(lod!==2){rv.hybridGripUse=(rv.hybridGripUse||0)*Math.exp(-3*dt);return target;}
- const wet=apexWeatherIsWet(),k=Math.abs(curvatureAt(rv.s+clamp(rv.speed*.18,4,13))),M=800,G=9.81,mu=1.86*apexTyreGripScale(rv);
- const down=Math.min(38000,2.72*rv.speed*rv.speed),latCap=mu*(M*G+down)/M,latNeed=rv.speed*rv.speed*k,use=latCap>0?latNeed/latCap:0;
+ const wet=apexWeatherIsWet(),ss=rv.s+clamp(rv.speed*.18,4,13),ks=curvatureAt(ss),k=Math.abs(ks),M=800,G=9.81,mu=1.86*apexTyreGripScale(rv);
+ const down=Math.min(38000,2.72*rv.speed*rv.speed),bank=clamp(finite(bankAt(ss),0),-.40,.40);
+ const latCap=mu*(M*G+down)*Math.cos(bank)/M,
+       latNeed=Math.max(0,rv.speed*rv.speed*k-Math.sign(ks)*G*Math.sin(bank)),
+       use=latCap>0?latNeed/latCap:0;
  rv.hybridGripUse=lerp(rv.hybridGripUse||0,use,clamp(dt*7,0,1));
  const threshold=.91+.055*(rv.cornerSkill||rv.skill);
  if(use>threshold)target*=1-clamp((use-threshold)*.18,0,.075);
@@ -2818,8 +2822,12 @@ function autoPhysicalCornerSpeed(s,car=player){
  const k=car===player&&(demoMode||assistMode)?
    Math.max(autoRacingCurvatureEnvelope(s),rawK*.72):rawK;
  if(k<.00055)return 99;
- const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800,G=9.81;
+ const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800;
  const safety=wet?.90:.960;
+ // Curvature and SVG/JSON banking share a signed local Frenet frame.
+ const signedSamples=[-3,0,3].map(d=>curvatureAt(s+d));
+ const signedK=signedSamples.reduce((a,b)=>Math.abs(b)>Math.abs(a)?b:a,0);
+ const kSigned=(Math.sign(signedK)||1)*k,bank=finite(bankAt(s),0);
  // The low-speed grip limit belongs to the player's AUT controller.
  // Keep the previously tuned rival speed floor/handling unchanged.
  const autPlayer=car===player&&(demoMode||assistMode);
@@ -2827,7 +2835,7 @@ function autoPhysicalCornerSpeed(s,car=player){
  for(let i=0;i<12;i++){
    const v=(lo+hi)*.5;
    const down=Math.min(38000,2.72*v*v);
-   const latAccel=mu*(M*G+down)/M*safety;
+   const latAccel=apexBankedLateralLimit(kSigned,s,v,mu,M,down,safety,bank);
    // Incluye también la autoridad geométrica de dirección a esa velocidad.
    const maxSteer=.285/(1+v*.0105),needSteer=Math.atan(3.60*k);
    const safe=(v*v*k<=latAccel)&&(needSteer<=maxSteer*.96);
@@ -3197,7 +3205,9 @@ function autoRaceSurvivalGovernor(s,sp,raceTraffic){
  for(let d=12;d<=horizon;d+=step){
    const ss=s+d,k=Math.abs(curvatureAt(ss)),legacy=cornerSafeSpeed(ss);
    if(k<.00215&&legacy>61)continue;
-   let curveTarget=legacy*scale+(firstLap?.35:1.1);
+   // Preserve the real banking effect in the secondary race safety governor.
+   const bankFactor=apexBankedSpeedFactor(curvatureAt(ss),ss,Math.min(90,legacy),1.86*apexTyreGripScale(player));
+   let curveTarget=legacy*scale*bankFactor+(firstLap?.35:1.1);
    if(k>.0090)curveTarget*=.975;
    const settle=d>22?10:4,allowed=Math.sqrt(Math.max(0,curveTarget*curveTarget+2*decel*Math.max(0,d-settle)));
    if(allowed<best){best=allowed;bestD=d;bestSafe=curveTarget;bestK=k;}

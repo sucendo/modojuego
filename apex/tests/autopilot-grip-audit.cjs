@@ -8,12 +8,17 @@ function section(from,to){
  assert.ok(i>=0&&j>i,'Missing AUT production function: '+from);
  return src.slice(i,j);
 }
+const bankSrc=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
+const bankStart=bankSrc.indexOf('function apexBankedLateralLimit('),
+      bankEnd=bankSrc.indexOf('function driverPhysicalSpeedFromCurvature(',bankStart);
+assert.ok(bankStart>=0&&bankEnd>bankStart,'Banking physics shared with AUT must exist');
+const bankHelpers=bankSrc.slice(bankStart,bankEnd);
 const physical=section('function autoCurvatureEnvelope(','function autoEnsureRiskMemory(');
 const envelope=section('function autoGripTrajectoryEnvelope(','// v5.145: segundo cinturón');
 const follow=section('function autoPredictiveTrafficSpeed(','function autoTargetSpeed(');
 const farKink=section('function autoFarKinkBrakingEnvelope(','// v5.145: segundo cinturón');
 const ctx={
- Math,Number,player:{teamKey:'test',tyres:{gripFront:1,gripRear:1}},trackData:{km:5.414},
+ Math,Number,player:{teamKey:'test',tyres:{gripFront:1,gripRear:1}},trackData:{km:5.414},bankVal:0,
  raceT:1,wet:false,demoMode:true,assistMode:false,nowCurvature:s=>(s>=150&&s<=240?.012:0),
  farKink:{active:true,d:200,angle:1.1},geometricKinkAhead:()=>ctx.farKink,
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
@@ -21,6 +26,7 @@ const ctx={
  curvatureAt:s=>ctx.nowCurvature(s),
  apexTyreGripScale:car=>Math.min(car.tyres.gripFront,car.tyres.gripRear),
  apexWeatherIsWet:()=>ctx.wet,
+ bankAt:()=>ctx.bankVal,finite:(v,f)=>Number.isFinite(v)?v:f,
  teamPerformance:()=>({brake:1}),
  envProfile:()=>({half:7}),
  poseAt:()=>({tx:0,tz:1}),
@@ -29,7 +35,17 @@ const ctx={
  autoRacingCurvatureEnvelope:s=>Math.abs(ctx.nowCurvature(s)),
  apexWallishAtS:()=>false
 };
-vm.createContext(ctx);vm.runInContext(physical+'\n'+envelope+'\n'+farKink+'\n'+follow,ctx);
+vm.createContext(ctx);vm.runInContext(bankHelpers+'\n'+physical+'\n'+envelope+'\n'+farKink+'\n'+follow,ctx);
+// The same tyre compound must tolerate more speed with favourable banking,
+ // and demand earlier braking with adverse banking.
+ctx.nowCurvature=()=>.012;
+const flatBank=ctx.autoPhysicalCornerSpeed(0);
+ctx.bankVal=.235;const favourableBank=ctx.autoPhysicalCornerSpeed(0);
+ctx.bankVal=-.235;const adverseBank=ctx.autoPhysicalCornerSpeed(0);
+assert.ok(favourableBank>flatBank+.3,'Favourable banking must raise sustainable corner speed');
+assert.ok(adverseBank<flatBank-.3,'Adverse banking must require a slower apex');
+ctx.bankVal=0;
+ctx.nowCurvature=s=>(s>=150&&s<=240?.012:0);
 const dry=ctx.autoGripTrajectoryEnvelope(0);
 assert.ok(Number.isFinite(dry.target)&&dry.target>35,'Dry approach must be quick but finite');
 assert.equal(ctx.autoGripTrajectoryEnvelope(0),dry,'No repeated scan during 75 ms cache period');
@@ -126,4 +142,4 @@ assert.ok(wetMadrid.target<wornMadrid.target&&wornMadrid.target<entry.target,
  'Worn tyres and wet conditions must reduce achievable entry speed');
 assert.ok(src.includes('futureReach=Math.max(.18,laneRate*futureTravel)'),'Lookahead must follow reachable lateral motion');
 assert.ok(src.includes("targetReason='GRIP_ENVELOPE'"),'Grip envelope not connected to AUT');
-console.log(JSON.stringify({test:'autopilot-grip',dry:dry.target,worn:worn.target,rain:rain.target,hairpin,straight:'unrestricted',cache:true,passed:true}));
+console.log(JSON.stringify({test:'autopilot-grip',dry:dry.target,worn:worn.target,rain:rain.target,banked:{adverse:adverseBank,flat:flatBank,favourable:favourableBank},hairpin,straight:'unrestricted',cache:true,passed:true}));
