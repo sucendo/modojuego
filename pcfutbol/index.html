@@ -5,6 +5,7 @@
 	<title>PcFútbol Manager (prototipo)</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link rel="stylesheet" href="css/styles.css" />
+	<link rel="stylesheet" href="css/transferMarket.css" />
 </head>
 <body>
 	<header class="app-header">
@@ -166,6 +167,7 @@
 				<div class="top-bar-left top-bar-nav">
 					<button id="btn-nav-dashboard" class="btn btn-link">Dashboard</button>
 					<button id="btn-nav-squad" class="btn btn-link">Plantilla</button>
+					<button id="btn-nav-transfermarket" class="btn btn-link">Fichajes</button>
 					<button id="btn-nav-alignment" class="btn btn-link">Alineación</button>
 					<button id="btn-nav-tactics" class="btn btn-link">Tácticas</button>  
 					<button id="btn-nav-calendar" class="btn btn-link">Calendario</button>
@@ -274,7 +276,7 @@
 								<span class="pcf-hub-item__label">Ojeador</span>
 								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
 							</button>
-							<button class="pcf-hub-item pcf-linkbtn" disabled>
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="transfermarket">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
 									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-transfers"></use></svg>
 								</span>
@@ -380,6 +382,64 @@
 						<ul id="quick-notes"></ul>
 					</aside>
 				</div>
+			</section>
+
+			
+			<!-- SUBVISTA: MERCADO DE FICHAJES -->
+			<section id="view-transfermarket" class="hidden" aria-label="Mercado de fichajes">
+				<article class="card">
+					<h2>Mercado de fichajes</h2>
+					<p class="pcf-market-info">Primera fase: compras directas y ofertas de venta simuladas. Las operaciones modifican las plantillas y los presupuestos y se incluyen en las partidas guardadas.</p>
+					<p id="market-budgets" class="pcf-market-info"></p>
+					<p id="market-message" role="status" aria-live="polite"></p>
+				</article>
+				<article class="card">
+					<h3>Buscar jugadores</h3>
+					<div class="market-toolbar">
+						<label>Nombre o club <input id="market-search" type="search" placeholder="Buscar jugador o club" /></label>
+						<label>Liga <select id="market-league"><option value="ALL">Todas las ligas</option></select></label>
+						<label>Demarcación
+							<select id="market-position">
+								<option value="ALL">Todas</option><option value="GK">Porteros</option>
+								<option value="DEF">Defensas</option><option value="MID">Centrocampistas</option>
+								<option value="ATT">Delanteros</option>
+							</select>
+						</label>
+					</div>
+					<p id="market-result-count" class="pcf-market-info"></p>
+					<div class="table-wrapper">
+						<table class="pcf-market-table">
+							<thead><tr><th>Jugador</th><th>Club</th><th>Pos.</th><th>Media</th><th>Edad</th><th>Precio</th><th></th></tr></thead>
+							<tbody id="market-results-body"></tbody>
+						</table>
+					</div>
+					<h3>Ofertar por jugador</h3>
+					<p id="market-selected" class="pcf-market-info">Selecciona un jugador de la lista.</p>
+					<div class="market-offer">
+						<label for="market-bid">Oferta en euros</label>
+						<input id="market-bid" type="number" min="10000" step="10000" inputmode="numeric"/>
+						<button id="market-buy" class="btn btn-primary" type="button" disabled>Enviar oferta y fichar</button>
+					</div>
+				</article>
+				<article class="card">
+					<h3>Vender jugadores</h3>
+					<p class="pcf-market-info">Marca a un jugador como transferible. Si existe un comprador con presupuesto, podrás aceptar una oferta simulada inmediata.</p>
+					<div class="market-sale-controls">
+						<select id="market-sale-player" aria-label="Selecciona jugador para vender"></select>
+						<button id="market-toggle-sale" class="btn btn-secondary" type="button">Poner en el mercado</button>
+						<button id="market-accept-sale" class="btn btn-primary" type="button" disabled>Aceptar oferta</button>
+					</div>
+					<p id="market-sale-info" class="pcf-market-info"></p>
+				</article>
+				<article class="card">
+					<h3>Últimos movimientos</h3>
+					<div class="table-wrapper">
+						<table class="pcf-market-table">
+							<thead><tr><th>Jugador</th><th>Operación</th><th>Precio</th><th>Fecha del juego</th></tr></thead>
+							<tbody id="market-history-body"></tbody>
+						</table>
+					</div>
+				</article>
 			</section>
 
 			<!-- SUBVISTA: PLANTILLA -->
