@@ -1,6 +1,7 @@
 // Mercado de fichajes: lógica sin dependencias del DOM.
 // Primera fase: compras y ventas directas entre clubes de las ligas simuladas.
 import { GameState } from '../state.js';
+import { isPlayerUnavailable } from './utils/availability.js';
 
 const MIN_SQUAD = 16;
 const MAX_SQUAD = 30;
@@ -41,6 +42,35 @@ function fail(message) {
   return { ok: false, message };
 }
 
+// Evitar que una operación deje un XI incompleto o IDs de jugadores transferidos.
+// Mantiene la alineación elegida y solo rellena vacantes con jugadores disponibles.
+function reconcileSquad(club) {
+  const all = (club.players || []).filter(p => p?.id);
+  const existing = new Set(all.map(p => String(p.id)));
+  const available = all.filter(p => !isPlayerUnavailable(p)).sort((a, b) => Number(b.overall || 0) - Number(a.overall || 0));
+  const chosen = new Set();
+  const xi = (Array.isArray(club.lineup) ? club.lineup : [])
+    .filter(id => existing.has(String(id)) && !chosen.has(String(id)) && (chosen.add(String(id)), true))
+    .slice(0, 11);
+  for (const p of available) {
+    if (xi.length >= 11) break;
+    if (chosen.has(String(p.id))) continue;
+    xi.push(p.id);
+    chosen.add(String(p.id));
+  }
+  const bench = (Array.isArray(club.bench) ? club.bench : [])
+    .filter(id => existing.has(String(id)) && !chosen.has(String(id)) && (chosen.add(String(id)), true))
+    .slice(0, 9);
+  for (const p of available) {
+    if (bench.length >= 9) break;
+    if (chosen.has(String(p.id))) continue;
+    bench.push(p.id);
+    chosen.add(String(p.id));
+  }
+  club.lineup = xi;
+  club.bench = bench;
+}
+
 function transferPlayer(source, destination, player, fee, kind) {
   const sourceIndex = source.players.findIndex((p) => String(p.id) === String(player.id));
   if (sourceIndex < 0) return fail('El futbolista ya no pertenece a ese club.');
@@ -56,10 +86,10 @@ function transferPlayer(source, destination, player, fee, kind) {
 
   // Comprobar todos los límites antes de mutar el estado, para que la operación sea atómica.
   source.players.splice(sourceIndex, 1);
-  source.lineup = (source.lineup || []).filter((id) => String(id) !== String(player.id));
-  source.bench = (source.bench || []).filter((id) => String(id) !== String(player.id));
   player.transferListed = false;
   destination.players.push(player);
+  reconcileSquad(source);
+  reconcileSquad(destination);
   destination.cash = amount(destination.cash) - cost;
   source.cash = amount(source.cash) + cost;
   destination.wageBudget = amount(destination.wageBudget) - wage;
