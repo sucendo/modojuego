@@ -175,8 +175,12 @@ export function updateTransferMarketView() {
   renderSales();
   renderHistory();
   if (selected) {
-    const list = searchTransferMarket({ query: '', leagueId: selected.leagueId, limit: 200 });
-    if (!list.some(p => String(p.playerId) === String(selected.playerId) && String(p.clubId) === String(selected.clubId))) {
+    const exists = [GameState.league, ...(GameState.world?.leagues || [])]
+      .filter(lg => lg?.id === selected.leagueId)
+      .flatMap(lg => lg.id === GameState.league?.id ? GameState.clubs || [] : lg.clubs || [])
+      .some(club => String(club.id) === String(selected.clubId) &&
+        (club.players || []).some(p => String(p.id) === String(selected.playerId)));
+    if (!exists) {
       selected = null;
       if (el('market-selected')) el('market-selected').textContent = 'Selecciona un jugador de la lista.';
       if (el('market-buy')) el('market-buy').disabled = true;
