@@ -51,6 +51,7 @@ import { initStatsUI, updateStatsView } from './ui/stats.js';
 import { initMedicalUI, updateMedicalView } from './ui/medical.js';
 
 import { initSquadUI, bindSquadActions, updateSquadView } from './ui/squad.js';
+import { initTransferMarketUI, updateTransferMarketView } from './ui/transferMarketView.js';
 import { getPlayerGameAge } from './ui/utils/calendar.js';
 
 import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js';
@@ -122,6 +123,7 @@ export function initUI() {
   // Navegación
   const btnNavDashboard = document.getElementById('btn-nav-dashboard');
   const btnNavSquad = document.getElementById('btn-nav-squad');
+  const btnNavTransferMarket = document.getElementById('btn-nav-transfermarket');
   const btnNavAlignment = document.getElementById('btn-nav-alignment');
   const btnNavTactics = document.getElementById('btn-nav-tactics');
   const btnNavCalendar = document.getElementById('btn-nav-calendar');
@@ -133,6 +135,7 @@ export function initUI() {
 
   const viewDashboard = document.getElementById('view-dashboard');
   const viewSquad = document.getElementById('view-squad');
+  const viewTransferMarket = document.getElementById('view-transfermarket');
   const viewAlignment = document.getElementById('view-alignment');
   const viewTactics = document.getElementById('view-tactics');
   const viewCalendar = document.getElementById('view-calendar');
@@ -174,6 +177,7 @@ export function initUI() {
   const ctx = {
     viewDashboard,
     viewSquad,
+    viewTransferMarket,
     viewAlignment,
     viewTactics,
     viewCalendar,
@@ -184,6 +188,7 @@ export function initUI() {
     viewMedical,
     btnNavDashboard,
     btnNavSquad,
+    btnNavTransferMarket,
     btnNavAlignment,
     btnNavTactics,
     btnNavCalendar,
@@ -199,6 +204,7 @@ export function initUI() {
     try { ensureGameTimeAndWorldSync(); } catch (e) { console.warn(e); }
     updateDashboard();
     updateSquadView();
+    updateTransferMarketView();
     updateAlignmentView();
     updateTacticsView();
     updateCalendarView();
@@ -262,9 +268,19 @@ export function initUI() {
   // Estadísticas (vista nueva)
   initStatsUI?.();
 
+  initTransferMarketUI({ onTransfer: () => {
+    updateDashboard();
+    updateSquadView();
+    updateAlignmentView();
+    updateTacticsView();
+    updateNextMatchView();
+    updateStatsView();
+  }});
+
   initNavigation(ctx, {
     updateDashboard,
     updateSquadView,
+    updateTransferMarketView,
     updateAlignmentView,
     updateTacticsView,
     updateCalendarView,
@@ -304,6 +320,7 @@ export function initUI() {
       const map = {
         dashboard: btnNavDashboard,
         squad: btnNavSquad,
+        transfermarket: btnNavTransferMarket,
         alignment: btnNavAlignment,
         tactics: btnNavTactics,
         calendar: btnNavCalendar,
