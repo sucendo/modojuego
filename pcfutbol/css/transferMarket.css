@@ -1,0 +1,25 @@
+/* Primera fase: mercado de fichajes PC Fútbol Manager. */
+.pcf-market-info { color: var(--muted); font-size: .92rem; }
+.market-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.market-toolbar > label { display: flex; flex-direction: column; gap: 5px; flex: 1 1 170px; min-width: 0; }
+.market-toolbar input, .market-toolbar select, .market-offer input, .market-sale-controls select {
+  width: 100%; min-width: 0; padding: 9px 10px; background: #111b32;
+  border: 1px solid #3c4b65; color: #f5f5f5; border-radius: 7px;
+}
+.market-offer, .market-sale-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.market-offer input { max-width: 210px; }
+.market-sale-controls select { flex: 1 1 280px; }
+.pcf-market-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.pcf-market-table th, .pcf-market-table td { padding: 9px; border-bottom: 1px solid var(--border); text-align: left; }
+.pcf-market-table thead th { background: rgba(20,39,70,.85); }
+.pcf-market-table tr:hover { background: rgba(255,255,255,.035); }
+.pcf-market-table td:last-child { white-space: nowrap; }
+.pcf-market-table .btn { padding: 6px 10px; }
+#market-message { min-height: 1.35em; margin-top: 8px; color: #b8e4bf; }
+#market-message.market-error { color: #ffb0b0; }
+@media (max-width:640px) {
+  .market-offer > * { width: 100%; max-width: none !important; }
+  .pcf-market-table { font-size: .81rem; }
+  .pcf-market-table th, .pcf-market-table td { padding: 7px 5px; }
+  .market-sale-controls .btn { flex: 1 1 auto; }
+}
