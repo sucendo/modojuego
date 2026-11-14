@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.15.0 · PRE-RELEASE**
+Versión de desarrollo: **v0.15.3 · PRE-RELEASE**
 
 ## v0.15.0 · Estrategia de boxes de los rivales (8D.1–8D.2)
 

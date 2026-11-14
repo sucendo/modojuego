@@ -150,7 +150,10 @@ function makeHome(){
  $('apex9aProfile').addEventListener('click',()=>{if(!global.ApexDriverProfile9F?.open?.())advanced('teamGarage','home');});
  $('apex9aAudio').addEventListener('click',()=>global.ApexMenuMusic9A?.toggle());
  $('apex9aHelp').addEventListener('click',()=>advanced('help','home'));
- $('apex9aCredits').addEventListener('click',()=>global.alert('APEX Formula 26 · Sucendo'));
+ $('apex9aCredits').addEventListener('click',()=>{
+    const release=typeof APP_VERSION==='string'?' '+APP_VERSION+' · '+APP_CHANNEL:'';
+    global.alert('APEX Formula 26'+release+' · Sucendo');
+  });
 }
 function makeModes(){
  modes=document.createElement('section');modes.id='apex9aModesScreen';modes.hidden=true;

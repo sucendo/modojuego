@@ -24,7 +24,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#05070b">
-<title>Apex Formula 26 v0.15.0 · PRE-RELEASE</title>
+<title>Apex Formula 26 v0.15.3 · PRE-RELEASE</title>
 <style>
 :root{--a:#59f3ff;--r:#ff405d;--panel:rgba(8,12,18,.94);--line:rgba(255,255,255,.14);--mut:#93a0b2}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -1156,7 +1156,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
 
 <section id="menu" class="panel">
   <div class="menuBgCar" aria-hidden="true"></div>
-  <div class="logo">APEX <b>26</b> <span id="versionBadge" style="font-size:.22em;letter-spacing:.05em;color:#8d99a9">v4.17</span></div>
+  <div class="logo">APEX <b>26</b> <span id="versionBadge" style="font-size:.22em;letter-spacing:.05em;color:#8d99a9">v0.15.3</span></div>
   <div class="tag">Elige tu modo, configura la sesión y sal a pista.</div>
     <div id="menuModeRow">
     <div id="menuModeTabs"><button class="tab active" data-t="quick">Carrera rápida</button><button class="tab" data-t="grandprix">Gran Premio</button><button class="tab" data-t="season">Temporada 2026</button><button class="tab" data-t="practice">Entrenamientos libres</button></div>
@@ -1448,7 +1448,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
 // Apex Formula 26 v5.80 · Progressive Mobile Quality
 // v5.230.36: cedemos un frame al navegador para que la portada pueda pintarse antes del arranque pesado.
 requestAnimationFrame(()=>setTimeout(()=>{
-const APP_VERSION="v0.15.0",APP_CHANNEL="PRE-RELEASE",APP_BUILD="2026.10.21.08D2";
+const APP_VERSION="v0.15.3",APP_CHANNEL="PRE-RELEASE",APP_BUILD="2026.11.14.153";
 const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mod=(n,m)=>((n%m)+m)%m,lerp=(a,b,t)=>a+(b-a)*t;
 const appStorage=(()=>{try{return window.localStorage}catch(e){return{getItem(){return null},setItem(){},removeItem(){},clear(){}}}})();
 const finite=(v,f=0)=>Number.isFinite(v)?v:f,finiteClamp=(v,a,b,f=0)=>clamp(finite(v,f),a,b);
