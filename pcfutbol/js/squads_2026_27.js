@@ -1,4 +1,5 @@
-// Plantillas 2026/27 contrastadas con LaLiga y Premier League.
+// Plantillas 2026/27 contrastadas con LaLiga, Premier League, Bundesliga,
+// Eredivisie, Serie B y Lega Serie A. La fuente exacta se guarda por club.
 // Solo nombres y posiciones (y dorsales cuando constan); las valoraciones,
 // salarios y contratos se estiman en el juego y NO son datos oficiales.
 // El formato compacto por jugador es: nombre|posición|dorsal opcional.
