@@ -426,6 +426,7 @@
 							<div class="market-toolbar">
 								<label>Salario anual (€) <input id="market-wage" type="number" min="10000" step="10000" inputmode="numeric" /></label>
 								<label>Duración (años) <input id="market-years" type="number" min="1" max="5" step="1" value="3" /></label>
+								<label>Cláusula de rescisión (€) <input id="market-release-clause" type="number" min="10000" step="10000" inputmode="numeric" /></label>
 								<label>Rol prometido <select id="market-role"><option value="STARTER">Titular</option><option value="ROTATION">Rotación</option><option value="PROSPECT">Promesa</option></select></label>
 							</div>
 							<button id="market-buy" class="btn btn-primary" type="button">Ofrecer contrato y fichar</button>
@@ -1541,6 +1542,10 @@
 					step="1000"
 				/>
 				</div>
+					<div class="form-group">
+					<label for="player-neg-clause">Cláusula de rescisión ofrecida (€)</label>
+					<input type="number" id="player-neg-clause" min="10000" step="10000" inputmode="numeric" />
+					</div>
 			</div>
 			<button class="btn btn-primary" id="player-neg-send" type="button">
 				Enviar oferta

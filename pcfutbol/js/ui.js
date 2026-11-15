@@ -74,6 +74,7 @@ window.GameState = GameState;
 
 let negYearsInput = null;
 let negWageInput = null;
+let negClauseInput = null;
 let negResultEl = null;
 let negHintEl = null;
 let negSectionEl = null;
@@ -86,6 +87,7 @@ function openPlayerModal(player) {
   if (!player) return;
   currentModalPlayer = player;
   openPlayerModalImpl(player);
+  prepareNegotiationUI(player);
 }
 
 function closePlayerModal() {
@@ -152,12 +154,14 @@ export function initUI() {
 
   negYearsInput = document.getElementById('player-neg-years');
   negWageInput = document.getElementById('player-neg-wage');
+  negClauseInput = document.getElementById('player-neg-clause');
   negResultEl = document.getElementById('player-modal-neg-result');
   negHintEl = document.getElementById('player-modal-neg-hint');
   negSectionEl = document.getElementById('player-modal-neg-section');
   initNegotiationUI({
     yearsInput: negYearsInput,
     wageInput: negWageInput,
+    clauseInput: negClauseInput,
     resultEl: negResultEl,
     hintEl: negHintEl,
     sectionEl: negSectionEl,
@@ -449,7 +453,11 @@ export function initUI() {
   if (negSendBtn) {
     negSendBtn.addEventListener('click', () => {
       if (!currentModalPlayer) return;
-      attemptRenewal(currentModalPlayer);
+      const result = attemptRenewal(currentModalPlayer);
+      if (result.accepted) {
+        updateDashboard();
+        updateSquadView();
+      }
     });
   }
 

@@ -3,6 +3,8 @@
 // cuando avanza la fecha del juego (nunca al redibujar una pantalla).
 import { GameState, ensureTransferMarketState } from '../state.js';
 import { isPlayerUnavailable } from './utils/availability.js';
+import { getReleaseClause, getSuggestedReleaseClause, evaluateReleaseClause } from './contracts.js';
+export { getReleaseClause } from './contracts.js';
 
 const MIN_SQUAD = 16;
 const MAX_SQUAD = 30;
@@ -96,14 +98,6 @@ export function getTransferPrice(player) {
 export function getSalePrice(player) {
   return roundFee(Math.max(100000, int(player?.value)) * 0.80);
 }
-export function getReleaseClause(player) {
-  const explicit = Number(player?.releaseClause);
-  if (Number.isSafeInteger(explicit) && explicit > 0) return explicit;
-  // El dataset no incluye cláusulas: generamos una cifra contractual simulada.
-  const years = Math.max(1, Math.min(5, int(player?.contractYears || 2)));
-  return roundFee(Math.max(100000, int(player?.value)) * (1.8 + years * 0.18));
-}
-
 function canSell(sourceEntry, player, { autonomous = false, season = 1 } = {}) {
   const source = sourceEntry.club;
   if (source.players.length <= MIN_SQUAD) return fail('El vendedor debe conservar al menos 16 jugadores.');
@@ -196,7 +190,7 @@ export function getPlayerRequirements(player, sellerClub, buyerClub) {
   return { minimumWage, expectedRole, minYears: age < 25 ? 3 : 1, maxYears: age >= 33 ? 2 : 5 };
 }
 
-export function evaluatePlayerOffer({ player, source, destination, wage, years, role = 'STARTER' }) {
+export function evaluatePlayerOffer({ player, source, destination, wage, years, role = 'STARTER', releaseClause }) {
   const salary = Number(wage);
   const duration = Number(years);
   if (!Number.isSafeInteger(salary) || salary <= 0) return fail('Introduce un salario anual válido.');
@@ -209,6 +203,11 @@ export function evaluatePlayerOffer({ player, source, destination, wage, years, 
   if (salary < req.minimumWage) {
     return fail(`El futbolista pide al menos ${req.minimumWage.toLocaleString('es-ES')} € al año.`, { requirements: req });
   }
+  const clauseDecision = evaluateReleaseClause({
+    player, years: duration, wage: salary,
+    releaseClause: releaseClause ?? getSuggestedReleaseClause(player, duration),
+  });
+  if (!clauseDecision.ok) return fail(clauseDecision.message, { requirements: req, clauseDecision });
   if (req.expectedRole === 'STARTER' && role !== 'STARTER') {
     return fail('Quiere garantías de jugar como titular.', { requirements: req });
   }
@@ -261,7 +260,7 @@ function reconcileSquad(club) {
   club.bench = bench;
 }
 
-function transferPlayer(sellerEntry, buyerEntry, player, fee, salary, years, role, type, viaClause = false, transferDateISO = null) {
+function transferPlayer(sellerEntry, buyerEntry, player, fee, salary, years, role, type, viaClause = false, transferDateISO = null, releaseClause = null) {
   const seller = sellerEntry.club;
   const buyer = buyerEntry.club;
   const check = validFinances(seller, buyer, player, fee, salary);
@@ -273,7 +272,7 @@ function transferPlayer(sellerEntry, buyerEntry, player, fee, salary, years, rol
   player.wage = salary;
   player.contractYears = years;
   player.squadRole = role;
-  player.releaseClause = roundFee(Math.max(100000, int(player.value)) * (1.8 + years * 0.18));
+  player.releaseClause = releaseClause ?? getSuggestedReleaseClause(player, years);
   player.transferListed = false;
   buyer.players.push(player);
   seller.cash = int(seller.cash) + fee;
@@ -289,7 +288,7 @@ function transferPlayer(sellerEntry, buyerEntry, player, fee, salary, years, rol
     playerId: player.id, playerName: player.name || 'Jugador',
     fromClubId: seller.id, fromLeagueId: sellerEntry.leagueId, fromClubName: seller.name || seller.id,
     toClubId: buyer.id, toLeagueId: buyerEntry.leagueId, toClubName: buyer.name || buyer.id,
-    fee, wage: salary, years, role,
+    fee, wage: salary, years, role, releaseClause: player.releaseClause,
     season: GameState.currentDate?.season || 1,
     matchday: GameState.currentDate?.matchday || 1,
     gameDate: transferDateISO || gameDate().toISOString(),
@@ -334,7 +333,7 @@ export function negotiateWithClub({ leagueId, clubId, playerId, fee, viaClause =
 }
 
 // Paso final: exige acuerdo previo con el club y después conformidad del jugador.
-export function makeTransferOffer({ leagueId, clubId, playerId, fee, wage, years, role = 'STARTER', viaClause = false }) {
+export function makeTransferOffer({ leagueId, clubId, playerId, fee, wage, years, role = 'STARTER', viaClause = false, releaseClause }) {
   const deal = market().userAgreement;
   if (!deal || !same(deal.leagueId, leagueId) || !same(deal.clubId, clubId) ||
     !same(deal.playerId, playerId) || !same(deal.destinationId, GameState.user?.clubId) ||
@@ -350,9 +349,11 @@ export function makeTransferOffer({ leagueId, clubId, playerId, fee, wage, years
   const playerDecision = evaluatePlayerOffer({
     player, source: seller.club, destination: buyer.club,
     wage: Number(wage), years: Number(years), role,
+    releaseClause: releaseClause == null ? undefined : Number(releaseClause),
   });
   if (!playerDecision.ok) return playerDecision;
-  return transferPlayer(seller, buyer, player, clubDecision.fee, Number(wage), Number(years), role, 'buy', viaClause);
+  return transferPlayer(seller, buyer, player, clubDecision.fee, Number(wage), Number(years), role,
+    'buy', viaClause, null, releaseClause == null ? null : Number(releaseClause));
 }
 
 export function toggleUserPlayerForSale(playerId) {

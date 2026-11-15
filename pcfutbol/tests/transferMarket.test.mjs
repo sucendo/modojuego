@@ -194,7 +194,7 @@ test('evolución progresiva en tres temporadas sin vaciar plantillas', () => {
 test('la pantalla incluye ambas negociaciones y la opción de cláusula', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const view = readFileSync(new URL('../js/ui/transferMarketView.js', import.meta.url), 'utf8');
-  for (const id of ['market-negotiate', 'market-contract', 'market-buy', 'market-wage', 'market-years', 'market-role', 'market-clause']) {
+  for (const id of ['market-negotiate', 'market-contract', 'market-buy', 'market-wage', 'market-years', 'market-role', 'market-clause', 'market-release-clause', 'player-neg-clause']) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
   assert.match(view, /negotiateWithClub\(/);

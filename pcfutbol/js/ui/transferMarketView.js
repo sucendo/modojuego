@@ -114,6 +114,7 @@ function selectTarget(item) {
   }
   if (el('market-wage')) el('market-wage').value = String(Math.ceil(item.wage * 1.2 / 10000) * 10000);
   if (el('market-years')) el('market-years').value = '3';
+  if (el('market-release-clause')) el('market-release-clause').value = String(item.releaseClause);
   if (el('market-role')) el('market-role').value = 'STARTER';
   if (el('market-clause')) el('market-clause').checked = false;
   if (el('market-contract')) el('market-contract').classList.add('hidden');
@@ -250,6 +251,7 @@ export function initTransferMarketUI({ onTransfer } = {}) {
       viaClause: !!el('market-clause')?.checked,
       wage: Number(el('market-wage')?.value),
       years: Number(el('market-years')?.value),
+      releaseClause: Number(el('market-release-clause')?.value),
       role: el('market-role')?.value || 'STARTER',
     });
     afterMutation(result);
