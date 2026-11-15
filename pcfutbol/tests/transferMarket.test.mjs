@@ -51,7 +51,7 @@ test('negociar con club, rechazo del jugador y compra tras aceptar condiciones',
   assert.equal(makeTransferOffer({ ...target, fee: lowBid.counterOffer, wage: agreedWage, years: 3 }).ok, false);
   assert.ok(!seller.lineup.includes(player.id));
   assert.ok(!seller.bench.includes(player.id));
-  assert.ok(seller.lineup.some(id => seller.players.some(p => p.id === id && p.position === 'GK')));
+  assert.ok(seller.lineup.some(id => seller.players.some(p => p.id === id && ['GK', 'POR'].includes(p.position))));
 });
 
 test('pagar cláusula evita veto del club, nunca consentimiento del jugador', () => {

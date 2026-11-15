@@ -6,6 +6,8 @@
 import { realSquads as realSquadsEs } from './squads_es.js';
 import { realSquads as realSquadsEn } from './squads_en.js';
 import { COMPETITIONS_2026_27, AFFILIATE_PARENT_IDS } from './catalog_2026_27.js';
+import { OFFICIAL_SQUADS_2026_27 } from './squads_2026_27.js';
+import { buildSquadFromSnapshot } from './rosterSnapshot.js';
 
 // Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
 // La clave es el id del club (real_madrid, barcelona, arsenal, astonvilla, ...).
@@ -58,18 +60,20 @@ function generateSquadForClub(clubBase) {
 
 function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
   const clubs = baseClubs.map((c) => {
-    // Si tenemos plantilla real definida para este club, la usamos
-    let players = null;
+    // La plantilla 2026/27 tiene prioridad frente a la del año pasado.
+    let historicalPlayers = null;
     if (realSquads && Object.prototype.hasOwnProperty.call(realSquads, c.id)) {
       const real = realSquads[c.id];
       if (Array.isArray(real) && real.length > 0) {
-        // clon superficial para no mutar la constante original
-        players = real.map((p) => ({ ...p }));
+        historicalPlayers = real.map((p) => ({ ...p }));
       }
     }
 
-    // Si no hay plantilla real, generamos una ficticia estándar
-    const hasRealSquad = !!players;
+    const snapshot = OFFICIAL_SQUADS_2026_27[c.id];
+    let players = buildSquadFromSnapshot(c, historicalPlayers, snapshot);
+    const verifiedSnapshot = !!players;
+    if (!players) players = historicalPlayers;
+    const hasRealSquad = !!historicalPlayers;
     if (!players) {
       players = generateSquadForClub(c);
     }
@@ -85,10 +89,9 @@ function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
       cash: c.cash,
       wageBudget: c.wageBudget,
       players,
-      // Se conserva la plantilla histórica existente, pero no se etiqueta
-      // como plantilla 2026/27 hasta verificar sus altas y bajas.
-      squadSource: hasRealSquad ? 'legacy' : 'generated',
-      squadSeason: hasRealSquad ? '2025/26' : null,
+      squadSource: verifiedSnapshot ? 'official-roster' : hasRealSquad ? 'legacy' : 'generated',
+      squadSeason: verifiedSnapshot ? '2026/27' : hasRealSquad ? '2025/26' : null,
+      squadReference: verifiedSnapshot ? snapshot.source : null,
       parentClubId: AFFILIATE_PARENT_IDS[c.id] || null,
     };
   });

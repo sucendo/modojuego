@@ -30,7 +30,7 @@ test('2026/27 incluye 14 ligas con 272 clubes únicos, sin perder descendidos', 
         assert.ok(!ids.has(club.id), `Club repetido: ${club.id}`);
         ids.add(club.id);
         assert.ok(club.players.length >= 18, club.name);
-        assert.ok(['legacy', 'generated'].includes(club.squadSource));
+        assert.ok(['official-roster', 'legacy', 'generated'].includes(club.squadSource));
         for (const player of club.players) {
           assert.ok(!playerIds.has(player.id), `Jugador repetido: ${player.id}`);
           playerIds.add(player.id);
