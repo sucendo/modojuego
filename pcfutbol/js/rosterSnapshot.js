@@ -61,9 +61,9 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
   const takenIds = new Set();
   const roster = [];
   // Reservamos 3 fichas libres para que todos los clubes puedan fichar.
-  // Los dorsales de Premier ayudan a priorizar primeros equipos frente a cantera.
+  // Los dorsales publicados ayudan a priorizar primeros equipos frente a cantera.
   const candidates = snapshot.players.slice();
-  if (String(snapshot.source).includes('premierleague.com')) {
+  if (['premierleague.com', 'bundesliga.com', 'eredivisie.nl'].some(domain => String(snapshot.source).includes(domain))) {
     candidates.sort((a, b) => (a.shirtNumber ?? 999) - (b.shirtNumber ?? 999));
   }
   const selected = candidates.slice(0, 27);
