@@ -66,7 +66,20 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
   if (['premierleague.com', 'bundesliga.com', 'eredivisie.nl', 'legaseriea.it'].some(domain => String(snapshot.source).includes(domain))) {
     candidates.sort((a, b) => (a.shirtNumber ?? 999) - (b.shirtNumber ?? 999));
   }
-  const selected = candidates.slice(0, 27);
+  // VI y BallValue agrupan los jugadores por posición. Respetar cuotas evita
+  // que una selección truncada deje 5 porteros y apenas delanteros.
+  const groupedByPosition = ['vi.nl/clubs/', 'ballvalue.com/pt/echipe/']
+    .some(domain => String(snapshot.source).includes(domain));
+  const selected = groupedByPosition
+    ? [['POR', 3], ['CB', 9], ['CM', 9], ['ST', 6]]
+      .flatMap(([role, count]) => candidates.filter(p => group(p.position) === role).slice(0, count))
+    : candidates.slice(0, 27);
+  if (groupedByPosition && selected.length < 27) {
+    for (const candidate of candidates) {
+      if (selected.length >= 27) break;
+      if (!selected.includes(candidate)) selected.push(candidate);
+    }
+  }
   // Asegurar posiciones mínimas: algunos porteros suplentes tienen dorsal alto.
   for (const [role, minimum] of [['POR', 2], ['CB', 4], ['CM', 3], ['ST', 2]]) {
     while (selected.filter(p => group(p.position) === role).length < minimum) {
@@ -101,8 +114,19 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
         ...(current.shirtNumber != null ? { shirtNumber: current.shirtNumber } : {}),
       };
     }
+    if (Number.isInteger(current.age) && current.age >= 15 && current.age <= 50) {
+      player.age = current.age;
+      player.ageEstimated = false;
+    } else {
+      player.ageEstimated = true;
+    }
+    // Ni una ficha publicada prueba estas cifras económicas del juego.
+    player.overallEstimated = true;
+    player.wageEstimated = true;
+    player.valueEstimated = true;
+    player.contractEstimated = true;
     player.rosterSeason = '2026/27';
-    player.rosterVerified = true;
+    player.rosterVerified = snapshot.sourceKind !== 'independent';
     roster.push(player);
   }
   return roster.length >= 16 && roster.some(p => group(p.position) === 'POR') ? roster : null;
