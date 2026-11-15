@@ -7,10 +7,10 @@ import { OFFICIAL_SQUADS_2026_27 } from '../js/squads_2026_27.js';
 const clubs = allLeagues.flatMap(l => l.clubs);
 const club = (id) => clubs.find(c => c.id === id);
 
-test('plantillas oficiales 2026/27: España (40), Premier (20), Alemania (36), Países Bajos (18)', () => {
-  assert.equal(Object.keys(OFFICIAL_SQUADS_2026_27).length, 114);
+test('plantillas oficiales 2026/27: España (40), Premier (20), Alemania (36), Países Bajos (18), Serie B (20)', () => {
+  assert.equal(Object.keys(OFFICIAL_SQUADS_2026_27).length, 134);
   const verified = clubs.filter(c => c.squadSource === 'official-roster');
-  assert.equal(verified.length, 114);
+  assert.equal(verified.length, 134);
   assert.ok(verified.every(c => c.squadSeason === '2026/27' && /^https:/.test(c.squadReference)));
   assert.ok(verified.every(c => c.players.length >= 16 && c.players.length <= 27));
   assert.ok(verified.every(c => c.players.some(p => ['POR', 'GK'].includes(p.position))));
@@ -35,6 +35,14 @@ test('los 18 clubes de Eredivisie tienen sus plantillas actualizadas', () => {
   assert.ok(club('ajax').players.some(p => p.name.includes('ter Stegen')));
   assert.ok(club('psv').players.some(p => p.name.includes('Pepi')));
   assert.ok(club('feyenoord').players.some(p => p.name.includes('Read')));
+});
+
+test('Serie B mantiene los 20 clubes y sus futbolistas registrados', () => {
+  const league = allLeagues.find(l => l.id === 'league_it_serieb');
+  assert.equal(league.clubs.length, 20);
+  assert.ok(league.clubs.every(c => c.squadSource === 'official-roster'));
+  assert.ok(club('palermo').players.some(p => p.name.includes('Pohjanpalo')));
+  assert.ok(club('modena').players.some(p => p.name.includes('Belotti')));
 });
 
 test('sin jugadores ficticios en los clubes verificados; fichajes reales reconocibles', () => {
