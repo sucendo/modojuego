@@ -242,12 +242,20 @@ export function initUI() {
   if (startLeagueSelect) {
     // Rellenar select de ligas
     startLeagueSelect.innerHTML = '';
+    let countryGroup = null;
+    let lastCountry = '';
     allLeagues.forEach((l) => {
+      if (l.country !== lastCountry) {
+        countryGroup = document.createElement('optgroup');
+        countryGroup.label = l.country;
+        startLeagueSelect.appendChild(countryGroup);
+        lastCountry = l.country;
+      }
       const opt = document.createElement('option');
       opt.value = l.id;
-      opt.textContent = l.name || l.id;
+      opt.textContent = `${l.tier === 2 ? '2ª' : '1ª'} · ${l.name || l.id}`;
       if (l.id === initialLeague.id) opt.selected = true;
-      startLeagueSelect.appendChild(opt);
+      countryGroup.appendChild(opt);
     });
 
     startLeagueSelect.addEventListener('change', refreshStartClubSelect);

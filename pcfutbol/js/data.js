@@ -5,6 +5,7 @@
 
 import { realSquads as realSquadsEs } from './squads_es.js';
 import { realSquads as realSquadsEn } from './squads_en.js';
+import { COMPETITIONS_2026_27, AFFILIATE_PARENT_IDS } from './catalog_2026_27.js';
 
 // Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
 // La clave es el id del club (real_madrid, barcelona, arsenal, astonvilla, ...).
@@ -55,7 +56,7 @@ function generateSquadForClub(clubBase) {
   return players;
 }
 
-function createLeagueFromBase(baseClubs, id, name, country) {
+function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
   const clubs = baseClubs.map((c) => {
     // Si tenemos plantilla real definida para este club, la usamos
     let players = null;
@@ -68,6 +69,7 @@ function createLeagueFromBase(baseClubs, id, name, country) {
     }
 
     // Si no hay plantilla real, generamos una ficticia estándar
+    const hasRealSquad = !!players;
     if (!players) {
       players = generateSquadForClub(c);
     }
@@ -82,7 +84,12 @@ function createLeagueFromBase(baseClubs, id, name, country) {
       },
       cash: c.cash,
       wageBudget: c.wageBudget,
-      players
+      players,
+      // Se conserva la plantilla histórica existente, pero no se etiqueta
+      // como plantilla 2026/27 hasta verificar sus altas y bajas.
+      squadSource: hasRealSquad ? 'legacy' : 'generated',
+      squadSeason: hasRealSquad ? '2025/26' : null,
+      parentClubId: AFFILIATE_PARENT_IDS[c.id] || null,
     };
   });
 
@@ -90,6 +97,8 @@ function createLeagueFromBase(baseClubs, id, name, country) {
     id,
     name,
     country,
+    tier,
+    seasonStartYear: 2026,
     cardStrictness: 1.0,
     clubs
   };
@@ -302,13 +311,6 @@ const ES_PRIMERA_CLUBS = [
   }
 ];
 
-const leagueES = createLeagueFromBase(
-  ES_PRIMERA_CLUBS,
-  "league_es_primera",
-  "La Liga EA Sports",
-  "España"
-);
-
 // =======================
 // PREMIER LEAGUE (Inglaterra)
 // =======================
@@ -414,13 +416,6 @@ const EN_PREMIER_CLUBS = [
     baseOverall: 77
   }
 ];
-
-const leagueEN = createLeagueFromBase(
-  EN_PREMIER_CLUBS,
-  "league_en_premier",
-  "Premier League",
-  "Inglaterra"
-);
 
 // =======================
 // SERIE A (Italia)
@@ -528,13 +523,6 @@ const IT_SERIEA_CLUBS = [
   }
 ];
 
-const leagueIT = createLeagueFromBase(
-  IT_SERIEA_CLUBS,
-  "league_it_seriea",
-  "Serie A",
-  "Italia"
-);
-
 // =======================
 // BUNDESLIGA (Alemania)
 // =======================
@@ -640,13 +628,6 @@ const DE_BUNDES_CLUBS = [
     baseOverall: 76
   }
 ];
-
-const leagueDE = createLeagueFromBase(
-  DE_BUNDES_CLUBS,
-  "league_de_bundesliga",
-  "Bundesliga",
-  "Alemania"
-);
 
 // =======================
 // LIGUE 1 (Francia)
@@ -754,13 +735,6 @@ const FR_LIGUE1_CLUBS = [
   }
 ];
 
-const leagueFR = createLeagueFromBase(
-  FR_LIGUE1_CLUBS,
-  "league_fr_ligue1",
-  "Ligue 1",
-  "Francia"
-);
-
 // =======================
 // PRIMEIRA LIGA (Portugal)
 // =======================
@@ -866,13 +840,6 @@ const PT_PRIMEIRA_CLUBS = [
     baseOverall: 71
   }
 ];
-
-const leaguePT = createLeagueFromBase(
-  PT_PRIMEIRA_CLUBS,
-  "league_pt_primeira",
-  "Primeira Liga",
-  "Portugal"
-);
 
 // =======================
 // EREDIVISIE (Países Bajos)
@@ -980,24 +947,39 @@ const NL_EREDIVISIE_CLUBS = [
   }
 ];
 
-const leagueNL = createLeagueFromBase(
-  NL_EREDIVISIE_CLUBS,
-  "league_nl_eredivisie",
-  "Eredivisie",
-  "Países Bajos"
-);
- 
 // =======================
 // EXPORTS
 // =======================
-export const initialLeague = leagueES;
+// Los datos base anteriores son un repositorio de presupuestos, estadios y
+// plantillas existentes; la pertenencia a cada categoría la fija 2026/27.
+// Usar el mismo ID de club al descender conserva sus datos conocidos.
+const knownClubs = new Map([
+  ...ES_PRIMERA_CLUBS,
+  ...EN_PREMIER_CLUBS,
+  ...IT_SERIEA_CLUBS,
+  ...DE_BUNDES_CLUBS,
+  ...FR_LIGUE1_CLUBS,
+  ...PT_PRIMEIRA_CLUBS,
+  ...NL_EREDIVISIE_CLUBS,
+].map((club) => [club.id, club]));
 
-export const allLeagues = [
-  leagueES,
-  leagueEN,
-  leagueIT,
-  leagueDE,
-  leagueFR,
-  leaguePT,
-  leagueNL
-];
+function resolveClubFor2026(entry, tier) {
+  const previous = knownClubs.get(entry.id);
+  if (previous) return { ...previous, name: entry.name, shortName: entry.shortName };
+  // Datos económicos y estadio provisionales, claramente identificados.
+  const baseOverall = tier === 1 ? 68 : 62;
+  return {
+    ...entry,
+    stadiumName: `Estadio de ${entry.name}`,
+    capacity: tier === 1 ? 18000 : 11000,
+    cash: tier === 1 ? 20000000 : 8000000,
+    wageBudget: tier === 1 ? 10000000 : 4500000,
+    baseOverall,
+  };
+}
+
+export const allLeagues = COMPETITIONS_2026_27.map(({ clubs, id, name, country, tier }) =>
+  createLeagueFromBase(clubs.map((club) => resolveClubFor2026(club, tier)), id, name, country, tier)
+);
+
+export const initialLeague = allLeagues.find((league) => league.id === 'league_es_primera');

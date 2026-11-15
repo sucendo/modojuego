@@ -4,6 +4,7 @@
 import { GameState, ensureTransferMarketState } from '../state.js';
 import { isPlayerUnavailable } from './utils/availability.js';
 import { getReleaseClause, getSuggestedReleaseClause, evaluateReleaseClause } from './contracts.js';
+import { FIRST_SEASON_YEAR, getSeasonStartYear } from '../gameSeason.js';
 export { getReleaseClause } from './contracts.js';
 
 const MIN_SQUAD = 16;
@@ -58,7 +59,7 @@ function hash01(value) {
 function gameDate() {
   const ms = Date.parse(GameState.currentTimeISO || '');
   if (Number.isFinite(ms)) return new Date(ms);
-  return new Date(Date.UTC(2025 + int(GameState.currentDate?.season || 1) - 1, 7, 1));
+  return new Date(Date.UTC(getSeasonStartYear(GameState.currentDate?.season), 7, 1));
 }
 
 export function getMarketClubs() {
@@ -441,7 +442,7 @@ function affordableAiDeal(seller, buyer, player, season) {
 }
 
 function simulateAiWeek(week, date) {
-  const season = date.getUTCFullYear() - 2025 + (date.getUTCMonth() >= 7 ? 1 : 0);
+  const season = date.getUTCFullYear() - FIRST_SEASON_YEAR + (date.getUTCMonth() >= 7 ? 1 : 0);
   if (season !== Number(GameState.currentDate?.season || 1)) return 0;
   const month = date.getUTCMonth() + 1;
   if (month !== 8 && month !== 1) return 0;

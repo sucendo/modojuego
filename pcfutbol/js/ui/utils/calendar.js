@@ -1,11 +1,12 @@
 import { GameState } from '../../state.js';
+import { FIRST_SEASON_YEAR } from '../../gameSeason.js';
 
 // Calendario interno del juego:
-//  - Temporada 1 comienza el 1 de agosto de 2025
+//  - Temporada 1 comienza el 1 de agosto de 2026
 //  - Cada jornada suma 7 días
 //  - Cada temporada suma 1 año
 export const GAME_CALENDAR = {
-  BASE_SEASON_YEAR: 2025,
+  BASE_SEASON_YEAR: FIRST_SEASON_YEAR,
   SEASON_START_MONTH: 8, // agosto
   SEASON_START_DAY: 1,
   DAYS_PER_MATCHDAY: 7,

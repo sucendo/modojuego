@@ -1,7 +1,7 @@
 // js/state.js
 
 import { initialLeague, allLeagues } from './data.js';
-import { CALENDAR_ES_LALIGA_2025_26 } from './calendar_es_laLiga_2025_26.js';
+import { getSeasonStartYear } from './gameSeason.js';
 
 export const GameState = {
   meta: {
@@ -104,6 +104,7 @@ export function newGame(options = {}) {
     id: league.id,
     name: league.name,
     country: league.country,
+    tier: league.tier || 1,
     cardStrictness:
       league.cardStrictness != null ? league.cardStrictness : 1.0,
   };
@@ -859,19 +860,14 @@ function clampAttr(v) {
  * Prepara el calendario y la clasificación inicial.
  *
  * Regla:
- *  - Temporada 1 (2025/26) en LaLiga: usa calendario oficial si encaja con los IDs de clubs.
- *  - Resto de temporadas/ligas: genera round-robin + asigna fechas internas.
+ *  - Todas las competiciones 2026/27 generan round-robin hasta incorporar
+ *    sus calendarios oficiales respectivos. Nunca reutilizar el de 2025/26.
  */
 function setupCompetition() {
   const season = Number(GameState.currentDate?.season || 1);
-  const leagueId = GameState.league?.id || null;
   const clubIds = (GameState.clubs || []).map((c) => c?.id).filter(Boolean);
-
-  let built = tryBuildOfficialFixturesForLeague(leagueId, season, clubIds);
-  if (!built) {
-    built = generateRoundRobinFixtures(clubIds);
-    decorateGeneratedFixturesWithSchedule(built.fixtures, season);
-  }
+  const built = generateRoundRobinFixtures(clubIds);
+  decorateGeneratedFixturesWithSchedule(built.fixtures, season);
 
   GameState.fixtures = built.fixtures || [];
 
@@ -897,87 +893,8 @@ function setupCompetition() {
 // Calendario oficial / generado
 // ----------------------------
 
-function tryBuildOfficialFixturesForLeague(leagueId, season, clubIds) {
-  if (Number(season) !== 1) return null;
-  if (!leagueId) return null;
-
-  // Por ahora: único calendario oficial integrado
-  if (leagueId !== CALENDAR_ES_LALIGA_2025_26?.leagueId) return null;
-
-  const clubSet = new Set((clubIds || []).map(String));
-  const matchdays = Array.isArray(CALENDAR_ES_LALIGA_2025_26?.matchdays)
-    ? CALENDAR_ES_LALIGA_2025_26.matchdays
-    : [];
-  if (!matchdays.length) return null;
-
-  const clubIndex = new Map((GameState.clubs || []).filter(Boolean).map((c) => [String(c.id), c]));
-
-  const fixtures = [];
-  for (const md of matchdays) {
-    const round = Number(md?.matchday || 0);
-    const matches = Array.isArray(md?.matches) ? md.matches : [];
-    if (!round || !matches.length) continue;
-
-    for (const m of matches) {
-      const homeId = String(m?.homeId || '');
-      const awayId = String(m?.awayId || '');
-      if (!homeId || !awayId) return null;
-      if (!clubSet.has(homeId) || !clubSet.has(awayId)) {
-        // si el calendario no cuadra con los clubs activos -> fallback a generado
-        return null;
-      }
-
-      const referee = getRandomReferee();
-      const homeClub = clubIndex.get(homeId) || null;
-      const cap = Number(homeClub?.stadium?.capacity || homeClub?.stadiumCapacity || 0) || null;
-
-      fixtures.push({
-        id: String(m?.matchId || `fx_off_${round}_${homeId}_${awayId}`),
-        matchday: round,
-        homeClubId: homeId,
-        awayClubId: awayId,
-        kickoffDate: m?.kickoffUtc || m?.kickoffLocal || (m?.date ? `${m.date}T${m.time || '20:00'}:00` : null),
-        kickoffTime: m?.time || null,
-        homeGoals: null,
-        awayGoals: null,
-        played: false,
-        events: [],
-        substitutions: [],
-        refereeName: referee.name,
-        refereeStrictness: referee.strictness,
-        meta: {
-          official: true,
-          source: 'CALENDAR_ES_LALIGA_2025_26',
-          stadiumName: m?.stadium || homeClub?.stadium?.name || homeClub?.stadiumName || null,
-          capacity: cap,
-          kickoffLocal: m?.kickoffLocal || null,
-          kickoffUtc: m?.kickoffUtc || null,
-          dateFrom: md?.dateFrom || null,
-          dateTo: md?.dateTo || null,
-        },
-      });
-    }
-  }
-
-  // Validación mínima
-  if (!fixtures.length) return null;
-  const maxMatchday = Math.max(...fixtures.map((f) => Number(f.matchday || 1)));
-
-  // Orden estable por jornada + hora
-  fixtures.sort((a, b) => {
-    const amd = Number(a.matchday || 0);
-    const bmd = Number(b.matchday || 0);
-    if (amd !== bmd) return amd - bmd;
-    const at = String(a.kickoffTime || '');
-    const bt = String(b.kickoffTime || '');
-    return at.localeCompare(bt);
-  });
-
-  return { fixtures, maxMatchday };
-}
-
 function getSeasonStartUTCInternal(season) {
-  const year = 2025 + (Number(season || 1) - 1);
+  const year = getSeasonStartYear(season);
   return new Date(Date.UTC(year, 7, 1)); // 1 de agosto
 }
 
@@ -985,7 +902,7 @@ function getSeasonStartUTCInternal(season) {
 // World leagues: calendario base por liga (para kickoffDate)
 // ---------------------------
 function getSeasonStartUTCForLeagueId(leagueId, season) {
-  const year = 2025 + (Number(season || 1) - 1);
+  const year = getSeasonStartYear(season);
   const map = {
     league_en_premier: { month: 8, day: 1 },     // 01/08
     league_it_seriea: { month: 8, day: 10 },     // 10/08
@@ -1113,6 +1030,7 @@ function setupWorldLeagues() {
       id: l.id,
       name: l.name || l.id,
       country: l.country || '',
+      tier: l.tier || 1,
       clubs,
       fixtures,
       leagueTable: [],
@@ -1320,7 +1238,7 @@ export function advanceToNextSeason() {
     season: nextSeason,
     matchday: 1,
   };
-  GameState.currentTimeISO = new Date(Date.UTC(2025 + nextSeason - 1, 7, 1, 9)).toISOString();
+  GameState.currentTimeISO = new Date(Date.UTC(getSeasonStartYear(nextSeason), 7, 1, 9)).toISOString();
 
   // Re-generar calendario principal
   setupCompetition();

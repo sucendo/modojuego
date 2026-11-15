@@ -79,11 +79,11 @@ test('la IA es conservadora e idempotente durante la temporada inicial', () => {
     new Set(GameState.marketState.baselines[`1:${e.leagueId}:${e.club.id}`].xi),
   ]));
   let movements = 0;
-  for (let t = Date.UTC(2025, 7, 1); t < Date.UTC(2026, 6, 31); t += 7 * 86400000) {
+  for (let t = Date.UTC(2026, 7, 1); t < Date.UTC(2027, 6, 31); t += 7 * 86400000) {
     movements += advanceAiTransferMarket(new Date(t).toISOString());
   }
   const history = structuredClone(GameState.transferHistory);
-  const count = advanceAiTransferMarket(new Date(Date.UTC(2026, 6, 30)).toISOString());
+  const count = advanceAiTransferMarket(new Date(Date.UTC(2027, 6, 30)).toISOString());
   assert.equal(count, 0);
   assert.deepEqual(GameState.transferHistory, history);
   assert.ok(movements > 0, 'Debe haber algo de actividad de IA a lo largo del año');
@@ -122,7 +122,7 @@ test('la IA es conservadora e idempotente durante la temporada inicial', () => {
 
 test('las operaciones y las plantillas de otras ligas sobreviven al guardado y a otra temporada', () => {
   begin();
-  for (let t = Date.UTC(2025, 7, 1); t <= Date.UTC(2026, 1, 2); t += 7 * 86400000) {
+  for (let t = Date.UTC(2026, 7, 1); t <= Date.UTC(2027, 1, 2); t += 7 * 86400000) {
     advanceAiTransferMarket(new Date(t).toISOString());
   }
   assert.ok(GameState.transferHistory.length > 0);
@@ -159,7 +159,7 @@ test('las partidas antiguas se cargan sin historial ni datos de mercado', () => 
 test('evolución progresiva en tres temporadas sin vaciar plantillas', () => {
   begin();
   for (let season = 1; season <= 3; season++) {
-    const startYear = 2024 + season;
+    const startYear = 2025 + season;
     const initialXi = new Map(getMarketClubs().map(e => [
       `${e.leagueId}:${e.club.id}`,
       [...GameState.marketState.baselines[`${season}:${e.leagueId}:${e.club.id}`].xi],

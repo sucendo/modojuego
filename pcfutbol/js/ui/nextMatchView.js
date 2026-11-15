@@ -3,6 +3,7 @@
 // Inspiración UI: PC Fútbol (capturas proporcionadas)
 
 import { GameState } from '../state.js';
+import { getSeasonLabel } from '../gameSeason.js';
 import { getUserClub } from '../game/selectors.js';
 import { advanceToNextUserMatchPrep } from '../game/simulateMatchday.js';
 import {
@@ -821,7 +822,7 @@ export function updateNextMatchView() {
   // Cabecera
   const season = Number(GameState.currentDate?.season || 1);
   const currentMd = Number(GameState.currentDate?.matchday || 1);
-  setText('nextmatch-season-label', `${2024 + season}/${2025 + season}`);
+  setText('nextmatch-season-label', getSeasonLabel(season));
   setText('nextmatch-current-matchday-label', String(currentMd));
   // La fecha de la cabecera se intentará ajustar al kickoff real del próximo partido (si existe)
   const baseDate = getGameDateFor(season, currentMd);
