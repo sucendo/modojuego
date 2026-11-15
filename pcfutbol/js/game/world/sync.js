@@ -6,6 +6,7 @@
 
 import { GameState } from '../../state.js';
 import { getFixtureKickoffISO } from '../utils/fixtures.js';
+import { advanceAiTransferMarket } from '../transferMarket.js';
 
 let _syncMainLeagueUpTo = null;
 let _simulateQuickWorldFixture = null;
@@ -138,4 +139,8 @@ export function syncWorldLeaguesUpToTime(upToISO) {
     if (!lg.currentDate) lg.currentDate = { season: GameState.currentDate?.season || 1, matchday: 1 };
     if (maxPlayed > 0) lg.currentDate.matchday = Math.min((lg.competition?.maxMatchday || maxPlayed), maxPlayed + 1);
   });
+
+  // El mercado solo consume tiempo de juego ya avanzado. Es idempotente:
+  // refrescar el HUB o importar una partida no duplica operaciones.
+  advanceAiTransferMarket(upToISO);
 }

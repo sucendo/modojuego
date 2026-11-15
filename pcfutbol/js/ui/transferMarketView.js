@@ -2,6 +2,7 @@
 import { GameState } from '../state.js';
 import {
   searchTransferMarket,
+  negotiateWithClub,
   makeTransferOffer,
   toggleUserPlayerForSale,
   getInstantSaleOffer,
@@ -103,11 +104,20 @@ function renderSearchResults() {
 }
 
 function selectTarget(item) {
-  selected = { playerId: item.playerId, leagueId: item.leagueId, clubId: item.clubId };
+  selected = { playerId: item.playerId, leagueId: item.leagueId, clubId: item.clubId,
+    releaseClause: item.releaseClause, price: item.price };
   if (el('market-selected')) el('market-selected').textContent =
-    `${item.name} · ${item.clubName} · ${item.position} · Media ${item.overall} · Precio solicitado: ${eur(item.price)} · Sueldo anual: ${eur(item.wage)}`;
-  if (el('market-bid')) el('market-bid').value = String(item.price);
-  const submit = el('market-buy');
+    `${item.name} · ${item.clubName} · ${item.position} · Media ${item.overall} · Precio orientativo: ${eur(item.price)} · Cláusula: ${eur(item.releaseClause)} (simulada) · Sueldo actual: ${eur(item.wage)}`;
+  if (el('market-bid')) {
+    el('market-bid').value = String(item.price);
+    el('market-bid').readOnly = false;
+  }
+  if (el('market-wage')) el('market-wage').value = String(Math.ceil(item.wage * 1.2 / 10000) * 10000);
+  if (el('market-years')) el('market-years').value = '3';
+  if (el('market-role')) el('market-role').value = 'STARTER';
+  if (el('market-clause')) el('market-clause').checked = false;
+  if (el('market-contract')) el('market-contract').classList.add('hidden');
+  const submit = el('market-negotiate');
   if (submit) submit.disabled = false;
   notice('');
 }
@@ -160,7 +170,7 @@ function renderHistory() {
   for (const deal of history) {
     const r = document.createElement('tr');
     td(r, deal.playerName);
-    td(r, `${deal.fromClubName} → ${deal.toClubName}`);
+    td(r, `${deal.fromClubName} → ${deal.toClubName}${deal.method === 'clause' ? ' (cláusula)' : ''}${deal.type === 'ai' ? ' · IA' : ''}`);
     td(r, eur(deal.fee));
     td(r, `T${deal.season} · J${deal.matchday}`);
     tbody.appendChild(r);
@@ -183,7 +193,8 @@ export function updateTransferMarketView() {
     if (!exists) {
       selected = null;
       if (el('market-selected')) el('market-selected').textContent = 'Selecciona un jugador de la lista.';
-      if (el('market-buy')) el('market-buy').disabled = true;
+      if (el('market-negotiate')) el('market-negotiate').disabled = true;
+      if (el('market-contract')) el('market-contract').classList.add('hidden');
     }
   }
 }
@@ -193,7 +204,8 @@ function afterMutation(result) {
   if (result.ok) {
     selected = null;
     if (el('market-selected')) el('market-selected').textContent = 'Selecciona un jugador de la lista.';
-    if (el('market-buy')) el('market-buy').disabled = true;
+    if (el('market-negotiate')) el('market-negotiate').disabled = true;
+    if (el('market-contract')) el('market-contract').classList.add('hidden');
     try { onChanged?.(); } catch (error) { console.warn('Mercado: refresco UI', error); }
     updateTransferMarketView();
   }
@@ -206,10 +218,40 @@ export function initTransferMarketUI({ onTransfer } = {}) {
   for (const id of ['market-search', 'market-position', 'market-league']) {
     el(id)?.addEventListener(id === 'market-search' ? 'input' : 'change', renderSearchResults);
   }
-  el('market-buy')?.addEventListener('click', () => {
+  el('market-clause')?.addEventListener('change', () => {
+    if (!selected) return;
+    const viaClause = !!el('market-clause')?.checked;
+    if (el('market-bid')) {
+      el('market-bid').value = String(viaClause ? selected.releaseClause : selected.price);
+      el('market-bid').readOnly = viaClause;
+    }
+    el('market-contract')?.classList.add('hidden');
+    notice('');
+  });
+  el('market-bid')?.addEventListener('input', () => {
+    el('market-contract')?.classList.add('hidden');
+  });
+  el('market-negotiate')?.addEventListener('click', () => {
     if (!selected) return notice('Selecciona un futbolista.', false);
     const fee = Number(el('market-bid')?.value);
-    const result = makeTransferOffer({ ...selected, fee });
+    const result = negotiateWithClub({ ...selected, fee, viaClause: !!el('market-clause')?.checked });
+    notice(result.message, result.ok);
+    if (!result.ok && result.counterOffer && !el('market-clause')?.checked) {
+      if (el('market-bid')) el('market-bid').value = String(result.counterOffer);
+      notice(`${result.message} Contraoferta: ${eur(result.counterOffer)}.`, false);
+    }
+    el('market-contract')?.classList.toggle('hidden', !result.ok);
+  });
+  el('market-buy')?.addEventListener('click', () => {
+    if (!selected) return notice('Selecciona un futbolista.', false);
+    const result = makeTransferOffer({
+      ...selected,
+      fee: Number(el('market-bid')?.value),
+      viaClause: !!el('market-clause')?.checked,
+      wage: Number(el('market-wage')?.value),
+      years: Number(el('market-years')?.value),
+      role: el('market-role')?.value || 'STARTER',
+    });
     afterMutation(result);
   });
   el('market-sale-player')?.addEventListener('change', renderSaleOffer);

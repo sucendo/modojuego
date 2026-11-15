@@ -389,7 +389,7 @@
 			<section id="view-transfermarket" class="hidden" aria-label="Mercado de fichajes">
 				<article class="card">
 					<h2>Mercado de fichajes</h2>
-					<p class="pcf-market-info">Primera fase: compras directas y ofertas de venta simuladas. Las operaciones modifican las plantillas y los presupuestos y se incluyen en las partidas guardadas.</p>
+					<p class="pcf-market-info">Negocia primero con el club y después con el jugador. Las cláusulas permiten pagar sin acuerdo del club, pero el futbolista también debe aceptar. La IA ficha durante los mercados con una política conservadora de continuidad.</p>
 					<p id="market-budgets" class="pcf-market-info"></p>
 					<p id="market-message" role="status" aria-live="polite"></p>
 				</article>
@@ -413,17 +413,27 @@
 							<tbody id="market-results-body"></tbody>
 						</table>
 					</div>
-					<h3>Ofertar por jugador</h3>
+						<h3>1. Negociar con el club</h3>
 					<p id="market-selected" class="pcf-market-info">Selecciona un jugador de la lista.</p>
 					<div class="market-offer">
 						<label for="market-bid">Oferta en euros</label>
 						<input id="market-bid" type="number" min="10000" step="10000" inputmode="numeric"/>
-						<button id="market-buy" class="btn btn-primary" type="button" disabled>Enviar oferta y fichar</button>
+							<label class="market-clause"><input id="market-clause" type="checkbox" /> Pagar cláusula</label>
+							<button id="market-negotiate" class="btn btn-primary" type="button" disabled>Negociar con el club</button>
 					</div>
+						<div id="market-contract" class="market-contract hidden">
+							<h3>2. Ofrecer contrato al jugador</h3>
+							<div class="market-toolbar">
+								<label>Salario anual (€) <input id="market-wage" type="number" min="10000" step="10000" inputmode="numeric" /></label>
+								<label>Duración (años) <input id="market-years" type="number" min="1" max="5" step="1" value="3" /></label>
+								<label>Rol prometido <select id="market-role"><option value="STARTER">Titular</option><option value="ROTATION">Rotación</option><option value="PROSPECT">Promesa</option></select></label>
+							</div>
+							<button id="market-buy" class="btn btn-primary" type="button">Ofrecer contrato y fichar</button>
+						</div>
 				</article>
 				<article class="card">
 					<h3>Vender jugadores</h3>
-					<p class="pcf-market-info">Marca a un jugador como transferible. Si existe un comprador con presupuesto, podrás aceptar una oferta simulada inmediata.</p>
+						<p class="pcf-market-info">Marca a un jugador como transferible. Las ofertas disponibles comprueban también el sueldo y las condiciones que aceptaría el jugador.</p>
 					<div class="market-sale-controls">
 						<select id="market-sale-player" aria-label="Selecciona jugador para vender"></select>
 						<button id="market-toggle-sale" class="btn btn-secondary" type="button">Poner en el mercado</button>

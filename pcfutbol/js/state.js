@@ -35,7 +35,38 @@ export const GameState = {
     leagues: [],
   },
   transferHistory: [],
+  marketState: null,
+  currentTimeISO: null,
 };
+
+// Las fotos iniciales de cada temporada permiten conservar el bloque principal
+// de cada plantilla sin depender del orden en que se simulen las ligas.
+export function ensureTransferMarketState() {
+  if (!GameState.marketState || typeof GameState.marketState !== 'object') {
+    GameState.marketState = {};
+  }
+  const market = GameState.marketState;
+  if (!market.baselines || typeof market.baselines !== 'object') market.baselines = {};
+  const season = Number(GameState.currentDate?.season || 1);
+  const leagues = [{ id: GameState.league?.id, clubs: GameState.clubs }, ...(GameState.world?.leagues || [])];
+  for (const league of leagues) {
+    for (const club of league.clubs || []) {
+      const key = `${season}:${league.id}:${club.id}`;
+      if (market.baselines[key]) continue;
+      const players = club.players || [];
+      const ids = new Set(players.map(p => String(p.id)));
+      const xi = (club.lineup || []).filter(id => ids.has(String(id))).slice(0, 11);
+      if (xi.length < 11) {
+        for (const p of [...players].sort((a, b) => (b.overall || 0) - (a.overall || 0))) {
+          if (xi.length === 11) break;
+          if (!xi.some(id => String(id) === String(p.id))) xi.push(p.id);
+        }
+      }
+      market.baselines[key] = { xi: xi.map(String), squad: players.map(p => String(p.id)) };
+    }
+  }
+  return market;
+}
 
 /**
  * Crea una nueva partida rápida usando la liga y clubes de data.js
@@ -67,6 +98,7 @@ export function newGame(options = {}) {
     season: 1,
     matchday: 1,
   };
+  GameState.currentTimeISO = null;
 
   GameState.league = {
     id: league.id,
@@ -85,6 +117,7 @@ export function newGame(options = {}) {
   };
   GameState.world = { leagues: [] };
   GameState.transferHistory = [];
+  GameState.marketState = null;
 
   GameState.user.roleMode = roleMode;
   GameState.user.clubId = selectedClubId;
@@ -98,6 +131,7 @@ export function newGame(options = {}) {
   normalizeGameState();
   setupCompetition();
   setupWorldLeagues();
+  ensureTransferMarketState();
 }
 
 /**
@@ -114,6 +148,7 @@ export function applyLoadedState(raw) {
 
   GameState.meta = raw.meta;
   GameState.currentDate = raw.currentDate || GameState.currentDate;
+  GameState.currentTimeISO = raw.currentTimeISO || null;
   GameState.league = raw.league;
   if (GameState.league.cardStrictness == null) {
     GameState.league.cardStrictness = 1.0;
@@ -128,6 +163,7 @@ export function applyLoadedState(raw) {
   // Mundo (otras ligas)
   GameState.world = raw.world || GameState.world || { leagues: [] };
   GameState.transferHistory = Array.isArray(raw.transferHistory) ? raw.transferHistory : [];
+  GameState.marketState = raw.marketState || null;
 
   normalizeGameState();
   if (!GameState.fixtures || GameState.fixtures.length === 0) {
@@ -144,7 +180,8 @@ export function applyLoadedState(raw) {
     setupWorldLeagues();
   } else {
     normalizeWorldLeagues();
-  }  
+  }
+  ensureTransferMarketState();
 }
 
 /**
@@ -1283,10 +1320,25 @@ export function advanceToNextSeason() {
     season: nextSeason,
     matchday: 1,
   };
+  GameState.currentTimeISO = new Date(Date.UTC(2025 + nextSeason - 1, 7, 1, 9)).toISOString();
 
   // Re-generar calendario principal
   setupCompetition();
 
-  // Re-generar ligas paralelas sincronizadas (con fixtures nuevos)
-  setupWorldLeagues();
+  // Conservamos fichajes y presupuestos de las ligas paralelas. Solo renovamos
+  // calendarios y resultados; reconstruir desde data.js borraría los traspasos.
+  if (!Array.isArray(GameState.world?.leagues) || !GameState.world.leagues.length) {
+    setupWorldLeagues();
+  } else {
+    for (const league of GameState.world.leagues) {
+      const { fixtures, maxMatchday } = generateRoundRobinFixtures((league.clubs || []).map(c => c.id));
+      fixtures.forEach(fx => { fx.season = nextSeason; fx.statsApplied = false; });
+      decorateWorldFixturesWithSchedule(fixtures, nextSeason, league.id);
+      league.fixtures = fixtures;
+      league.competition = { maxMatchday };
+      league.leagueTable = [];
+      league.currentDate = { season: nextSeason, matchday: 1 };
+    }
+  }
+  ensureTransferMarketState();
 }
