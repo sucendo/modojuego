@@ -7,10 +7,10 @@ import { OFFICIAL_SQUADS_2026_27 } from '../js/squads_2026_27.js';
 const clubs = allLeagues.flatMap(l => l.clubs);
 const club = (id) => clubs.find(c => c.id === id);
 
-test('plantillas oficiales 2026/27: España (40), Premier (20), Alemania (36), Países Bajos (18), Serie B (20)', () => {
-  assert.equal(Object.keys(OFFICIAL_SQUADS_2026_27).length, 134);
+test('plantillas oficiales 2026/27: España (40), Premier (20), Alemania (36), Países Bajos (18), Italia (40)', () => {
+  assert.equal(Object.keys(OFFICIAL_SQUADS_2026_27).length, 154);
   const verified = clubs.filter(c => c.squadSource === 'official-roster');
-  assert.equal(verified.length, 134);
+  assert.equal(verified.length, 154);
   assert.ok(verified.every(c => c.squadSeason === '2026/27' && /^https:/.test(c.squadReference)));
   assert.ok(verified.every(c => c.players.length >= 16 && c.players.length <= 27));
   assert.ok(verified.every(c => c.players.some(p => ['POR', 'GK'].includes(p.position))));
@@ -43,6 +43,15 @@ test('Serie B mantiene los 20 clubes y sus futbolistas registrados', () => {
   assert.ok(league.clubs.every(c => c.squadSource === 'official-roster'));
   assert.ok(club('palermo').players.some(p => p.name.includes('Pohjanpalo')));
   assert.ok(club('modena').players.some(p => p.name.includes('Belotti')));
+});
+
+test('Serie A incorpora las 20 plantillas oficiales, titulares y dorsales', () => {
+  const league = allLeagues.find(l => l.id === 'league_it_seriea');
+  assert.equal(league.clubs.length, 20);
+  assert.ok(league.clubs.every(c => c.squadSource === 'official-roster'));
+  assert.ok(club('inter').players.some(p => p.name.includes('Lautaro') && p.shirtNumber === 10));
+  assert.ok(club('acmilan').players.some(p => p.name.includes('Maignan')));
+  assert.ok(club('juventus').players.some(p => p.name.includes('Kenan Yildiz')));
 });
 
 test('sin jugadores ficticios en los clubes verificados; fichajes reales reconocibles', () => {
