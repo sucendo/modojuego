@@ -351,12 +351,18 @@ function apexTerrainFinePatch(g,ix,iz,kind){
  const x0=g.minX+ix*g.cell,z0=g.minZ+iz*g.cell,
        x1=Math.min(g.maxX,x0+g.cell),z1=Math.min(g.maxZ,z0+g.cell),n=kind==='PORTAL'?20:(kind==='TUNNEL'?18:kind==='PIT'?8:4),
        dx=(x1-x0)/n,dz=(z1-z0)/n,points=[],quads=[];
+ const [A,B,C,D]=apexPhase4TerrainPacket(g,ix,iz,ix+1,iz+1);
  for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){
-  const x=x0+dx*i,z=z0+dz*j;
-  // La altura de la malla fina debe coincidir con la consulta del coche
-  // (apexUnifiedSurfaceAtWorld/TERRAIN), no remezclar rawVals por separado.
-  // No se toca la altura ni la física del vehículo.
-  const y=apexWorldGroundY(x,z);
+  const x=i===n?x1:x0+dx*i,z=j===n?z1:z0+dz*j;
+  // Fine and coarse cells can share an edge. Reuse the coarse edge's exact
+  // interpolation at subdivision vertices, including masked grid vertices.
+  // Interior samples stay aligned with the terrain used by the vehicle.
+  let y;
+  if(j===0)y=lerp(A.y,B.y,i/n);
+  else if(j===n)y=lerp(D.y,C.y,i/n);
+  else if(i===0)y=lerp(A.y,D.y,j/n);
+  else if(i===n)y=lerp(B.y,C.y,j/n);
+  else y=apexWorldGroundY(x,z);
   points.push({x,y,z});
  }
  for(let j=0;j<n;j++)for(let i=0;i<n;i++){
@@ -472,16 +478,15 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
 // ---------- v5.230.62.2 · COMPILADOR ESTÁTICO + CACHE PERSISTENTE ----------
 // El objetivo es pagar el coste de interpretación/teselación ANTES de conducir y
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
-// V15.2.8: invalidate stored IndexedDB fine terrain geometry after the V15.2.6–27
-// road/pit-cut fixes. Old cells are incompatible and can expose sky-coloured
-// bands where the new shoulder draws less material than the cached terrain cut.
-const APEX_CIRCUIT_COMPILE_REV=230697;
+// Stored fine cells contain cut geometry and heights. Invalidate copies
+// compiled before the SVG curb/escape-area and shared-edge changes.
+const APEX_CIRCUIT_COMPILE_REV=230698;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){
  const dir=trackData&&trackData.spec&&trackData.spec.dir||'',src=readEffectiveTrackSvg(dir),raw=src&&typeof src.rawSvg==='string'?src.rawSvg:'',cw=trackData&&trackData.customWorld,cfg=readStoredCircuitJson(dir)||{},vp=trackData&&trackData.verticalProfile||cfg.verticalProfile||null;
  let geomSig=raw;if(!geomSig&&trackData&&Array.isArray(trackData.pts)){const P=trackData.pts,n=P.length,s=[];for(let i=0;i<n;i+=Math.max(1,Math.floor(n/96))){const p=P[i];s.push(Number(p[0]).toFixed(3)+','+Number(p[1]).toFixed(3))}geomSig=`${n}|${trackData.km}|${trackData.direction}|${s.join(';')}`}
- const meta=`${APEX_CIRCUIT_COMPILE_REV}|${dir}|${cw&&cw.profileRevision||0}|${JSON.stringify(vp||{})}|${JSON.stringify(cfg.banking||{})}`;
+ const meta=`${APEX_CIRCUIT_COMPILE_REV}|${dir}|${cw&&cw.profileRevision||0}|${JSON.stringify(vp||{})}|${JSON.stringify(cfg.banking||{})}|${JSON.stringify(cfg.pitLane||{})}|${JSON.stringify(cfg.terrain||{})}`;
  return `${dir}:${apexHash32String(geomSig)}:${apexHash32String(meta)}`;
 }
 function apexPackFineCache(map){
