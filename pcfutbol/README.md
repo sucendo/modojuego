@@ -2,19 +2,16 @@
 
 El juego funciona **sin conexión a Internet**: datos, código, hojas de estilo y **272 escudos** están dentro de `pcfutbol/`. Las imágenes de los equipos se encuentran en `img/coats/2026-27/`, todas como PNG de 96 × 96 píxeles.
 
-## Jugar en Windows
+## Jugar con WAMP o XAMPP
 
-1. Descomprime la carpeta `pcfutbol/` conservando su estructura.
-2. Ejecuta **`iniciar-local.bat`**. Busca PHP (incluido WAMP) o Python en el equipo y abre el navegador en `http://127.0.0.1:8765/`.
-3. Mantén abierta la ventana del servidor mientras juegas. **No hace falta Internet.**
+1. Descomprime `pcfutbol/` conservando todos los archivos y subcarpetas.
+2. Copia la carpeta a `C:\wamp64\www\pcfutbol\` (WAMP) o `C:\xampp\htdocs\pcfutbol\` (XAMPP).
+3. Inicia **Apache** desde WAMP/XAMPP.
+4. Abre **`http://localhost/pcfutbol/`** en el navegador. **No hace falta Internet.**
 
-También puedes copiar `pcfutbol/` dentro de `www` de WAMP y entrar por `http://localhost/pcfutbol/` con Apache arrancado.
+El juego es una aplicación HTML/CSS/JavaScript; no necesita PHP ni base de datos. Apache solo sirve los archivos locales.
 
 > No recomendamos abrir `index.html` mediante `file://`: los navegadores modernos restringen las importaciones de módulos JavaScript desde archivos locales. Servir el juego por `localhost` sigue siendo totalmente local, sin conexión a ningún servicio externo.
-
-## Linux y macOS
-
-En la carpeta `pcfutbol/` ejecuta `python3 -m http.server 8765 --bind 127.0.0.1` y abre `http://127.0.0.1:8765/`. Si utilizas PHP, también sirve `php -S 127.0.0.1:8765`.
 
 ## Escudos y mantenimiento
 
