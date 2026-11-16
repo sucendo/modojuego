@@ -22,7 +22,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   nx=-dz/len,nz=dx/len;
  const left=Math.max(.05,Number(end?sg.visualLeftB:sg.visualLeftA)||sg.leftWidth||sg.width*.5),
   right=Math.max(.05,Number(end?sg.visualRightB:sg.visualRightA)||sg.rightWidth||sg.width*.5);
- let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false,separator=null;
+ let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false,paintEdges=null;
  const st=nearestTrackState(x,z,null);
  if(st&&Number.isFinite(st.lat)&&Number.isFinite(st.s)){
   const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),
@@ -38,15 +38,17 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
    merge=Number.isFinite(sg.exitS)&&sg.exitS-(end?sg.s2:sg.s1)<=45;
    const pitS=end?sg.s2:sg.s1;
    if(merge||Number.isFinite(sg.entryS)&&pitS-sg.entryS<=45){
-    // The separator follows the original pit edge, even where its asphalt
-    // wedge narrows to zero. Project each edge of the paint onto its surface.
-    const near=side>0?lo:hi;
-    separator=[near,near+side*.09].map(lat=>{
-     const xPaint=x+nx*lat,zPaint=z+nz*lat,offset=off+dot*lat;
-     const onTrack=offset<=0;
-     const yPaint=onTrack?edge.y+Math.tan(frame.bank||0)*bankSide*offset:y;
-     return {x:xPaint,y:yPaint+.045,z:zPaint};
-    });
+    // Keep both authored lane edges when the main road supplies the asphalt.
+    // Project the paint onto the road or the pit grade independently.
+    const paintPoint=lat=>{
+     const offset=off+dot*lat;
+     const height=offset<=0?edge.y+Math.tan(frame.bank||0)*bankSide*offset:y;
+     return {x:x+nx*lat,y:height+.045,z:z+nz*lat};
+    };
+    paintEdges=[
+     [paintPoint(lo),paintPoint(lo+.09)],
+     [paintPoint(hi),paintPoint(hi-.09)]
+    ];
    }
    // Keep the authored exit over the track edge only within the merge.
    const overlap=merge?.55:0;
@@ -65,7 +67,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  }
  const width=Math.max(0,hi-lo);
  const p={lo,hi,near:side>0?lo:hi,far:side>0?hi:lo,
-  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,separator,outerExcess};
+  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,paintEdges,outerExcess};
  sg[key]=p;return p;
 }
 function apexPitVisualPointV1526(p,lat,lift=.012){
@@ -6479,32 +6481,31 @@ function collectExactPitRenderItems(cam){
     b=lat=>worldToCamera(sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat,cam);
    const toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
    const first=apexPitVisualMergeProfileV1526(sg,0),last=apexPitVisualMergeProfileV1526(sg,1);
-   const continuousSeparator=first.separator&&last.separator;
+   const mergePaint=first.paintEdges&&last.paintEdges&&(first.clipped||last.clipped);
    const merged=apexPitMergeQuadV1526(sg);
    if(merged){
     const {a:pa,b:pb,quad}=merged;
     add(...quad.map(toCam),null,null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PITLANE',merge:merged.overlap});
-    // Separate physical paint, never a 2-D screen-space outline. Keep the
-    // track-facing pit-exit line; taper its width with the wedge itself.
-    const stripe=(nearSide)=>{
-     const lineEnd=(p)=>{
-      const edge=nearSide?p.near:p.far,dir=nearSide?p.side:-p.side,
-       thick=Math.min(.09,Math.max(0,p.width*.24));
-      return [toCam(apexPitVisualPointV1526(p,edge,.045)),
-              toCam(apexPitVisualPointV1526(p,edge+dir*thick,.045))];
+    if(!mergePaint&&Math.max(pa.width,pb.width)>=.035){
+     const stripe=(nearSide)=>{
+      const lineEnd=p=>{
+       const edge=nearSide?p.near:p.far,dir=nearSide?p.side:-p.side,
+        thick=Math.min(.09,p.width*.24);
+       return [toCam(apexPitVisualPointV1526(p,edge,.045)),
+               toCam(apexPitVisualPointV1526(p,edge+dir*thick,.045))];
+      };
+      const [A,B]=lineEnd(pa),[D,C]=lineEnd(pb);
+      add(A,B,C,D,nearSide?'#f6f7f8':'#e4e8ec',null,{kind:'PIT_PAINT',merge:merged.overlap});
      };
-     const A=lineEnd(pa),B=lineEnd(pb);
-     if(Math.max(pa.width,pb.width)<.035)return;
-     add(A[0],A[1],B[1],B[0],nearSide?'#f6f7f8':'#e4e8ec',null,{kind:'PIT_PAINT',merge:merged.overlap});
-    };
-    if(!continuousSeparator)stripe(true);
-    // At the merge, a second white edge over the racing surface looks like
-    // a parallel phantom lane. Draw the outer boundary only on distinct pit.
-    if(!pa.clipped&&!pb.clipped)stripe(false);
+     stripe(true);
+     if(!pa.clipped&&!pb.clipped)stripe(false);
+    }
    }
-   if(continuousSeparator){
-    const [A,B]=first.separator.map(toCam),[D,C]=last.separator.map(toCam);
-    add(A,B,C,D,'#f6f7f8',null,{kind:'PIT_PAINT',merge:true});
+   if(mergePaint){
+    for(const index of [0,1]){
+     const [A,B]=first.paintEdges[index].map(toCam),[D,C]=last.paintEdges[index].map(toCam);
+     add(A,B,C,D,'#f6f7f8',null,{kind:'PIT_PAINT',merge:true});
+    }
    }
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
      const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);

@@ -4342,7 +4342,6 @@ function webglPushExactPitLane(cam,pitch){
   if(!(baked&&paved&&!d.material.merge))
    webglPushCamQuad(A,B,C,D,pitch,paved?apexSurfaceTintV152(d.material.kind||'PITLANE',d.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152(),d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.material?.merge?(paved?-.055:-.075):d.color==='#ffe16a'?-.034:-.022);
   // Markings are own 3-D quads assembled by collectExactPitRenderItems().
-  // Never paint a second full-width white edge on the main racing line.
  }
 }
 
