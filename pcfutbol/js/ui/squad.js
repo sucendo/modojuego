@@ -11,6 +11,7 @@ import { computePCFParams } from './utils/pcfParams.js';
 
 let filterPos = 'ALL';
 let sortKey = 'POSITION';
+let sortDirection = 'asc';
 let onActionCb = null;
 
 function formatCurrency(v) {
@@ -44,17 +45,34 @@ function matchesFilter(position) {
 
 function compare(a, b) {
   const k = String(sortKey || 'POSITION').toUpperCase();
-  if (k === 'NAME') return String(a.name || '').localeCompare(String(b.name || ''));
-  if (k === 'AGE') return (getPlayerGameAge(a) ?? 0) - (getPlayerGameAge(b) ?? 0);
-  if (k === 'OVERALL') return (b.overall ?? 0) - (a.overall ?? 0);
-  if (k === 'WAGE') return (b.wage ?? 0) - (a.wage ?? 0);
-  if (k === 'MORALE') return (b.morale ?? 0) - (a.morale ?? 0);
-  if (k === 'FITNESS') return (b.fitness ?? 0) - (a.fitness ?? 0);
+  const sign = sortDirection === 'desc' ? -1 : 1;
+  if (k === 'NAME') return sign * String(a.name || '').localeCompare(String(b.name || ''), 'es');
+  if (k === 'NUMBER') return sign * ((a.shirtNumber ?? 999) - (b.shirtNumber ?? 999));
+  if (k === 'AGE') return sign * ((getPlayerGameAge(a) ?? 0) - (getPlayerGameAge(b) ?? 0));
+  if (k === 'OVERALL') return sign * ((a.overall ?? 0) - (b.overall ?? 0));
+  if (k === 'WAGE') return sign * ((a.wage ?? 0) - (b.wage ?? 0));
+  if (k === 'MORALE') return sign * ((a.morale ?? 0) - (b.morale ?? 0));
+  if (k === 'FITNESS') return sign * ((a.fitness ?? 0) - (b.fitness ?? 0));
   // POSITION
   const ga = getPositionGroup(a.position);
   const gb = getPositionGroup(b.position);
-  if (ga !== gb) return ga - gb;
-  return String(a.position || '').localeCompare(String(b.position || ''));
+  if (ga !== gb) return sign * (ga - gb);
+  return sign * String(a.position || '').localeCompare(String(b.position || ''), 'es');
+}
+
+function defaultDirection(key) {
+  return ['OVERALL', 'WAGE', 'MORALE', 'FITNESS'].includes(key) ? 'desc' : 'asc';
+}
+
+function matchesSquadExtras(p) {
+  const value = id => document.getElementById(id)?.value?.trim() || '';
+  const query = value('squad-search').toLocaleLowerCase('es');
+  if (query && !`${p.name || ''} ${p.fullName || ''} ${p.nationality || ''}`.toLocaleLowerCase('es').includes(query)) return false;
+  const age = getPlayerGameAge(p);
+  if (value('squad-age-min') && (age == null || age < Number(value('squad-age-min')))) return false;
+  if (value('squad-age-max') && (age == null || age > Number(value('squad-age-max')))) return false;
+  if (value('squad-overall-min') && Number(p.overall || 0) < Number(value('squad-overall-min'))) return false;
+  return true;
 }
 
 function getEstado(player) {
@@ -70,7 +88,7 @@ function getEstado(player) {
 function getFichaBadge(player) {
   const season = GameState.currentDate?.season || 1;
   const key = String(season);
-  const hasBio = !!(player.birthDate && player.nationality);
+  const hasBio = !!(player.birthDate && player.nationality && player.name && player.shirtNumber != null && !player.shirtNumberEstimated);
   const hasAttrs = !!(player.attributes?.technical && player.attributes?.mental && player.attributes?.physical);
   const hasStats = !!(player.stats && player.stats[key]); // existe aunque sea 0s
 
@@ -94,9 +112,29 @@ export function initSquadUI() {
 
   if (sortEl) {
     sortKey = sortEl.value || 'POSITION';
+    sortDirection = defaultDirection(sortKey);
     sortEl.addEventListener('change', () => {
       sortKey = sortEl.value || 'POSITION';
+      sortDirection = defaultDirection(sortKey);
       updateSquadView();
+    });
+  }
+
+  for (const id of ['squad-search','squad-age-min','squad-age-max','squad-overall-min']) {
+    const input = document.getElementById(id);
+    input?.addEventListener('input', updateSquadView);
+  }
+  for (const header of document.querySelectorAll('[data-squad-sort]')) {
+    const change = () => {
+      const key = header.dataset.squadSort;
+      sortDirection = sortKey === key && sortDirection === 'asc' ? 'desc' : 'asc';
+      sortKey = key;
+      if (sortEl) sortEl.value = key;
+      updateSquadView();
+    };
+    header.addEventListener('click', change);
+    header.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); change(); }
     });
   }
 
@@ -136,7 +174,13 @@ export function updateSquadView() {
   if (!tbody || !label || !club) return;
 
   const players = Array.isArray(club.players) ? club.players.slice() : [];
-  const list = players.filter((p) => matchesFilter(p.position)).sort(compare);
+  const list = players.filter((p) => matchesFilter(p.position) && matchesSquadExtras(p)).sort(compare);
+
+  document.querySelectorAll('[data-squad-sort]').forEach(th => {
+    const active = th.dataset.squadSort === sortKey;
+    th.setAttribute('aria-sort', active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none');
+    th.dataset.sortDirection = active ? sortDirection : '';
+  });
 
   label.textContent = `${list.length} jugador${list.length === 1 ? '' : 'es'} en plantilla`;
   tbody.innerHTML = '';
@@ -178,7 +222,9 @@ export function updateSquadView() {
     };
 
     // #
-    tr.appendChild(tdText(String(dorsal)));
+    const dorsalCell = tdText(`${dorsal}${p.shirtNumberEstimated ? '*' : ''}`);
+    if (p.shirtNumberEstimated) dorsalCell.title = 'Dorsal provisional, pendiente de verificación';
+    tr.appendChild(dorsalCell);
 
     // Jugador + bandera (estilo tácticas)
     const tdName = document.createElement('td');
@@ -187,10 +233,13 @@ export function updateSquadView() {
     if (flag) tdName.appendChild(flag);
     const nameSpan = document.createElement('span');
     nameSpan.textContent = p.name || 'Jugador';
+    if (!p.nationality) nameSpan.title = 'Nacionalidad pendiente de verificar';
     tdName.appendChild(nameSpan);
     tr.appendChild(tdName);
 
-    tr.appendChild(tdNum(edad != null ? String(edad) : '-'));
+    const ageCell = tdNum(edad != null ? `${p.ageEstimated ? '~' : ''}${edad}` : '-');
+    if (p.ageEstimated) ageCell.title = 'Edad estimada, fecha de nacimiento no verificada';
+    tr.appendChild(ageCell);
     tr.appendChild(tdNum(String(pcf.EN)));
     tr.appendChild(tdNum(String(pcf.CF)));
     tr.appendChild(tdNum(String(pcf.CM)));

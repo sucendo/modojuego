@@ -2,6 +2,7 @@
 
 import { initialLeague, allLeagues } from './data.js';
 import { getSeasonStartYear } from './gameSeason.js';
+import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 import { fitPlayersToFormation } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
@@ -923,85 +924,16 @@ function setupCompetition() {
 // Calendario oficial / generado
 // ----------------------------
 
-function getSeasonStartUTCInternal(season) {
-  const year = getSeasonStartYear(season);
-  return new Date(Date.UTC(year, 7, 1)); // 1 de agosto
-}
-
-// ---------------------------
-// World leagues: calendario base por liga (para kickoffDate)
-// ---------------------------
-function getSeasonStartUTCForLeagueId(leagueId, season) {
-  const year = getSeasonStartYear(season);
-  const map = {
-    league_en_premier: { month: 8, day: 1 },     // 01/08
-    league_it_seriea: { month: 8, day: 10 },     // 10/08
-    league_de_bundesliga: { month: 8, day: 15 }, // 15/08
-    __default: { month: 8, day: 1 },
-  };
-  const cfg = map[String(leagueId || '')] || map.__default;
-  const m0 = Math.max(1, Math.min(12, Number(cfg.month || 8))) - 1;
-  const d0 = Math.max(1, Math.min(31, Number(cfg.day || 1)));
-  return new Date(Date.UTC(year, m0, d0, 12, 0, 0, 0));
-}
-
 function decorateWorldFixturesWithSchedule(fixtures, season, leagueId) {
-  if (!Array.isArray(fixtures) || fixtures.length === 0) return;
-  const start = getSeasonStartUTCForLeagueId(leagueId, season);
-  const slots = ['13:00', '16:15', '18:30', '21:00'];
-
-  const byMd = new Map();
-  fixtures.forEach((fx) => {
-    const md = Math.max(1, Number(fx?.matchday || 1));
-    if (!byMd.has(md)) byMd.set(md, []);
-    byMd.get(md).push(fx);
-  });
-
-  for (const [md, arr] of byMd.entries()) {
-    arr.sort((a, b) => `${a?.homeClubId||''}|${a?.awayClubId||''}`.localeCompare(`${b?.homeClubId||''}|${b?.awayClubId||''}`));
-    arr.forEach((fx, i) => {
-      if (!fx) return;
-      if (fx.kickoffDate) return;
-      const t = slots[i % slots.length];
-      const [hh, mm] = t.split(':').map((n) => Number(n || 0));
-      const d = new Date(start.getTime());
-      d.setUTCDate(d.getUTCDate() + (md - 1) * 7);
-      d.setUTCHours(hh, mm, 0, 0);
-      fx.kickoffTime = fx.kickoffTime || t;
-      fx.kickoffDate = d.toISOString();
-    });
-  }
+  assignLeagueFixtureDates(fixtures, leagueId, season);
 }
 
 function decorateGeneratedFixturesWithSchedule(fixtures, season) {
   if (!Array.isArray(fixtures) || fixtures.length === 0) return;
-
+  assignLeagueFixtureDates(fixtures, GameState.league?.id, season);
   const clubIndex = new Map((GameState.clubs || []).filter(Boolean).map((c) => [String(c.id), c]));
-  const slots = ['16:00', '18:15', '20:30', '22:00'];
-
-  // Agrupar por jornada para asignar horas "tipo TV"
-  const byMd = new Map();
   fixtures.forEach((fx) => {
-    const md = Number(fx?.matchday || 1);
-    if (!byMd.has(md)) byMd.set(md, []);
-    byMd.get(md).push(fx);
-  });
-
-  for (const [md, list] of byMd.entries()) {
-    list.forEach((fx, idx) => {
       if (!fx) return;
-      const time = slots[idx % slots.length];
-      fx.kickoffTime = fx.kickoffTime || time;
-
-      // Fecha base: cada jornada +7 días
-      const d = getSeasonStartUTCInternal(season);
-      d.setUTCDate(d.getUTCDate() + (Math.max(1, md) - 1) * 7);
-
-      // Hora en UTC (simple). Si quieres "hora local", ya lo ajustaremos.
-      const [hh, mm] = String(fx.kickoffTime).split(':').map((x) => Number(x || 0));
-      if (Number.isFinite(hh)) d.setUTCHours(hh, Number.isFinite(mm) ? mm : 0, 0, 0);
-      fx.kickoffDate = fx.kickoffDate || d.toISOString();
-
       const homeClub = clubIndex.get(String(fx.homeClubId)) || null;
       if (!fx.meta || typeof fx.meta !== 'object') fx.meta = {};
       if (!fx.meta.stadiumName) fx.meta.stadiumName = homeClub?.stadium?.name || homeClub?.stadiumName || null;
@@ -1011,8 +943,7 @@ function decorateGeneratedFixturesWithSchedule(fixtures, season) {
       }
       if (fx.meta.official == null) fx.meta.official = false;
       if (!fx.meta.source) fx.meta.source = 'round_robin';
-    });
-  }
+  });
 }
 
 function normalizeWorldLeagues() {

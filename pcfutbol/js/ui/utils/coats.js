@@ -6,6 +6,18 @@ function normalizeClubId(clubId) {
   return String(clubId).trim().toLowerCase();
 }
 
+function getProvisionalCoatUrl(clubId, clubName = '') {
+  const label = (clubName || clubId).replace(/_/g, ' ').trim();
+  const words = label.split(/\s+/).filter(Boolean);
+  const initials = (words.length > 1 ? `${words[0][0]}${words[1][0]}` : label.slice(0, 2))
+    .toLocaleUpperCase().replace(/[^A-ZÁÉÍÓÚÑ0-9]/g, '').slice(0, 2) || 'FC';
+  let hash = 0;
+  for (const ch of clubId) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
+  const color = ['#2459a5', '#9b2835', '#176e62', '#694eab', '#8c622e'][Math.abs(hash) % 5];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 96"><path d="M7 5h66v43c0 20-14 32-33 42C21 80 7 68 7 48Z" fill="${color}" stroke="#eee" stroke-width="4"/><text x="40" y="52" font-size="26" font-weight="bold" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif">${initials}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 export function getCoatUrlForClubId(clubId) {
   const id = normalizeClubId(clubId);
   if (!id) return null;
@@ -57,6 +69,8 @@ export function getCoatUrlForClubId(clubId) {
     wolves: 'en/Wolves.png',
     brentford: 'en/brentford.png',
     sunderland: 'en/Sunderland AFC.png',
+    crystalpalace: 'en/Crystal Palace.png',
+    fulham: 'en/Fulham.png',
 
     // =====================
     // Serie A (Italia)
@@ -77,6 +91,10 @@ export function getCoatUrlForClubId(clubId) {
     sassuolo: 'it/Sassuolo.png',
     lecce: 'it/Lecce.png',
     como: 'it/Como.png',
+    genoa: 'it/Genoa.png',
+    cremonese: 'it/Cremonese.png',
+    parma: 'it/Parma.png',
+    pisa: 'it/Pisa.png',
 
     // =====================
     // Bundesliga (Alemania)
@@ -140,11 +158,35 @@ export function getCoatUrlForClubId(clubId) {
     telstar: 'nl/SC Telstar.png',
     volendam: 'nl/Volendam.png',
     zwolle: 'nl/Zwolle.png',
+    excelsior: 'nl/Excelsior.png',
+    fortunasittard: 'nl/Fortuna Sittard.png',
+    fortuna: 'nl/Fortuna Sittard.png',
+    goahead: 'nl/Go Ahead.png',
+
+    // Primeira Liga (Portugal)
+    porto: 'pt/Porto.png',
+    benfica: 'pt/Benfica.png',
+    sportingcp: 'pt/Sporting Lisboa.png',
+    braga: 'pt/Braga.png',
+    guimaraes: 'pt/Guimaraes.png',
+    arouca: 'pt/Arouca.png',
+    estoril: 'pt/Estoril.png',
+    moreirense: 'pt/Moreirense.png',
+    nacional: 'pt/Nacional.png',
+    rioave: 'pt/Rio Ave.png',
+    santaclara: 'pt/Santa Clara.png',
+    tondela: 'pt/Tondela.png',
   };
 
-  const filename = map[id];
-  if (!filename) return null;
-  return `img/coats/${filename}`;
+  // Los filiales comparten el escudo del club matriz mientras no haya una
+  // variante propia contrastada disponible en el paquete gráfico.
+  const affiliateParent = {
+    celta_fortuna: 'celta', realsociedad_b: 'realsociedad', sporting_b: 'sportingcp',
+    benfica_b: 'benfica', porto_b: 'porto', jong_ajax: 'ajax', jong_az: 'az',
+    jong_utrecht: 'utrecht', jong_psv: 'psv',
+  };
+  const filename = map[id] || map[affiliateParent[id]];
+  return filename ? `img/coats/${filename}` : getProvisionalCoatUrl(id);
 }
 
 export function createCoatImgElement(clubId, clubName, size = 20) {
@@ -154,6 +196,12 @@ export function createCoatImgElement(clubId, clubName, size = 20) {
   const img = document.createElement('img');
   img.src = url;
   img.alt = clubName ? `Escudo de ${clubName}` : 'Escudo del club';
+  if (url.startsWith('data:')) img.title = 'Emblema provisional; falta el escudo oficial';
+  img.addEventListener('error', () => {
+    if (img.src.startsWith('data:')) return;
+    img.src = getProvisionalCoatUrl(normalizeClubId(clubId), clubName);
+    img.title = 'Emblema provisional; imagen oficial no disponible';
+  });
   img.classList.add('coat-icon');
   img.loading = 'lazy';
   if (size != null) {

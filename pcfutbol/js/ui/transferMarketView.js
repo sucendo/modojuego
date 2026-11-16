@@ -16,6 +16,28 @@ const eur = (value) => Number(value || 0).toLocaleString('es-ES', {
 let selected = null;
 let onChanged = null;
 let bound = false;
+let lastFocus = null;
+let marketSort = { key: 'overall', direction: 'desc' };
+
+function closeNegotiation() {
+  const modal = el('market-modal');
+  if (!modal || modal.classList.contains('hidden')) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('market-modal-open');
+  if (lastFocus?.isConnected) lastFocus.focus();
+  lastFocus = null;
+}
+
+function openNegotiation(trigger) {
+  const modal = el('market-modal');
+  if (!modal) return;
+  lastFocus = trigger || document.activeElement;
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('market-modal-open');
+  el('market-bid')?.focus();
+}
 
 function td(row, text) {
   const cell = document.createElement('td');
@@ -32,11 +54,12 @@ function button(label, fn, className = 'btn btn-secondary') {
   return b;
 }
 function notice(message, ok = true) {
-  const node = el('market-message');
-  if (!node) return;
-  node.textContent = message || '';
-  node.classList.toggle('market-error', !ok);
-  node.setAttribute('role', 'status');
+  for (const id of ['market-message', 'market-feedback']) {
+    const node = el(id);
+    if (!node) continue;
+    node.textContent = message || '';
+    node.classList.toggle('market-error', !ok);
+  }
 }
 
 function getUserClub() {
@@ -78,7 +101,19 @@ function renderSearchResults() {
     query: el('market-search')?.value || '',
     position: el('market-position')?.value || 'ALL',
     leagueId: el('market-league')?.value || 'ALL',
+    minAge: el('market-age-min')?.value === '' ? null : Number(el('market-age-min')?.value),
+    maxAge: el('market-age-max')?.value === '' ? null : Number(el('market-age-max')?.value),
+    minOverall: el('market-overall-min')?.value === '' ? null : Number(el('market-overall-min')?.value),
+    maxPrice: el('market-price-max')?.value === '' ? null : Number(el('market-price-max')?.value),
+    onlyListed: !!el('market-only-listed')?.checked,
+    sortBy: marketSort.key,
+    sortDirection: marketSort.direction,
     limit: 80,
+  });
+  document.querySelectorAll('[data-market-sort]').forEach(th => {
+    const active = th.dataset.marketSort === marketSort.key;
+    th.setAttribute('aria-sort', active ? (marketSort.direction === 'asc' ? 'ascending' : 'descending') : 'none');
+    th.dataset.sortDirection = active ? marketSort.direction : '';
   });
   if (!matches.length) {
     const row = document.createElement('tr');
@@ -92,10 +127,12 @@ function renderSearchResults() {
     td(row, item.clubName);
     td(row, item.position);
     td(row, item.overall);
-    td(row, item.age || '—');
+    const ageCell = td(row, item.age ? `${item.ageEstimated ? '~' : ''}${item.age}` : '—');
+    if (item.ageEstimated) ageCell.title = 'Edad provisional';
     td(row, eur(item.price));
     const action = document.createElement('td');
-    action.appendChild(button('Negociar', () => selectTarget(item), 'btn btn-primary'));
+    const negotiateButton = button('Negociar', () => selectTarget(item, negotiateButton), 'btn btn-primary');
+    action.appendChild(negotiateButton);
     row.appendChild(action);
     tbody.appendChild(row);
   }
@@ -103,7 +140,7 @@ function renderSearchResults() {
     `${matches.length} jugadores mostrados (máximo 80 por búsqueda)`;
 }
 
-function selectTarget(item) {
+function selectTarget(item, trigger = null) {
   selected = { playerId: item.playerId, leagueId: item.leagueId, clubId: item.clubId,
     releaseClause: item.releaseClause, price: item.price };
   if (el('market-selected')) el('market-selected').textContent =
@@ -121,6 +158,7 @@ function selectTarget(item) {
   const submit = el('market-negotiate');
   if (submit) submit.disabled = false;
   notice('');
+  openNegotiation(trigger);
 }
 
 function renderSales() {
@@ -203,6 +241,7 @@ export function updateTransferMarketView() {
 function afterMutation(result) {
   notice(result.message, result.ok);
   if (result.ok) {
+    closeNegotiation();
     selected = null;
     if (el('market-selected')) el('market-selected').textContent = 'Selecciona un jugador de la lista.';
     if (el('market-negotiate')) el('market-negotiate').disabled = true;
@@ -216,8 +255,36 @@ export function initTransferMarketUI({ onTransfer } = {}) {
   onChanged = onTransfer || null;
   if (bound || !el('view-transfermarket')) return;
   bound = true;
-  for (const id of ['market-search', 'market-position', 'market-league']) {
+  for (const id of ['market-search', 'market-position', 'market-league', 'market-age-min',
+    'market-age-max', 'market-overall-min', 'market-price-max', 'market-only-listed']) {
     el(id)?.addEventListener(id === 'market-search' ? 'input' : 'change', renderSearchResults);
+  }
+  el('market-modal-close')?.addEventListener('click', closeNegotiation);
+  el('market-modal-cancel')?.addEventListener('click', closeNegotiation);
+  el('market-modal-backdrop')?.addEventListener('click', closeNegotiation);
+  document.addEventListener('keydown', ev => {
+    const modal = el('market-modal');
+    if (!modal || modal.classList.contains('hidden')) return;
+    if (ev.key === 'Escape') { ev.preventDefault(); closeNegotiation(); return; }
+    if (ev.key !== 'Tab') return;
+    const focusable = [...modal.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]')]
+      .filter(node => node.getClientRects().length && !node.closest('.hidden'));
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable.at(-1);
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  });
+  const sorting = el('view-transfermarket')?.querySelectorAll('[data-market-sort]') || [];
+  for (const header of sorting) {
+    const changeSort = () => {
+      const key = header.dataset.marketSort;
+      marketSort = { key, direction: marketSort.key === key && marketSort.direction === 'asc' ? 'desc' : 'asc' };
+      renderSearchResults();
+    };
+    header.addEventListener('click', changeSort);
+    header.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); changeSort(); }
+    });
   }
   el('market-clause')?.addEventListener('change', () => {
     if (!selected) return;

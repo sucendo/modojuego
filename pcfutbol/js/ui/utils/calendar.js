@@ -31,9 +31,16 @@ export function getGameDateFor(season, matchday) {
 
 // Fecha actual de juego según GameState.currentDate
 export function getCurrentGameDate() {
+  if (GameState.currentTimeISO) {
+    const date = new Date(GameState.currentTimeISO);
+    if (Number.isFinite(date.getTime())) return date;
+  }
   const season = GameState.currentDate?.season || 1;
   const matchday = GameState.currentDate?.matchday || 1;
-  return getGameDateFor(season, matchday);
+  const firstFixture = (GameState.fixtures || []).filter(f => Number(f?.matchday) === Number(matchday))
+    .map(f => new Date(f.kickoffDate)).filter(d => Number.isFinite(d.getTime()))
+    .sort((a, b) => a.getTime() - b.getTime())[0];
+  return firstFixture || getGameDateFor(season, matchday);
 }
 
 // Formato "15/09/2025"

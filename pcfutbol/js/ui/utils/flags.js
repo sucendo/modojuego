@@ -26,6 +26,7 @@ export function getFlagUrlForNationality(nationality) {
 	Dinamarca: 'Flag_of_Denmark.svg',
 	Finlandia: 'Flag_of_Finland.svg',
 	Grecia: 'Flag_of_Greece.svg',
+	Hungría: 'Flag_of_Hungary.svg',
 	Inglaterra: 'Flag_of_England.svg',
 	Islandia: 'Flag_of_Iceland.svg',
 	Francia: 'Flag_of_France.svg',
