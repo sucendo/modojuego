@@ -5,6 +5,7 @@ import { GameState, ensureTransferMarketState } from '../state.js';
 import { isPlayerUnavailable } from './utils/availability.js';
 import { getReleaseClause, getSuggestedReleaseClause, evaluateReleaseClause } from './contracts.js';
 import { FIRST_SEASON_YEAR, getSeasonStartYear } from '../gameSeason.js';
+import { selectValidStartingXI } from './utils/lineupSelection.js';
 export { getReleaseClause } from './contracts.js';
 
 const MIN_SQUAD = 16;
@@ -15,10 +16,10 @@ const roundFee = (v) => Math.max(10000, Math.round(v / 10000) * 10000);
 const same = (a, b) => String(a) === String(b);
 
 export const AI_MARKET_RULES = Object.freeze({
-  firstSummerStartDay: 22,        // El estreno de temporada conserva plantillas reales.
-  firstSummerSignings: 1,
+  firstSummerStartDay: 22,        // Sin efecto en la primera campaña: verano bloqueado.
+  firstSummerSignings: 0,        // Las plantillas 2026/27 se mantienen hasta enero de 2027.
   firstWinterSignings: 2,
-  firstSeasonSignings: 3,         // Dentro del margen de 0–4 acordado.
+  firstSeasonSignings: 2,         // Sin verano inicial: solo hasta dos entradas en enero.
   laterSummerSignings: 3,
   laterWinterSignings: 2,
   laterSeasonSignings: 5,
@@ -231,32 +232,19 @@ function validFinances(source, destination, player, fee, wage) {
 // Conserva los convocados que siguen en el club, rellena bajas y evita IDs ajenos.
 function reconcileSquad(club) {
   const all = (club.players || []).filter(p => p?.id);
-  const ids = new Set(all.map(p => String(p.id)));
   const ordered = all.filter(p => !isPlayerUnavailable(p))
     .sort((a, b) => int(b.overall) - int(a.overall));
-  const chosen = new Set();
-  const keep = (values, max) => (Array.isArray(values) ? values : [])
-    .filter(id => ids.has(String(id)) && !chosen.has(String(id)) && (chosen.add(String(id)), true))
-    .slice(0, max);
-  const xi = keep(club.lineup, 11);
-  for (const p of ordered) {
-    if (xi.length >= 11) break;
-    if (!chosen.has(String(p.id))) { xi.push(p.id); chosen.add(String(p.id)); }
-  }
-  // Tras vender un portero titular, nunca dejamos un XI sin guardameta.
-  if (!xi.some(id => all.some(p => same(p.id, id) && group(p.position) === 'GK'))) {
-    const keeper = ordered.find(p => group(p.position) === 'GK');
-    if (keeper) {
-      if (xi.length >= 11) chosen.delete(String(xi.pop()));
-      xi.unshift(keeper.id);
-      chosen.add(String(keeper.id));
-    }
-  }
-  const bench = keep(club.bench, 9);
-  for (const p of ordered) {
-    if (bench.length >= 9) break;
-    if (!chosen.has(String(p.id))) { bench.push(p.id); chosen.add(String(p.id)); }
-  }
+  const xi = selectValidStartingXI(all, club.lineup, isPlayerUnavailable);
+  const chosen = new Set(xi.map(String));
+  const bench = [];
+  const append = id => {
+    const player = ordered.find(p => same(p.id, id));
+    if (!player || chosen.has(String(id)) || bench.length >= 9) return;
+    chosen.add(String(id));
+    bench.push(player.id);
+  };
+  for (const id of club.bench || []) append(id);
+  for (const player of ordered) append(player.id);
   club.lineup = xi;
   club.bench = bench;
 }
@@ -446,7 +434,7 @@ function simulateAiWeek(week, date) {
   if (season !== Number(GameState.currentDate?.season || 1)) return 0;
   const month = date.getUTCMonth() + 1;
   if (month !== 8 && month !== 1) return 0;
-  if (season === 1 && month === 8 && date.getUTCDate() < AI_MARKET_RULES.firstSummerStartDay) return 0;
+  if (season === 1 && month === 8) return 0; // No alterar las plantillas antes del invierno 2026/27.
   const windowMax = season === 1
     ? (month === 8 ? AI_MARKET_RULES.firstSummerSignings : AI_MARKET_RULES.firstWinterSignings)
     : (month === 8 ? AI_MARKET_RULES.laterSummerSignings : AI_MARKET_RULES.laterWinterSignings);

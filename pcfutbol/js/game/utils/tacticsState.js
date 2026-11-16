@@ -2,6 +2,7 @@
 // Estado de táctica/alineación (motor, sin DOM)
 
 import { isPlayerUnavailable } from './availability.js';
+import { selectValidStartingXI } from './lineupSelection.js';
 
 function getPositionGroup(position) {
   const pos = (position || '').toUpperCase();
@@ -28,16 +29,7 @@ export function autoPickMatchdaySquad(club, benchMax = 9) {
     .slice()
     .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
 
-  const xi = [];
-  const gk = available.find(
-    (p) => String(p.position || '').toUpperCase() === 'GK'
-  );
-  if (gk) xi.push(gk.id);
-
-  for (let i = 0; i < available.length && xi.length < 11; i++) {
-    const id = available[i].id;
-    if (id && !xi.includes(id)) xi.push(id);
-  }
+  const xi = selectValidStartingXI(available);
 
   const xiSet = new Set(xi);
   const bench = [];

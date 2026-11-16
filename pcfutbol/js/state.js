@@ -2,6 +2,7 @@
 
 import { initialLeague, allLeagues } from './data.js';
 import { getSeasonStartYear } from './gameSeason.js';
+import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 
 export const GameState = {
   meta: {
@@ -233,38 +234,21 @@ function ensureClubDefaults(club) {
   if (!Array.isArray(club.lineup)) club.lineup = [];
   if (!Array.isArray(club.bench)) club.bench = [];
 
-  // Si vienes de save viejo o está vacío: autogenerar una convocatoria razonable
-  if ((club.lineup.length === 0 && Array.isArray(club.players) && club.players.length) || club.bench.length === 0) {
-    const available = (club.players || [])
-      .filter((p) => p && p.id && !p.injury && !p.suspension)
-      .slice()
-      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
-
-    const pickedXI = [];
-    // asegurar un portero si existe
-    const gk = available.find((p) => String(p.position || '').toUpperCase() === 'POR');
-    if (gk) pickedXI.push(gk.id);
-
-    for (let i = 0; i < available.length && pickedXI.length < 11; i++) {
-      const id = available[i].id;
-      if (id && !pickedXI.includes(id)) pickedXI.push(id);
-    }
-
-    const xiSet = new Set(pickedXI);
-    const pickedBench = [];
-    for (let i = 0; i < available.length && pickedBench.length < 9; i++) {
-      const id = available[i].id;
-      if (id && !xiSet.has(id) && !pickedBench.includes(id)) pickedBench.push(id);
-    }
-
-    club.lineup = pickedXI.slice(0, 11);
-    club.bench = pickedBench.slice(0, 9);
-  } else {
-    // limpieza: únicos y limitar tamaños
-    club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
-    const xiSet = new Set(club.lineup);
-    club.bench = Array.from(new Set(club.bench)).filter((id) => id && !xiSet.has(id)).slice(0, 9);
-  }
+  const available = (club.players || [])
+    .filter(p => p?.id && !isPlayerUnavailable(p))
+    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+  club.lineup = selectValidStartingXI(club.players, club.lineup, isPlayerUnavailable);
+  const chosen = new Set(club.lineup.map(String));
+  const bench = [];
+  const addToBench = id => {
+    const player = available.find(p => String(p.id) === String(id));
+    if (!player || chosen.has(String(id)) || bench.length >= 9) return;
+    bench.push(player.id);
+    chosen.add(String(id));
+  };
+  for (const id of club.bench) addToBench(id);
+  for (const player of available) addToBench(player.id);
+  club.bench = bench;
 }
 
 function ensurePlayerDefaults(player, season) {
@@ -577,7 +561,7 @@ function applyStatsToFixture(fx, season, playerIndex) {
   (Array.isArray(fx.homeLineupIds) ? fx.homeLineupIds : []).forEach((pid) => {
     const info = playerIndex.get(pid);
     if (!info || !info.player) return;
-    if (String(info.player.position || '').toUpperCase() !== 'POR') return;
+    if (!isGoalkeeper(info.player)) return;
     if (homeGA !== 0) return;
     ensurePlayerSeasonStats(info.player, season);
     info.player.stats[key].cleanSheets += 1;
@@ -585,7 +569,7 @@ function applyStatsToFixture(fx, season, playerIndex) {
   (Array.isArray(fx.awayLineupIds) ? fx.awayLineupIds : []).forEach((pid) => {
     const info = playerIndex.get(pid);
     if (!info || !info.player) return;
-    if (String(info.player.position || '').toUpperCase() !== 'POR') return;
+    if (!isGoalkeeper(info.player)) return;
     if (awayGA !== 0) return;
     ensurePlayerSeasonStats(info.player, season);
     info.player.stats[key].cleanSheets += 1;
@@ -701,10 +685,10 @@ function generateAttributesForPosition(position, overall) {
   const isCB = pos === 'DFC' || pos === 'CB';
   const isFB =
     pos === 'LD' || pos === 'LI' || pos === 'RB' || pos === 'LB' || pos === 'CAD';
-  const isDM = pos === 'MCD' || pos === 'DM';
-  const isCM = pos === 'MC';
-  const isAM = pos === 'MCO' || pos === 'MP';
-  const isWinger = pos === 'EI' || pos === 'ED';
+  const isDM = pos === 'MCD' || pos === 'DM' || pos === 'CDM';
+  const isCM = pos === 'MC' || pos === 'CM';
+  const isAM = pos === 'MCO' || pos === 'MP' || pos === 'CAM';
+  const isWinger = ['EI', 'ED', 'RW', 'LW'].includes(pos);
   const isST =
     pos === 'DC' || pos === 'SD' || pos === 'ST' || pos === 'FW' || pos === 'CF';
 

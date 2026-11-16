@@ -36,6 +36,53 @@ function group(position) {
   return 'CM';
 }
 
+// Las fuentes originales suelen publicar solo portero/defensa/medio/delantero.
+// Para la táctica usamos únicamente las diez demarcaciones modernas, y dejamos
+// constancia de cuándo la subposición se ha tenido que estimar.
+function modernPosition(position) {
+  const p = String(position || '').toUpperCase();
+  const alias = {
+    POR: 'GK', GK: 'GK', DFC: 'CB', LD: 'RB', LI: 'LB', RWB: 'RB', LWB: 'LB',
+    MCD: 'CDM', DM: 'CDM', MC: 'CM', RM: 'CM', LM: 'CM',
+    MCO: 'CAM', AM: 'CAM', MP: 'CAM', ED: 'RW', EI: 'LW',
+    CF: 'ST', DC: 'ST', FW: 'ST', SD: 'ST',
+  };
+  const normalized = alias[p] || p;
+  if (['GK', 'RB', 'LB', 'CB', 'CDM', 'CM', 'CAM', 'RW', 'LW', 'ST'].includes(normalized)) return normalized;
+  return { POR: 'GK', CB: 'CB', CM: 'CM', ST: 'ST' }[group(position)];
+}
+
+const GENERIC_POSITIONS = new Set(['POR', 'CB', 'CM', 'ST', 'DF', 'DEF', 'MF', 'MID', 'FW', 'ATT']);
+
+function rebalanceEstimatedPositions(roster, accuracyByIndex) {
+  const allocations = [
+    { base: 'CB', roles: ['RB', 'LB'], divisor: 4, hints: [[2, 12, 22], [3, 13, 23]] },
+    { base: 'CM', roles: ['CDM', 'CAM'], divisor: 4, hints: [[6, 4, 16], [10, 18, 20]] },
+    { base: 'ST', roles: ['RW', 'LW'], divisor: 3, hints: [[7, 17, 27], [11, 21, 19]] },
+  ];
+  for (const { base, roles, divisor, hints } of allocations) {
+    const members = roster.filter(p => group(p.position) === base);
+    const target = Math.min(2, Math.floor(members.length / divisor));
+    for (const [index, role] of roles.entries()) {
+      let need = target - members.filter(p => p.position === role).length;
+      if (need <= 0) continue;
+      const candidates = roster.map((player, i) => ({ player, i }))
+        .filter(({ player, i }) => player.position === base && accuracyByIndex[i]?.generic)
+        .sort((a, b) => {
+          const score = x =>
+            (hints[index].includes(Number(x.player.shirtNumber)) ? -2 : 0) +
+            (accuracyByIndex[x.i]?.legacyPrecise ? 1 : 0);
+          return score(a) - score(b) || a.i - b.i;
+        });
+      for (const { player } of candidates) {
+        if (need-- <= 0) break;
+        player.position = role;
+        player.positionEstimated = true;
+      }
+    }
+  }
+}
+
 function baseEstimate(club, position, index) {
   const base = Math.max(55, Math.min(83, Number(club.baseOverall) || 65));
   const variation = (index * 7 + base) % 9 - 4;
@@ -60,6 +107,7 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
   const legacy = Array.isArray(historicalPlayers) ? historicalPlayers : [];
   const takenIds = new Set();
   const roster = [];
+  const accuracyByIndex = [];
   // Reservamos 3 fichas libres para que todos los clubes puedan fichar.
   // Los dorsales publicados ayudan a priorizar primeros equipos frente a cantera.
   const candidates = snapshot.players.slice();
@@ -98,8 +146,9 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
     let player;
     if (old) {
       takenIds.add(old.id);
+      const keepLegacyRole = group(old.position) === group(current.position);
       player = { ...old,
-        position: group(old.position) === group(current.position) ? old.position : current.position,
+        position: keepLegacyRole ? modernPosition(old.position) : modernPosition(current.position),
         shirtNumber: current.shirtNumber ?? old.shirtNumber,
       };
     } else {
@@ -110,10 +159,14 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
       takenIds.add(id);
       player = {
         id, name: current.name,
-        ...baseEstimate(club, current.position, index),
+        ...baseEstimate(club, modernPosition(current.position), index),
         ...(current.shirtNumber != null ? { shirtNumber: current.shirtNumber } : {}),
       };
     }
+    const publishedGeneric = GENERIC_POSITIONS.has(String(current.position || '').toUpperCase());
+    player.positionEstimated = publishedGeneric;
+    accuracyByIndex.push({ generic: publishedGeneric && !current.preferredPosition, legacyPrecise: !!old &&
+      !GENERIC_POSITIONS.has(String(old.position || '').toUpperCase()) });
     if (Number.isInteger(current.age) && current.age >= 15 && current.age <= 50) {
       player.age = current.age;
       player.ageEstimated = false;
@@ -129,5 +182,6 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
     player.rosterVerified = snapshot.sourceKind !== 'independent';
     roster.push(player);
   }
+  rebalanceEstimatedPositions(roster, accuracyByIndex);
   return roster.length >= 16 && roster.some(p => group(p.position) === 'POR') ? roster : null;
 }

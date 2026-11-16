@@ -7,6 +7,7 @@ import { GameState } from '../state.js';
 import { getUserClub } from '../game/selectors.js';
 import { createFlagImgElement } from './utils/flags.js';
 import { getPlayerGameAge } from './utils/calendar.js';
+import { selectValidStartingXI } from '../game/utils/lineupSelection.js';
 import {
   ensureClubTactics,
   autoPickMatchdaySquad,
@@ -379,7 +380,7 @@ function normalizeLineupBench(club) {
   club.lineup = normalizeIdArray(club.lineup, club);
   club.bench  = normalizeIdArray(club.bench, club);
 
-  club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
+  club.lineup = selectValidStartingXI(club.players, club.lineup, isPlayerUnavailable);
   const setXI = new Set(club.lineup);
   club.bench = Array.from(new Set(club.bench)).filter((id) => id && !setXI.has(id)).slice(0, 9);
 }

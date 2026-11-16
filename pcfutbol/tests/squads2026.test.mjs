@@ -39,7 +39,7 @@ test('Championship: 24 equipos con plantillas publicadas para 2026/27', () => {
   assert.equal(league.clubs.length, 24);
   assert.ok(league.clubs.every(c => c.squadSource === 'published-roster'));
   assert.ok(league.clubs.every(c => c.players.length >= 16 && c.players.length <= 27));
-  assert.ok(league.clubs.every(c => c.players.some(p => p.position === 'POR')));
+  assert.ok(league.clubs.every(c => c.players.some(p => p.position === 'GK')));
   assert.ok(club('birmingham').players.some(p => p.name === 'Jay Stansfield'));
   assert.ok(club('norwich').players.some(p => p.name === 'Mathias Kvistgaarden'));
   assert.ok(club('wrexham').players.some(p => p.name === 'Nathan Broadhead'));
@@ -50,7 +50,7 @@ test('Eerste Divisie: 20 plantillas 2026/27 con dorsales y reparto equilibrado',
   assert.equal(league.clubs.length, 20);
   assert.ok(league.clubs.every(c => c.squadSource === 'published-roster'));
   assert.ok(league.clubs.every(c => c.players.length >= 16 && c.players.length <= 27));
-  assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'POR').length >= 2));
+  assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'GK').length >= 2));
   assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'ST').length >= 2));
   assert.ok(club('vvv').players.some(p => p.name === 'Youri Schoonderwaldt' && p.shirtNumber === 13));
   assert.ok(club('almere').players.some(p => p.name === 'Ferdy Druijf'));
@@ -62,7 +62,7 @@ test('Liga Portugal 2: 18 plantillas 2026/27 con dorsales de clubes y filiales',
   assert.equal(league.clubs.length, 18);
   assert.ok(league.clubs.every(c => c.squadSource === 'published-roster'));
   assert.ok(league.clubs.every(c => c.players.length >= 16 && c.players.length <= 27));
-  assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'POR').length >= 2));
+  assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'GK').length >= 2));
   assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'ST').length >= 2));
   assert.ok(club('tondela').players.some(p => p.name === 'Lucas Cañizares' && p.shirtNumber === 1));
   assert.ok(club('sporting_b').players.some(p => p.name === 'Luka Petrič'));
@@ -74,7 +74,7 @@ test('Ligue 2: 18 plantillas 2026/27 de los equipos descendidos y ascendidos', (
   assert.equal(league.clubs.length, 18);
   assert.ok(league.clubs.every(c => c.squadSource === 'published-roster'));
   assert.ok(league.clubs.every(c => c.players.length >= 16 && c.players.length <= 27));
-  assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'POR').length >= 2));
+  assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'GK').length >= 2));
   assert.ok(league.clubs.every(c => c.players.filter(p => p.position === 'ST').length >= 2));
   assert.ok(club('nantes').players.some(p => p.name === 'Maxime Dupé'));
   assert.ok(club('saintetienne').players.some(p => p.name === 'Gautier Larsonneur'));

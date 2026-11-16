@@ -9,6 +9,7 @@
 // añadir opciones (roles, rotación, etc.) sin tocar simulateMatchday.js.
 
 import { ensureClubTactics, isPlayerUnavailable } from '../utils/index.js';
+import { selectValidStartingXI } from '../utils/lineupSelection.js';
 
 // Wrapper defensivo: respeta sanciones (si existen) + unavailable base.
 function defaultIsPlayerUnavailableNow(p) {
@@ -30,34 +31,7 @@ function getIsUnavailableFn(options) {
 export function getStartingXIForFixture(club, options = null) {
   ensureClubTactics(club);
   const isUnavailableNow = getIsUnavailableFn(options);
-
-  const preferred = Array.isArray(club?.lineup) ? club.lineup.slice() : [];
-  const players = Array.isArray(club?.players) ? club.players : [];
-
-  const available = players.filter((p) => p && p.id && !isUnavailableNow(p));
-  const availableSet = new Set(available.map((p) => p.id));
-
-  const xi = [];
-  const seen = new Set();
-
-  // 1) Respetar lineup preferido
-  preferred.forEach((id) => {
-    if (id && !seen.has(id) && availableSet.has(id) && xi.length < 11) {
-      xi.push(id);
-      seen.add(id);
-    }
-  });
-
-  // 2) Rellenar con el orden natural de club.players
-  for (let i = 0; i < available.length && xi.length < 11; i++) {
-    const id = available[i].id;
-    if (id && !seen.has(id)) {
-      xi.push(id);
-      seen.add(id);
-    }
-  }
-
-  return xi;
+  return selectValidStartingXI(club?.players, club?.lineup, isUnavailableNow);
 }
 
 export function getBenchForFixture(club, startingXIIds, benchSize = 9, options = null) {

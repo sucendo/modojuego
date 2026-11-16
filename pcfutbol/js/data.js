@@ -9,6 +9,7 @@ import { COMPETITIONS_2026_27, AFFILIATE_PARENT_IDS } from './catalog_2026_27.js
 import { OFFICIAL_SQUADS_2026_27 } from './squads_2026_27.js';
 import { PUBLISHED_SQUADS_2026_27 } from './published_squads_2026_27.js';
 import { CLUB_OFFICIAL_SQUADS_2026_27 } from './club_official_squads_2026_27.js';
+import { SQUAD_SUPPLEMENTS_2026_27 } from './squadSupplements2026.js';
 import { buildSquadFromSnapshot } from './rosterSnapshot.js';
 
 // Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
@@ -71,7 +72,12 @@ function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
       }
     }
 
-    const snapshot = OFFICIAL_SQUADS_2026_27[c.id] || CLUB_OFFICIAL_SQUADS_2026_27[c.id] || PUBLISHED_SQUADS_2026_27[c.id];
+    const originalSnapshot = OFFICIAL_SQUADS_2026_27[c.id] || CLUB_OFFICIAL_SQUADS_2026_27[c.id] || PUBLISHED_SQUADS_2026_27[c.id];
+    const supplement = SQUAD_SUPPLEMENTS_2026_27[c.id];
+    const snapshot = originalSnapshot && supplement ? {
+      ...originalSnapshot,
+      players: [...originalSnapshot.players, ...supplement.players],
+    } : originalSnapshot;
     let players = buildSquadFromSnapshot(c, historicalPlayers, snapshot);
     const verifiedSnapshot = !!players;
     const officiallySourced = verifiedSnapshot && snapshot.sourceKind !== 'independent';
@@ -95,6 +101,7 @@ function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
       squadSource: officiallySourced ? 'official-roster' : verifiedSnapshot ? 'published-roster' : hasRealSquad ? 'legacy' : 'generated',
       squadSeason: verifiedSnapshot ? '2026/27' : hasRealSquad ? '2025/26' : null,
       squadReference: verifiedSnapshot ? snapshot.source : null,
+      squadExtraReferences: verifiedSnapshot && supplement ? [supplement.source] : [],
       parentClubId: AFFILIATE_PARENT_IDS[c.id] || null,
     };
   });
