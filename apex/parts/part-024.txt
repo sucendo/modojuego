@@ -4104,8 +4104,6 @@ function apexWebglRenderPitExact(it,cam,pitch,lod){
  if(it.hasBalcony!==false){const bo=1.35,q0=apexPitEdgeWorld(edge,.02,bo),q1=apexPitEdgeWorld(edge,.98,bo);webglPushCamQuad(worldToCamera(e0[0],yy0+h*.70,e0[1],cam),worldToCamera(e1[0],yy1+h*.70,e1[1],cam),worldToCamera(q1[0],apexPitGroundAt(it,q1[0],q1[1])+clear+h*.70,q1[1],cam),worldToCamera(q0[0],apexPitGroundAt(it,q0[0],q0[1])+clear+h*.70,q0[1],cam),pitch,prof.balcony,.60,-.020)}
  // Parapeto superior.
  webglPushCamQuad(worldToCamera(e0[0],yy0+h*.91,e0[1],cam),worldToCamera(e1[0],yy1+h*.91,e1[1],cam),worldToCamera(e1[0],yy1+h,e1[1],cam),worldToCamera(e0[0],yy0+h,e0[1],cam),pitch,prof.parapet,.60,-.018);
- // Pit wall independiente, paralelo al edificio y gobernado por SVG.
- if(it.hasPitwall!==false&&lod===0){const off=4.6,w0=apexPitEdgeWorld(edge,.03,off),w1=apexPitEdgeWorld(edge,.97,off),wy0=apexPitGroundAt(it,w0[0],w0[1]),wy1=apexPitGroundAt(it,w1[0],w1[1]),wh=1.05;webglPushCamQuad(worldToCamera(w0[0],wy0,w0[1],cam),worldToCamera(w1[0],wy1,w1[1],cam),worldToCamera(w1[0],wy1+wh,w1[1],cam),worldToCamera(w0[0],wy0+wh,w0[1],cam),pitch,prof.pitwall,.60,-.022)}
  return true;
 }
 
@@ -4456,7 +4454,6 @@ function drawWorldLandmarks(cam,pitch){
          const e0=apexPitEdgeWorld(edge,.01,.10),e1=apexPitEdgeWorld(edge,.99,.10),yy0=apexPitGroundAt(it,e0[0],e0[1])+clear,yy1=apexPitGroundAt(it,e1[0],e1[1])+clear;
          polyCam([worldToCamera(e0[0],yy0+h*.31,e0[1],cam),worldToCamera(e1[0],yy1+h*.31,e1[1],cam),worldToCamera(e1[0],yy1+h*.36,e1[1],cam),worldToCamera(e0[0],yy0+h*.36,e0[1],cam)],prof.frame,null,1,1);
          if(it.hasBalcony!==false&&detailAlpha>.18){const bo=1.35,q0=apexPitEdgeWorld(edge,.02,bo),q1=apexPitEdgeWorld(edge,.98,bo);polyCam([worldToCamera(e0[0],yy0+h*.70,e0[1],cam),worldToCamera(e1[0],yy1+h*.70,e1[1],cam),worldToCamera(q1[0],apexPitGroundAt(it,q1[0],q1[1])+clear+h*.70,q1[1],cam),worldToCamera(q0[0],apexPitGroundAt(it,q0[0],q0[1])+clear+h*.70,q0[1],cam)],prof.balcony,null,1,.98)}
-         if(it.hasPitwall!==false&&detailAlpha>.35){const off=4.6,w0=apexPitEdgeWorld(edge,.03,off),w1=apexPitEdgeWorld(edge,.97,off),wy0=apexPitGroundAt(it,w0[0],w0[1]),wy1=apexPitGroundAt(it,w1[0],w1[1]),wh=1.05;polyCam([worldToCamera(w0[0],wy0,w0[1],cam),worldToCamera(w1[0],wy1,w1[1],cam),worldToCamera(w1[0],wy1+wh,w1[1],cam),worldToCamera(w0[0],wy0+wh,w0[1],cam)],prof.pitwall,null,1,1)}
         }
        }
        continue;
