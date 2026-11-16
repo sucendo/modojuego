@@ -1,0 +1,1637 @@
+{
+  "width": 96,
+  "height": 96,
+  "clubs": {
+    "academica": {
+      "file": "academica.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2990.png",
+      "sha256": "5e14a1f0a6d3d88f1085790bcf7de9f29636f4cca1b009296f39c9f2d8999155"
+    },
+    "academico_viseu": {
+      "file": "academico_viseu.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/7788.png",
+      "sha256": "ba54b24f62b255b25ea2ec73de96c67eb753e32318bec7f5acf63cf71c2c22c2"
+    },
+    "acmilan": {
+      "file": "acmilan.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/0E1JciuKLW0EbG48I5cFRQ_96x96.png",
+      "sha256": "57547d6a88fcf38a4347398b410a2524924b4847ce2e2aab587c7258d048030f"
+    },
+    "afs": {
+      "file": "afs.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/110302.png",
+      "sha256": "46b7acc02498aba008d9331436941962600a76897c64f4e9bdb2a1ab5e2bfd6b"
+    },
+    "ajax": {
+      "file": "ajax.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/WIAAdPpdzFwVKU7maFvJ6w_96x96.png",
+      "sha256": "023678ccc95fef192c0a24a010a3394d44525f952566f6b3b6717f39a8279b83"
+    },
+    "alaves": {
+      "file": "alaves.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/RUcTOeFcBc7q7uku1nR_iQ_96x96.png",
+      "sha256": "998cb8f2908aae0b531c05cf2f60c444c6acf671208f4eec900d5bd3bbbcc70c"
+    },
+    "albacete": {
+      "file": "albacete.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Ar-Bs9wxzWFljllr1HzNow_96x96.png",
+      "sha256": "a24d07aacd7409dbeb98b95e0046bb273c312bbf0d7f8ba7e178494bf783b0a5"
+    },
+    "almere": {
+      "file": "almere.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/kOBM_7hmtOCsUfPtIr7ksw_96x96.png",
+      "sha256": "71aa0661e82378e5f7d2bef1a91c11604df9f2f6fbc077d9dc3e75b2c52f5d11"
+    },
+    "almeria": {
+      "file": "almeria.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/kt3Bf9IFcvWB2N3CN-N7Wg_96x96.png",
+      "sha256": "c42e1b3221f3e5ec7937785083a2df1d290cfc48b8226441320f006d99aa7e11"
+    },
+    "alverca": {
+      "file": "alverca.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2521.png",
+      "sha256": "a70416559f3b15affee68969e3921cc1a9aa966c72e942c91084facfcb25a9a2"
+    },
+    "amarante": {
+      "file": "amarante.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/7789.png",
+      "sha256": "1bf29020505ce9e02b51709a0a0c04f12d0288738129823c67ff994c57be6d79"
+    },
+    "andorra": {
+      "file": "andorra.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/10718.png",
+      "sha256": "1dc056ffc2a979a83dec9d5a3b77d2bcd4f4b81a96b7a576f3064bcc7820aa2b"
+    },
+    "angers": {
+      "file": "angers.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Be-wAQaZCDYKCGls1191zg_96x96.png",
+      "sha256": "a8d198f1ef02847211696457c1901ea77a2448fb240d6652814a60c4b47f47a9"
+    },
+    "annecy": {
+      "file": "annecy.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/WlKh8pGD_2GYtQXcxJZaNg_96x96.png",
+      "sha256": "b32594a8f29c575189c91a0f8587b122852f5d1c8d3a6965c0b8f3da04475cd5"
+    },
+    "arezzo": {
+      "file": "arezzo.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/4255.png",
+      "sha256": "854cb3b1c236ab32223fbe1b0103d8327d6eebf0be6b888306ef6a35eeaa5cbe"
+    },
+    "arouca": {
+      "file": "arouca.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/MPL7gIc8hdegirtqBZLc2A_96x96.png",
+      "sha256": "758d208fb3ee0bce93d06a1ae50b922991b01028c09a9a19aca615a356c4d39a"
+    },
+    "arsenal": {
+      "file": "arsenal.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/4us2nCgl6kgZc0t3hpW75Q_96x96.png",
+      "sha256": "0bc2f26f590268d5505e1c0841eb9d7f8e33eab3873ebe57bbac712ec5c9d5ce"
+    },
+    "ascoli": {
+      "file": "ascoli.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/408.png",
+      "sha256": "a4ab32a99ea889c645ce997eb7fec2be4ced64824bb1f23bbbf905ab9b4e5e9d"
+    },
+    "astonvilla": {
+      "file": "astonvilla.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/uyNNelfnFvCEnsLrUL-j2Q_96x96.png",
+      "sha256": "1cca1d9d5f23739f4b4e45834d5967c1762ec5bc0fd6bd430bbe01dc1a8a0e93"
+    },
+    "atalanta": {
+      "file": "atalanta.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/0XmrZHobvb6ua5tgMOnTEA_96x96.png",
+      "sha256": "9ee14c69d0ebbcdabcf88c26add0d8268df69d57dd14836d7b59f81a87cdd85d"
+    },
+    "athletic": {
+      "file": "athletic.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/OSL_5Zm6kYPP1J17Bo5uDA_96x96.png",
+      "sha256": "f95a9763d3a9478b128471b0a9d72062913914c69481ecd9059ff1d71bf8aa2f"
+    },
+    "atletico": {
+      "file": "atletico.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/pEqmA7CL-VRo4Llq3rwIPA_96x96.png",
+      "sha256": "c4cd192ff84e4d406dc8b7682b180477dd1260b9e1d8adbb3c79ac1fc8bf6703"
+    },
+    "augsburg": {
+      "file": "augsburg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/gjz1Ml0qpVQuY3leN4z8mQ_96x96.png",
+      "sha256": "e64ff3fb22d1303af548608f01b5441e3003604b7e306e1e52b837825824387a"
+    },
+    "auxerre": {
+      "file": "auxerre.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/jX0oM3wnm6cWOGKoUR3AyA_96x96.png",
+      "sha256": "ff9fb002296add69e39293135f71ad8d7f097efb193189f5757c2bbbc77d4221"
+    },
+    "avellino": {
+      "file": "avellino.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2321.png",
+      "sha256": "998feef0d4cfce7abc9fb9e7b5dcc5c2b5bbe180034a7263b3e202c7d3a25936"
+    },
+    "az": {
+      "file": "az.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Lhhh1mbsrqH2K1AfXFazrQ_96x96.png",
+      "sha256": "72d4a09b5dcbe2a7590f54bdcf1a4d9e1ea90c16a3c415c3f5a4ef85fb5093b5"
+    },
+    "barcelona": {
+      "file": "barcelona.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/paYnEE8hcrP96neHRNofhQ_96x96.png",
+      "sha256": "e25ccef4d8ceecfd690d2757ad1a235d2144e2a01eb10b935d47b0cd67f873fe"
+    },
+    "bayern": {
+      "file": "bayern.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/-_cmntP5q_pHL7g5LfkRiw_96x96.png",
+      "sha256": "fc46953d33fc9ad83cad8c7d6664366c50e8629acbe73ae1d555ddb92430d3aa"
+    },
+    "benevento": {
+      "file": "benevento.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/4171.png",
+      "sha256": "d58316ab04e399e016272bde9b459117f185fe376b63061a7e6e4b572c32b88b"
+    },
+    "benfica": {
+      "file": "benfica.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/nFwABZ-4n_A3BGXT9A7Adg_96x96.png",
+      "sha256": "0e2b29c6cbd2c7febcf28599a14c1e86abb8ea69e8a6bd8073bd0d12425acfed"
+    },
+    "benfica_b": {
+      "file": "benfica_b.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/10330.png",
+      "sha256": "63582f8781afe6f9a86dccd83d8d5637b02921630f73b9391ae6d288cafc647e"
+    },
+    "betis": {
+      "file": "betis.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/XDClkrMKtkm3UTP2YKN6oQ_96x96.png",
+      "sha256": "cec8c4dc36506561e002926944fbfc62beba5a31a7d204a90e604faeab83db24"
+    },
+    "bielefeld": {
+      "file": "bielefeld.png",
+      "source": "a.espncdn.com",
+      "originalUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/2506.png",
+      "sha256": "7707ff09e015c026984732de570635860694a06a1056025d0323487199bd37bc"
+    },
+    "birmingham": {
+      "file": "birmingham.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/vZkXVHm56WFEs_I5q9OnJQ_96x96.png",
+      "sha256": "a6da45889fe702912b85289b2e4db1b0ff0d63a1b2b6277f9e6036915353f36c"
+    },
+    "blackburn": {
+      "file": "blackburn.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/9SHzswVb2HlYJfeUEkQNiQ_96x96.png",
+      "sha256": "e0b6679affc8fff7b1dd99df29f33e50485b74e5560e022f2e06bcdaa52cbd88"
+    },
+    "bochum": {
+      "file": "bochum.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/BY9Ihv1GcvZnxQWkPtEBug_96x96.png",
+      "sha256": "81b2a67d746f4d32f19ddb0e71b3d8e631bc3634de4ac753ffdb32205d78d9da"
+    },
+    "bologna": {
+      "file": "bologna.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/WnKdNmw06v2lz7HjhqPRPw_96x96.png",
+      "sha256": "48a5b38edb1512e644a64ef9153b3608c022d2b123f655a0faff7fc19e2e3c1c"
+    },
+    "bolton": {
+      "file": "bolton.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/AwpOg9EBSdw787FNq_JHyw_96x96.png",
+      "sha256": "abb80e101b8e2e06bd33ab5c313ce1583dd8b911c4cb046db4fcc4b7d2122d52"
+    },
+    "boulogne": {
+      "file": "boulogne.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2669.png",
+      "sha256": "cb6b955dbe058671ba59e16e0f2711002f0acc788a9216f20c37add4600d3b0e"
+    },
+    "bournemouth": {
+      "file": "bournemouth.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/IcOt-hrK04B-RlRwI3R0yA_96x96.png",
+      "sha256": "22204d646f76578e790f596b01f88444e5504c171d8c7c173d7105909f3112d7"
+    },
+    "braga": {
+      "file": "braga.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/1orTeFljffloKztScEN2RA_96x96.png",
+      "sha256": "3b5becf248fde7f8ed5f220acd05e89bef48fa4073140ce8b2a85f5ceeb9df1d"
+    },
+    "braunschweig": {
+      "file": "braunschweig.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/iB3OButWEnl_30iWG5Xl5g_96x96.png",
+      "sha256": "ddb93ad548fb4eb1e5d625ca6c687536ddbb2bb23fd1031c8dda74f559d9e9ed"
+    },
+    "brentford": {
+      "file": "brentford.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/QOUce0WQBYqnkSmN6_TxGA_96x96.png",
+      "sha256": "7f123c9f6b1d7767ff4864ecc251a4d1624257aca920b12ba3561480aaef0893"
+    },
+    "brest": {
+      "file": "brest.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/HNqZwlu71GHXo60XjYrPxg_96x96.png",
+      "sha256": "6c57a17804473c29c696d9c60531e95722e07273340b7ceb8b2d33fe0e7acd33"
+    },
+    "brighton": {
+      "file": "brighton.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/EKIe0e-ZIphOcfQAwsuEEQ_96x96.png",
+      "sha256": "c6154e18128b02841f4643890dea0e73e78cb5d4ebe5853034acf56ba8ea7eee"
+    },
+    "bristol_city": {
+      "file": "bristol_city.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/TdB6iSSRKPZ3diEBygOi_A_96x96.png",
+      "sha256": "618368547461db21cc6bfe5357f767490dc9d82d83bce8ca59d0bdc69bab1ab4"
+    },
+    "burgos": {
+      "file": "burgos.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/CppNmUsSM_U2Loz5N2_YXw_96x96.png",
+      "sha256": "4e84d18e13fe620a949ec09c5cbd606392cd0a0a05f78f26d2387f97e97cca40"
+    },
+    "burnley": {
+      "file": "burnley.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/teLLSaMXim_8BA1d93sMng_48x48.png",
+      "sha256": "11d6330ae789fe1f46775396ddbfb7038a4cbf8818d9b2d68c4ffcc4ae7b5791"
+    },
+    "cadiz": {
+      "file": "cadiz.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/H1vdTrUUqJBeUW1HfbW0nQ_96x96.png",
+      "sha256": "d58e19c3e75b215992ecd4753c8ecb7220f3a359b9668fb4990d66479eda9466"
+    },
+    "cagliari": {
+      "file": "cagliari.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/e9XfySyGdfyJ4UzEkYwENw_96x96.png",
+      "sha256": "f8c6da0f8436245d1c15bdbfec3a410b1470c646d7e333ba0fd1ed01485f2708"
+    },
+    "cambuur": {
+      "file": "cambuur.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/133.png",
+      "sha256": "ba76cccda79d49f83a1c3449afb6af39b3a9cb65005f97d10f9bee5fce6cdaa3"
+    },
+    "cardiff": {
+      "file": "cardiff.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/mTDxrTqWa4SqI0rCi5LhqA_96x96.png",
+      "sha256": "fc8e4ef2acc8923cdb9069f70245fb062a025319db2fa261913bf1f851e9ab30"
+    },
+    "carrarese": {
+      "file": "carrarese.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Y2Rda43m4sfv0aUH5sbZUQ_96x96.png",
+      "sha256": "f031bdcdf380bea3abfc807f14511bcadcba88ee1b7e9bada400fd7afd76141a"
+    },
+    "casapia": {
+      "file": "casapia.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/3268.png",
+      "sha256": "a1fff173ea64bcb5232e0c6c8a6eef3b55c63c543b9ca41902250d43e91523fb"
+    },
+    "castellon": {
+      "file": "castellon.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/aFhuVqlIsAWblpynnLEUjw_96x96.png",
+      "sha256": "e933fa2298080db706d0fcc06683c2062a016a2d12e39cdf72c09a31ef6e8f06"
+    },
+    "catanzaro": {
+      "file": "catanzaro.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/twl42nCppyJG_owWs1h-Uw_96x96.png",
+      "sha256": "25b1fa437c4acbb3722b78a4e0b7150acb579162a411afe7d77cf7350732d9f3"
+    },
+    "celta": {
+      "file": "celta.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/wpdhixHP_sloegfP0UlwAw_96x96.png",
+      "sha256": "a950ba6756738c7b8c9dcd44253c51a35856e2001a203e0caa4f549b0c1b2e53"
+    },
+    "celta_fortuna": {
+      "file": "celta_fortuna.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/8733.png",
+      "sha256": "5622215e33249f6c536fc45261afa05052ae4dcbe1f9d5e522c63a6cf1505ca5"
+    },
+    "cesena": {
+      "file": "cesena.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/2g4SWgkPtIESldRqC3qJSA_96x96.png",
+      "sha256": "25958362c002fb00a8ac15f10ca4946c8778fc9235f9691a63e5fc4f2247fc3a"
+    },
+    "ceuta": {
+      "file": "ceuta.png",
+      "source": "a.espncdn.com",
+      "originalUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/11058.png",
+      "sha256": "0536a725f631840f870cafc2f3d94c2140b6474092bb2da82f2bd0caa556c65d"
+    },
+    "charlton": {
+      "file": "charlton.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/3lbv_Ruzzg223vLT2TjaSg_96x96.png",
+      "sha256": "8b75cbdafefdd3f08368371632bb8f04cccb7d86d5cdd1a2fa3e6cd0208175cc"
+    },
+    "chaves": {
+      "file": "chaves.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/3325.png",
+      "sha256": "deea9414ad747d7e59e13dfe8f90c372f7969c4a6d3c4528b89680742dd2bbec"
+    },
+    "chelsea": {
+      "file": "chelsea.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/fhBITrIlbQxhVB6IjxUO6Q_96x96.png",
+      "sha256": "36248b952cd18df58b23034639b7a652c942beafcbecad8edf9c87cb741d5118"
+    },
+    "clermont": {
+      "file": "clermont.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/0aur9jOW37pq6dUzu61wWQ_96x96.png",
+      "sha256": "4f9b93f16d3408895cbd4c8fd9683c2bb20434b62d5ecf39841718f5ed64f376"
+    },
+    "como": {
+      "file": "como.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/6InMYSIcwGvDV1SD3-cPGA_96x96.png",
+      "sha256": "7229d35dc2856efec9c1ec931b718501a288a3288ece5d328b4ece2c61f832ff"
+    },
+    "cordoba": {
+      "file": "cordoba.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/r5lM2rHP0brNeZgomsA2KA_96x96.png",
+      "sha256": "642834600f53f0526253604ad0bd9471119a9fb147b52da81145e99b3258d196"
+    },
+    "cottbus": {
+      "file": "cottbus.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/25.png",
+      "sha256": "ee54c05fca44f1f0144227829e4a4e5bbe1e42cd04d9af1b6d3c1351f0eb89dd"
+    },
+    "coventry": {
+      "file": "coventry.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/KHpmY4tIwqiutl8Cfl0MAw_96x96.png",
+      "sha256": "d2f3b94a2d8db2b22efb9bd471437e0d25f6aed72d698abee0ec5ce1adcd0e30"
+    },
+    "cremonese": {
+      "file": "cremonese.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/DE7-gNIPSRkzKx4FKSwxOw_96x96.png",
+      "sha256": "0ee77285b961fdb0d6d90d28200240e7fdc95656157116960fc270200dbffaed"
+    },
+    "crystalpalace": {
+      "file": "crystalpalace.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/8piQOzndGmApKYTcvyN9vA_96x96.png",
+      "sha256": "5d91a088dfeb83009f5668bda60512c5d319482254bd8a4f5dd2c3e1bdd20673"
+    },
+    "darmstadt": {
+      "file": "darmstadt.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/LRa03M7uie9UbhtSgw9jCg_96x96.png",
+      "sha256": "c58c3a5d975a9294a7bbcd4865da324ab7b407c12e18d6152b98245a38cdeece"
+    },
+    "denbosch": {
+      "file": "denbosch.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/404.png",
+      "sha256": "d76489bc8494760cc1964dee8ddd0686066990e964e085dbc4457d20d16e050b"
+    },
+    "denhaag": {
+      "file": "denhaag.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1268.png",
+      "sha256": "99b2d2568005216d58c0b90fc06bb7eaef5dc00bdfa62d46d15b8932a1580b13"
+    },
+    "deportivo": {
+      "file": "deportivo.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/inCIPy4Y90tsk9qG5u5HBQ_96x96.png",
+      "sha256": "1c4c63ffde59fae15024c685fdfd62393ffb491b0ab87fa0f958bd5fa8e232f3"
+    },
+    "derby": {
+      "file": "derby.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/PvtlG2gQHu9CD8NvqJWTXA_96x96.png",
+      "sha256": "5d1f4601a0a9dc1c1507686490186a70d90b782af02ee3340ce0d4b5529d7777"
+    },
+    "dijon": {
+      "file": "dijon.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Qf3Beb1hzy-ENYzJOSVJ0Q_96x96.png",
+      "sha256": "52e0467f14ea41433c079293fa8889e287115b48c55a9680ebde9b9a97b65303"
+    },
+    "dordrecht": {
+      "file": "dordrecht.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1455.png",
+      "sha256": "4908576264b52567e9e63822d6a911a928e3e23269b9a98b4ac2e8582bfcf0e3"
+    },
+    "dortmund": {
+      "file": "dortmund.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/FZnTSH2rbHFos4BnlWAItw_96x96.png",
+      "sha256": "c99c4226ee23592565cbc5b7d9a11c12abd0b9e35aceddffc5db287d635131b6"
+    },
+    "dresden": {
+      "file": "dresden.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/129.png",
+      "sha256": "7db75a7179afc141db769382929ed61ef7ee71b1496b68d0402b4b28392a7c33"
+    },
+    "dunkerque": {
+      "file": "dunkerque.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/UFdgnDBxxUlUhtGbZDrLKw_96x96.png",
+      "sha256": "2464af76e41dba4797ee81c32fefaf3e52843072587e72c7875bbd7c18b39a32"
+    },
+    "eibar": {
+      "file": "eibar.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/sbTFnFgPeUsTa-szphHf8Q_96x96.png",
+      "sha256": "932fef1277248ceb8c20fb8e23b22e6e32f0e44dad729634fe0de4470eca1970"
+    },
+    "eindhoven": {
+      "file": "eindhoven.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/3892.png",
+      "sha256": "e28e84c134bf6273720b85a84cbba286174902237c12160c01c41cc5e8879bab"
+    },
+    "elche": {
+      "file": "elche.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/uyyqqxLIYT_lQIXRyMI_RA_96x96.png",
+      "sha256": "4cb623546e134953b2c0fbe7bef0b661744bf036fb14deb5e3288af9b27681d1"
+    },
+    "eldense": {
+      "file": "eldense.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/2cgWTqhI7zXg6v5AfL4XMQ_96x96.png",
+      "sha256": "3dfa66364134529d2d19b18c4db8bb89e51a0d615de4f4a8de8c858eee6ee1ee"
+    },
+    "elversberg": {
+      "file": "elversberg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/23mYCieJHbCn0bq8zzLk0Q_96x96.png",
+      "sha256": "a0b228b46700a6c3b28d4d168b94ce1472d41846cba29f7999607e1e24a13523"
+    },
+    "emmen": {
+      "file": "emmen.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1283.png",
+      "sha256": "20ffd6891433a24654f84995576a22cbe3f405b8f60c2eccc27870752d0a8b54"
+    },
+    "empoli": {
+      "file": "empoli.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/j8L__ffBY15ooTGG-0uZ2w_96x96.png",
+      "sha256": "a970bb19b81a84e9f781012e5752eefdeb4ab9794d864728579ce80bd053496c"
+    },
+    "espanyol": {
+      "file": "espanyol.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/TKitIqelDyN6M-kYt4Uc0g_96x96.png",
+      "sha256": "7fdead471b2beb6c64e8240d135ae65ecc69e62a72a3e94f23eb770c43bc9dce"
+    },
+    "estoril": {
+      "file": "estoril.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/M4I8t9zSkfsS-jI-m71ADQ_96x96.png",
+      "sha256": "7fb51eef0d9076757e3616673378b45c3f8ce2805dedc419fcd50e684ef0fad6"
+    },
+    "estrela": {
+      "file": "estrela.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2431.png",
+      "sha256": "bf4fdbc54214e9bcc04e7035df59c624065889bf36a296b7e085751ac23ad7bf"
+    },
+    "everton": {
+      "file": "everton.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/C3J47ea36cMBc4XPbp9aaA_96x96.png",
+      "sha256": "3f950a2925749f519dc965bd1648a1ec4725f0c0d40248035db202858a6aa9c0"
+    },
+    "excelsior": {
+      "file": "excelsior.png",
+      "source": "archivo local previo",
+      "sha256": "5d799349e39acf77d768e84d633073eb38c7036979894a579e414f134edafecc"
+    },
+    "famalicao": {
+      "file": "famalicao.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/3329.png",
+      "sha256": "b13949dff80f6dad7ac2141765221066bd876440d9962dec46a88ce9cc22409d"
+    },
+    "farense": {
+      "file": "farense.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/4294.png",
+      "sha256": "5fbfaeda631b721ec21532baf515c7cfa64801d7b58c834d24a0fda416d7d99f"
+    },
+    "feirense": {
+      "file": "feirense.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/3349.png",
+      "sha256": "0c07ab45bc4ff3ee28c4f867e0a36a9d57ebdc5ce8844f4d2bb2f8674689a082"
+    },
+    "felgueiras": {
+      "file": "felgueiras.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1701.png",
+      "sha256": "65c4931bc6b2925eca056e1d643474040c8f7617775ae329edd269d1311be44b"
+    },
+    "feyenoord": {
+      "file": "feyenoord.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/36g41WN3WdjCRsSFiurazw_96x96.png",
+      "sha256": "3bf29d88ee398a76ed338441e10656581a11cb572c05c5fb0e4972b901d93df2"
+    },
+    "fiorentina": {
+      "file": "fiorentina.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/h-HS2cEVCwMJZFSlwYeWmA_96x96.png",
+      "sha256": "6eddd22c7c7f128cf791f463604e74e6e1aa8fd077f50056f9258b9436eb38db"
+    },
+    "fortuna": {
+      "file": "fortuna.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/yggtmgEdp8JilDkQFFfqkA_96x96.png",
+      "sha256": "aa682c0deeebfd1854e20fa0f4302129a0a27c7da8f0c1961ef79f2176dd540e"
+    },
+    "frankfurt": {
+      "file": "frankfurt.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/VOizBJPDHnvnSaU3XPVGAw_96x96.png",
+      "sha256": "16866496b362251142927efa4b9889f75de636a8b27ec417caf42c9761bfd941"
+    },
+    "freiburg": {
+      "file": "freiburg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/s0YO0sK9qrioMnzJuFGKuw_96x96.png",
+      "sha256": "99fef4af7c472462a559fb1a3da54aeb239eac035dc91485f33ab5c2112e938c"
+    },
+    "frosinone": {
+      "file": "frosinone.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/_J6w-PL2RjW-fRR-D7Dl-w_96x96.png",
+      "sha256": "812dc1a45d2010c9e5da31b9af9bbd1af8dd18f0da38b9f50820328ddf0717ed"
+    },
+    "fulham": {
+      "file": "fulham.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Gh7_5p3n364p4vxeM8FhNg_96x96.png",
+      "sha256": "360e77f91dca2820a982fb9e529d00c2c819816d467b3010ff0078c833d214da"
+    },
+    "genoa": {
+      "file": "genoa.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/85QkdgIOpAt-_EuQ9mKTPg_96x96.png",
+      "sha256": "94a35559d69bf5a4252b5c650684b13177dfbddfd87b914033782e3b42954de9"
+    },
+    "getafe": {
+      "file": "getafe.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/1UDHZMdKZD15W5gus7dJyg_96x96.png",
+      "sha256": "c4878ccada92a666d2e2319910fb37adb523d596b88be6e16317ea0f236e83bc"
+    },
+    "gilvicente": {
+      "file": "gilvicente.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2424.png",
+      "sha256": "8515dec45458676328012b3766abe7158c8ba2b6fcb7e090f151842fec33ec5e"
+    },
+    "girona": {
+      "file": "girona.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/sHiSmLm_rA0BOC5MfrNt8A_96x96.png",
+      "sha256": "7a70342c6da2a03c8a55a1baa25755dfb71e62bae72466bf2c8a27fdb237aa67"
+    },
+    "goahead": {
+      "file": "goahead.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/KPnQQv6PNQxcHPlpi4rC-g_96x96.png",
+      "sha256": "93c96e24b4eaa624747e8d2d1e34d4f39211c8bc1ad3663f1442bb0ffe4bf31f"
+    },
+    "graafschap": {
+      "file": "graafschap.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/642.png",
+      "sha256": "b256e3b966ea3efdd0b245b9bef69918fa833f05be862aa0a5e8a665b843f585"
+    },
+    "granada": {
+      "file": "granada.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Fn_X2IO4-1ACuTemcHkDEw_96x96.png",
+      "sha256": "a2002965dd2beb6cf235c727978c88989a6c2dcb2786ca266f94fe3810f5b49d"
+    },
+    "grenoble": {
+      "file": "grenoble.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/jtQqQTDGybMTV3xx3X_YpA_96x96.png",
+      "sha256": "bde58643022abcadcabadd57ab38e6dc7122d4d158a5c1ad93c30a4d6c73e531"
+    },
+    "greutherfurth": {
+      "file": "greutherfurth.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/t63uFnGIMI9FtTAdkqm5qg_96x96.png",
+      "sha256": "a72ac16b44d1bdf9a72a8f610353bb16d56a612737926d2c9393fb203d7ac8f9"
+    },
+    "groningen": {
+      "file": "groningen.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/efkaF1E3Z9UbMSO0VC9WJQ_96x96.png",
+      "sha256": "985d2f6295e9f13c7698ddfcff0da17fea7d5593a0f61f3b1062393f48c05bbc"
+    },
+    "guimaraes": {
+      "file": "guimaraes.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2420.png",
+      "sha256": "39d1118aa10a70988074a8a6883c03c59687e8e64240d09e2f04736bf2514082"
+    },
+    "guingamp": {
+      "file": "guingamp.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/XQv_Ulysoyap0FzOPUA-mA_96x96.png",
+      "sha256": "809ef774217946015ee1fe18c51f25e85859cae08c9136b7dff7f71855c78b94"
+    },
+    "hamburg": {
+      "file": "hamburg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/A8Hvwz1Z7e2PNuZer9yHGw_96x96.png",
+      "sha256": "d73a20c74d5ba1f606076a3da49f1b35e434a85d71b7fd795be15ad51d08e6fa"
+    },
+    "hannover": {
+      "file": "hannover.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/wp6Yb9lNlAT8TrF6Mkqykg_96x96.png",
+      "sha256": "bc3219bfe56b997e3c3f7d4aea24b19ea49756751b44f2fa87bba3fcfab8ade8"
+    },
+    "heerenveen": {
+      "file": "heerenveen.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Qa7g4ljRDZbBcmibwsRePA_96x96.png",
+      "sha256": "27a7973e5db3b7770707f6bf41c75448e8c76f8d106249ff002a11a22f61be82"
+    },
+    "heidenheim": {
+      "file": "heidenheim.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Nqpb8Rl6ShUtB0ClAKRw-g_96x96.png",
+      "sha256": "7b7107a406565cc99e47a9b083e5f921e1004aba8b0ed47ef94daac1214a1235"
+    },
+    "helmond": {
+      "file": "helmond.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/500.png",
+      "sha256": "7513b283fb09cab0ce69a00c093bc0b8c84b718f2e3a9df0d44b763a4462b6b2"
+    },
+    "heracles": {
+      "file": "heracles.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/EDWW-98PyPcSLD3Qm2oZZg_96x96.png",
+      "sha256": "348f132b25cb3f208c088d5c24fbdb854e6d849d79e16277a4bfd8b1ba2d27c0"
+    },
+    "hertha": {
+      "file": "hertha.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/PQMb_rQTIwV-OOhkwHN3qA_96x96.png",
+      "sha256": "be4ea8b955fa4c8e873315954cdfea7833d4fa778f8541c426cfa70a5c324090"
+    },
+    "hoffenheim": {
+      "file": "hoffenheim.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/zlO6wgTW2QB30eOypHGxDg_96x96.png",
+      "sha256": "04821d452feef9815134edf1bdca31ed6931d5060955f4c93bd27fc6a12e38e1"
+    },
+    "holsteinkiel": {
+      "file": "holsteinkiel.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/9NJC7z1ReBNUIdqTTywvCw_96x96.png",
+      "sha256": "b75cd97869471131901d3268b34e015b77a990b884ada41446196741c96db4e1"
+    },
+    "hull": {
+      "file": "hull.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/riiyZbb1JHuFQgZ3831jUQ_96x96.png",
+      "sha256": "b9abd2b5cf656bf04994b47a5afd3db97f4ffe978ad18b57c30d9e3adc697f74"
+    },
+    "inter": {
+      "file": "inter.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/l2-icwsMhIvsbRw8AwC1yg_96x96.png",
+      "sha256": "2f3f5a5fc2a9bf2612f21fd8df78a44b84284cbc66d297b0761d009592e5ea7b"
+    },
+    "ipswich": {
+      "file": "ipswich.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/56vquJBk5U16Dng7txLXCw_96x96.png",
+      "sha256": "724e0dcd439ee144bef04fc07212e15e90655997213b737e012677ff40b95276"
+    },
+    "jong_ajax": {
+      "file": "jong_ajax.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/8817.png",
+      "sha256": "17ed85acefc10b35420db502a068163881a73df4853f461f03c1527a6f490aff"
+    },
+    "jong_az": {
+      "file": "jong_az.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/11368.png",
+      "sha256": "2d05e2c95671f46869230a1f75f36085e0285937d20c079e0bb86dd49f4f2a25"
+    },
+    "jong_psv": {
+      "file": "jong_psv.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/9715.png",
+      "sha256": "c9f0e7b103f8214a33f1b52f03c3c848a3639b2a4a92a9acc45a42f5d90f02d6"
+    },
+    "jong_utrecht": {
+      "file": "jong_utrecht.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/17596.png",
+      "sha256": "206da5eab24b471f73bf9e2d5a55e19823f9edc171d9cb9bded99c718c08c8ce"
+    },
+    "juventus": {
+      "file": "juventus.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Y5vu3UZBApWMe4i66MimpA_96x96.png",
+      "sha256": "76d110af2c0b85cc77d471b9690db23c5ef0bcaf83a1da1da8bc58ad7ce8e738"
+    },
+    "juvestabia": {
+      "file": "juvestabia.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/DheNIe4pFMhKUMdcvPE3qA_96x96.png",
+      "sha256": "d024a46715397987fe533a93897828096f4933aabf8f80a1328852106064a1a9"
+    },
+    "kaiserslautern": {
+      "file": "kaiserslautern.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/i2Vlt0uS3nB98g6N3du_0A_96x96.png",
+      "sha256": "b581f4ed80bcfdc2017f561c461536fc8099f773493f4ccfb6888336a08df07f"
+    },
+    "karlsruhe": {
+      "file": "karlsruhe.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/KyIq9UYl91lfNOFb_jkUIg_96x96.png",
+      "sha256": "88e1641f8cf38d36c1de37ded7b09accb0b577d3a83a2cdd93cc200a02bd2c5e"
+    },
+    "koln": {
+      "file": "koln.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/W94hx-q1SdXOZBrW6RSSVg_96x96.png",
+      "sha256": "1b239261d92b4aa82dec354f67fe0a4623f47c669e837dcb2b605d5902cd19ed"
+    },
+    "laspalmas": {
+      "file": "laspalmas.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/yOIfuEFVFzu1dD8HiJt9vA_96x96.png",
+      "sha256": "afef5343605e7c7bb86dabdcf5d8e642d37ebd267bcc9f5dd1967fd20130cb71"
+    },
+    "laval": {
+      "file": "laval.png",
+      "source": "a.espncdn.com",
+      "originalUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/3240.png",
+      "sha256": "bce41232db84194452a41ea51b9d5e72db13d3efb564db9cef93f435b41bfcd6"
+    },
+    "lazio": {
+      "file": "lazio.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/VCmS5WyitnqY3ECAr0UYGw_96x96.png",
+      "sha256": "d84968eab3c2deba528ec1460e22983673cbcb84ccaeaf5e0149177fe9d96870"
+    },
+    "lecce": {
+      "file": "lecce.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/tIaC5FB7Gm8CIULc77qMjg_96x96.png",
+      "sha256": "81381db7c3b879a8ae4a2cc6b4e418d57dbfa04a23e77a943d768cb238a370b5"
+    },
+    "leeds": {
+      "file": "leeds.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/5dqfOKpjjW6EwTAx_FysKQ_96x96.png",
+      "sha256": "ca32e8563ac4c2c444ca64bdbb540347ef4b9b5f3239a1539588d052fd88363c"
+    },
+    "leganes": {
+      "file": "leganes.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Id84F7Ji9rZGVacaazlBYA_96x96.png",
+      "sha256": "ac4caa1b9fd0b6d1ded9714ef2ce68ba1406d7448a9b6ccd74399d9df626db2c"
+    },
+    "lehavre": {
+      "file": "lehavre.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/BRitaBE1_mjMJguk6xzTRw_96x96.png",
+      "sha256": "d85ff7fce22cc80be5d09e54a4f62c55a8f61df02b0444d282c1609d1be5277c"
+    },
+    "leipzig": {
+      "file": "leipzig.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/R7-Lqc_SDxd97uWgoeUQ-g_96x96.png",
+      "sha256": "e47c7e8ac0982361faeba5a58ebe717588773ee9b76050549ad9993f996658e8"
+    },
+    "leixoes": {
+      "file": "leixoes.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/3345.png",
+      "sha256": "f74c26fe6d497937e634bc42b5238d14f5d50d6f8e4ebf03bfed07988cd5622c"
+    },
+    "lemans": {
+      "file": "lemans.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/d_680kHAdTDWexQw3BemxQ_96x96.png",
+      "sha256": "317cf1d7af6c1b820551b23f525600be7bcfc46e1fa3f90eb32cd831ec48c5e2"
+    },
+    "lens": {
+      "file": "lens.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/TUvwItKazVFpgThEhhlN1Q_96x96.png",
+      "sha256": "bf3cf4665a6ec9eed699ad6deeac56bb3140837d2ecd0ec15c4c4f69c7542c78"
+    },
+    "levante": {
+      "file": "levante.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/SQB-jlVosxVV1Ce79FhbOA_96x96.png",
+      "sha256": "066455dbeff795b7bd451a70657656992b28d1a470e783dee4b5c9bd5397afb8"
+    },
+    "leverkusen": {
+      "file": "leverkusen.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/0zIcXiwD_JGY482DFC28Lw_96x96.png",
+      "sha256": "5e44df6698536e53a78a5991d2ff0592a7e40493de8a41008ee0e779a6658b43"
+    },
+    "lille": {
+      "file": "lille.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/D2AQe8qoyPIP4K8MzLvwuA_96x96.png",
+      "sha256": "5ce55c2c89a81c6cc791c7c60e4ab962ac76ec5d2d08d7bffd6edd8379c8a8ad"
+    },
+    "lincoln": {
+      "file": "lincoln.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/snKsegS9M33O-mzAYPlOaQ_96x96.png",
+      "sha256": "be679350889b416bb6a1ae49f71c1b2ff1a8a6b36e83d74bddbbc1960c12f448"
+    },
+    "liverpool": {
+      "file": "liverpool.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/nGfV05dipbAc7zzojivKew_96x96.png",
+      "sha256": "09c3761aa965e87157c7af685f68fd579db662b1aa6f2a3042013455807f7e57"
+    },
+    "lorient": {
+      "file": "lorient.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/bbYkAWWtD6lpK5KyGfr1vA_96x96.png",
+      "sha256": "29b16b062d5d4d4eb59c21a5c30dafd52f7de391c447ef3921011ec38d8e6105"
+    },
+    "lourosa": {
+      "file": "lourosa.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/8189.png",
+      "sha256": "206bcbb6d855013cfd1fec3a2f1687d1fc480325cdd9ea3b4b13f787d178b2ab"
+    },
+    "lyon": {
+      "file": "lyon.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/SrKK55dUkCxe4mJsyshfCg_96x96.png",
+      "sha256": "220f7411bcbd39d6990d074b46d9971de2ccad42417c062598ed3ddc5726e75f"
+    },
+    "magdeburg": {
+      "file": "magdeburg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/e2Np1r6lu0YtEIfSxzRVcw_96x96.png",
+      "sha256": "be6ec3e30993ec6e9e296da6e0dd3bdcab94eec27f9b9f63acbcd82875a0ebdd"
+    },
+    "mainz": {
+      "file": "mainz.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/-_DNuqGrrFQ5FUvKjb7zAw_96x96.png",
+      "sha256": "cfd7bd47ddbc360f7511e1a151a083e1c17e7a0e7996d603e91fe3b8e34b5dc8"
+    },
+    "malaga": {
+      "file": "malaga.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/cPQnNrl3qcM5x70V14TuYA_96x96.png",
+      "sha256": "d1727b01d2021e1cbeae1cd6185714ddfbf7c195f7f32b26fc4405866a5c123f"
+    },
+    "mallorca": {
+      "file": "mallorca.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Ss21P4CUmigjrEtcoapjVg_96x96.png",
+      "sha256": "f21f3f1ababbbe8623c9f53c269f10f936d195149b4cf1271e49c15332bdea79"
+    },
+    "mancity": {
+      "file": "mancity.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/z44l-a0W1v5FmgPnemV6Xw_96x96.png",
+      "sha256": "d2a95f9b72d054aef0f47df8329557d0a969ad0e15243c6849fbf12a42f3e829"
+    },
+    "mantova": {
+      "file": "mantova.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/TOaxZtTEJSrxS2P_FrHDjQ_96x96.png",
+      "sha256": "9f99b2bbf18e760facc66f9b95cace76621b88a814d229017e86ed62f7c5779b"
+    },
+    "manutd": {
+      "file": "manutd.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/udQ6ns69PctCv143h-GeYw_96x96.png",
+      "sha256": "f294b1216136dfca3477270bed90a65254d59fc56bc7f09e3bcf10cdc91db160"
+    },
+    "maritimo": {
+      "file": "maritimo.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1301.png",
+      "sha256": "f947bdc3c9974ccb20bf0cffbd3a5a5122ba0368b3093e1e12e543d853ea8c0b"
+    },
+    "marseille": {
+      "file": "marseille.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/WnFwNAD9wIdfewRHSq79WQ_96x96.png",
+      "sha256": "f387bc352af2460625036d950256089191625623d30cbc12a324347f98bb2508"
+    },
+    "metz": {
+      "file": "metz.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/b7iBf-aijuqQaScGSpDV7A_96x96.png",
+      "sha256": "d2e59f325f5ce1ca9f37c244f56e79dda99de470c8e773b812d73ce25d8034ea"
+    },
+    "middlesbrough": {
+      "file": "middlesbrough.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/tSAATe0_UkCtEX0hgEdyTg_96x96.png",
+      "sha256": "2659980c92fcfa28f96be356a3929d1b1513322fe56ca6eb288902ee8e7cb0c8"
+    },
+    "millwall": {
+      "file": "millwall.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/FjQESJIwYuTRJ5B7HvtzPA_96x96.png",
+      "sha256": "e31917e777063b0650ee9d299cadf3bbdfaa55cb93886340add30673f05e4cbb"
+    },
+    "modena": {
+      "file": "modena.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/6uFfmSYUK2fyRxXHH0ZoSw_96x96.png",
+      "sha256": "c534ceac9c6b76fc26ed6ffd422614718d308be48b8d516e7ac5a9649bc582b5"
+    },
+    "monaco": {
+      "file": "monaco.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/RX0XTi5Dtg4joMtuHNmYKg_96x96.png",
+      "sha256": "7068606f011c00592f8248e8ec968ee8bf9fc18a0760109750fc3df8f6865934"
+    },
+    "monchengladbach": {
+      "file": "monchengladbach.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/HFg_gp-vbuL7z1Othoa0ZA_96x96.png",
+      "sha256": "4e4b6fdeba091a34f66d885ac9b0c98cd8173dfdeaf899b9652b3f118631978d"
+    },
+    "montpellier": {
+      "file": "montpellier.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/fL5Nk_2eUanYiOSB9AnBpQ_96x96.png",
+      "sha256": "ddb75792cf1c22a8a6a2e6f8c571f8848ea90d9f57d80f77946ad62343afeab6"
+    },
+    "monza": {
+      "file": "monza.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/g2S0HUWrWZX9hwKC87W11Q_96x96.png",
+      "sha256": "a770b55f83973dee45fb11da62c1a89eb2a093f5d2adf9ad2741a9c9eef86218"
+    },
+    "moreirense": {
+      "file": "moreirense.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/GVi9CQNTfywAlEId1LI9-A_96x96.png",
+      "sha256": "09f54147bebb9af1ad736b00eb7b43656afe570d01f75e304800447409f94d9e"
+    },
+    "mvv": {
+      "file": "mvv.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/384.png",
+      "sha256": "b66e2fbb464e9bc4583d335650e948952cd795bf149ffc34d2aa90de03fbd511"
+    },
+    "nac": {
+      "file": "nac.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/5QzjC5uajTeyHE_fjTlWSQ_96x96.png",
+      "sha256": "af22c7158d21cde0ae6c9033005cf1c0231633e2734adb1c9dde1d8a822b9047"
+    },
+    "nacional": {
+      "file": "nacional.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/qyy50QMMYekML4pWPjLJkw_96x96.png",
+      "sha256": "132f60c52d027524357c1bb33c2d3cb17cf56f5f64589a863fd7ce92d38679ce"
+    },
+    "nancy": {
+      "file": "nancy.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/MHlgXPd6_jt7JS_KkGfD5w_96x96.png",
+      "sha256": "f9a330a66d4777de975cab1b82a26d424da7aaa411c89ee66992d74506ec686b"
+    },
+    "nantes": {
+      "file": "nantes.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/r3qizrAtoAXPICgYjFYCyA_96x96.png",
+      "sha256": "5f7079fbfe6d2df6a3c55f557a82e50e5b35f2d9dbad63e0bb7699d3dd8216e7"
+    },
+    "napoli": {
+      "file": "napoli.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/ueX_32AIja-hLmJSHpUuFg_96x96.png",
+      "sha256": "b4f037c046670fab64dff08137eeab1b45a8d281389f422d94e060983bd4339b"
+    },
+    "nec": {
+      "file": "nec.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/z6E6BNnp8PjBXtfAiZ6yNg_96x96.png",
+      "sha256": "4f87b006b886d45bd5b1634b9326444c3d066d2b5970b6a4623434d43643d67c"
+    },
+    "newcastle": {
+      "file": "newcastle.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/96CcNNQ0AYDAbssP0V9LuQ_96x96.png",
+      "sha256": "d1becd61cd095340dcc63e290164e553ae617daa09b915d42ba0af5f09a6560a"
+    },
+    "nice": {
+      "file": "nice.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Llrxrqsc3Tw4JzE6xM7GWw_96x96.png",
+      "sha256": "da844e5831c7ce9acc9ecbe450b3a9e012a5af65050108f02bb9d5ce0b328e34"
+    },
+    "norwich": {
+      "file": "norwich.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/rdYUHHFDGi3FoPorBG8o1w_96x96.png",
+      "sha256": "6e563c6f6717e9af6df2cf76ec2ef1fa130fada736b5a382d2d80f37e1fc68e3"
+    },
+    "nottingham": {
+      "file": "nottingham.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Zr6FbE-8pDH7UBpWCO8U9A_96x96.png",
+      "sha256": "d4877ee6ffcfd80078ae96d263f1fed8e74c4e3c17f40d26878277c1fb07648c"
+    },
+    "nurnberg": {
+      "file": "nurnberg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/i2kCwRvu3YSxi-sgU_kIxw_96x96.png",
+      "sha256": "540d4fc8553d4c3bb22d046c3621e166a8be93ee305f70396905ab57e98a5c52"
+    },
+    "osasuna": {
+      "file": "osasuna.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/pk-hNCNpGM_JDoHHvLVF-Q_96x96.png",
+      "sha256": "d4cdba91206f7cf6c6091a34b3f3441bba8144cd808f780ab379a78a8d92e690"
+    },
+    "osnabruck": {
+      "file": "osnabruck.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/81.png",
+      "sha256": "e8acc50d5e0e07631faf2fb8299389acfaf6ae5ff3ef2e23e48ca4a6e136bcf5"
+    },
+    "oss": {
+      "file": "oss.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1228.png",
+      "sha256": "930cc88a0c7c3201ac247c3c58cde2deebeab43561accc7fb3d2d8f492e7426a"
+    },
+    "paderborn": {
+      "file": "paderborn.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/9glO51fgDYJdqoP8EM24kw_96x96.png",
+      "sha256": "a3a4e94965139a44e23f86af2e53246b58a1c110e16879daf780076a72f0ac5c"
+    },
+    "padova": {
+      "file": "padova.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1390.png",
+      "sha256": "18bda25a914ede11225fdb1a0a5473c8c799dc46e4af5b53d9a3077bdb3b85cc"
+    },
+    "palermo": {
+      "file": "palermo.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/eXSuE1EAbAEjpl56gXMZig_96x96.png",
+      "sha256": "be400c223da232922e47d17c2c5567a12e3465f080b1143ebb2c16e3015b6752"
+    },
+    "parisfc": {
+      "file": "parisfc.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/6L0HPrdS4FdFbafBX80QuQ_96x96.png",
+      "sha256": "c244d76d4d17817f68b584a5386882fe927da92eb5fe4d778edb6aa8f04022f1"
+    },
+    "parma": {
+      "file": "parma.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Pr7ZXZlx34eEXdUMTkLvkw_96x96.png",
+      "sha256": "e08710e948325de341241f0445f63ffc7abf1455a6e579d5252950784e639802"
+    },
+    "pau": {
+      "file": "pau.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/8tjPEm0_7YNsViRVZEedmg_96x96.png",
+      "sha256": "0f7b21f1fed66d81b470249caa18191ecc2b686ad78bfc1ed62d51eaf29a9009"
+    },
+    "penafiel": {
+      "file": "penafiel.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/3327.png",
+      "sha256": "18f6a0176baa826d3c5a6d89106f2572dd132dd9fd8578c505417e26ccfa362d"
+    },
+    "pisa": {
+      "file": "pisa.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/mArEiirzGlQAboYWfQhbxw_96x96.png",
+      "sha256": "0dac5d84bdabb164b1798e7b1d2a4062b70823e3a088f8a51c7f9fb611e1f85f"
+    },
+    "portimonense": {
+      "file": "portimonense.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/7378.png",
+      "sha256": "5d2915a78f86a8e29bef4502146fc06dded39c4da40904bbba929bed568efbbd"
+    },
+    "porto": {
+      "file": "porto.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/QkkllEKwkj60jEVtOEZWAg_96x96.png",
+      "sha256": "0ee1f9d1e3c737fc47c3967ddfb30fa6140fef1fd1f22fd14e15014be8cb8b49"
+    },
+    "porto_b": {
+      "file": "porto_b.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/10331.png",
+      "sha256": "9777e3da13ff9388b33e82791d41b629a1adc2cfefe5c907a0138ea9aadfc1f5"
+    },
+    "portsmouth": {
+      "file": "portsmouth.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/8IxFwJV2AIZpKjjf8IKfoA_96x96.png",
+      "sha256": "d8e428b41a5637b2a36d658ea9bf49bb741255392b9fc2fef26cfb71447854dd"
+    },
+    "preston": {
+      "file": "preston.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/2NRxn9AO_zb45mFCRIdCYQ_96x96.png",
+      "sha256": "f5a8c286a4cef06653ee30df19f9084034feb6a4e507600d040bf3387015205c"
+    },
+    "psg": {
+      "file": "psg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/mcpMspef1hwHwi9qrfp4YQ_96x96.png",
+      "sha256": "066ce023b96ce55c69f5d3694364f7a3872312b264ee24bbb57dcf7a9908014a"
+    },
+    "psv": {
+      "file": "psv.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/FylTPR72JXIGFzqwQocSAQ_96x96.png",
+      "sha256": "c2607c290ac9cb55ea12f4c09684b4a53f8d65bbb6c31fc2498b3ad23c238a9b"
+    },
+    "qpr": {
+      "file": "qpr.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/SYBiHsr8jq3vT4p0HauolA_96x96.png",
+      "sha256": "b290589fc4be7fb2fee062b0ff5e6e2f60271be651797394114cd3261e013396"
+    },
+    "racing_santander": {
+      "file": "racing_santander.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/2qlWr1sH_7xAfbRZDRoK3A_96x96.png",
+      "sha256": "d6b5baf8ded92ff73486eb9e087e5d5d9a282713bd903b2dce46fdeb011992ba"
+    },
+    "rayo": {
+      "file": "rayo.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/i5LifmxEVIl0sbvIysiyhw_96x96.png",
+      "sha256": "80cdeb98f85168a0c749df1b7d3d3e988a6c9d5aa27c5a4891923c71f24f6c4a"
+    },
+    "realmadrid": {
+      "file": "realmadrid.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Th4fAVAZeCJWRcKoLW7koA_96x96.png",
+      "sha256": "a87266237c48b2b77a22bcbeacc752cbe3ac921e07d03bedc0f629a4b303d7ec"
+    },
+    "realoviedo": {
+      "file": "realoviedo.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/2hbZVQulcYqiPFXkWDkB_g_96x96.png",
+      "sha256": "9d8f24dd46e0d0fd2374b47f8579e7f95eae30cfa30ac568ba39384744efd31b"
+    },
+    "realsociedad": {
+      "file": "realsociedad.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/w8tb1aeBfVZIj9tZXf7eZg_96x96.png",
+      "sha256": "aba4513c6690eb0237623155dcdb59d9ef96d1970d7b52310767aeae4491fec5"
+    },
+    "realsociedad_b": {
+      "file": "realsociedad_b.png",
+      "source": "a.espncdn.com",
+      "originalUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/89.png",
+      "sha256": "2ec10d3f56c0144c0f56cd10865fbd97138589ff64e70a93e4df5ca170ca210b"
+    },
+    "redstar": {
+      "file": "redstar.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/T60DLhYVyAbK6hhNDH48zg_96x96.png",
+      "sha256": "97ab99158c3c6854b0f700a88f7739973dc5cdc019045b5dc5a3510497421394"
+    },
+    "reims": {
+      "file": "reims.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/NWzvJ-A3j8HQkeQZ0sJP1w_96x96.png",
+      "sha256": "fc33273ffff92a82dd0e093dff4ccdcce05fd51e43b752c6124d04c18e51a580"
+    },
+    "rennes": {
+      "file": "rennes.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/guI8eg4hoTyIp6rO1opjxA_96x96.png",
+      "sha256": "769ec647404c3be6c681ca5d5b01f758517d93c8aaaded4ebf44a7bee219b81b"
+    },
+    "rioave": {
+      "file": "rioave.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/VG25vxdw0DTdTD_MIiil-Q_96x96.png",
+      "sha256": "7f21d92547b864f52a6badd49ffc8e2540dc3eabb575dd927a061286b64d3df4"
+    },
+    "rkc": {
+      "file": "rkc.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/pPk9dz2N7A7YWQkhABIiCQ_96x96.png",
+      "sha256": "3e2f8fdb6ee118e5a9b9255a49d3f39805ab1c5c94b1ef99e4c820a4ac01ec98"
+    },
+    "roda": {
+      "file": "roda.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/192.png",
+      "sha256": "17f75c6096a82097f136912e02f247501c10f2426ae94a33dd0deedcf506bdd6"
+    },
+    "rodez": {
+      "file": "rodez.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/seB78PSR2RZcg6-Jb7snsA_96x96.png",
+      "sha256": "f39f254745078123ff583bd3f928a4837aaf1bd638debbe31da04fec30416477"
+    },
+    "roma": {
+      "file": "roma.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/BQdP4jUBFJfG7U_JBsFIMg_96x96.png",
+      "sha256": "71c75f64580c74c5b0ddb885f427676e28437076c55d8cb89fb9f87856efd984"
+    },
+    "sabadell": {
+      "file": "sabadell.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/11422.png",
+      "sha256": "6f4d40783d4ec884c96cb9d30bc28860acea794ce60e4d8a1233278ba0dfc7f2"
+    },
+    "saintetienne": {
+      "file": "saintetienne.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/dH6Te3EMILwG9ulAl8O_rA_96x96.png",
+      "sha256": "37583dd123ec746c98c71709a8f20d7e0f5f26e077bc6b208015ef8847fa97a1"
+    },
+    "sampdoria": {
+      "file": "sampdoria.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/47dPMe9ylzDWErM3MQYj3g_96x96.png",
+      "sha256": "7c376ca6fc7e5465fff1bcb2cedfdec6c347eceb67d5d63d942bd67e5053ec9a"
+    },
+    "santaclara": {
+      "file": "santaclara.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/i0cKD3neXF2M09arqLQO5g_96x96.png",
+      "sha256": "4e5236c71f2ee152527010fe95a55bfc77ebc8db90f704f4d98488191ea424a6"
+    },
+    "sassuolo": {
+      "file": "sassuolo.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/GoeTFIVAZLA5JWk0-A6B0A_96x96.png",
+      "sha256": "c630a484dfea44bd0691c196ca759be31a19a3218ee0aabbb5fa47f694e7d3a4"
+    },
+    "schalke": {
+      "file": "schalke.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/3CjFxnIvrHJ1-pJq6B5ZQw_96x96.png",
+      "sha256": "fcdb267b418bb86d87e4beff989c33b2a07d0ca96fb402d047785e14d9712130"
+    },
+    "sevilla": {
+      "file": "sevilla.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/hCTs5EX3WjCMC5Jl3QE4Rw_96x96.png",
+      "sha256": "cef84d99e3147776beec4ff3dc67a6689e882c0899279ac3ed51ee10e274a317"
+    },
+    "sheffield_utd": {
+      "file": "sheffield_utd.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/wF8AgQsssfy3_GLyVR3dSg_96x96.png",
+      "sha256": "32b2cd7614c336721171545fea847a045fc01df26622df3e5d3912b6121a4a21"
+    },
+    "sochaux": {
+      "file": "sochaux.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/wWvPrYkUfTFWGg7ZAHmpPg_96x96.png",
+      "sha256": "627e94493f3c70285f1d95f6dd302978a1ea3b0d5dd5847f55302ceb45a4ae5e"
+    },
+    "southampton": {
+      "file": "southampton.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/y1V4sm2SEBiWUPRIYl5rfg_96x96.png",
+      "sha256": "6e2dcdaa4cdafbce7676157379d9fd3b028adce7640229a2e6e2be04641e0e46"
+    },
+    "sparta": {
+      "file": "sparta.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/-zNS1knZ46R8EM_FRWN01w_96x96.png",
+      "sha256": "aad1112ec5cf8f2f0bb9701c158b5ea45e2a7f1f4c354d278a5c4bbf66bf1e91"
+    },
+    "sporting_b": {
+      "file": "sporting_b.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/10949.png",
+      "sha256": "d18f9d24e1a1a203389e80ff2e6d9e13fa929d319dd654b9eb557e4d20191f25"
+    },
+    "sporting_gijon": {
+      "file": "sporting_gijon.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/x6qk7V9aKp6DG-5sAbzFIA_96x96.png",
+      "sha256": "f350b6588027d353665a0e159cf405c95e57fc279a3c84f6a2a350850f717b3e"
+    },
+    "sportingcp": {
+      "file": "sportingcp.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/58doDuhR0wW3WZE9PdODUw_96x96.png",
+      "sha256": "06afeb53a7e94a182338d2c7e107f683b31f05ead3ec70ce6cfc6454317c27b1"
+    },
+    "stoke": {
+      "file": "stoke.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/T9sIbS6mr9BuRKY6y4FFLA_96x96.png",
+      "sha256": "bafa940284b59591df866e53f1ef3e778258bbc1c3da6c56c11a94f24942fb03"
+    },
+    "stpauli": {
+      "file": "stpauli.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/tMFLGl5GGkQXMihhpJVXuw_96x96.png",
+      "sha256": "57e56d90d6b864bcb2a26edc5b999df336bb6dc358ca1ad59628b01ce4b3ba9c"
+    },
+    "strasbourg": {
+      "file": "strasbourg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/Eb9xtMpUy8FXQ0RCKvLxcg_48x48.png",
+      "sha256": "fb7e71c364d435360e540708a3a484bcd3419cdfb635f0611014db7338b93876"
+    },
+    "stuttgart": {
+      "file": "stuttgart.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Qc_eb6-lZEDR8ojQmZxFhQ_96x96.png",
+      "sha256": "1512ec468e97486b2892a3098a3b2dc99615868104b84674582a82ae4ce3114a"
+    },
+    "sudtirol": {
+      "file": "sudtirol.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Q29eJHI6JUMIstRx1IAN8A_96x96.png",
+      "sha256": "e7fb08b936d6933f8e10afe5a2e399318dcfbaa4f6d356555259efb1e731c6ed"
+    },
+    "sunderland": {
+      "file": "sunderland.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/CQFeTfHrtxqgr3VKWtTwfA_96x96.png",
+      "sha256": "3fe0fa361b6dc1340ffce10ea81a0f460529d48ff210c24c7ffa5fd8ff250a94"
+    },
+    "swansea": {
+      "file": "swansea.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/45heVhzL3HvaZW3e2B94kg_96x96.png",
+      "sha256": "bac507bf58c911fb47abcc012ab23439746448ca7b85731ea1b0d9364d9229ce"
+    },
+    "telstar": {
+      "file": "telstar.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/hxgio1GXzh_31hI4-cgqTQ_96x96.png",
+      "sha256": "dc7de4d211356bfc661fe0293a6efe477ed1f468f73b26e075bb117f8baa478d"
+    },
+    "tenerife": {
+      "file": "tenerife.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/YjLHUeUkgTpiB87kChIVOQ_96x96.png",
+      "sha256": "c8947691b289fe6e7a13335fb989cdc1710542853ebd754c1dd94b93237e90be"
+    },
+    "tondela": {
+      "file": "tondela.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/7179.png",
+      "sha256": "d651957fd8d3c91a911d39bd8890e743dcf6367491224110ca81d77af75fe81e"
+    },
+    "torino": {
+      "file": "torino.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/ovE3HSEx4GWXkW8GU7KVhA_96x96.png",
+      "sha256": "7c0106117fb737784655058f04ee828a815b4810c7b51fa5970ba5b07030a083"
+    },
+    "torreense": {
+      "file": "torreense.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2432.png",
+      "sha256": "9f22604f5afe57207af401ec8e2c9685d89705d72525220353d65001ae1352ec"
+    },
+    "tottenham": {
+      "file": "tottenham.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/k3Q_mKE98Dnohrcea0JFgQ_96x96.png",
+      "sha256": "e1e87c627b3bb6c4af04362fd01ba562b418af78ccc51a84337a3aab9efeb289"
+    },
+    "toulouse": {
+      "file": "toulouse.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/DrzFcMWJgtG1nDSdfN0dBA_96x96.png",
+      "sha256": "9252a6d56851467748811ab26f10ef83ac4555c47f8eb8bfb5e5c2ef97cfac6c"
+    },
+    "troyes": {
+      "file": "troyes.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/BUjNnbc4kDTOc5I0IzOQog_96x96.png",
+      "sha256": "659e45999cb8d31645b3e855ca2971ccff61170639792e452f806b7d0b27233a"
+    },
+    "twente": {
+      "file": "twente.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/APPtKtO4wP6dQme5I1MSlA_96x96.png",
+      "sha256": "8a6afb4844cfe7f74703b68a839ba59d38539c610719051fa8d2f37e9bd04659"
+    },
+    "udinese": {
+      "file": "udinese.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/92Aw_iasBENKmzvdpbTpHQ_96x96.png",
+      "sha256": "29b95e1db28ed66358f398032d29f487e580e080e3a2a36e4bde7762961acd1d"
+    },
+    "uniao_leiria": {
+      "file": "uniao_leiria.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2639.png",
+      "sha256": "957d8e574c12fd1b1444ef2cbf9a338593137c54cc09d8c999f8aef4a60d4a05"
+    },
+    "unionberlin": {
+      "file": "unionberlin.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/zsPvbWQ2kNoiZX3sZXq-Yg_96x96.png",
+      "sha256": "443191f451ddf25f335615a8e171db2020c2ec879e3456de99ddf41cef4e772e"
+    },
+    "utrecht": {
+      "file": "utrecht.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Xf2ldClrgyjAQGXtqliERg_96x96.png",
+      "sha256": "b41854a30f6e390c73c400876b6350fad0d21a42d4f9708c7ad6b862594dca5c"
+    },
+    "valencia": {
+      "file": "valencia.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/QPbjvDwI_0Wuu4tCS2O6uw_96x96.png",
+      "sha256": "519c9485de37083c4a55e195f4dc89ad0bf1c893f2dd0d0d06bc2d7b6774e50f"
+    },
+    "valladolid": {
+      "file": "valladolid.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/DdERt3jquzbYD95zvHQJWw_96x96.png",
+      "sha256": "13339ef5a0c3de4a7721174d2b8d46f6e363c84bd1350c90a368074bfeb45935"
+    },
+    "venezia": {
+      "file": "venezia.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/NNnNl8N5_KJrxpIrK-zBRA_96x96.png",
+      "sha256": "82a4e21d34ce7e46ec37af2949210f97b00aa28e03c56f79258938d6ca07f529"
+    },
+    "verona": {
+      "file": "verona.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Y23PEIJgTvK3Qpm9il1MGA_96x96.png",
+      "sha256": "101fd350140fd242e9b220a561ba886ff7d798a74bea494a08c3f6f95ad32d48"
+    },
+    "vicenza": {
+      "file": "vicenza.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/2655.png",
+      "sha256": "c08120bbaab57f6dd367716c7d7330a111418c9c5bee6d3969a01953eda1df8b"
+    },
+    "villarreal": {
+      "file": "villarreal.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/WKH7Ak5cYD6Qm1EEqXzmVw_96x96.png",
+      "sha256": "d007194fa2fce1bc7d6f193cd29634f5e0da6eaa070c9fa473f91d1f1363a8ee"
+    },
+    "virtusentella": {
+      "file": "virtusentella.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/20519.png",
+      "sha256": "8d700c651e025c6ec39506f0576767b874dce3571b0b74bc6de735e2789e893d"
+    },
+    "vitesse": {
+      "file": "vitesse.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/LetMZDmqTkozltbeocNuRQ_96x96.png",
+      "sha256": "a1b2584292edc61abad477152e5024802ad1ba0e7a749d198abde7cc1efb579b"
+    },
+    "vizela": {
+      "file": "vizela.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/6912.png",
+      "sha256": "732ead18b96818be95bf674bad8064e365644cc2768d07d27b1f2fae81db8635"
+    },
+    "volendam": {
+      "file": "volendam.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/KYWpfshiElDxg4QQWpHkqA_96x96.png",
+      "sha256": "ce7f7ab3162b5618108f6133e9cc75ed3e8fcbf58325d5ebe87a8a3cc3d5ec3e"
+    },
+    "vvv": {
+      "file": "vvv.png",
+      "source": "tmssl.akamaized.net",
+      "originalUrl": "https://tmssl.akamaized.net/images/wappen/head/1426.png",
+      "sha256": "c16b64c4165000f7ca71147da1e128d865cd4bcc367d4388912d94ae67bfd364"
+    },
+    "watford": {
+      "file": "watford.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/lHr1L31i7aJS-O8tUdHOIQ_96x96.png",
+      "sha256": "6f7065ed8008fe436aecaa26df6f0ab22bcf80eb3e1c632f8989afcb0cd9bb37"
+    },
+    "werder": {
+      "file": "werder.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/v4G9srMr-9IWDhCXiPhAIw_96x96.png",
+      "sha256": "d879c7bd04c7cdd346fe5404204f407bc01687348cadfd9b4e49034e7501e190"
+    },
+    "westbrom": {
+      "file": "westbrom.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/Im2UqFKvfm3TaM7R2RYkjw_96x96.png",
+      "sha256": "1653b9103ff9bdb74561ad0e8cadcda672d62808911ae7d184eb8dfb5482ce7a"
+    },
+    "westham": {
+      "file": "westham.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/bXkiyIzsbDip3x2FFcUU3A_96x96.png",
+      "sha256": "44a77ddeb8325c3a6c72ab869115be79d072c8696c160f224267e8e82802c086"
+    },
+    "willemii": {
+      "file": "willemii.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/dJxW7JzpyiA_hNx-Lf-bww_96x96.png",
+      "sha256": "d5b61bfcb44802f6ea1fcee0ed9d99ce370bd4d722f734c99164e529842241b3"
+    },
+    "wolfsburg": {
+      "file": "wolfsburg.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/nCdwmPlnAA041M4HDMzmkg_96x96.png",
+      "sha256": "72db932138cd427981104a46f11bf136a6238fa5335ae796fe202b04725948d8"
+    },
+    "wolves": {
+      "file": "wolves.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/-WjHLbBIQO9xE2e2MW3OPQ_96x96.png",
+      "sha256": "3708bbb5300db62e8652f8916e3d55a532bd0c23ddf63812b93b8d8d12f6544d"
+    },
+    "wrexham": {
+      "file": "wrexham.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/s9UUJa1cSjACrYbu44z2OQ_96x96.png",
+      "sha256": "d3d9a3fa66ae1080bd14a8728ccc7f8c7eecf181f47670a1304499db9962da36"
+    },
+    "zwolle": {
+      "file": "zwolle.png",
+      "source": "Google Sports",
+      "originalUrl": "https://ssl.gstatic.com/onebox/media/sports/logos/optimized/wG9B0Qx4RzFdcpLmKnjHLQ_96x96.png",
+      "sha256": "c4d6604c433af56e88dd5bf5559282533eb59918e930aa2cd0f307001c2aec7e"
+    }
+  }
+}

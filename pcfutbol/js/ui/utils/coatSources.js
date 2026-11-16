@@ -1,6 +1,6 @@
-// Catálogo de imágenes para los 272 clubes de la temporada 2026/27.
-// Prioridad: Google Sports (96 px), archivo local y proveedor alternativo.
-// Enlaces públicos contrastados con los clubes, no se consultan APIs en tiempo de juego.
+// Fuentes para preparar/actualizar los 272 PNG locales de 2026/27.
+// Solo importa este módulo scripts/downloadCoats.mjs (nunca el juego en el navegador).
+// Prioridad de descarga: Google Sports (96 px), proveedor alternativo y archivo previo.
 // Fuentes: Google Sports; CoucouMichel/petit-pont-crampon/clubLogos.json;
 // ChaiyasitZ/Football-Management-Simulation/leaguesConfig.ts;
 // Transfermarkt (club IDs y escudos), contrastados por nombre antes de asociarlos.
