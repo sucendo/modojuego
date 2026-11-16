@@ -315,7 +315,7 @@ function apexGradeSpatialIndex(){
      bx=Array.isArray(b)?+b[0]:+b.x,bz=Array.isArray(b)?+b[1]:+b.z,len=Math.hypot(bx-ax,bz-az);
    if(!Number.isFinite(len)||len<.12)continue;
    const ay=ys?+ys[i-1]:(Number.isFinite(a.y)?a.y:0),by=ys?+ys[i]:(Number.isFinite(b.y)?b.y:0);
-   const seg={kind,ax,az,bx,bz,ay,by,width,extra,len};
+   const seg={kind,ax,az,bx,bz,ay,by,width,extra,len,a,b};
    const j=segments.length;segments.push(seg);
    const margin=Math.max(36,width*.5+32);
    for(let ix=Math.floor((Math.min(ax,bx)-margin)/size);ix<=Math.floor((Math.max(ax,bx)+margin)/size);ix++)
@@ -350,7 +350,13 @@ function apexNearestGradeSegment(x,z,kind=null,maxD=86){
  for(let i=-n;i<=n;i++)for(let j=-n;j<=n;j++)for(const id of idx.buckets.get((ix+i)+','+(iz+j))||[]){
   if(seen.has(id))continue;seen.add(id);const sg=idx.segments[id];if(kind&&!(kind==='PAVED'?(sg.kind==='PIT'||sg.kind==='ROAD'):sg.kind===kind))continue;
   const dx=sg.bx-sg.ax,dz=sg.bz-sg.az,len2=dx*dx+dz*dz,t=clamp(((x-sg.ax)*dx+(z-sg.az)*dz)/len2,0,1),px=sg.ax+t*dx,pz=sg.az+t*dz,d2=(x-px)**2+(z-pz)**2;
-  if(d2<best2){best2=d2;best={...sg,dist:Math.sqrt(d2),x:px,z:pz,y:lerp(sg.ay,sg.by,t)}}
+  if(d2<best2){
+   best2=d2;best={...sg,dist:Math.sqrt(d2),x:px,z:pz,y:lerp(sg.ay,sg.by,t)};
+   if(sg.kind==='PIT'){
+    const side=(x-px)*-dz+(z-pz)*dx>=0?'leftWidth':'rightWidth';
+    best.halfWidth=lerp(sg.a?.[side]??sg.width*.5,sg.b?.[side]??sg.width*.5,t);
+   }
+  }
  }
  return best;
 }
@@ -484,7 +490,7 @@ function apexPitGradeOwnsPoint(st,pit){
  if(!st)return true;
  const env=envProfile(st.s),lat=Math.abs(st.lat);
  if(lat<=env.half+.2)return false;
- if(pit.dist<pit.width*.5)return true;
+ if(pit.dist<(pit.halfWidth??pit.width*.5))return true;
  const side=st.lat>=0?1:-1,limit=apexRoadFlatLimit(st.s,env,side);
  if(lat>limit)return true;
  const q=renderRibbonFrameAt(st.s);
@@ -511,7 +517,8 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
    const edge=apexTrackEdgeSection(q,env,side).end,
     distance=(x-edge.x)*q.nx*side+(z-edge.z)*q.nz*side;
    if(distance<=0){
-    out=q.y+Math.tan(q.bank||0)*st.lat-.18;
+    const insideY=q.y+Math.tan(q.bank||0)*st.lat-.18;
+    out=lerp(edge.y,insideY,terrainEase(-distance));
     mainProtected=true;
    }else{
     const rise=Math.abs(natural-edge.y),blend=Math.max(cfg.blendM,1.5*rise/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
@@ -523,12 +530,12 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
  // modifica la placa: los viales se renderizan después apoyados sobre el relieve.
  const sg=apexNearestGradeSegment(x,z,'PIT',42);
  if(sg){
-  const shoulder=sg.width*.5+3;
+  const distance=sg.dist-(sg.halfWidth??sg.width*.5),edgeY=sg.y+.012;
   if(apexPitGradeOwnsPoint(st,sg)){
-   if(sg.dist<=shoulder)out=sg.y-.18;
+   if(distance<=3)out=edgeY-.192*terrainEase(Math.max(0,-distance));
    else if(!mainProtected){
-    const blend=Math.max(cfg.blendM,Math.abs(natural-sg.y)/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
-    if(sg.dist<shoulder+blend)out=lerp(sg.y-.18,out,terrainEase((sg.dist-shoulder)/blend));
+    const blend=Math.max(cfg.blendM,Math.abs(out-edgeY)/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
+    if(distance<3+blend)out=lerp(edgeY,out,terrainEase((distance-3)/blend));
    }
   }
  }
@@ -2219,8 +2226,8 @@ function apexClipRunoffSurfaceTriangles(triangles){
      let y=v.y;
      const ns=nearestTrackState(v.x,v.z,null,{radius:80,allowGlobal:true,fallbackDist:75});
      const pit=apexNearestGradeSegment(v.x,v.z,'PIT',16);
-     if(pit&&pit.dist<=pit.width*.5+3&&apexPitGradeOwnsPoint(ns,pit)){
-      y=pit.y-.042;
+     if(pit&&pit.dist<=(pit.halfWidth??pit.width*.5)+3&&apexPitGradeOwnsPoint(ns,pit)){
+      y=pit.y+.012;
      }
      return [v.x,y,v.z];
     }));
