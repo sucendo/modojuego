@@ -12,6 +12,7 @@ import { GameState } from '../state.js';
 import { getUserClub } from '../game/selectors.js';
 import { createFlagImgElement } from './utils/flags.js';
 import { isPlayerInjuredNow, isPlayerSuspendedNow } from '../game/utils/index.js';
+import { POSITION_NAMES, getPositionAffinity, getEffectiveOverall } from '../game/tactics/positions.js';
  
 import {
   ensureClubTactics,
@@ -78,8 +79,8 @@ function ensureExtendedTactics(club) {
 function getRoleFromPosition(pos){
   const p = String(pos||'').toUpperCase();
   if (p === 'POR' || p === 'GK') return 'POR';
-  if (p.includes('D') || ['RB','LB','CB','RWB','LWB'].includes(p)) return 'DEF';
-  if (p.includes('M') || ['CDM','CM','CAM','RM','LM'].includes(p)) return 'MED';
+  if (['RB','LB','CB','RWB','LWB'].includes(p)) return 'DEF';
+  if (['CDM','CM','CAM','RM','LM'].includes(p)) return 'MED';
   return 'DEL';
 }
 
@@ -106,6 +107,14 @@ function getOrderedXIPlayers(club){
     if(ax!==bx) return ax-bx;
     return (a.name||'').localeCompare(b.name||'');
   });
+}
+
+function getXIPositionAssignments(club) {
+  const formation = club.tactics?.formation || '4-4-2';
+  const slots = getFormationSlots(formation);
+  return new Map(assignPlayersToSlots(getXIPlayers(club), slots)
+    .filter(slot => slot.player?.id != null)
+    .map(slot => [String(slot.player.id), slot.position]));
 }
 
 function fillSelect(select, options, currentValue) {
@@ -233,6 +242,7 @@ function renderXIListTable(club) {
   tbody.innerHTML = '';
 
   const xi = getOrderedXIPlayers(club);
+  const positions = getXIPositionAssignments(club);
   if (!xi.length) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
@@ -277,7 +287,12 @@ function renderXIListTable(club) {
     tr.appendChild(makeTd(formatAttr(stats.CO)));
     tr.appendChild(makeTd(formatAttr(stats.MO)));
     tr.appendChild(makeTd(formatAttr(stats.EF)));
-    tr.appendChild(makeTd(formatAttr(stats.ME), 'pcf-td-me'));
+    const target = positions.get(id) || p.position;
+    const fit = getPositionAffinity(p, target);
+    const effective = getEffectiveOverall(p, target);
+    const effectiveCell = makeTd(formatAttr(effective), 'pcf-td-me');
+    effectiveCell.title = `Media natural: ${stats.ME}. En ${target}: ${effective} (${Math.round(fit * 100)}% de afinidad).`;
+    tr.appendChild(effectiveCell);
 
     tr.appendChild(makeTd(getRoleFromPosition(p.position)));
     tr.appendChild(makeTd(getDemarcation(p.position)));
@@ -437,6 +452,16 @@ function renderPlayerCard(club) {
   kv.appendChild(kvItem('País', p.nationality || '—'));
   kv.appendChild(kvItem('Pie', p.foot || '—'));
   kv.appendChild(kvItem('Nac.', p.birthDate || '—'));
+  const position = getXIPositionAssignments(club).get(String(p.id)) || p.position;
+  const affinity = getPositionAffinity(p, position);
+  const effective = getEffectiveOverall(p, position);
+  const secondary = (p.secondaryPositions || []).map(entry =>
+    `${entry.position} ${Math.round(entry.familiarity * 100)}%${entry.sourceType === 'estimated-compatible' ? ' (est.)' : ''}`
+  ).join(', ') || 'No registradas';
+  kv.appendChild(kvItem('Posición principal', `${p.position} · ${POSITION_NAMES[p.position] || ''}`));
+  kv.appendChild(kvItem('Posiciones secundarias', secondary));
+  kv.appendChild(kvItem('En esta alineación', `${position} · ${effective} de ${p.overall} (${Math.round(affinity * 100)}%)`));
+  kv.appendChild(kvItem('Versatilidad', `${Math.round((p.versatility ?? .7) * 100)}% (simulada)`));
 
   const portrait = mk('div', 'pcf-pcard-portrait');
   const initials = (p.name || 'J').split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
@@ -525,7 +550,13 @@ function renderTacticsPitch(club) {
     dot.style.left = `${leftTop.left}%`;
     dot.style.top = `${leftTop.top}%`;
     dot.textContent = getShirtNumber(p) || '·';
-    dot.title = p ? `${p.name} (${p.position || '-'})` : `${formation} · ${slot?.role || ''}`;
+    if (p) {
+      const fit = getPositionAffinity(p, slot.position);
+      dot.title = `${p.name} · principal ${p.position || '-'} · ${slot.position}: ${getEffectiveOverall(p, slot.position)} (${Math.round(fit * 100)}%)`;
+      dot.dataset.positionAffinity = String(Math.round(fit * 100));
+    } else {
+      dot.title = `${formation} · ${slot?.role || ''}`;
+    }
 
     if (pid && selectedPlayerId != null && String(selectedPlayerId) === pid) {
       dot.classList.add('is-selected');

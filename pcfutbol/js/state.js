@@ -4,6 +4,7 @@ import { initialLeague, allLeagues } from './data.js';
 import { getSeasonStartYear } from './gameSeason.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 import { fitPlayersToFormation } from './game/tactics/identity.js';
+import { ensurePlayerPositionData } from './game/tactics/positions.js';
 
 export const GameState = {
   meta: {
@@ -267,6 +268,9 @@ function ensureClubDefaults(club) {
 }
 
 function ensurePlayerDefaults(player, season) {
+  // Guardados anteriores a la ampliación de posiciones: migración no
+  // destructiva y sin alterar la valoración, el equipo ni el contrato.
+  ensurePlayerPositionData(player);
   if (player.morale == null) player.morale = 0.7;
   if (player.fitness == null) player.fitness = 0.9;
   if (player.transferListed == null) player.transferListed = false;
@@ -699,11 +703,14 @@ function generateAttributesForPosition(position, overall) {
   const isGK = pos === 'POR' || pos === 'GK';
   const isCB = pos === 'DFC' || pos === 'CB';
   const isFB =
-    pos === 'LD' || pos === 'LI' || pos === 'RB' || pos === 'LB' || pos === 'CAD';
+    pos === 'LD' || pos === 'LI' || pos === 'RB' || pos === 'LB'
+    || pos === 'RWB' || pos === 'LWB' || pos === 'CAD';
   const isDM = pos === 'MCD' || pos === 'DM' || pos === 'CDM';
   const isCM = pos === 'MC' || pos === 'CM';
   const isAM = pos === 'MCO' || pos === 'MP' || pos === 'CAM';
+  const isWideMid = pos === 'RM' || pos === 'LM';
   const isWinger = ['EI', 'ED', 'RW', 'LW'].includes(pos);
+  const isSS = pos === 'SS';
   const isST =
     pos === 'DC' || pos === 'SD' || pos === 'ST' || pos === 'FW' || pos === 'CF';
 
@@ -797,6 +804,18 @@ function generateAttributesForPosition(position, overall) {
     physical.pace = clampAttr(base + 2);
     physical.stamina = clampAttr(base + 1);
     physical.strength = clampAttr(base - 1);
+  } else if (isWideMid) {
+    technical.passing = clampAttr(base + 3);
+    technical.shooting = clampAttr(base - 1);
+    technical.dribbling = clampAttr(base + 3);
+    technical.tackling = clampAttr(base);
+    mental.vision = clampAttr(base + 3);
+    mental.composure = clampAttr(base + 1);
+    mental.workRate = clampAttr(base + 4);
+    mental.leadership = clampAttr(base);
+    physical.pace = clampAttr(base + 4);
+    physical.stamina = clampAttr(base + 5);
+    physical.strength = clampAttr(base);
   } else if (isWinger) {
     // Extremos: velocidad y regate
     technical.passing = clampAttr(base + 1);
@@ -812,6 +831,18 @@ function generateAttributesForPosition(position, overall) {
     physical.pace = clampAttr(base + 7);
     physical.stamina = clampAttr(base + 3);
     physical.strength = clampAttr(base - 2);
+  } else if (isSS) {
+    technical.passing = clampAttr(base + 3);
+    technical.shooting = clampAttr(base + 4);
+    technical.dribbling = clampAttr(base + 5);
+    technical.tackling = clampAttr(base - 5);
+    mental.vision = clampAttr(base + 4);
+    mental.composure = clampAttr(base + 3);
+    mental.workRate = clampAttr(base + 1);
+    mental.leadership = clampAttr(base);
+    physical.pace = clampAttr(base + 4);
+    physical.stamina = clampAttr(base + 2);
+    physical.strength = clampAttr(base);
   } else if (isST) {
     // Delanteros: definición, algo de fuerza, menos defensa
     technical.passing = clampAttr(base - 1);

@@ -8,6 +8,7 @@ import { generateEventsForFixture, attachFixtureMeta } from './events.js';
 import { getStartingXIForFixture, getBenchForFixture } from './selection.js';
 import { getClubStrengthProfile } from '../tactics/strength.js';
 import { chooseMatchPlan } from '../tactics/matchPlans.js';
+import { applyFixturePositionExperience } from '../tactics/positionExperience.js';
 import { computeMatchLambdas, sampleGoals } from './scoring.js';
 
 export function simulateFixture(fx, deps = {}) {
@@ -90,4 +91,5 @@ export function simulateFixture(fx, deps = {}) {
   // Meta + estadísticas avanzadas (para UI nueva)
   attachFixtureMeta(fx, homeClub, awayClub);
   generateAdvancedStatsForFixture(fx, homeClub, awayClub);
+  applyFixturePositionExperience(fx, homeClub, awayClub);
 }

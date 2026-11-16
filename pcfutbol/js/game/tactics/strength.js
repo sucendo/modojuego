@@ -4,7 +4,8 @@
 // Mantenerlo separado evita duplicar criterios entre motor y UI.
 
 import { ensureClubTactics, isPlayerUnavailable } from '../utils/index.js';
-import { FORMATION_EFFECTS, getFormationFit } from './identity.js';
+import { FORMATION_EFFECTS, FORMATION_ROLES, fitPlayersToFormation } from './identity.js';
+import { getPositionAffinity } from './positions.js';
 
 // Wrapper defensivo: sanciones + unavailable base
 function isPlayerUnavailableNow(p) {
@@ -43,9 +44,6 @@ export function getClubStrengthProfile(club, isHome, options = {}) {
       ? lineupPlayers.reduce((acc, p) => acc + (p.overall || 50), 0) / lineupPlayers.length
       : 50;
 
-  let attack = avgOverall * 0.9;
-  let defense = avgOverall * 0.9;
-
   // Las opciones del usuario viven en club.tactics. alignment se conserva
   // como compatibilidad con los guardados y pantallas antiguos.
   const t = { ...(club.alignment || {}), ...(club.tactics || {}), ...(options.tactics || {}) };
@@ -53,12 +51,32 @@ export function getClubStrengthProfile(club, isHome, options = {}) {
   const pressure = t.pressure || 'NORMAL';
   const formation = FORMATION_EFFECTS[t.formation] ? t.formation : '4-4-2';
   const formationEffect = FORMATION_EFFECTS[formation];
-  const tacticalFit = getFormationFit(lineupPlayers, formation);
+  const assigned = fitPlayersToFormation(lineupPlayers, formation);
+  const roles = FORMATION_ROLES[formation];
+  let totalAffinity = 0;
+  let attackPenalty = 0;
+  let defensePenalty = 0;
+  for (const slot of assigned) {
+    const player = slot.player;
+    if (!player) continue;
+    const affinity = getPositionAffinity(player, slot.position);
+    totalAffinity += affinity;
+    const loss = (Number(player.overall) || 50) * (1 - affinity);
+    const pos = roles[slot.index];
+    const def = ['GK', 'CB', 'RB', 'LB', 'RWB', 'LWB'].includes(pos);
+    const att = ['ST', 'SS', 'RW', 'LW'].includes(pos);
+    // Una única penalización por rol: pesa algo más en la faceta principal
+    // de ese puesto, sin cambiar las estadísticas persistentes del jugador.
+    attackPenalty += loss * (att ? 1.25 : def ? .65 : 1);
+    defensePenalty += loss * (def ? 1.25 : att ? .70 : 1);
+  }
+  const tacticalFit = totalAffinity / 11;
+  let attack = avgOverall * .9 - attackPenalty / 11;
+  let defense = avgOverall * .9 - defensePenalty / 11;
 
-  // La formación sí modifica las fortalezas, sin crear ventajas extremas;
-  // situar titulares fuera de su demarcación cuesta una penalización gradual.
-  attack += formationEffect.attack - (1 - tacticalFit) * 5;
-  defense += formationEffect.defense - (1 - tacticalFit) * 6;
+  // Sin penalización adicional por tacticalFit: el coste ya está incluido.
+  attack += formationEffect.attack;
+  defense += formationEffect.defense;
 
   if (mentality === 'OFFENSIVE') attack += 5;
   else if (mentality === 'DEFENSIVE') defense += 5;

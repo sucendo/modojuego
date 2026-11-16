@@ -24,7 +24,7 @@ function posGroup(pos) {
   if (p === 'GK' || p === 'POR') return 'GK';
   if (p === 'RB' || p === 'LB' || p === 'CB' || p === 'RWB' || p === 'LWB') return 'DEF';
   if (p === 'CDM' || p === 'CM' || p === 'CAM' || p === 'RM' || p === 'LM') return 'MID';
-  if (p === 'RW' || p === 'LW' || p === 'CF' || p === 'ST') return 'ATT';
+  if (p === 'RW' || p === 'LW' || p === 'CF' || p === 'ST' || p === 'SS') return 'ATT';
   return 'MID';
 }
 
@@ -77,7 +77,7 @@ export function getPotentialScorersForClub(club, lineupIds) {
   const score = (p) => {
     const pos = normPos(p);
     if (pos === 'ST') return 6;
-    if (pos === 'CF') return 5;
+    if (pos === 'CF' || pos === 'SS') return 5;
     if (pos === 'RW' || pos === 'LW') return 4;
     if (pos === 'CAM') return 3;
     if (pos === 'CM') return 2;
@@ -98,7 +98,7 @@ export function getPotentialAssistersForClub(club, lineupIds) {
     if (pos === 'CM') return 5;
     if (pos === 'RW' || pos === 'LW') return 5;
     if (pos === 'RM' || pos === 'LM') return 4;
-    if (pos === 'CF') return 4;
+    if (pos === 'CF' || pos === 'SS') return 4;
     if (pos === 'ST') return 2;
     if (pos === 'CDM') return 2;
     return 1;

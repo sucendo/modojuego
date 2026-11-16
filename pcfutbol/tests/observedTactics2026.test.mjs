@@ -73,8 +73,8 @@ test('nueve formaciones están disponibles en el motor, con 11 roles y posicione
     const slots = getFormationSlots(formation);
     assert.equal(slots.length, 11, formation);
     assert.deepEqual(slots.map(slot => slot.position), roles, formation);
-    const left = slots.find(slot => slot.position === 'LB');
-    const right = slots.find(slot => slot.position === 'RB');
+    const left = slots.find(slot => ['LB', 'LWB'].includes(slot.position));
+    const right = slots.find(slot => ['RB', 'RWB'].includes(slot.position));
     assert.ok(left.x < right.x, formation);
   }
 });

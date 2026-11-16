@@ -32,23 +32,23 @@ function group(position) {
   const p = String(position || '').toUpperCase();
   if (['GK', 'POR'].includes(p)) return 'POR';
   if (['CB', 'RB', 'LB', 'RWB', 'LWB', 'DFC', 'LD', 'LI'].includes(p)) return 'CB';
-  if (['ST', 'CF', 'RW', 'LW', 'DC', 'ED', 'EI'].includes(p)) return 'ST';
+  if (['ST', 'SS', 'CF', 'RW', 'LW', 'DC', 'ED', 'EI'].includes(p)) return 'ST';
   return 'CM';
 }
 
 // Las fuentes originales suelen publicar solo portero/defensa/medio/delantero.
-// Para la táctica usamos únicamente las diez demarcaciones modernas, y dejamos
-// constancia de cuándo la subposición se ha tenido que estimar.
+// Se conservan las quince demarcaciones cuando la fuente las identifica.
+// Las fuentes genéricas se distribuyen por rol y se marcan como estimadas.
 function modernPosition(position) {
   const p = String(position || '').toUpperCase();
   const alias = {
-    POR: 'GK', GK: 'GK', DFC: 'CB', LD: 'RB', LI: 'LB', RWB: 'RB', LWB: 'LB',
-    MCD: 'CDM', DM: 'CDM', MC: 'CM', RM: 'CM', LM: 'CM',
+    POR: 'GK', GK: 'GK', DFC: 'CB', LD: 'RB', LI: 'LB',
+    MCD: 'CDM', DM: 'CDM', MC: 'CM',
     MCO: 'CAM', AM: 'CAM', MP: 'CAM', ED: 'RW', EI: 'LW',
-    CF: 'ST', DC: 'ST', FW: 'ST', SD: 'ST',
+    CF: 'ST', DC: 'ST', FW: 'ST', SD: 'SS',
   };
   const normalized = alias[p] || p;
-  if (['GK', 'RB', 'LB', 'CB', 'CDM', 'CM', 'CAM', 'RW', 'LW', 'ST'].includes(normalized)) return normalized;
+  if (['GK', 'RB', 'LB', 'CB', 'RWB', 'LWB', 'CDM', 'CM', 'CAM', 'RM', 'LM', 'RW', 'LW', 'ST', 'SS'].includes(normalized)) return normalized;
   return { POR: 'GK', CB: 'CB', CM: 'CM', ST: 'ST' }[group(position)];
 }
 
@@ -165,6 +165,7 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
     }
     const publishedGeneric = GENERIC_POSITIONS.has(String(current.position || '').toUpperCase());
     player.positionEstimated = publishedGeneric;
+    player.primaryPositionSource = publishedGeneric ? 'estimated-from-generic-roster' : 'published-role';
     accuracyByIndex.push({ generic: publishedGeneric && !current.preferredPosition, legacyPrecise: !!old &&
       !GENERIC_POSITIONS.has(String(old.position || '').toUpperCase()) });
     if (Number.isInteger(current.age) && current.age >= 15 && current.age <= 50) {

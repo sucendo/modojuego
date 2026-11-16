@@ -9,6 +9,7 @@
 import { getStartingXIForFixture } from '../match/selection.js';
 import { getClubStrengthProfile } from '../tactics/strength.js';
 import { chooseMatchPlan } from '../tactics/matchPlans.js';
+import { applyFixturePositionExperience } from '../tactics/positionExperience.js';
 
 let _generateAdvancedStatsForFixture = null;
 
@@ -112,6 +113,7 @@ export function simulateQuickWorldFixture(fx, ls) {
 
   // Stats “ligeras” por jugador (apps/min/goals/asist…)
   wApplyWorldPlayerStats(ls, fx);
+  applyFixturePositionExperience(fx, home, away);
 }
 
 // -------------------------------------------------

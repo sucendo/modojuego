@@ -13,8 +13,8 @@ test('las bandas se dibujan con laterales y extremos en su lado correcto', () =>
   for (const formation of Object.keys(FORMATION_ROLES)) {
     const slots = getFormationSlots(formation);
     assert.equal(slots.length, 11);
-    const left = slots.find(s => s.position === 'LB');
-    const right = slots.find(s => s.position === 'RB');
+    const left = slots.find(s => ['LB', 'LWB'].includes(s.position));
+    const right = slots.find(s => ['RB', 'RWB'].includes(s.position));
     assert.ok(left && right && left.x < right.x, formation);
     const lw = slots.find(s => s.position === 'LW');
     const rw = slots.find(s => s.position === 'RW');

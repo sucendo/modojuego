@@ -3,19 +3,21 @@
 // No inferimos un entrenador real a partir de una distribución de posiciones.
 
 import { OBSERVED_MATCHLOGS_2026_27 } from './observed2026.js';
+import { normalizePosition, getPositionAffinity, getEffectiveOverall } from './positions.js';
+export { normalizePosition } from './positions.js';
 
 export const FORMATION_ROLES = Object.freeze({
   // Orden de izquierda a derecha para que los extremos y laterales se
   // dibujen en su banda, tanto en Tácticas como en la previa.
-  '4-4-2':   ['GK', 'LB', 'CB', 'CB', 'RB', 'LW', 'CM', 'CM', 'RW', 'ST', 'ST'],
+  '4-4-2':   ['GK', 'LB', 'CB', 'CB', 'RB', 'LM', 'CM', 'CM', 'RM', 'ST', 'SS'],
   '4-3-3':   ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'CM', 'CAM', 'LW', 'ST', 'RW'],
   '4-2-3-1': ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'CM', 'LW', 'CAM', 'RW', 'ST'],
-  '3-5-2':   ['GK', 'CB', 'CB', 'CB', 'LB', 'CDM', 'CM', 'CAM', 'RB', 'ST', 'ST'],
-  '3-4-3':   ['GK', 'CB', 'CB', 'CB', 'LB', 'CM', 'CM', 'RB', 'LW', 'ST', 'RW'],
-  '5-3-2':   ['GK', 'LB', 'CB', 'CB', 'CB', 'RB', 'CDM', 'CM', 'CAM', 'ST', 'ST'],
-  '5-4-1':   ['GK', 'LB', 'CB', 'CB', 'CB', 'RB', 'LW', 'CM', 'CM', 'RW', 'ST'],
-  '4-1-4-1': ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'LW', 'CM', 'CM', 'RW', 'ST'],
-  '4-5-1':   ['GK', 'LB', 'CB', 'CB', 'RB', 'LW', 'CM', 'CDM', 'CM', 'RW', 'ST'],
+  '3-5-2':   ['GK', 'CB', 'CB', 'CB', 'LWB', 'CDM', 'CM', 'CAM', 'RWB', 'ST', 'SS'],
+  '3-4-3':   ['GK', 'CB', 'CB', 'CB', 'LWB', 'CM', 'CM', 'RWB', 'LW', 'ST', 'RW'],
+  '5-3-2':   ['GK', 'LWB', 'CB', 'CB', 'CB', 'RWB', 'CDM', 'CM', 'CAM', 'ST', 'SS'],
+  '5-4-1':   ['GK', 'LWB', 'CB', 'CB', 'CB', 'RWB', 'LM', 'CM', 'CM', 'RM', 'ST'],
+  '4-1-4-1': ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'LM', 'CM', 'CM', 'RM', 'ST'],
+  '4-5-1':   ['GK', 'LB', 'CB', 'CB', 'RB', 'LM', 'CM', 'CDM', 'CM', 'RM', 'ST'],
 });
 
 export const FORMATION_EFFECTS = Object.freeze({
@@ -30,26 +32,6 @@ export const FORMATION_EFFECTS = Object.freeze({
   '4-5-1':   { attack: -0.7, defense: 1.5, attackBias: -1 },
 });
 
-const POSITION_NEIGHBOURS = Object.freeze({
-  GK: {},
-  RB: { LB: 0.63, CB: 0.73, CDM: 0.58, RW: 0.58 },
-  LB: { RB: 0.63, CB: 0.73, CDM: 0.58, LW: 0.58 },
-  CB: { RB: 0.76, LB: 0.76, CDM: 0.75, CM: 0.5 },
-  CDM: { CM: 0.87, CB: 0.76, CAM: 0.67, RB: 0.5, LB: 0.5 },
-  CM: { CDM: 0.88, CAM: 0.87, RW: 0.6, LW: 0.6 },
-  CAM: { CM: 0.85, RW: 0.76, LW: 0.76, ST: 0.71, CDM: 0.6 },
-  RW: { LW: 0.7, CAM: 0.82, ST: 0.77, CM: 0.56, RB: 0.48 },
-  LW: { RW: 0.7, CAM: 0.82, ST: 0.77, CM: 0.56, LB: 0.48 },
-  ST: { RW: 0.78, LW: 0.78, CAM: 0.75, CM: 0.45 },
-});
-
-const LEGACY_POSITIONS = {
-  POR: 'GK', DFC: 'CB', DF: 'CB', LD: 'RB', LI: 'LB',
-  MC: 'CM', MF: 'CM', MCD: 'CDM', MCO: 'CAM', MP: 'CAM',
-  ED: 'RW', EI: 'LW', FW: 'ST', DC: 'ST', CF: 'ST',
-  RWB: 'RB', LWB: 'LB', RM: 'RW', LM: 'LW',
-};
-
 // Los sistemas de cuatro defensas son el punto de partida más frecuente;
 // el ajuste por plantilla puede superar esta preferencia.
 const FORMATION_PRIOR = {
@@ -58,17 +40,8 @@ const FORMATION_PRIOR = {
   '5-4-1': 0.06, '4-1-4-1': 0.10, '4-5-1': 0.07,
 };
 
-export function normalizePosition(position) {
-  const pos = String(position || '').toUpperCase();
-  return LEGACY_POSITIONS[pos] || pos;
-}
-
-export function suitabilityForPosition(playerPosition, targetPosition) {
-  const actual = normalizePosition(playerPosition);
-  const target = normalizePosition(targetPosition);
-  if (actual === target) return 1;
-  if (actual === 'GK' || target === 'GK') return 0.03;
-  return POSITION_NEIGHBOURS[target]?.[actual] ?? 0.32;
+export function suitabilityForPosition(playerOrPosition, targetPosition) {
+  return getPositionAffinity(playerOrPosition, targetPosition);
 }
 
 function hash01(seed) {
@@ -85,7 +58,7 @@ export function fitPlayersToRoles(players, roles) {
 
   // Reservar el puesto de portero y cubrir primero los roles más escasos.
   const waiting = slots.slice().sort((a, b) => {
-    const scarce = slot => available.filter(p => suitabilityForPosition(p.position, slot.position) >= 0.85).length;
+    const scarce = slot => available.filter(p => suitabilityForPosition(p, slot.position) >= 0.88).length;
     return (a.position === 'GK' ? -1000 : scarce(a)) - (b.position === 'GK' ? -1000 : scarce(b)) || a.index - b.index;
   });
   const taken = new Set();
@@ -95,8 +68,10 @@ export function fitPlayersToRoles(players, roles) {
     for (const player of available) {
       if (taken.has(String(player.id))) continue;
       if (slot.position !== 'GK' && normalizePosition(player.position) === 'GK') continue;
-      const suitability = suitabilityForPosition(player.position, slot.position);
-      const score = suitability * 100 + Math.min(100, Number(player.overall || 60)) * 0.12;
+      const suitability = suitabilityForPosition(player, slot.position);
+      // Calidad efectiva: un suplente capaz en su demarcación puede ser
+      // preferible a un titular brillante completamente fuera de puesto.
+      const score = getEffectiveOverall(player, slot.position) + suitability * 5;
       if (score > bestScore) { best = player; bestScore = score; }
     }
     if (best) {
@@ -114,7 +89,7 @@ export function fitPlayersToFormation(players, formation) {
 export function getFormationFit(players, formation) {
   const slots = fitPlayersToFormation(players, formation);
   const total = slots.reduce((sum, slot) => sum + (slot.player
-    ? suitabilityForPosition(slot.player.position, slot.position) : 0), 0);
+    ? suitabilityForPosition(slot.player, slot.position) : 0), 0);
   return total / 11;
 }
 
