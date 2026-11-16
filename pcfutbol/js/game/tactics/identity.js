@@ -1,6 +1,8 @@
-// Identidad táctica 2026/27. Las observaciones puntuales tienen su URL;
-// para los demás clubes se calcula un perfil ESTIMADO a partir de su plantilla.
+// Identidad táctica 2026/27. Las formaciones contrastadas usan una muestra
+// de varios partidos; para los demás clubes se calcula un perfil ESTIMADO.
 // No inferimos un entrenador real a partir de una distribución de posiciones.
+
+import { OBSERVED_MATCHLOGS_2026_27 } from './observed2026.js';
 
 export const FORMATION_ROLES = Object.freeze({
   // Orden de izquierda a derecha para que los extremos y laterales se
@@ -11,6 +13,9 @@ export const FORMATION_ROLES = Object.freeze({
   '3-5-2':   ['GK', 'CB', 'CB', 'CB', 'LB', 'CDM', 'CM', 'CAM', 'RB', 'ST', 'ST'],
   '3-4-3':   ['GK', 'CB', 'CB', 'CB', 'LB', 'CM', 'CM', 'RB', 'LW', 'ST', 'RW'],
   '5-3-2':   ['GK', 'LB', 'CB', 'CB', 'CB', 'RB', 'CDM', 'CM', 'CAM', 'ST', 'ST'],
+  '5-4-1':   ['GK', 'LB', 'CB', 'CB', 'CB', 'RB', 'LW', 'CM', 'CM', 'RW', 'ST'],
+  '4-1-4-1': ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'LW', 'CM', 'CM', 'RW', 'ST'],
+  '4-5-1':   ['GK', 'LB', 'CB', 'CB', 'RB', 'LW', 'CM', 'CDM', 'CM', 'RW', 'ST'],
 });
 
 export const FORMATION_EFFECTS = Object.freeze({
@@ -20,6 +25,9 @@ export const FORMATION_EFFECTS = Object.freeze({
   '3-5-2':   { attack: 0.8, defense: 0.2, attackBias: 0 },
   '3-4-3':   { attack: 2.2, defense: -1.4, attackBias: 2 },
   '5-3-2':   { attack: -1.2, defense: 2.2, attackBias: -2 },
+  '5-4-1':   { attack: -1.4, defense: 2.1, attackBias: -2 },
+  '4-1-4-1': { attack: 0.2, defense: 1.1, attackBias: 0 },
+  '4-5-1':   { attack: -0.7, defense: 1.5, attackBias: -1 },
 });
 
 const POSITION_NEIGHBOURS = Object.freeze({
@@ -42,26 +50,12 @@ const LEGACY_POSITIONS = {
   RWB: 'RB', LWB: 'LB', RM: 'RW', LM: 'LW',
 };
 
-const OBSERVED_2026_27 = Object.freeze({
-  barcelona: {
-    formation: '4-3-3', alternate: '4-2-3-1',
-    source: 'https://fbref.com/en/squads/206d90db/2026-2027/matchlogs/c8/schedule/Barcelona-Scores-and-Fixtures-Champions-League',
-  },
-  atletico: {
-    formation: '4-4-2', alternate: '4-2-3-1',
-    source: 'https://www.eurosport.es/futbol/la-liga/2026-2027/live-atletico-de-madrid-barcelona_mtc21891305/live-lineup.shtml',
-  },
-  realmadrid: {
-    formation: '4-2-3-1', alternate: '4-3-3',
-    source: 'https://cadenaser.com/resultados/futbol/primera/2026_2027/directo/regular_a_1_6a4496c62a73177/alineaciones/',
-  },
-});
-
 // Los sistemas de cuatro defensas son el punto de partida más frecuente;
 // el ajuste por plantilla puede superar esta preferencia.
 const FORMATION_PRIOR = {
   '4-4-2': 0.22, '4-3-3': 0.32, '4-2-3-1': 0.34,
   '3-5-2': 0.14, '3-4-3': 0.08, '5-3-2': 0.08,
+  '5-4-1': 0.06, '4-1-4-1': 0.10, '4-5-1': 0.07,
 };
 
 export function normalizePosition(position) {
@@ -150,9 +144,14 @@ export function createClubTacticalIdentity(club, baseOverall = 70, leagueId = ''
     return { formation, score: fitness * 4 + favorable * 0.12 + variation * 0.7 + FORMATION_PRIOR[formation] };
   }).sort((a, b) => b.score - a.score);
 
-  const observed = OBSERVED_2026_27[id];
-  const formation = observed?.formation || ranked[0].formation;
-  const alternate = observed?.alternate || ranked.find(x => x.formation !== formation)?.formation || '4-4-2';
+  const observed = OBSERVED_MATCHLOGS_2026_27[id];
+  const formation = observed?.preferred || ranked[0].formation;
+  const observedAlternates = observed ? Object.entries(observed.formations)
+    .filter(([name, appearances]) => name !== formation && appearances >= 2 && FORMATION_ROLES[name])
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) : [];
+  // Una aparición aislada no basta para declarar un sistema alternativo real.
+  const alternate = observedAlternates[0]?.[0]
+    || ranked.find(x => x.formation !== formation)?.formation || '4-4-2';
   return {
     season: '2026/27',
     formation,
@@ -162,7 +161,11 @@ export function createClubTacticalIdentity(club, baseOverall = 70, leagueId = ''
     tempo: style.tempo,
     playStyle: style.playStyle,
     manager: { risk: style.risk, adaptability: style.adaptability },
-    sourceType: observed ? 'observed-match-2026/27' : 'estimated-from-roster',
+    sourceType: observed ? 'observed-matchlogs-2026/27' : 'estimated-from-roster',
     source: observed?.source || null,
+    observedGames: observed?.fixtures || 0,
+    observedFormationMatches: observed?.formations[formation] || 0,
+    sourceScope: observed?.scope || null,
+    alternateSourceType: observedAlternates.length ? 'observed-matchlogs-2026/27' : 'estimated-from-roster',
   };
 }

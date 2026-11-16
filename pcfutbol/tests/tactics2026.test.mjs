@@ -31,12 +31,12 @@ test('272 clubes reciben identidad distinta y fuentes o marcas de estimación', 
     assert.ok(FORMATION_ROLES[identity.formation], club.name);
     assert.ok(FORMATION_ROLES[identity.alternate], club.name);
     assert.notEqual(identity.formation, identity.alternate, club.name);
-    assert.ok(['observed-match-2026/27', 'estimated-from-roster'].includes(identity.sourceType));
-    if (identity.sourceType === 'observed-match-2026/27') assert.match(identity.source, /^https:\/\//);
+    assert.ok(['observed-matchlogs-2026/27', 'estimated-from-roster'].includes(identity.sourceType));
+    if (identity.sourceType === 'observed-matchlogs-2026/27') assert.match(identity.source, /^https:\/\//);
     if (identity.sourceType === 'estimated-from-roster') assert.equal(identity.source, null);
     formations.add(identity.formation);
   }
-  assert.equal(formations.size, 6);
+  assert.ok(formations.size >= 9);
   assert.equal(clubs.find(c => c.id === 'barcelona').tacticalIdentity.formation, '4-3-3');
   assert.equal(clubs.find(c => c.id === 'atletico').tacticalIdentity.formation, '4-4-2');
   assert.equal(clubs.find(c => c.id === 'realmadrid').tacticalIdentity.formation, '4-2-3-1');
