@@ -31,6 +31,25 @@ new Function('trackData','apexPitLaneJsonProfile','apexNearestTrackSurfaceY','ap
 assert.equal(points[0].y,2,'Entry joins the active road elevation');
 assert.equal(points[2].y,3,'Exit joins the active road elevation');
 assert.ok(points[1].y<1,'Interior elevation is taken from the profile');
+const savedSvg=read('circuits/svg/apex26_01-australia_circuito-propuesta-20261111-v2.svg');
+const rejoinGroup=savedSvg.slice(savedSvg.indexOf('id="APEX_PIT_REJOIN"'));
+const rejoinTag=rejoinGroup.match(/<polygon\b[^>]*>/)[0];
+const attrs=Object.fromEntries([...rejoinTag.matchAll(/([\w-]+)="([^"]*)"/g)].map(m=>[m[1],m[2]]));
+const verts=attrs.points.split(/\s+/).map(p=>p.split(',').map(Number));
+const landmark=section(core,'function apexSvgLandmarkExact(', 'function apexAuthoredCurbMesh(');
+const surfaceY=section(core,'function apexSvgSurfaceMarkingY(', 'function apexCompileCrosswalkTriangles(');
+const imported=new Function('apexPitSpeedMarkColor','apexSvgSampleMounted','nearestTrackState','proposalWorldAnchor','poseAt',
+ 'apexSvgReadAppearance','apexSvgSurfaceColor','apexIsCurbAuthoringMark','envProfile','apexNearestTrackSurfaceY',
+ 'apexNearestGradeSegment','apexWorldGroundY',landmark+surfaceY+'return apexSvgLandmarkExact;')(
+ ()=>null,()=>verts,()=>({s:0,lat:2}),()=>({}),()=>null,()=>({}),
+ el=>el.getAttribute('fill'),()=>false,()=>({half:5}),()=>3,()=>null,()=>0)(
+ {localName:'polygon',closest:s=>s==='#APEX_PIT_REJOIN',getAttribute:k=>attrs[k]??null},0,{toWorld:p=>p});
+assert.match(read('parts/part-023.txt'),/querySelectorAll\('[^']*#APEX_PIT_REJOIN polygon/);
+assert.equal(imported.type,'marking');
+assert.equal(imported.markingKind,'PIT_REJOIN');
+assert.equal(imported.color,attrs.fill);
+assert.deepEqual(imported.worldFootprint,verts);
+assert.ok(imported.worldY.every(y=>y===3),'Paint follows road grade');
 const separated=api.merge(sg(16,16));
 assert.equal(separated.a.width,6);
 assert.equal(separated.b.width,6);

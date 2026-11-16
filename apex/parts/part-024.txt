@@ -630,7 +630,10 @@ function apexForestScatter(poly,seedText,count=18){
  if(!Array.isArray(poly)||poly.length<3)return[];let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(const p of poly){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])}let seed=apexStringHash(seedText),out=[],tries=0;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};while(out.length<count&&tries<count*18){tries++;const x=minX+rnd()*(maxX-minX),z=minZ+rnd()*(maxZ-minZ);if(apexPointInPolyXZ(x,z,poly))out.push([x,z,apexWorldGroundY(x,z)])}return out;
 }
 function apexSvgLandmarkExact(el,index,ctx){
- const sourceRole=String(el.getAttribute('data-apex-role')||'').trim().toLowerCase(),rawType=String(el.getAttribute('data-apex-type')||roleNameToImportType(sourceRole)||'').trim();if(!rawType||sourceRole==='advertising')return null;
+ const pitRejoin=el.localName==='polygon'&&!!el.closest('#APEX_PIT_REJOIN');
+ const sourceRole=pitRejoin?'pit-rejoin':String(el.getAttribute('data-apex-role')||'').trim().toLowerCase();
+ const rawType=pitRejoin?'marking':String(el.getAttribute('data-apex-type')||roleNameToImportType(sourceRole)||'').trim();
+ if(!rawType||sourceRole==='advertising')return null;
  const pitSpeedColor=apexPitSpeedMarkColor(sourceRole);
  let pts=apexSvgSampleMounted(ctx.root,el,{step:5}).map(ctx.toWorld);
  if(pitSpeedColor&&el.localName==='line'){
@@ -654,7 +657,10 @@ function apexSvgLandmarkExact(el,index,ctx){
    if(type==='terrainZone')node.color=node.color||'#667a4d';
    if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
-   if(type==='marking'){node.markingKind=/^pit-speed-limit-(start|end)$/.test(sourceRole)?'PIT_SPEED_LIMIT':sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||pitSpeedColor||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
+   if(pitRejoin){
+    node.markingKind='PIT_REJOIN';
+    node.color=apexSvgSurfaceColor(el)||'#8ee5ff';
+   }else if(type==='marking'){node.markingKind=/^pit-speed-limit-(start|end)$/.test(sourceRole)?'PIT_SPEED_LIMIT':sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||pitSpeedColor||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
   if(apexIsCurbAuthoringMark(node)){
    node.width=wAttr||1.25;node.curbRuns=apexSvgElementWorldRunsExact(ctx,el,1.5);node.worldPath=node.curbRuns[0]||[];
    const dash=parseFloat(getComputedStyle(el).strokeDasharray),m=apexSvgRelativeMatrix(ctx.root,el),scale=m?Math.hypot(m.a,m.b):1;
@@ -1964,14 +1970,14 @@ function apexGroundPatchYOffset(it){
  const t=String(it&&it.type||'').toLowerCase();
  if(t==='surfacezone')return -.055;
  if(t==='water')return -.010;
- if(t==='marking')return .025;
+ if(t==='marking')return it.markingKind==='PIT_REJOIN'?.055:.025;
  return .002;
 }
 function apexGroundPatchDepthBias(it){
  const t=String(it&&it.type||'').toLowerCase();
  if(t==='surfacezone')return .045;
  if(t==='water')return .012;
- if(t==='marking')return -.020;
+ if(t==='marking')return it.markingKind==='PIT_REJOIN'?-.080:-.020;
  return .006;
 }
 
@@ -2240,6 +2246,11 @@ function apexSvgSurfaceMarkingY(it,x,z){
   const st=nearestTrackState(x,z,null,{radius:48,allowGlobal:true,fallbackDist:42});
   if(st&&Number.isFinite(st.s)){
    const env=envProfile(st.s);
+   if(it.sourceRole==='pit-rejoin'){
+    if(Math.abs(st.lat)<=env.half)return apexNearestTrackSurfaceY(x,z);
+    const pit=apexNearestGradeSegment(x,z,'PIT',12);
+    if(pit&&pit.dist<=pit.width*.5+.5)return pit.y;
+   }
    if(Math.abs(st.lat)<=env.half+env.curb+2)return apexAlignedCircuitSurfaceY(x,z);
   }
  }
