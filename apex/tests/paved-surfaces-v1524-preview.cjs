@@ -12,6 +12,30 @@ function extract(src,start,end){
  assert.ok(a>=0&&b>a,'Missing '+start);
  const block=src.slice(a,b);new vm.Script(block);return block;
 }
+const colors=extract(core,'function apexRoadSvgNormalizeColorV15(', 'function apexRoadTextureHashV15(');
+const cssProbe={
+ color:'#000000',
+ get fillStyle(){return this.color;},
+ set fillStyle(value){
+  if(/^#[0-9a-f]{6}$/i.test(value))this.color=value.toLowerCase();
+  if(value==='black')this.color='#000000';
+ }
+};
+const svgTrack={spec:{dir:'01-australia'}};
+const svgRoot={querySelector:selector=>selector.includes('track_centerline')?{
+ getAttribute:name=>name==='stroke'?'rgb(51,55,59)':null
+}:null,getAttribute:()=>null};
+const colorApi=new Function('document','DOMParser','trackData','readEffectiveTrackSvg',
+ 'apexWeatherDarkness','apexWeatherWetFactor','shadeColor',
+ colors+'return {normalize:apexRoadSvgNormalizeColorV15,pit:apexPitAsphaltColorV152};')(
+ {createElement:()=>({getContext:()=>cssProbe})},
+ class {parseFromString(){return {documentElement:svgRoot};}},
+ svgTrack,()=>({rawSvg:'<svg/>'}),()=>0,()=>0,hex=>hex);
+assert.equal(colorApi.normalize(''),null);
+assert.equal(colorApi.normalize('none'),null);
+assert.equal(colorApi.normalize('black'),'#000000');
+assert.equal(colorApi.pit(),'#33373b','pit without a colour override inherits the track asphalt');
+assert.equal(svgTrack._apexV152PitSvgColor,null);
 const kind=extract(render,'function apexSurfaceMaterialKindV152(', 'function apexPavedExtraGpuZonesV1524(');
 const material=new Function(kind+'return apexSurfaceMaterialKindV152;')();
 for(const name of ['ASPHALT','ROAD','CITY','PLAZA','SERVICE','PIT','PITLANE','PIT_WORK','PADDOCK','PARKING','APRON','TARMAC'])

@@ -45,6 +45,10 @@ for(const key of ['entryS','exitS']){
   }
  }
 }
+const longExit={...sg(4,3),s1:0,s2:20,exitS:120};
+assert.equal(api.profile(longExit,0).merge,false,'asphalt overlap is still limited to the exit');
+assert.equal(api.profile(longExit,0).paintCrossesTrack,true,'paint follows crossings outside the asphalt overlap window');
+assert.equal(api.profile(sg(16,16),0).paintCrossesTrack,false,'isolated pit edges do not get overlapping paint');
 const overpass={...sg(3,3,8),entryS:0,exitS:20,s1:0,s2:20};
 assert.equal(api.profile(overpass,0).paintEdges,null);
 const opposite=api.merge(sg(-7,-7));

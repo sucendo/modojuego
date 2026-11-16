@@ -22,7 +22,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   nx=-dz/len,nz=dx/len;
  const left=Math.max(.05,Number(end?sg.visualLeftB:sg.visualLeftA)||sg.leftWidth||sg.width*.5),
   right=Math.max(.05,Number(end?sg.visualRightB:sg.visualRightA)||sg.rightWidth||sg.width*.5);
- let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false,paintEdges=null;
+ let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false,paintEdges=null,paintCrossesTrack=false;
  const st=nearestTrackState(x,z,null);
  if(st&&Number.isFinite(st.lat)&&Number.isFinite(st.s)){
   const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),
@@ -36,20 +36,22 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
    // Track-facing edge can be the left OR right of the pit path.
    side=dot>=0?1:-1;
    merge=Number.isFinite(sg.exitS)&&sg.exitS-(end?sg.s2:sg.s1)<=45;
-   const pitS=end?sg.s2:sg.s1;
-   if(merge||Number.isFinite(sg.entryS)&&pitS-sg.entryS<=45){
-    // Keep both authored lane edges when the main road supplies the asphalt.
-    // Project the paint onto the road or the pit grade independently.
-    const paintPoint=lat=>{
-     const offset=off+dot*lat;
-     const height=offset<=0?edge.y+Math.tan(frame.bank||0)*bankSide*offset:y;
-     return {x:x+nx*lat,y:height+.045,z:z+nz*lat};
-    };
-    paintEdges=[
-     [paintPoint(lo),paintPoint(lo+.09)],
-     [paintPoint(hi),paintPoint(hi-.09)]
-    ];
-   }
+   // The asphalt overlap window does not bound the white lines. Use the
+   // original pit edges and the full main-road width to locate the crossing.
+   const otherEdge=apexTrackEdgeSection(frame,env,-bankSide).end;
+   const trackWidth=bankSide*((edge.x-otherEdge.x)*frame.nx+(edge.z-otherEdge.z)*frame.nz);
+   const paintInside=offset=>offset<=0&&offset>=-trackWidth;
+   const lowerOffset=off+dot*lo,upperOffset=off+dot*hi;
+   paintCrossesTrack=Math.min(lowerOffset,upperOffset)<=0&&Math.max(lowerOffset,upperOffset)>=-trackWidth;
+   const paintPoint=lat=>{
+    const offset=off+dot*lat;
+    const height=paintInside(offset)?edge.y+Math.tan(frame.bank||0)*bankSide*offset:y;
+    return {x:x+nx*lat,y:height+.045,z:z+nz*lat};
+   };
+   paintEdges=[
+    [paintPoint(lo),paintPoint(lo+.09)],
+    [paintPoint(hi),paintPoint(hi-.09)]
+   ];
    // Keep the authored exit over the track edge only within the merge.
    const overlap=merge?.55:0;
    trackSlope=Math.tan(frame.bank||0)*dot*bankSide;
@@ -67,7 +69,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  }
  const width=Math.max(0,hi-lo);
  const p={lo,hi,near:side>0?lo:hi,far:side>0?hi:lo,
-  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,paintEdges,outerExcess};
+  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,paintEdges,paintCrossesTrack,outerExcess};
  sg[key]=p;return p;
 }
 function apexPitVisualPointV1526(p,lat,lift=.012){
@@ -2664,6 +2666,7 @@ function apexBuildUnifiedGroundAtlas(cw){
 // A root data-apex-road-color can explicitly override the track stroke.
 function apexRoadSvgNormalizeColorV15(value){
  const raw=String(value||'').trim();
+ if(!raw)return null;
  if(/^#[0-9a-f]{6}$/i.test(raw))return raw.toLowerCase();
  if(/^#[0-9a-f]{3}$/i.test(raw))return '#'+raw.slice(1).split('').map(x=>x+x).join('').toLowerCase();
  const rgb=raw.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
@@ -2675,6 +2678,8 @@ function apexRoadSvgNormalizeColorV15(value){
   if(ctx){
    ctx.fillStyle='#010203';ctx.fillStyle=raw;
    const css=String(ctx.fillStyle||'').toLowerCase();
+   ctx.fillStyle='#040506';ctx.fillStyle=raw;
+   if(css!==String(ctx.fillStyle||'').toLowerCase())return null;
    if(/^#[0-9a-f]{6}$/.test(css))return css;
    const m=css.match(/^rgb\(\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\s*\)$/);
    if(m)return '#'+[1,2,3].map(i=>Math.min(255,+m[i]).toString(16).padStart(2,'0')).join('');
@@ -6481,7 +6486,7 @@ function collectExactPitRenderItems(cam){
     b=lat=>worldToCamera(sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat,cam);
    const toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
    const first=apexPitVisualMergeProfileV1526(sg,0),last=apexPitVisualMergeProfileV1526(sg,1);
-   const mergePaint=first.paintEdges&&last.paintEdges&&(first.clipped||last.clipped);
+   const mergePaint=first.paintEdges&&last.paintEdges&&(first.paintCrossesTrack||last.paintCrossesTrack);
    const merged=apexPitMergeQuadV1526(sg);
    if(merged){
     const {a:pa,b:pb,quad}=merged;
