@@ -9,9 +9,9 @@ const core=read('parts/part-024.txt'),
 function section(src,from,to){const a=src.indexOf(from),b=src.indexOf(to,a);
  assert.ok(a>=0&&b>a,'missing '+from);const part=src.slice(a,b);new vm.Script(part);return part;}
 const code=section(core,'function apexPitVisualMergeProfileV1526(', 'function nearestPitState(');
-const api=new Function('nearestTrackState','envProfile','renderRibbonFrameAt','apexTrackEdgeSection',
+const api=new Function('nearestTrackState','envProfile','renderRibbonFrameAt','apexTrackEdgeSection','terrainEase',
  code+'return {profile:apexPitVisualMergeProfileV1526,point:apexPitVisualPointV1526,merge:apexPitMergeQuadV1526};')(
- (x,z)=>({s:x,lat:z}),()=>({half:5}),()=>({nx:0,nz:1}),(frame,env,side)=>({end:{x:0,y:0,z:side*env.half}}));
+ (x,z)=>({s:x,lat:z}),()=>({half:5}),()=>({nx:0,nz:1}),(frame,env,side)=>({end:{x:0,y:0,z:side*env.half}}),x=>{const t=Math.max(0,Math.min(1,x));return t*t*(3-2*t);});
 const sg=(a,b,y=0)=>({x1:0,z1:a,y1:y,x2:20,z2:b,y2:y,width:6,leftWidth:3,rightWidth:3,len:Math.hypot(20,b-a)});
 const joinedSegments=new Function('trackData',section(core,'function apexPitSegments(', 'function apexPitVisualMergeProfileV1526(')+'return apexPitSegments();')(
  {customWorld:{pitNetwork:{runs:[{width:6,points:[
@@ -79,7 +79,7 @@ assert.ok(overlap.a.merge&&overlap.b.merge);
 assert.ok(Math.abs(overlap.quad[2].z-4.45)<1e-9,'pit exit crosses the main edge by 55 cm');
 assert.ok(overlap.quad[2].y>0,'pit asphalt sits above the track at the join');
 assert.match(core,/apexClipTerrainAtPit\(poly\)\?\?\[poly\]/,'main paint cedes to the pit footprint');
-assert.match(render,/paved&&!d.material.merge/,'pit overlap is drawn after the main road');
+assert.match(render,/if\(merge\)lane.push/,'pit overlap uses the same textured mesh as the rest of the lane');
 for(const key of ['entryS','exitS']){
  const joined={...sg(1,1),s1:0,s2:20,[key]:key==='entryS'?0:20};
  assert.equal(api.merge(joined),null,'main asphalt is already underneath');
@@ -93,10 +93,15 @@ for(const key of ['entryS','exitS']){
   }
  }
 }
-const longExit={...sg(4,3),s1:0,s2:20,exitS:120};
+const longExit={...sg(4,3),s1:0,s2:20,exitS:140};
 assert.equal(api.profile(longExit,0).merge,false,'asphalt overlap is still limited to the exit');
 assert.equal(api.profile(longExit,0).paintCrossesTrack,true,'paint follows crossings outside the asphalt overlap window');
 assert.equal(api.profile(sg(16,16),0).paintCrossesTrack,false,'isolated pit edges do not get overlapping paint');
+const narrowMerge={...sg(8.4,8.4),s1:0,s2:20,entryS:0};
+const narrowQuad=api.merge(narrowMerge);
+assert.ok(narrowQuad.overlap&&narrowQuad.quad[1].z<5,'A short entrance gap is covered by the paved merge');
+const distinctLane=api.merge({...sg(9.2,9.2),s1:0,s2:20,entryS:0});
+assert.ok(!distinctLane.overlap&&distinctLane.quad[1].z>5,'A wider median remains separate');
 const overpass={...sg(3,3,8),entryS:0,exitS:20,s1:0,s2:20};
 assert.equal(api.profile(overpass,0).paintEdges,null);
 const opposite=api.merge(sg(-7,-7));

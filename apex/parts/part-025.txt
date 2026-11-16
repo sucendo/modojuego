@@ -530,7 +530,7 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
 // Stored fine cells contain cut geometry and heights. Invalidate copies
 // compiled before the SVG curb/escape-area and shared-edge changes.
-const APEX_CIRCUIT_COMPILE_REV=230699;
+const APEX_CIRCUIT_COMPILE_REV=230700;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){
@@ -3363,7 +3363,7 @@ function apexPavedExtraGpuZonesV1524(){
    // The static GPU atlas uses the SAME pit merge mesh as Canvas and
    // the painted 3-D separator, never the legacy full-width rectangle.
    const merge=apexPitMergeQuadV1526(sg);
-   if(merge&&!merge.overlap)lane.push(merge.quad.map(p=>[p.x,p.y,p.z]));
+   if(merge)lane.push(merge.quad.map(p=>[p.x,p.y,p.z]));
    if(!pn.workFootprints?.length&&work&&sg.s2>=work.start&&sg.s1<=work.end){
     const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8),
      outer=t=>inner+side*apexPitWorkWidthAt(work,t);
@@ -4394,7 +4394,7 @@ function webglPushExactPitLane(cam,pitch){
   const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;
   if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}
   const paved=d.material&&(!d.color||d.material.kind==='PIT_WORK');
-  if(!(baked&&paved&&!d.material.merge))
+  if(!(baked&&paved))
    webglPushCamQuad(A,B,C,D,pitch,paved?apexSurfaceTintV152(d.material.kind||'PITLANE',d.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152(),d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.material?.merge?(paved?-.055:-.075):d.color==='#ffe16a'?-.034:-.022);
   // Markings are own 3-D quads assembled by collectExactPitRenderItems().
  }

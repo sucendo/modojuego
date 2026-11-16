@@ -27,7 +27,7 @@ function apexPitSegments(){
    const a=pts[i],b=pts[i+1],aw=width(a),bw=width(b),
     al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,
     ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;
-   segs.push({runId:r.id,exitS:pts.at(-1).pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,
+   segs.push({runId:r.id,entryS:pts[0].pitS,exitS:pts.at(-1).pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,
     visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,visualNormalA:cuts[i],visualNormalB:cuts[i+1],
     x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len:Math.hypot(b.x-a.x,b.z-a.z)});
   }
@@ -60,7 +60,8 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   if(Math.abs(trackY-y)<1.25&&Math.abs(dot)>.075){
    // Track-facing edge can be the left OR right of the pit path.
    side=dot>=0?1:-1;
-   merge=Number.isFinite(sg.exitS)&&sg.exitS-(end?sg.s2:sg.s1)<=45;
+   const pitS=end?sg.s2:sg.s1;
+   merge=(pitS-sg.entryS<=90)||(sg.exitS-pitS<=90);
    // The asphalt overlap window does not bound the white lines. Use the
    // original pit edges and the full main-road width to locate the crossing.
    const otherEdge=apexTrackEdgeSection(frame,env,-bankSide).end;
@@ -77,8 +78,14 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
     [paintPoint(lo),paintPoint(lo+.09)],
     [paintPoint(hi),paintPoint(hi-.09)]
    ];
-   // Keep the authored exit over the track edge only within the merge.
-   const overlap=merge?.55:0;
+   // Close narrow wedges at a same-level merge. Keep a wider separation
+   // between independent roads and ease out the extension at its threshold.
+   const overlap=merge?.55:0,nearOffset=Math.min(lowerOffset,upperOffset);
+   if(merge&&nearOffset>-overlap&&nearOffset<1){
+    const extension=(nearOffset+overlap)*terrainEase((1-nearOffset)/.4);
+    if(dot>0)lo-=extension/dot;
+    else hi-=extension/dot;
+   }
    trackSlope=Math.tan(frame.bank||0)*dot*bankSide;
    trackY-=Math.tan(frame.bank||0)*bankSide*overlap;
    const vLo=off+overlap+dot*lo,vHi=off+overlap+dot*hi;
