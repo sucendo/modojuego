@@ -1,6 +1,6 @@
 import { GameState } from '../state.js';
 import { getUserClub } from '../game/selectors.js';
-import { updateQuickNotes } from './medical.js';
+import { updateDashboardExtras } from './dashboardExtras.js';
 import { getFixtureKickoffDate, formatGameDateLabel } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
 
@@ -223,6 +223,15 @@ export function updateDashboard() {
   if (cashLabel) cashLabel.textContent = formatCurrency(club.cash ?? 0);
   if (wageLabel) wageLabel.textContent = formatCurrency(club.wageBudget ?? 0);
 
+  const simTime = GameState.currentTimeISO ? new Date(GameState.currentTimeISO) : null;
+  if (simTime && !Number.isNaN(simTime.getTime())) {
+    if (hubSimDate) hubSimDate.textContent = capFirst(simTime.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }));
+    if (hubSimTime) hubSimTime.textContent = simTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  } else {
+    if (hubSimDate) hubSimDate.textContent = `Temporada ${GameState.currentDate?.season || 1} · Jornada ${GameState.currentDate?.matchday || 1}`;
+    if (hubSimTime) hubSimTime.textContent = 'Preparación';
+  }
+
   // Próximo partido
   const nextMatchLabel = document.getElementById('next-match-label');
   const shouldRenderNext = Boolean(
@@ -254,8 +263,6 @@ export function updateDashboard() {
       if (hubNextHint) hubNextHint.textContent = hudNextSub?.textContent || '';
 
       // Centro: limpiar tarjeta si existe
-      if (hubSimDate) hubSimDate.textContent = '—';
-      if (hubSimTime) hubSimTime.textContent = '—';
       if (hubNextHomeCoat) hubNextHomeCoat.innerHTML = '';
       if (hubNextAwayCoat) hubNextAwayCoat.innerHTML = '';
       if (hubNextHomeName) hubNextHomeName.textContent = '—';
@@ -312,11 +319,6 @@ export function updateDashboard() {
           hudNextLogo.removeAttribute('alt');
         }
       }
-      // HUB: bajo el botón PARTIDO, lo mismo pero un poco más grande
-      // Centro: “fecha/hora del simulador” (tomamos la del próximo partido)
-      if (hubSimDate) hubSimDate.textContent = `${weekday ? weekday + ' ' : ''}${dateLabel}`;
-      if (hubSimTime) hubSimTime.textContent = timeLabel || '—';
-
       // Centro: tarjeta detallada (si existe el markup nuevo)
       const hasNewCard = Boolean(hubNextHomeName && hubNextAwayName && hubNextComp && hubNextVenue2 && hubNextDate2 && hubNextTime2);
       if (hasNewCard) {
@@ -371,6 +373,5 @@ export function updateDashboard() {
     }
   }
 
-  // Notas rápidas (las mantiene medical.js)
-  updateQuickNotes();
+  updateDashboardExtras();
 }

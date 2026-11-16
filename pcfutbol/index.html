@@ -132,7 +132,10 @@
 				</div>
 		
 				<div class="pcf-hud__center">
-
+					<div class="pcf-center__now" aria-label="Fecha y hora del simulador">
+						<div id="hub-sim-date" class="pcf-center__now-date">—</div>
+						<div id="hub-sim-time" class="pcf-center__now-time">—</div>
+					</div>
 				</div>
 		
 				<div class="pcf-hud__right">
@@ -163,8 +166,19 @@
 				</div>
 			</header>
 			
-			<nav class="top-bar">
-				<div class="top-bar-left top-bar-nav">
+			<nav class="top-bar pcf-shortcuts" aria-label="Accesos rápidos configurables">
+				<div class="pcf-shortcuts__main">
+					<span class="pcf-shortcuts__title">★ Mis accesos rápidos</span>
+					<div id="pcf-shortcuts-list" class="pcf-shortcuts__list"></div>
+					<button id="pcf-shortcuts-edit" type="button" class="pcf-shortcuts__edit" aria-expanded="false" aria-controls="pcf-shortcuts-picker" aria-label="Personalizar accesos rápidos">＋</button>
+				</div>
+				<div id="pcf-shortcuts-picker" class="pcf-shortcuts__picker hidden" aria-label="Selecciona tus accesos rápidos">
+					<strong>Personalizar accesos</strong>
+					<div id="pcf-shortcuts-options" class="pcf-shortcuts__options"></div>
+					<button id="pcf-shortcuts-close" class="btn btn-secondary" type="button">Listo</button>
+				</div>
+				<!-- Los botones originales siguen presentes como destinos de navegación. -->
+				<div class="top-bar-left top-bar-nav pcf-nav-hooks" hidden>
 					<button id="btn-nav-dashboard" class="btn btn-link">Dashboard</button>
 					<button id="btn-nav-squad" class="btn btn-link">Plantilla</button>
 					<button id="btn-nav-transfermarket" class="btn btn-link">Fichajes</button>
@@ -184,8 +198,12 @@
 			<!-- SUBVISTA: DASHBOARD (HUB) -->
 			<section id="view-dashboard" class="pcf-hub">
 				<div class="pcf-hub__grid">
+					<aside class="pcf-panel pcf-inbox" aria-label="Gestiones pendientes del club">
+						<header class="pcf-panel__head"><h2>▣ Gestiones pendientes <span id="pcf-inbox-count" class="pcf-feed-count">0</span></h2></header>
+						<div id="pcf-inbox-list" class="pcf-feed-list" aria-live="polite"></div>
+					</aside>
 					<article class="pcf-panel pcf-panel--competitions">
-						<header class="pcf-panel__head"><h2>COMPETICIONES</h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">COMPETICIONES <span aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="stats">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -219,7 +237,7 @@
 					</article>
 
 					<article class="pcf-panel pcf-panel--style">
-						<header class="pcf-panel__head"><h2>ESTILO DE JUEGO</h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">ESTILO DE JUEGO <span aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="alignment">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -253,7 +271,7 @@
 					</article>
 
 					<article class="pcf-panel pcf-panel--market">
-						<header class="pcf-panel__head"><h2>MERCADO Y FICHAJES</h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">MERCADO Y FICHAJES <span aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="squad">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -287,7 +305,7 @@
 					</article>
 
 					<article class="pcf-panel pcf-panel--club">
-						<header class="pcf-panel__head"><h2>CLUB Y ESTADIO</h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">CLUB Y ESTADIO <span aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" disabled>
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -321,21 +339,11 @@
 					</article>
 
 					<article class="pcf-center">
-						<!-- Fecha/hora del simulador (derivada del próximo partido) -->
-						<div class="pcf-center__now" aria-label="Fecha y hora del simulador">
-							<div id="hub-sim-date" class="pcf-center__now-date">—</div>
-							<div id="hub-sim-time" class="pcf-center__now-time">—</div>
-						</div>
-
 						<div class="pcf-center__ball" aria-hidden="true">
 							<img src="img/resources/balonfutbol.svg" alt="" loading="lazy" />
 						</div>
 
-						<button id="btn-go-next-match" class="pcf-big-action" data-nav-target="nextmatch" data-set-current-md="1">
-							PARTIDO
-						</button>
-
-						<!-- Próximo partido (tarjeta estilo captura) -->
+						<!-- Próximo partido: centrado, antes de la acción principal. -->
 						<div id="hub-next-hint" class="pcf-nextcard" aria-label="Próximo partido">
 							<div class="pcf-nextcard__teams">
 								<div class="pcf-nextcard__team">
@@ -375,14 +383,25 @@
 								</div>
 							</div>
 						</div>
+						<button id="btn-go-next-match" class="pcf-big-action" data-nav-target="nextmatch" data-set-current-md="1">
+							<span aria-hidden="true">▶</span> PARTIDO
+						</button>
 					</article>
 
-					<aside class="pcf-panel pcf-notes">
-						<header class="pcf-panel__head"><h2>NOTAS RÁPIDAS</h2></header>
-						<ul id="quick-notes"></ul>
+					<aside class="pcf-panel pcf-news" aria-label="Noticias del mundo del fútbol">
+						<header class="pcf-panel__head"><h2>▤ Actualidad</h2></header>
+						<div id="pcf-news-list" class="pcf-feed-list" aria-live="polite"></div>
+						<p class="pcf-news__caption">Noticias generadas por los acontecimientos de tu partida.</p>
 					</aside>
 				</div>
 			</section>
+			<nav class="pcf-mobile-nav" aria-label="Navegación móvil">
+				<button type="button" data-nav-target="dashboard"><span aria-hidden="true">⌂</span>Inicio</button>
+				<button type="button" data-nav-target="squad"><span aria-hidden="true">♟</span>Plantilla</button>
+				<button type="button" data-nav-target="nextmatch"><span aria-hidden="true">⚽</span>Partido</button>
+				<button type="button" data-nav-target="transfermarket"><span aria-hidden="true">⇄</span>Fichajes</button>
+				<button type="button" id="pcf-mobile-more"><span aria-hidden="true">•••</span>Más</button>
+			</nav>
 
 			
 			<!-- SUBVISTA: MERCADO DE FICHAJES -->
