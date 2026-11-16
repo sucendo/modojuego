@@ -9,7 +9,8 @@ import { initNegotiationUI, prepareNegotiationUI, evaluateRenewalOffer, attemptR
 function setup() {
   newGame({ leagueId: 'league_es_primera', clubId: 'realmadrid' });
   const club = GameState.clubs.find(c => c.id === 'realmadrid');
-  const player = club.players.find(p => p.name === 'Andriy Lunin');
+  // Se mantienen identificadores estables aunque se corrija el nombre oficial.
+  const player = club.players.find(p => p.id === 'rm_lunin');
   assert.ok(player);
   return { club, player };
 }

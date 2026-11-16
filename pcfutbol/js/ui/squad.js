@@ -88,7 +88,7 @@ function getEstado(player) {
 function getFichaBadge(player) {
   const season = GameState.currentDate?.season || 1;
   const key = String(season);
-  const hasBio = !!(player.birthDate && player.nationality && player.name && player.shirtNumber != null && !player.shirtNumberEstimated);
+  const hasBio = player.biographyVerified === true && !!(player.birthDate && player.nationality && player.name && player.shirtNumber != null && !player.shirtNumberEstimated);
   const hasAttrs = !!(player.attributes?.technical && player.attributes?.mental && player.attributes?.physical);
   const hasStats = !!(player.stats && player.stats[key]); // existe aunque sea 0s
 

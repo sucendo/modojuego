@@ -9,6 +9,7 @@ import { GameState, newGame } from '../js/state.js';
 import { getLeagueRoundDates, LEAGUE_CALENDARS } from '../js/game/seasonCalendar.js';
 import { searchTransferMarket } from '../js/game/transferMarket.js';
 import { getCoatUrlForClubId } from '../js/ui/utils/coats.js';
+import { getFlagUrlForNationality, getFlagEmojiForNationality } from '../js/ui/utils/flags.js';
 
 const base = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -25,6 +26,39 @@ test('Villarreal: 27 jugadores con nombre, nacionalidad, nacimiento, edad y dors
     assert.equal(player.ageEstimated, false);
     assert.equal(player.shirtNumberEstimated, false);
     assert.ok(player.age >= 17 && player.age <= 40);
+  }
+});
+
+test('Primera 2026/27: las 540 fichas de los 20 clubes tienen biografía y dorsal contrastados', () => {
+  const clubs = allLeagues.find(league => league.id === 'league_es_primera').clubs;
+  assert.equal(clubs.length, 20);
+  assert.equal(clubs.reduce((sum, club) => sum + club.players.length, 0), 540);
+  for (const club of clubs) {
+    const shirts = new Set();
+    for (const player of club.players) {
+      const context = `${club.id}: ${player.name}`;
+      assert.ok(player.biographyVerified === true, `${context} sin verificación`);
+      assert.ok(player.fullName?.includes(' '), `${context} sin nombre desarrollado`);
+      assert.ok(player.nationality, `${context} sin nacionalidad`);
+      assert.match(player.birthDate, /^\d{4}-\d{2}-\d{2}$/, `${context} sin nacimiento`);
+      const birth = new Date(`${player.birthDate}T00:00:00Z`);
+      assert.equal(birth.toISOString().slice(0, 10), player.birthDate, `${context} fecha inválida`);
+      const age = 2026 - birth.getUTCFullYear() - (
+        birth.getUTCMonth() > 7 || (birth.getUTCMonth() === 7 && birth.getUTCDate() > 14) ? 1 : 0);
+      assert.equal(player.age, age, `${context} edad incoherente al comienzo de temporada`);
+      assert.ok(age >= 15 && age <= 43, `${context} edad fuera de rango`);
+      assert.equal(player.ageEstimated, false, `${context} edad marcada como estimada`);
+      assert.ok(Number.isInteger(player.shirtNumber) && player.shirtNumber > 0 && player.shirtNumber <= 99,
+        `${context} dorsal inválido`);
+      assert.equal(player.shirtNumberEstimated, false, `${context} dorsal provisional`);
+      assert.ok(!shirts.has(player.shirtNumber), `${club.id} dorsal ${player.shirtNumber} duplicado`);
+      shirts.add(player.shirtNumber);
+      assert.match(player.shirtNumberSource, /^https:\/\/www\.laliga\.com\/clubes\//, `${context} sin fuente de dorsal`);
+      assert.match(player.biographySource, /^https:\/\//, `${context} sin fuente biográfica`);
+      const flag = getFlagUrlForNationality(player.nationality);
+      assert.ok(flag || getFlagEmojiForNationality(player.nationality), `${context} sin bandera`);
+      if (flag) assert.ok(existsSync(join(base, flag)), `${context} imagen de bandera ausente`);
+    }
   }
 });
 
