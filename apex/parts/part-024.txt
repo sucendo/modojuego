@@ -223,7 +223,13 @@ function apexUnifiedSurfaceAtWorld(x,z,opts=null){
      else if(k==='SAND')set('RUNOFF','SAND',.28,.20,.36);
      else if(k==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
      else set('RUNOFF','ASPHALT',.78,.75,.82);
-    }else if(drivable===true)set('RUNOFF','ASPHALT',.78,.75,.82);
+    }else if(drivable===true){
+     const k=terrainVisualProfile({s,env}).near;
+     if(k==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
+     else if(k==='GRAVEL')set('RUNOFF','GRAVEL',.34,.25,.42);
+     else if(k==='SAND')set('RUNOFF','SAND',.28,.20,.36);
+     else set('RUNOFF','ASPHALT',.78,.75,.82);
+    }
     else if(abs<=env.half+env.curb+env.runoff){
      if(env.runoffSurface==='GRAVEL')set('RUNOFF','GRAVEL',.34,.25,.42);
      else if(env.runoffSurface==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
@@ -1976,7 +1982,10 @@ function apexStaticBoundInView(bound,cam,far=1900,margin=1.22){
 // marking = pintura: queda ligeramente por encima para evitar z-fighting.
 function apexGroundPatchYOffset(it){
  const t=String(it&&it.type||'').toLowerCase();
- if(t==='surfacezone')return it.surfaceKind==='PIT_WORK'?.012:-.055;
+ if(t==='surfacezone'){
+  if(it.surfaceKind==='PIT_WORK')return .012;
+  return ['SAND','GRAVEL','GRASS'].includes(it.surfaceKind)?0:-.055;
+ }
  if(t==='water')return -.010;
  if(t==='marking')return it.markingKind==='PIT_REJOIN'?.055:.025;
  return .002;
@@ -2089,6 +2098,20 @@ function apexRunoffRoadClipIndex(){
   }
   prev=cur;
  }
+ if(trackData.customWorld?.curbGeometryAuthoritative){
+  // The authored curb mesh is separate from the asphalt ribbon.
+  for(const face of apexAuthoredCurbVisual()){
+   const poly=face.points.map(([x,y,z])=>({x,y,z}));
+   const [a,b,c,d]=poly;
+   const mid={x:(a.x+b.x)*.5,z:(a.z+b.z)*.5};
+   if(apexTunnelCutAt(mid.x,mid.z))continue;
+   const st=nearestTrackState(mid.x,mid.z,null);
+   const structure=apexPhase1StructureAtWorld(mid.x,mid.z,st.s);
+   if(structure?.kind==='OVER'||structure?.kind==='UNDER')continue;
+   add([a,b,c]);if(d)add([a,c,d]);
+   for(let i=0;i<poly.length;i++)seam(poly[i],poly[(i+1)%poly.length]);
+  }
+ }
  for(const sg of apexPitSegments()){
   // V15.2.7: pit terrain cut MUST equal the visible V15.2.6 merge footprint.
   // Otherwise the original rectangular, full-width pit cutter removes terrain
@@ -2118,7 +2141,8 @@ function apexTrackSeamHeight(idx,p){
     if(length2<1e-12)continue;
     const t=clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/length2,0,1),
      d=Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz);
-    if(d<=closest){closest=d;height=lerp(a.y,b.y,t);}
+    const y=lerp(a.y,b.y,t);
+    if(d<closest-1e-9||(d<=closest&&y>(height??-Infinity))){closest=d;height=y;}
    }
   }
  return height;
@@ -2244,6 +2268,7 @@ window.apexRunoffClipDiagnostics=()=>{
 };
 
 function apexSvgPavedSurfaceY(it,x,z){
+ if(/^runoff-(sand|gravel|grass)$/.test(it.sourceRole))return apexWorldGroundY(x,z);
  if(it.sourceRole==='pit-work-area'){
    const pit=apexNearestGradeSegment(x,z,'PIT',16);
    if(pit)return pit.y;
@@ -2590,10 +2615,22 @@ function apexClipGenericRunoffPolygon(poly){
   for(const part of parts)next.push(...apexInspectorSubtractFoot(part,f.foot,false));
   parts=next;if(!parts.length)break;
  }
- const area=parts.reduce((v,p)=>v+Math.abs(apexInspectorPolyArea(p)),0);
- // Evita reproyectar piezas idénticas cuando las cajas coinciden, pero
- // los polígonos no se pisan realmente.
- return origArea-area>Math.max(.00005,origArea*1e-7)?parts:null;
+ const area=parts.reduce((v,p)=>v+Math.abs(apexInspectorPolyArea(p)),0),
+  clipped=origArea-area>Math.max(.00005,origArea*1e-7);
+ const joins=[...seen].map(id=>idx.faces[id]).filter(f=>['SAND','GRAVEL','GRASS'].includes(f.kind));
+ if(!joins.length)return clipped?parts:null;
+ let snapped=false;
+ const result=(clipped?parts:[poly]).map(part=>part.map(p=>{
+  for(const f of joins){
+   if(p.x<f.minX-1e-5||p.x>f.maxX+1e-5||p.z<f.minZ-1e-5||p.z>f.maxZ+1e-5)continue;
+   const A=f.tri[0],dx=p.x-A[0],dz=p.z-A[2],u=(dx*f.vz-dz*f.vx)*f.inv,v=(f.ux*dz-f.uz*dx)*f.inv;
+   if(u<-.00001||v<-.00001||u+v>1.00001)continue;
+   const y=apexInspectorFootHeight(f.foot,p);
+   if(Math.abs(y-p.y)>1e-7&&Math.abs(y-p.y)<=.5){snapped=true;return {...p,y};}
+  }
+  return p;
+ }));
+ return clipped||snapped?result:null;
 }
 window.apexRunoffFallbackMaskDiagnostics=()=>{
  const i=trackData&&trackData._apexRunoffDriveSurfaceIndex;

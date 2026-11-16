@@ -56,6 +56,17 @@ assert.equal(api.clip(poly(5,8)),null,
  'Natural ground must survive under bridges and tunnels');
 assert.ok(index.buckets.size>0,
  'SVG runoff mask must retain the regular road footprint at crossings');
+// Exact SVG kerbs own their actual area beyond the base asphalt ribbon.
+gradeSeparated=false;data._apexRunoffRoadClipIndex=null;data.customWorld={curbGeometryAuthoritative:true};
+const curbFactory=new Function('trackData','apexRoadMeshSamples','renderRibbonFrameAt',
+ 'envProfile','ribbonWorldPoint','apexPhase1StructureAtWorld','curbInfo','clamp','lerp','apexPitSegments',
+ 'apexAuthoredCurbVisual','apexTunnelCutAt','nearestTrackState',src+'\nreturn apexClipTerrainAtDrive;');
+const curbClip=curbFactory(data,()=>[0,10],q,()=>({...env,curb:0}),ribbon,()=>null,()=>({}),
+ (v,a,b)=>Math.max(a,Math.min(b,v)),(a,b,t)=>a+(b-a)*t,()=>[],
+ ()=>[{points:[[3,1,0],[3,1,10],[5,1,10],[5,1,0]]}],()=>false,()=>({s:0}));
+const curbEdge=curbClip(poly(4,7)).flat();
+assert.ok(curbEdge.every(v=>v.x>=5-1e-8),'Terrain is clipped away from the rendered curb');
+assert.ok(curbEdge.some(v=>v.x===5&&Math.abs(v.y-1)<1e-8),'The kerb edge and terrain share a height');
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t;
 const ease=x=>{const t=clamp(x,0,1);return t*t*(3-2*t)};
 let pitActive=false,under=false;

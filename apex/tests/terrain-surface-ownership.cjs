@@ -74,6 +74,17 @@ assert.ok(runoffCut.flat().every(v=>Math.abs(v.y)<1e-7),
  'A high SVG surface must not create floating terrain triangles');
 svgIndex.faces[0].foot.poly=runoff;
 
+// A real soft-surface join closes at the triangle's grade. Distant
+// elevated surfaces and extension lines keep the original terrain height.
+const sand=[point(6,0,.12),point(8,0,.12),point(6,10,.12)];
+svgIndex.faces[0]={kind:'SAND',tri:sand.map(v=>[v.x,v.y,v.z]),ux:2,uz:0,vx:0,vz:10,inv:.05,
+ foot:{poly:sand,bounds:bbox(sand)},minX:6,maxX:8,minZ:0,maxZ:10};
+const sandCut=audit.svg(square);
+assert.ok(Math.abs(sumArea(sandCut)-90)<1e-7);
+assert.ok(sandCut.flat().some(v=>v.x===6&&Math.abs(v.y-.12)<1e-7),'Ground and sand share a boundary height');
+assert.ok(sandCut.flat().filter(v=>v.x===0).every(v=>v.y===0),'Unrelated terrain keeps its grade');
+svgIndex.faces[0]={foot:{poly:runoff,bounds:bbox(runoff)},minX:6,maxX:8,minZ:0,maxZ:10};
+
 const diagonal=[point(3,5,60),point(5,3,60),point(7,5,60),point(5,7,60)];
 roadIndex.faces[0].poly=diagonal;
 roadIndex.faces[0].bounds={
