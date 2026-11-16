@@ -17,7 +17,7 @@ function pick(src,name){
 const names={
  23:['apexInspectorPolyArea','apexInspectorPolyBounds','apexInspectorFootHeight','apexInspectorHalfPoly','apexInspectorSubtractFoot'],
  24:['apexTrackSeamHeight','apexSnapTrackSeam','apexClipTerrainAtDrive','apexClipGenericRunoffPolygon'],
- 25:['apexTerrainFinePatch','apexUnifiedTerrainCellPieces','apexPhase4TerrainPacket']
+ 25:['apexTerrainFinePatch','apexUnifiedTerrainCellPieces','apexClipTerrainSurface','apexStitchTerrainPieces','apexPhase4TerrainPacket']
 };
 const source=Object.entries(names).flatMap(([part,fns])=>fns.map(name=>pick(parts[part],name))).join('\n');
 const point=(x,z,y=0)=>({x,y,z});
@@ -43,7 +43,7 @@ const inputs=[
 const values=[(v,a,b)=>Math.max(a,Math.min(b,v)),(a,b,t)=>a+(b-a)*t,trackData,()=>roadIndex,()=>[],(x,z)=>({s:0,lat:x-5}),()=>0,
  ()=>true,()=>null,(A,B,C,D)=>[[A,B,C,D]],()=>null,{packetHits:0,packetEvicted:0,packetsBuilt:0}];
 const factory=new Function(...inputs,source+
- '\nreturn {road:apexClipTerrainAtDrive,svg:apexClipGenericRunoffPolygon,area:apexInspectorPolyArea,fine:apexTerrainFinePatch,coarse:apexUnifiedTerrainCellPieces};');
+ '\nreturn {road:apexClipTerrainAtDrive,svg:apexClipGenericRunoffPolygon,area:apexInspectorPolyArea,stitch:apexStitchTerrainPieces,fine:apexTerrainFinePatch,coarse:apexUnifiedTerrainCellPieces};');
 const audit=factory(...values);
 const sumArea=polys=>polys.reduce((total,p)=>total+Math.abs(audit.area(p)),0);
 const svgPieces=audit.svg(square);
@@ -107,6 +107,14 @@ assert.ok(coarse&&Math.abs(sumArea(coarse)-60)<.01,
  'Coarse LOD uses the same ownership as fine LOD');
 assert.equal(audit.fine(grid,0,0,'TRACK'),fine,'Fine LOD must be cached');
 
+// The short face meets a raised point halfway along the neighbour's edge.
+const joint=point(4,5,.25), stitched=audit.stitch([
+ rectangle(0,4),[point(4,0),point(6,0),point(6,5),joint],
+ [joint,point(6,5),point(6,10),point(4,10)]
+]);
+assert.ok(Math.abs(sumArea(stitched)-60)<1e-8);
+assert.ok(stitched.filter(p=>p.some(v=>v.x<4)).some(p=>p.includes(joint)));
+assert.ok(stitched.every(p=>!p.some((v,i)=>v.x===4&&v.z===0&&p[(i+1)%p.length].x===4&&p[(i+1)%p.length].z===10)));
 const slopeGrid={...grid,minX:40,maxX:50,inside:Uint8Array.from([1,0,1,1]),
  baseLevelM:2,vals:Float32Array.from([4,99,8,10]),fineCache:new Map()};
 delete slopeGrid._apexPhase4WorldPackets;
@@ -117,7 +125,7 @@ assert.ok(slopeVertices.some(v=>v.x===45&&v.z===5&&v.y===0),'Interior still uses
 
 roadIndex.faces[0].terrainCut=false;
 assert.equal(audit.road(square),null,'Bridges and tunnels must preserve underlying terrain');
-assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230698/,'Old compiled meshes must be invalidated');
+assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230699/,'Old compiled meshes must be invalidated');
 assert.match(parts[25],/else y=apexWorldGroundY\(x,z\);/,'Fine terrain must sample the same ground height as the vehicle');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'circuits/manifest.json'),'utf8'));
 for(const gp of ['01-australia','14-spain']){
@@ -126,4 +134,4 @@ for(const gp of ['01-australia','14-spain']){
  assert.ok(fs.existsSync(path.join(root,'circuits',entry.svg)),'Missing saved SVG '+gp);
 }
 console.log(JSON.stringify({test:'terrain-surface-ownership',finePolygons:fine.length,
- coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230698,ok:true}));
+ coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230699,ok:true}));
