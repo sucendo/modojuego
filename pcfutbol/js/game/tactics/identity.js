@@ -1,0 +1,146 @@
+// Identidad táctica 2026/27. Las formaciones contrastadas usan una muestra
+// de varios partidos; para los demás clubes se calcula un perfil ESTIMADO.
+// No inferimos un entrenador real a partir de una distribución de posiciones.
+
+import { OBSERVED_MATCHLOGS_2026_27 } from './observed2026.js';
+import { normalizePosition, getPositionAffinity, getEffectiveOverall } from './positions.js';
+export { normalizePosition } from './positions.js';
+
+export const FORMATION_ROLES = Object.freeze({
+  // Orden de izquierda a derecha para que los extremos y laterales se
+  // dibujen en su banda, tanto en Tácticas como en la previa.
+  '4-4-2':   ['GK', 'LB', 'CB', 'CB', 'RB', 'LM', 'CM', 'CM', 'RM', 'ST', 'SS'],
+  '4-3-3':   ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'CM', 'CAM', 'LW', 'ST', 'RW'],
+  '4-2-3-1': ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'CM', 'LW', 'CAM', 'RW', 'ST'],
+  '3-5-2':   ['GK', 'CB', 'CB', 'CB', 'LWB', 'CDM', 'CM', 'CAM', 'RWB', 'ST', 'SS'],
+  '3-4-3':   ['GK', 'CB', 'CB', 'CB', 'LWB', 'CM', 'CM', 'RWB', 'LW', 'ST', 'RW'],
+  '5-3-2':   ['GK', 'LWB', 'CB', 'CB', 'CB', 'RWB', 'CDM', 'CM', 'CAM', 'ST', 'SS'],
+  '5-4-1':   ['GK', 'LWB', 'CB', 'CB', 'CB', 'RWB', 'LM', 'CM', 'CM', 'RM', 'ST'],
+  '4-1-4-1': ['GK', 'LB', 'CB', 'CB', 'RB', 'CDM', 'LM', 'CM', 'CM', 'RM', 'ST'],
+  '4-5-1':   ['GK', 'LB', 'CB', 'CB', 'RB', 'LM', 'CM', 'CDM', 'CM', 'RM', 'ST'],
+});
+
+export const FORMATION_EFFECTS = Object.freeze({
+  '4-4-2':   { attack: 0.3, defense: 0.6, attackBias: 0 },
+  '4-3-3':   { attack: 1.9, defense: -0.8, attackBias: 2 },
+  '4-2-3-1': { attack: 1.0, defense: 0.8, attackBias: 1 },
+  '3-5-2':   { attack: 0.8, defense: 0.2, attackBias: 0 },
+  '3-4-3':   { attack: 2.2, defense: -1.4, attackBias: 2 },
+  '5-3-2':   { attack: -1.2, defense: 2.2, attackBias: -2 },
+  '5-4-1':   { attack: -1.4, defense: 2.1, attackBias: -2 },
+  '4-1-4-1': { attack: 0.2, defense: 1.1, attackBias: 0 },
+  '4-5-1':   { attack: -0.7, defense: 1.5, attackBias: -1 },
+});
+
+// Los sistemas de cuatro defensas son el punto de partida más frecuente;
+// el ajuste por plantilla puede superar esta preferencia.
+const FORMATION_PRIOR = {
+  '4-4-2': 0.22, '4-3-3': 0.32, '4-2-3-1': 0.34,
+  '3-5-2': 0.14, '3-4-3': 0.08, '5-3-2': 0.08,
+  '5-4-1': 0.06, '4-1-4-1': 0.10, '4-5-1': 0.07,
+};
+
+export function suitabilityForPosition(playerOrPosition, targetPosition) {
+  return getPositionAffinity(playerOrPosition, targetPosition);
+}
+
+function hash01(seed) {
+  let h = 2166136261;
+  for (const c of String(seed)) {
+    h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  }
+  return (h >>> 0) / 4294967295;
+}
+
+export function fitPlayersToRoles(players, roles) {
+  const available = (players || []).filter(p => p && p.id);
+  const slots = (roles || []).map((position, index) => ({ position, index, player: null }));
+
+  // Reservar el puesto de portero y cubrir primero los roles más escasos.
+  const waiting = slots.slice().sort((a, b) => {
+    const scarce = slot => available.filter(p => suitabilityForPosition(p, slot.position) >= 0.88).length;
+    return (a.position === 'GK' ? -1000 : scarce(a)) - (b.position === 'GK' ? -1000 : scarce(b)) || a.index - b.index;
+  });
+  const taken = new Set();
+  for (const slot of waiting) {
+    let best = null;
+    let bestScore = -1;
+    for (const player of available) {
+      if (taken.has(String(player.id))) continue;
+      if (slot.position !== 'GK' && normalizePosition(player.position) === 'GK') continue;
+      const suitability = suitabilityForPosition(player, slot.position);
+      // Calidad efectiva: un suplente capaz en su demarcación puede ser
+      // preferible a un titular brillante completamente fuera de puesto.
+      const score = getEffectiveOverall(player, slot.position) + suitability * 5;
+      if (score > bestScore) { best = player; bestScore = score; }
+    }
+    if (best) {
+      slot.player = best;
+      taken.add(String(best.id));
+    }
+  }
+  return slots;
+}
+
+export function fitPlayersToFormation(players, formation) {
+  return fitPlayersToRoles(players, FORMATION_ROLES[formation] || FORMATION_ROLES['4-4-2']);
+}
+
+export function getFormationFit(players, formation) {
+  const slots = fitPlayersToFormation(players, formation);
+  const total = slots.reduce((sum, slot) => sum + (slot.player
+    ? suitabilityForPosition(slot.player, slot.position) : 0), 0);
+  return total / 11;
+}
+
+function seededManagerStyle(id, overall) {
+  const risk = Math.round((0.24 + hash01(`${id}:risk`) * 0.6) * 100) / 100;
+  const adaptability = Math.round((0.2 + hash01(`${id}:adapt`) * 0.65) * 100) / 100;
+  const offense = (Number(overall || 70) - 70) / 25 + risk - 0.5;
+  return {
+    risk,
+    adaptability,
+    mentality: offense > 0.42 ? 'OFFENSIVE' : offense < -0.43 ? 'DEFENSIVE' : 'BALANCED',
+    pressure: hash01(`${id}:press`) > 0.72 ? 'HIGH' : hash01(`${id}:press`) < 0.22 ? 'LOW' : 'NORMAL',
+    tempo: hash01(`${id}:tempo`) > 0.7 ? 'FAST' : hash01(`${id}:tempo`) < 0.22 ? 'SLOW' : 'NORMAL',
+    playStyle: hash01(`${id}:play`) > 0.69 ? 'DIRECT' : hash01(`${id}:play`) < 0.27 ? 'COUNTER' : 'POSSESSION',
+  };
+}
+
+export function createClubTacticalIdentity(club, baseOverall = 70, leagueId = '') {
+  const id = String(club?.id || 'unknown');
+  const players = club?.players || [];
+  const style = seededManagerStyle(id, baseOverall);
+  const ranked = Object.keys(FORMATION_ROLES).map(formation => {
+    const fitness = getFormationFit(players, formation);
+    const bias = FORMATION_EFFECTS[formation].attackBias;
+    const favorable = style.mentality === 'OFFENSIVE' ? bias : style.mentality === 'DEFENSIVE' ? -bias : 0;
+    const variation = hash01(`${leagueId}:${id}:${formation}`) - 0.5;
+    return { formation, score: fitness * 4 + favorable * 0.12 + variation * 0.7 + FORMATION_PRIOR[formation] };
+  }).sort((a, b) => b.score - a.score);
+
+  const observed = OBSERVED_MATCHLOGS_2026_27[id];
+  const formation = observed?.preferred || ranked[0].formation;
+  const observedAlternates = observed ? Object.entries(observed.formations)
+    .filter(([name, appearances]) => name !== formation && appearances >= 2 && FORMATION_ROLES[name])
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) : [];
+  // Una aparición aislada no basta para declarar un sistema alternativo real.
+  const alternate = observedAlternates[0]?.[0]
+    || ranked.find(x => x.formation !== formation)?.formation || '4-4-2';
+  return {
+    season: '2026/27',
+    formation,
+    alternate,
+    mentality: style.mentality,
+    pressure: style.pressure,
+    tempo: style.tempo,
+    playStyle: style.playStyle,
+    manager: { risk: style.risk, adaptability: style.adaptability },
+    sourceType: observed ? 'observed-matchlogs-2026/27' : 'estimated-from-roster',
+    source: observed?.source || null,
+    observedGames: observed?.fixtures || 0,
+    observedFormationMatches: observed?.formations[formation] || 0,
+    sourceScope: observed?.scope || null,
+    alternateSourceType: observedAlternates.length ? 'observed-matchlogs-2026/27' : 'estimated-from-roster',
+  };
+}

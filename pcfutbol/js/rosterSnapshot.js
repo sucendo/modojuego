@@ -1,6 +1,7 @@
 // Reconciliación de una plantilla oficial con los jugadores históricos del juego.
 // La identidad se conserva si la coincidencia es inequívoca; salario,
 // cláusula y valoración nunca se atribuyen a la fuente oficial.
+import { getVerifiedPlayerBiography } from './rosterBiographies2026.js';
 
 function normalizedName(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -32,23 +33,23 @@ function group(position) {
   const p = String(position || '').toUpperCase();
   if (['GK', 'POR'].includes(p)) return 'POR';
   if (['CB', 'RB', 'LB', 'RWB', 'LWB', 'DFC', 'LD', 'LI'].includes(p)) return 'CB';
-  if (['ST', 'CF', 'RW', 'LW', 'DC', 'ED', 'EI'].includes(p)) return 'ST';
+  if (['ST', 'SS', 'CF', 'RW', 'LW', 'DC', 'ED', 'EI'].includes(p)) return 'ST';
   return 'CM';
 }
 
 // Las fuentes originales suelen publicar solo portero/defensa/medio/delantero.
-// Para la táctica usamos únicamente las diez demarcaciones modernas, y dejamos
-// constancia de cuándo la subposición se ha tenido que estimar.
+// Se conservan las quince demarcaciones cuando la fuente las identifica.
+// Las fuentes genéricas se distribuyen por rol y se marcan como estimadas.
 function modernPosition(position) {
   const p = String(position || '').toUpperCase();
   const alias = {
-    POR: 'GK', GK: 'GK', DFC: 'CB', LD: 'RB', LI: 'LB', RWB: 'RB', LWB: 'LB',
-    MCD: 'CDM', DM: 'CDM', MC: 'CM', RM: 'CM', LM: 'CM',
+    POR: 'GK', GK: 'GK', DFC: 'CB', LD: 'RB', LI: 'LB',
+    MCD: 'CDM', DM: 'CDM', MC: 'CM',
     MCO: 'CAM', AM: 'CAM', MP: 'CAM', ED: 'RW', EI: 'LW',
-    CF: 'ST', DC: 'ST', FW: 'ST', SD: 'ST',
+    CF: 'ST', DC: 'ST', FW: 'ST', SD: 'SS',
   };
   const normalized = alias[p] || p;
-  if (['GK', 'RB', 'LB', 'CB', 'CDM', 'CM', 'CAM', 'RW', 'LW', 'ST'].includes(normalized)) return normalized;
+  if (['GK', 'RB', 'LB', 'CB', 'RWB', 'LWB', 'CDM', 'CM', 'CAM', 'RM', 'LM', 'RW', 'LW', 'ST', 'SS'].includes(normalized)) return normalized;
   return { POR: 'GK', CB: 'CB', CM: 'CM', ST: 'ST' }[group(position)];
 }
 
@@ -142,6 +143,7 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
   }
   for (const [index, current] of selected.entries()) {
     if (!current.name) continue;
+    const verifiedBio = getVerifiedPlayerBiography(club.id, current.name);
     const old = findLegacyPlayer(current.name, legacy, takenIds);
     let player;
     if (old) {
@@ -165,14 +167,28 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
     }
     const publishedGeneric = GENERIC_POSITIONS.has(String(current.position || '').toUpperCase());
     player.positionEstimated = publishedGeneric;
+    player.primaryPositionSource = publishedGeneric ? 'estimated-from-generic-roster' : 'published-role';
     accuracyByIndex.push({ generic: publishedGeneric && !current.preferredPosition, legacyPrecise: !!old &&
       !GENERIC_POSITIONS.has(String(old.position || '').toUpperCase()) });
-    if (Number.isInteger(current.age) && current.age >= 15 && current.age <= 50) {
+    const bio = { ...(current.fullName ? { name: current.fullName, fullName: current.fullName } : {}),
+      ...(current.birthDate ? { birthDate: current.birthDate } : {}),
+      ...(current.nationality ? { nationality: current.nationality } : {}),
+      ...(current.shirtNumber != null ? { shirtNumber: current.shirtNumber } : {}),
+      ...(verifiedBio || {}) };
+    Object.assign(player, bio);
+    if (player.birthDate && Number.isFinite(Date.parse(player.birthDate))) {
+      const startYear = 2026;
+      const dob = new Date(player.birthDate);
+      player.age = startYear - dob.getUTCFullYear() -
+        (dob.getUTCMonth() > 7 || (dob.getUTCMonth() === 7 && dob.getUTCDate() > 14) ? 1 : 0);
+      player.ageEstimated = false;
+    } else if (Number.isInteger(current.age) && current.age >= 15 && current.age <= 50) {
       player.age = current.age;
       player.ageEstimated = false;
     } else {
       player.ageEstimated = true;
     }
+    player.shirtNumberEstimated = player.shirtNumber == null;
     // Ni una ficha publicada prueba estas cifras económicas del juego.
     player.overallEstimated = true;
     player.wageEstimated = true;
@@ -181,6 +197,17 @@ export function buildSquadFromSnapshot(club, historicalPlayers, snapshot) {
     player.rosterSeason = '2026/27';
     player.rosterVerified = snapshot.sourceKind !== 'independent';
     roster.push(player);
+  }
+  // Dorsal provisional únicamente si la fuente no lo publica. No confundirlo
+  // con una ficha oficial; se marca para que sea distinguible en la interfaz.
+  const used = new Set(roster.map(p => Number(p.shirtNumber)).filter(Number.isInteger));
+  let next = 1;
+  for (const player of roster) {
+    if (player.shirtNumber != null) continue;
+    while (used.has(next)) next++;
+    player.shirtNumber = next;
+    player.shirtNumberEstimated = true;
+    used.add(next++);
   }
   rebalanceEstimatedPositions(roster, accuracyByIndex);
   return roster.length >= 16 && roster.some(p => group(p.position) === 'POR') ? roster : null;

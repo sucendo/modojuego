@@ -11,6 +11,8 @@ import { PUBLISHED_SQUADS_2026_27 } from './published_squads_2026_27.js';
 import { CLUB_OFFICIAL_SQUADS_2026_27 } from './club_official_squads_2026_27.js';
 import { SQUAD_SUPPLEMENTS_2026_27 } from './squadSupplements2026.js';
 import { buildSquadFromSnapshot } from './rosterSnapshot.js';
+import { createClubTacticalIdentity } from './game/tactics/identity.js';
+import { ensurePlayerPositionData } from './game/tactics/positions.js';
 
 // Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
 // La clave es el id del club (real_madrid, barcelona, arsenal, astonvilla, ...).
@@ -26,7 +28,7 @@ const SQUAD_POSITIONS = [
   "RWB","LWB",          // 2 carrileros/extremos
   "CDM","CM","CAM","RM","LM",// 5 centrocampistas
   "RW","LW",            // 2 extremos ofensivos
-  "CF","ST","ST"   // 3 atacantes
+  "SS","ST","ST"   // 3 atacantes
 ];
 
 // Genera una plantilla de 18 jugadores ficticios para un club
@@ -86,6 +88,9 @@ function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
     if (!players) {
       players = generateSquadForClub(c);
     }
+    // Migración de las 272 plantillas a un modelo con posición principal,
+    // secundarias (estimadas cuando no constan) y experiencia por demarcación.
+    players.forEach(ensurePlayerPositionData);
 
     return {
       id: c.id,
@@ -98,6 +103,7 @@ function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
       cash: c.cash,
       wageBudget: c.wageBudget,
       players,
+      tacticalIdentity: createClubTacticalIdentity({ id: c.id, players }, c.baseOverall, id),
       squadSource: officiallySourced ? 'official-roster' : verifiedSnapshot ? 'published-roster' : hasRealSquad ? 'legacy' : 'generated',
       squadSeason: verifiedSnapshot ? '2026/27' : hasRealSquad ? '2025/26' : null,
       squadReference: verifiedSnapshot ? snapshot.source : null,

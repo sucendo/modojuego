@@ -26,12 +26,15 @@ test('los 272 equipos comienzan con un solo portero en el XI y en el motor de pa
 });
 
 test('las posiciones 2026/27 son modernas y las subposiciones inferidas están identificadas', () => {
-  const valid = new Set(['GK', 'RB', 'LB', 'CB', 'CDM', 'CM', 'CAM', 'RW', 'LW', 'ST']);
+  const valid = new Set(['GK', 'RB', 'LB', 'CB', 'RWB', 'LWB', 'CDM', 'CM', 'CAM', 'RM', 'LM', 'RW', 'LW', 'ST', 'SS']);
   const clubs = allLeagues.flatMap(league => league.clubs);
   assert.equal(clubs.length, 272);
   for (const club of clubs) {
     assert.ok(club.players.every(player => valid.has(player.position)), club.name);
     assert.ok(club.players.every(player => typeof player.positionEstimated === 'boolean'), club.name);
+    assert.ok(club.players.every(player => player.primaryPosition === player.position), club.name);
+    assert.ok(club.players.every(player => player.secondaryPositions.every(secondary =>
+      valid.has(secondary.position) && secondary.sourceType)), club.name);
     for (const position of ['GK', 'RB', 'LB', 'CB', 'CM', 'ST']) {
       assert.ok(club.players.some(player => player.position === position), `${club.name}: falta ${position}`);
     }

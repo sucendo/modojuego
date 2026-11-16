@@ -1500,6 +1500,19 @@ html{
   display: none;
 }
 
+body.market-modal-open { overflow: hidden; }
+.market-dialog { max-width: 760px; }
+.market-dialog .market-toolbar { flex-wrap: wrap; }
+.market-dialog .market-offer { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.market-dialog .market-offer input[type="number"] { min-width: 140px; max-width: 240px; }
+#market-feedback.market-error { color: #ffb0b0; }
+.market-toolbar input[type="number"], .squad-toolbar input[type="number"] { max-width: 160px; }
+.squad-filter-group input { background: #020617; color: #e5e7eb; border: 1px solid #1f2937; border-radius: 6px; padding: 0.3rem 0.45rem; }
+[data-market-sort], [data-squad-sort] { cursor: pointer; user-select: none; }
+[data-market-sort]:focus-visible, [data-squad-sort]:focus-visible { outline: 2px solid #60a5fa; outline-offset: -2px; }
+[data-sort-direction="asc"]::after { content: " ▲"; font-size: 0.72em; color: #60a5fa; }
+[data-sort-direction="desc"]::after { content: " ▼"; font-size: 0.72em; color: #60a5fa; }
+
 .modal-backdrop {
   position: absolute;
   inset: 0;

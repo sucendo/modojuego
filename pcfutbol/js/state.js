@@ -2,7 +2,10 @@
 
 import { initialLeague, allLeagues } from './data.js';
 import { getSeasonStartYear } from './gameSeason.js';
+import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
+import { fitPlayersToFormation } from './game/tactics/identity.js';
+import { ensurePlayerPositionData } from './game/tactics/positions.js';
 
 export const GameState = {
   meta: {
@@ -215,19 +218,30 @@ function isPlayerUnavailable(player) {
 function ensureClubDefaults(club) {
   if (!club) return;
 
-  // Táctica base
+  // Identidad de 2026/27 para partidas nuevas; las tácticas de partidas
+  // guardadas nunca se sobrescriben al normalizar el estado.
+  const identity = club.tacticalIdentity || {};
   if (!club.alignment) {
     club.alignment = {
-      formation: '4-4-2',
-      mentality: 'BALANCED',
-      tempo: 'NORMAL',
-      pressure: 'NORMAL',
+      formation: identity.formation || '4-4-2',
+      mentality: identity.mentality || 'BALANCED',
+      tempo: identity.tempo || 'NORMAL',
+      pressure: identity.pressure || 'NORMAL',
     };
   } else {
     if (!club.alignment.formation) club.alignment.formation = '4-4-2';
     if (!club.alignment.mentality) club.alignment.mentality = 'BALANCED';
     if (!club.alignment.tempo) club.alignment.tempo = 'NORMAL';
     if (!club.alignment.pressure) club.alignment.pressure = 'NORMAL';
+  }
+  if (!club.tactics) {
+    club.tactics = {
+      formation: club.alignment.formation,
+      mentality: club.alignment.mentality,
+      tempo: club.alignment.tempo,
+      pressure: club.alignment.pressure,
+      playStyle: identity.playStyle || 'POSSESSION',
+    };
   }
 
   // XI (11) + Convocados (banquillo 9)
@@ -237,7 +251,10 @@ function ensureClubDefaults(club) {
   const available = (club.players || [])
     .filter(p => p?.id && !isPlayerUnavailable(p))
     .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
-  club.lineup = selectValidStartingXI(club.players, club.lineup, isPlayerUnavailable);
+  const preferredXI = club.lineup.length ? club.lineup : fitPlayersToFormation(
+    available, club.tactics?.formation || club.alignment?.formation,
+  ).map(s => s.player?.id).filter(Boolean);
+  club.lineup = selectValidStartingXI(club.players, preferredXI, isPlayerUnavailable);
   const chosen = new Set(club.lineup.map(String));
   const bench = [];
   const addToBench = id => {
@@ -252,6 +269,9 @@ function ensureClubDefaults(club) {
 }
 
 function ensurePlayerDefaults(player, season) {
+  // Guardados anteriores a la ampliación de posiciones: migración no
+  // destructiva y sin alterar la valoración, el equipo ni el contrato.
+  ensurePlayerPositionData(player);
   if (player.morale == null) player.morale = 0.7;
   if (player.fitness == null) player.fitness = 0.9;
   if (player.transferListed == null) player.transferListed = false;
@@ -684,11 +704,14 @@ function generateAttributesForPosition(position, overall) {
   const isGK = pos === 'POR' || pos === 'GK';
   const isCB = pos === 'DFC' || pos === 'CB';
   const isFB =
-    pos === 'LD' || pos === 'LI' || pos === 'RB' || pos === 'LB' || pos === 'CAD';
+    pos === 'LD' || pos === 'LI' || pos === 'RB' || pos === 'LB'
+    || pos === 'RWB' || pos === 'LWB' || pos === 'CAD';
   const isDM = pos === 'MCD' || pos === 'DM' || pos === 'CDM';
   const isCM = pos === 'MC' || pos === 'CM';
   const isAM = pos === 'MCO' || pos === 'MP' || pos === 'CAM';
+  const isWideMid = pos === 'RM' || pos === 'LM';
   const isWinger = ['EI', 'ED', 'RW', 'LW'].includes(pos);
+  const isSS = pos === 'SS';
   const isST =
     pos === 'DC' || pos === 'SD' || pos === 'ST' || pos === 'FW' || pos === 'CF';
 
@@ -782,6 +805,18 @@ function generateAttributesForPosition(position, overall) {
     physical.pace = clampAttr(base + 2);
     physical.stamina = clampAttr(base + 1);
     physical.strength = clampAttr(base - 1);
+  } else if (isWideMid) {
+    technical.passing = clampAttr(base + 3);
+    technical.shooting = clampAttr(base - 1);
+    technical.dribbling = clampAttr(base + 3);
+    technical.tackling = clampAttr(base);
+    mental.vision = clampAttr(base + 3);
+    mental.composure = clampAttr(base + 1);
+    mental.workRate = clampAttr(base + 4);
+    mental.leadership = clampAttr(base);
+    physical.pace = clampAttr(base + 4);
+    physical.stamina = clampAttr(base + 5);
+    physical.strength = clampAttr(base);
   } else if (isWinger) {
     // Extremos: velocidad y regate
     technical.passing = clampAttr(base + 1);
@@ -797,6 +832,18 @@ function generateAttributesForPosition(position, overall) {
     physical.pace = clampAttr(base + 7);
     physical.stamina = clampAttr(base + 3);
     physical.strength = clampAttr(base - 2);
+  } else if (isSS) {
+    technical.passing = clampAttr(base + 3);
+    technical.shooting = clampAttr(base + 4);
+    technical.dribbling = clampAttr(base + 5);
+    technical.tackling = clampAttr(base - 5);
+    mental.vision = clampAttr(base + 4);
+    mental.composure = clampAttr(base + 3);
+    mental.workRate = clampAttr(base + 1);
+    mental.leadership = clampAttr(base);
+    physical.pace = clampAttr(base + 4);
+    physical.stamina = clampAttr(base + 2);
+    physical.strength = clampAttr(base);
   } else if (isST) {
     // Delanteros: definición, algo de fuerza, menos defensa
     technical.passing = clampAttr(base - 1);
@@ -877,85 +924,16 @@ function setupCompetition() {
 // Calendario oficial / generado
 // ----------------------------
 
-function getSeasonStartUTCInternal(season) {
-  const year = getSeasonStartYear(season);
-  return new Date(Date.UTC(year, 7, 1)); // 1 de agosto
-}
-
-// ---------------------------
-// World leagues: calendario base por liga (para kickoffDate)
-// ---------------------------
-function getSeasonStartUTCForLeagueId(leagueId, season) {
-  const year = getSeasonStartYear(season);
-  const map = {
-    league_en_premier: { month: 8, day: 1 },     // 01/08
-    league_it_seriea: { month: 8, day: 10 },     // 10/08
-    league_de_bundesliga: { month: 8, day: 15 }, // 15/08
-    __default: { month: 8, day: 1 },
-  };
-  const cfg = map[String(leagueId || '')] || map.__default;
-  const m0 = Math.max(1, Math.min(12, Number(cfg.month || 8))) - 1;
-  const d0 = Math.max(1, Math.min(31, Number(cfg.day || 1)));
-  return new Date(Date.UTC(year, m0, d0, 12, 0, 0, 0));
-}
-
 function decorateWorldFixturesWithSchedule(fixtures, season, leagueId) {
-  if (!Array.isArray(fixtures) || fixtures.length === 0) return;
-  const start = getSeasonStartUTCForLeagueId(leagueId, season);
-  const slots = ['13:00', '16:15', '18:30', '21:00'];
-
-  const byMd = new Map();
-  fixtures.forEach((fx) => {
-    const md = Math.max(1, Number(fx?.matchday || 1));
-    if (!byMd.has(md)) byMd.set(md, []);
-    byMd.get(md).push(fx);
-  });
-
-  for (const [md, arr] of byMd.entries()) {
-    arr.sort((a, b) => `${a?.homeClubId||''}|${a?.awayClubId||''}`.localeCompare(`${b?.homeClubId||''}|${b?.awayClubId||''}`));
-    arr.forEach((fx, i) => {
-      if (!fx) return;
-      if (fx.kickoffDate) return;
-      const t = slots[i % slots.length];
-      const [hh, mm] = t.split(':').map((n) => Number(n || 0));
-      const d = new Date(start.getTime());
-      d.setUTCDate(d.getUTCDate() + (md - 1) * 7);
-      d.setUTCHours(hh, mm, 0, 0);
-      fx.kickoffTime = fx.kickoffTime || t;
-      fx.kickoffDate = d.toISOString();
-    });
-  }
+  assignLeagueFixtureDates(fixtures, leagueId, season);
 }
 
 function decorateGeneratedFixturesWithSchedule(fixtures, season) {
   if (!Array.isArray(fixtures) || fixtures.length === 0) return;
-
+  assignLeagueFixtureDates(fixtures, GameState.league?.id, season);
   const clubIndex = new Map((GameState.clubs || []).filter(Boolean).map((c) => [String(c.id), c]));
-  const slots = ['16:00', '18:15', '20:30', '22:00'];
-
-  // Agrupar por jornada para asignar horas "tipo TV"
-  const byMd = new Map();
   fixtures.forEach((fx) => {
-    const md = Number(fx?.matchday || 1);
-    if (!byMd.has(md)) byMd.set(md, []);
-    byMd.get(md).push(fx);
-  });
-
-  for (const [md, list] of byMd.entries()) {
-    list.forEach((fx, idx) => {
       if (!fx) return;
-      const time = slots[idx % slots.length];
-      fx.kickoffTime = fx.kickoffTime || time;
-
-      // Fecha base: cada jornada +7 días
-      const d = getSeasonStartUTCInternal(season);
-      d.setUTCDate(d.getUTCDate() + (Math.max(1, md) - 1) * 7);
-
-      // Hora en UTC (simple). Si quieres "hora local", ya lo ajustaremos.
-      const [hh, mm] = String(fx.kickoffTime).split(':').map((x) => Number(x || 0));
-      if (Number.isFinite(hh)) d.setUTCHours(hh, Number.isFinite(mm) ? mm : 0, 0, 0);
-      fx.kickoffDate = fx.kickoffDate || d.toISOString();
-
       const homeClub = clubIndex.get(String(fx.homeClubId)) || null;
       if (!fx.meta || typeof fx.meta !== 'object') fx.meta = {};
       if (!fx.meta.stadiumName) fx.meta.stadiumName = homeClub?.stadium?.name || homeClub?.stadiumName || null;
@@ -965,8 +943,7 @@ function decorateGeneratedFixturesWithSchedule(fixtures, season) {
       }
       if (fx.meta.official == null) fx.meta.official = false;
       if (!fx.meta.source) fx.meta.source = 'round_robin';
-    });
-  }
+  });
 }
 
 function normalizeWorldLeagues() {

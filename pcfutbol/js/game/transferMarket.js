@@ -287,7 +287,9 @@ function transferPlayer(sellerEntry, buyerEntry, player, fee, salary, years, rol
   return { ok: true, message: `${history.playerName} ficha por ${history.toClubName}.`, transfer: history };
 }
 
-export function searchTransferMarket({ query = '', position = 'ALL', leagueId = 'ALL', limit = 70 } = {}) {
+export function searchTransferMarket({ query = '', position = 'ALL', leagueId = 'ALL',
+  minAge = null, maxAge = null, minOverall = null, maxPrice = null,
+  onlyListed = false, sortBy = 'overall', sortDirection = 'desc', limit = 70 } = {}) {
   const q = String(query).trim().toLocaleLowerCase('es');
   const result = [];
   for (const entry of getMarketClubs()) {
@@ -295,18 +297,34 @@ export function searchTransferMarket({ query = '', position = 'ALL', leagueId = 
     if (leagueId !== 'ALL' && entry.leagueId !== leagueId) continue;
     for (const player of entry.club.players) {
       if (!player?.id || (position !== 'ALL' && group(player.position) !== position)) continue;
-      if (q && !`${player.name || ''} ${entry.club.name || ''}`.toLocaleLowerCase('es').includes(q)) continue;
+      if (q && !`${player.name || ''} ${player.fullName || ''} ${player.nationality || ''} ${entry.club.name || ''}`.toLocaleLowerCase('es').includes(q)) continue;
+      const age = Number(player.age);
+      const overall = int(player.overall);
+      const price = getTransferPrice(player);
+      if (onlyListed && !player.transferListed) continue;
+      if (minAge != null && (!Number.isFinite(age) || age < Number(minAge))) continue;
+      if (maxAge != null && (!Number.isFinite(age) || age > Number(maxAge))) continue;
+      if (minOverall != null && overall < Number(minOverall)) continue;
+      if (maxPrice != null && price > Number(maxPrice)) continue;
       result.push({
         playerId: player.id, clubId: entry.club.id, clubName: entry.club.name,
         leagueId: entry.leagueId, leagueName: entry.leagueName,
         name: player.name || 'Jugador', age: player.age || null,
-        position: player.position || '-', overall: int(player.overall),
-        wage: int(player.wage), price: getTransferPrice(player),
+        ageEstimated: !!player.ageEstimated,
+        position: player.position || '-', overall,
+        wage: int(player.wage), price,
         releaseClause: getReleaseClause(player), listed: !!player.transferListed,
       });
     }
   }
-  result.sort((a, b) => Number(b.listed) - Number(a.listed) || b.overall - a.overall || a.price - b.price);
+  const key = ['name','clubName','position','overall','age','price'].includes(sortBy) ? sortBy : 'overall';
+  const direction = sortDirection === 'asc' ? 1 : -1;
+  result.sort((a, b) => {
+    const av = a[key], bv = b[key];
+    const order = typeof av === 'number' && typeof bv === 'number'
+      ? av - bv : String(av ?? '').localeCompare(String(bv ?? ''), 'es');
+    return direction * order || Number(b.listed) - Number(a.listed) || String(a.name).localeCompare(String(b.name), 'es');
+  });
   return result.slice(0, Math.max(1, Math.min(200, Number(limit) || 70)));
 }
 

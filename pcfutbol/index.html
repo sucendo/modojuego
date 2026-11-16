@@ -391,7 +391,7 @@
 					<h2>Mercado de fichajes</h2>
 					<p class="pcf-market-info">Negocia primero con el club y después con el jugador. Las cláusulas permiten pagar sin acuerdo del club, pero el futbolista también debe aceptar. La IA ficha durante los mercados con una política conservadora de continuidad.</p>
 					<p id="market-budgets" class="pcf-market-info"></p>
-					<p id="market-message" role="status" aria-live="polite"></p>
+					<p id="market-feedback" class="pcf-market-info" role="status" aria-live="polite"></p>
 				</article>
 				<article class="card">
 					<h3>Buscar jugadores</h3>
@@ -405,32 +405,19 @@
 								<option value="ATT">Delanteros</option>
 							</select>
 						</label>
+						<label>Edad mínima <input id="market-age-min" type="number" min="15" max="50" placeholder="15" /></label>
+						<label>Edad máxima <input id="market-age-max" type="number" min="15" max="50" placeholder="50" /></label>
+						<label>Media mínima <input id="market-overall-min" type="number" min="0" max="99" placeholder="0" /></label>
+						<label>Precio máximo (€) <input id="market-price-max" type="number" min="0" step="100000" placeholder="Sin límite" /></label>
+						<label class="market-clause"><input id="market-only-listed" type="checkbox" /> Solo transferibles</label>
 					</div>
 					<p id="market-result-count" class="pcf-market-info"></p>
 					<div class="table-wrapper">
 						<table class="pcf-market-table">
-							<thead><tr><th>Jugador</th><th>Club</th><th>Pos.</th><th>Media</th><th>Edad</th><th>Precio</th><th></th></tr></thead>
+							<thead><tr><th data-market-sort="name" tabindex="0">Jugador</th><th data-market-sort="clubName" tabindex="0">Club</th><th data-market-sort="position" tabindex="0">Pos.</th><th data-market-sort="overall" tabindex="0">Media</th><th data-market-sort="age" tabindex="0">Edad</th><th data-market-sort="price" tabindex="0">Precio</th><th></th></tr></thead>
 							<tbody id="market-results-body"></tbody>
 						</table>
 					</div>
-						<h3>1. Negociar con el club</h3>
-					<p id="market-selected" class="pcf-market-info">Selecciona un jugador de la lista.</p>
-					<div class="market-offer">
-						<label for="market-bid">Oferta en euros</label>
-						<input id="market-bid" type="number" min="10000" step="10000" inputmode="numeric"/>
-							<label class="market-clause"><input id="market-clause" type="checkbox" /> Pagar cláusula</label>
-							<button id="market-negotiate" class="btn btn-primary" type="button" disabled>Negociar con el club</button>
-					</div>
-						<div id="market-contract" class="market-contract hidden">
-							<h3>2. Ofrecer contrato al jugador</h3>
-							<div class="market-toolbar">
-								<label>Salario anual (€) <input id="market-wage" type="number" min="10000" step="10000" inputmode="numeric" /></label>
-								<label>Duración (años) <input id="market-years" type="number" min="1" max="5" step="1" value="3" /></label>
-								<label>Cláusula de rescisión (€) <input id="market-release-clause" type="number" min="10000" step="10000" inputmode="numeric" /></label>
-								<label>Rol prometido <select id="market-role"><option value="STARTER">Titular</option><option value="ROTATION">Rotación</option><option value="PROSPECT">Promesa</option></select></label>
-							</div>
-							<button id="market-buy" class="btn btn-primary" type="button">Ofrecer contrato y fichar</button>
-						</div>
 				</article>
 				<article class="card">
 					<h3>Vender jugadores</h3>
@@ -486,6 +473,7 @@
 					  <label for="squad-sort">Ordenar por:</label>
 					  <select id="squad-sort">
 						<option value="POSITION">Posición</option>
+						<option value="NUMBER">Dorsal</option>
 						<option value="NAME">Nombre</option>
 						<option value="AGE">Edad</option>
 						<option value="OVERALL">Media</option>
@@ -494,15 +482,19 @@
 						<option value="FITNESS">Forma</option>
 					  </select>
 					</div>
+					<div class="squad-filter-group"><label for="squad-search">Jugador:</label><input id="squad-search" type="search" placeholder="Nombre o nacionalidad" /></div>
+					<div class="squad-filter-group"><label for="squad-age-min">Edad mínima:</label><input id="squad-age-min" type="number" min="15" max="50" placeholder="15" /></div>
+					<div class="squad-filter-group"><label for="squad-age-max">Edad máxima:</label><input id="squad-age-max" type="number" min="15" max="50" placeholder="50" /></div>
+					<div class="squad-filter-group"><label for="squad-overall-min">Media mínima:</label><input id="squad-overall-min" type="number" min="0" max="99" placeholder="0" /></div>
 				  </div>
 
 				  <div class="squad-table-wrapper">
 					<table class="table pcf-table table-squad">
 					  <thead>
 						<tr>
-						  <th>#</th>
-						  <th>Jugador</th>
-						  <th class="num">EDAD</th>
+						  <th data-squad-sort="NUMBER" tabindex="0">#</th>
+						  <th data-squad-sort="NAME" tabindex="0">Jugador</th>
+						  <th class="num" data-squad-sort="AGE" tabindex="0">EDAD</th>
 						  <th class="num">EN</th>
 						  <th class="num">CF</th>
 						  <th class="num">CM</th>
@@ -510,11 +502,11 @@
 						  <th class="num">CO</th>
 						  <th class="num">MO</th>
 						  <th class="num">EF</th>
-						  <th class="num">ME</th>
+						  <th class="num" data-squad-sort="OVERALL" tabindex="0">ME</th>
 						  <th>ROL</th>
 						  <th>DEM</th>
 						  <th>Estado</th>
-						  <th class="num">Sueldo</th>
+						  <th class="num" data-squad-sort="WAGE" tabindex="0">Sueldo</th>
 						  <th class="num">Contrato</th>
 						  <th>Acciones</th>
 						  <th>Ficha</th>
@@ -1402,6 +1394,39 @@
 		</div>
 	</div>
 	
+	<!-- Mercado: negociar en primer plano para conservar el foco -->
+	<div id="market-modal" class="modal hidden" aria-hidden="true">
+		<div id="market-modal-backdrop" class="modal-backdrop"></div>
+		<div class="modal-dialog market-dialog" role="dialog" aria-modal="true" aria-labelledby="market-modal-title" tabindex="-1">
+			<header class="modal-header">
+				<h2 id="market-modal-title">Negociar fichaje</h2>
+				<button id="market-modal-close" class="btn btn-secondary btn-icon" type="button" aria-label="Cerrar negociación">✕</button>
+			</header>
+			<div class="modal-body">
+				<p id="market-selected" class="pcf-market-info">Selecciona un jugador de la lista.</p>
+				<h3>1. Negociar con el club</h3>
+				<div class="market-offer">
+					<label for="market-bid">Oferta en euros</label>
+					<input id="market-bid" type="number" min="10000" step="10000" inputmode="numeric"/>
+					<label class="market-clause"><input id="market-clause" type="checkbox" /> Pagar cláusula</label>
+					<button id="market-negotiate" class="btn btn-primary" type="button" disabled>Negociar con el club</button>
+				</div>
+				<p id="market-message" role="status" aria-live="polite"></p>
+				<div id="market-contract" class="market-contract hidden">
+					<h3>2. Ofrecer contrato al jugador</h3>
+					<div class="market-toolbar">
+						<label>Salario anual (€) <input id="market-wage" type="number" min="10000" step="10000" inputmode="numeric" /></label>
+						<label>Duración (años) <input id="market-years" type="number" min="1" max="5" step="1" value="3" /></label>
+						<label>Cláusula de rescisión (€) <input id="market-release-clause" type="number" min="10000" step="10000" inputmode="numeric" /></label>
+						<label>Rol prometido <select id="market-role"><option value="STARTER">Titular</option><option value="ROTATION">Rotación</option><option value="PROSPECT">Promesa</option></select></label>
+					</div>
+					<button id="market-buy" class="btn btn-primary" type="button">Ofrecer contrato y fichar</button>
+				</div>
+			</div>
+			<footer class="modal-footer"><button id="market-modal-cancel" class="btn btn-secondary" type="button">Cerrar</button></footer>
+		</div>
+	</div>
+
 	<!-- Modal: ficha detallada de jugador -->
 	<div id="player-modal" class="modal hidden" aria-hidden="true">
 		<div id="player-modal-backdrop" class="modal-backdrop"></div>

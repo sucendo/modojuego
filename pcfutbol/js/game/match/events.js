@@ -24,7 +24,7 @@ function posGroup(pos) {
   if (p === 'GK' || p === 'POR') return 'GK';
   if (p === 'RB' || p === 'LB' || p === 'CB' || p === 'RWB' || p === 'LWB') return 'DEF';
   if (p === 'CDM' || p === 'CM' || p === 'CAM' || p === 'RM' || p === 'LM') return 'MID';
-  if (p === 'RW' || p === 'LW' || p === 'CF' || p === 'ST') return 'ATT';
+  if (p === 'RW' || p === 'LW' || p === 'CF' || p === 'ST' || p === 'SS') return 'ATT';
   return 'MID';
 }
 
@@ -62,7 +62,7 @@ export function createFixtureMinutePicker(existingEvents) {
   return function pick() {
     for (let i = 0; i < 18; i++) {
       const m = 1 + Math.floor(Math.random() * 90);
-      if (!used.has(m)) {
+      if (!used.has(m) && !(existingEvents || []).some(ev => ev?.minute === m)) {
         used.add(m);
         return m;
       }
@@ -77,7 +77,7 @@ export function getPotentialScorersForClub(club, lineupIds) {
   const score = (p) => {
     const pos = normPos(p);
     if (pos === 'ST') return 6;
-    if (pos === 'CF') return 5;
+    if (pos === 'CF' || pos === 'SS') return 5;
     if (pos === 'RW' || pos === 'LW') return 4;
     if (pos === 'CAM') return 3;
     if (pos === 'CM') return 2;
@@ -98,7 +98,7 @@ export function getPotentialAssistersForClub(club, lineupIds) {
     if (pos === 'CM') return 5;
     if (pos === 'RW' || pos === 'LW') return 5;
     if (pos === 'RM' || pos === 'LM') return 4;
-    if (pos === 'CF') return 4;
+    if (pos === 'CF' || pos === 'SS') return 4;
     if (pos === 'ST') return 2;
     if (pos === 'CDM') return 2;
     return 1;
@@ -234,13 +234,20 @@ export function generateEventsForFixture(fx, homeClub, awayClub, hooks = {}) {
   const events = [];
   const pickMinute = createFixtureMinutePicker(events);
 
-  const addGoal = (clubId, playerId, assistPlayerId = null) => {
+  const pickGoalMinute = (start, end) => {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const minute = start + Math.floor(Math.random() * (end - start + 1));
+      if (!events.some(event => event.minute === minute)) return minute;
+    }
+    return start;
+  };
+  const addGoal = (clubId, playerId, assistPlayerId = null, range = null) => {
     events.push({
       type: 'GOAL',
       clubId,
       playerId,
       assistPlayerId: assistPlayerId || null,
-      minute: pickMinute(),
+      minute: range ? pickGoalMinute(range[0], range[1]) : pickMinute(),
     });
   };
 
@@ -249,15 +256,26 @@ export function generateEventsForFixture(fx, homeClub, awayClub, hooks = {}) {
   const homeAssisters = getPotentialAssistersForClub(homeClub, fx.homeLineupIds);
   const awayAssisters = getPotentialAssistersForClub(awayClub, fx.awayLineupIds);
 
-  for (let i = 0; i < (fx.homeGoals || 0); i++) {
-    const p = pickRandomScorer(homeScorers);
-    const a = pickRandomAssister(homeAssisters, p?.id);
-    addGoal(fx.homeClubId, p?.id || null, a?.id || null);
-  }
-  for (let i = 0; i < (fx.awayGoals || 0); i++) {
-    const p = pickRandomScorer(awayScorers);
-    const a = pickRandomAssister(awayAssisters, p?.id);
-    addGoal(fx.awayClubId, p?.id || null, a?.id || null);
+  const phases = fx.goalPhases;
+  const phased = phases && Array.isArray(phases.home) && Array.isArray(phases.away) &&
+    phases.home.reduce((a, b) => a + b, 0) === fx.homeGoals &&
+    phases.away.reduce((a, b) => a + b, 0) === fx.awayGoals;
+  const addTeamGoals = (clubId, number, scorers, assisters, range = null) => {
+    for (let i = 0; i < number; i++) {
+      const p = pickRandomScorer(scorers);
+      const a = pickRandomAssister(assisters, p?.id);
+      addGoal(clubId, p?.id || null, a?.id || null, range);
+    }
+  };
+  if (phased) {
+    const split = Math.max(2, Math.min(88, Math.round(Number(phases.splitMinute) || 65)));
+    addTeamGoals(fx.homeClubId, phases.home[0], homeScorers, homeAssisters, [1, split - 1]);
+    addTeamGoals(fx.awayClubId, phases.away[0], awayScorers, awayAssisters, [1, split - 1]);
+    addTeamGoals(fx.homeClubId, phases.home[1], homeScorers, homeAssisters, [split, 90]);
+    addTeamGoals(fx.awayClubId, phases.away[1], awayScorers, awayAssisters, [split, 90]);
+  } else {
+    addTeamGoals(fx.homeClubId, fx.homeGoals || 0, homeScorers, homeAssisters);
+    addTeamGoals(fx.awayClubId, fx.awayGoals || 0, awayScorers, awayAssisters);
   }
 
   // Subs tácticas básicas

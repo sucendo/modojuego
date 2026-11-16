@@ -1,6 +1,9 @@
 // Escudos de los clubes: todas las imágenes se sirven desde el proyecto.
 // Las URLs de Google/ESPN/Transfermarkt solo se utilizan en scripts/downloadCoats.mjs.
+import { COMPETITIONS_2026_27 } from '../../catalog_2026_27.js';
+
 const COATS_DIRECTORY = 'img/coats/2026-27';
+const KNOWN_CLUB_IDS = new Set(COMPETITIONS_2026_27.flatMap(league => league.clubs.map(club => club.id)));
 
 function normalizeClubId(clubId) {
   if (!clubId) return '';
@@ -10,15 +13,17 @@ function normalizeClubId(clubId) {
 
 export function getCoatCandidateUrlsForClubId(clubId) {
   const id = normalizeClubId(clubId);
-  return id ? [`${COATS_DIRECTORY}/${id}.png`] : [];
+  return id && KNOWN_CLUB_IDS.has(id) ? [`${COATS_DIRECTORY}/${id}.png`] : [];
 }
 
 export function getCoatUrlForClubId(clubId) {
-  return getCoatCandidateUrlsForClubId(clubId)[0] || null;
+  const id = normalizeClubId(clubId);
+  if (!id) return null;
+  return getCoatCandidateUrlsForClubId(id)[0] || coatPlaceholder('', id);
 }
 
 function coatPlaceholder(clubName, clubId) {
-  const label = String(clubName || clubId || '?').trim().split(/\s+/)
+  const label = String(clubName || clubId || '?').replace(/_/g, ' ').trim().split(/\s+/)
     .filter(Boolean).slice(0, 3).map(word => word[0].toUpperCase()).join('');
   const safeLabel = label.replace(/[&<>"]/g, '');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
@@ -55,6 +60,7 @@ export function createCoatImgElement(clubId, clubName, size = 20) {
   img.src = urls[0] || placeholder;
   img.dataset.coatFallbacks = JSON.stringify(urls.length ? [...urls.slice(1), placeholder] : []);
   img.alt = clubName ? `Escudo de ${clubName}` : 'Escudo del club';
+  if (!urls.length) img.title = 'Emblema provisional; falta el escudo oficial';
   img.classList.add('coat-icon');
   img.loading = 'lazy';
   img.decoding = 'async';

@@ -272,6 +272,7 @@ export function generateAdvancedStatsForFixture(fx, homeClub, awayClub) {
     if (pos === 'RM' || pos === 'LM') return { shoot: 1.2, pass: 1.3, defend: 0.9, dribble: 1.4, cross: 1.3, save: 0.0 };
     if (pos === 'RW' || pos === 'LW') return { shoot: 1.6, pass: 1.2, defend: 0.6, dribble: 1.6, cross: 1.2, save: 0.0 };
     if (pos === 'ST' || pos === 'CF') return { shoot: 2.0, pass: 0.9, defend: 0.4, dribble: 1.2, cross: 0.2, save: 0.0 };
+    if (pos === 'SS') return { shoot: 1.8, pass: 1.2, defend: 0.5, dribble: 1.5, cross: 0.3, save: 0.0 };
     return { shoot: 1.0, pass: 1.0, defend: 1.0, dribble: 1.0, cross: 0.6, save: 0.0 };
   };
   
