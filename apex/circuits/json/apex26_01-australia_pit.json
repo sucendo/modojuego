@@ -1,0 +1,1298 @@
+{
+  "schema": "APEX_CIRCUIT_JSON_V1",
+  "schemaVersion": 1,
+  "appVersion": "v5.230.62.8.6.7.6",
+  "circuit": {
+    "id": "01-australia",
+    "name": "Melbourne",
+    "displayName": "Albert Park",
+    "country": "🇦🇺 Australia",
+    "city": "Melbourne",
+    "layout": "melbourne-2",
+    "calendar": "F1_2026",
+    "round": 1,
+    "hudName": "ALBERT PARK"
+  },
+  "track": {
+    "lengthMeters": 5278.0,
+    "surface": "ASPHALT",
+    "circuitType": "STREET",
+    "requiresSvg": false
+  },
+  "race": {
+    "direction": "CLOCKWISE",
+    "turns": 14,
+    "laps": 58,
+    "pit": {
+      "side": -1,
+      "entry": -543.7,
+      "exit": 190.035,
+      "offset": 12.2,
+      "width": 5.4,
+      "speedKph": 80
+    },
+    "totalLaps": 58
+  },
+  "environment": {
+    "theme": "park",
+    "family": "PARK",
+    "surfaces": {
+      "runoffSurface": "ASPHALT",
+      "offSurface": "GRASS"
+    },
+    "terrainTone": "GREEN"
+  },
+  "visual": {
+    "curbs": {
+      "colors": [
+        "#14864a",
+        "#f1c232"
+      ],
+      "quality": "VISUAL_MODEL_NOT_PAINT_SPEC"
+    },
+    "mapOrientation": {
+      "rotationDeg": 0.0,
+      "mirrorX": false,
+      "mirrorY": false,
+      "source": "FORMULA1_COM_2026",
+      "sourceUrl": "https://www.formula1.com/en/racing/2026/australia",
+      "status": "BAKED_COORDINATES_NO_GLOBAL_TRANSFORM",
+      "rotationConvention": "SCREEN_CLOCKWISE",
+      "geometryUnchanged": true,
+      "appliesTo": [
+        "BASE_SVG_COORDINATES",
+        "MENU_PREVIEW_IDENTITY",
+        "HUD_MINIMAP_IDENTITY"
+      ],
+      "bakedRotationDeg": 90.0,
+      "bakedMirrorX": false,
+      "bakedMirrorY": false,
+      "note": "Presentation orientation is baked directly into SVG coordinates. No global SVG transform is used; s/length/elevation/width/banking remain unchanged."
+    },
+    "mapPresentation": {
+      "rotationDeg": 0.0,
+      "mirrorX": false,
+      "mirrorY": false,
+      "source": "FORMULA1_COM_2026",
+      "sourceUrl": "https://www.formula1.com/en/racing/2026/australia",
+      "status": "BAKED_COORDINATES_NO_GLOBAL_TRANSFORM",
+      "rotationConvention": "SCREEN_CLOCKWISE",
+      "geometryUnchanged": true,
+      "appliesTo": [
+        "BASE_SVG_COORDINATES",
+        "MENU_PREVIEW_IDENTITY",
+        "HUD_MINIMAP_IDENTITY"
+      ],
+      "bakedRotationDeg": 90.0,
+      "bakedMirrorX": false,
+      "bakedMirrorY": false,
+      "note": "Presentation orientation is baked directly into SVG coordinates. No global SVG transform is used; s/length/elevation/width/banking remain unchanged."
+    }
+  },
+  "geometryProfile": {
+    "schema": "APEX_TRACK_GEOMETRY_PROFILE_V1",
+    "reference": "LAP_FRACTION",
+    "elevationRangeM": 2.6,
+    "elevationKnots": [
+      [
+        0,
+        0.1
+      ],
+      [
+        0.18,
+        0.25
+      ],
+      [
+        0.42,
+        0.45
+      ],
+      [
+        0.66,
+        0.55
+      ],
+      [
+        0.84,
+        1
+      ],
+      [
+        0.94,
+        0.42
+      ],
+      [
+        1,
+        0.1
+      ]
+    ],
+    "widthMinM": 10.0,
+    "widthMaxM": 15.0,
+    "widthKnots": [
+      [
+        0,
+        13.0
+      ],
+      [
+        0.12,
+        12.2
+      ],
+      [
+        0.32,
+        13.8
+      ],
+      [
+        0.52,
+        13.0
+      ],
+      [
+        0.72,
+        15.0
+      ],
+      [
+        0.88,
+        10.8
+      ],
+      [
+        1,
+        13.0
+      ]
+    ],
+    "bankMaxDeg": 1.6,
+    "bankZones": [],
+    "quality": "MODELED_BASE_PROFILE",
+    "note": "Muy plano; anchura modelada variable."
+  },
+  "verticalProfile": {
+    "schema": "APEX_VERTICAL_PROFILE_V1",
+    "reference": "START_FINISH_ZERO",
+    "normalizeToZero": true,
+    "fields": [
+      "lapFraction",
+      "elevationM"
+    ],
+    "samples": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.015625,
+        0.0339
+      ],
+      [
+        0.03125,
+        0.0677
+      ],
+      [
+        0.046875,
+        0.1016
+      ],
+      [
+        0.0625,
+        0.1354
+      ],
+      [
+        0.078125,
+        0.1693
+      ],
+      [
+        0.09375,
+        0.2031
+      ],
+      [
+        0.109375,
+        0.237
+      ],
+      [
+        0.125,
+        0.2708
+      ],
+      [
+        0.140625,
+        0.3047
+      ],
+      [
+        0.15625,
+        0.3385
+      ],
+      [
+        0.171875,
+        0.3724
+      ],
+      [
+        0.1875,
+        0.4062
+      ],
+      [
+        0.203125,
+        0.4401
+      ],
+      [
+        0.21875,
+        0.474
+      ],
+      [
+        0.234375,
+        0.5078
+      ],
+      [
+        0.25,
+        0.5417
+      ],
+      [
+        0.265625,
+        0.5755
+      ],
+      [
+        0.28125,
+        0.6094
+      ],
+      [
+        0.296875,
+        0.6432
+      ],
+      [
+        0.3125,
+        0.6771
+      ],
+      [
+        0.328125,
+        0.7109
+      ],
+      [
+        0.34375,
+        0.7448
+      ],
+      [
+        0.359375,
+        0.7786
+      ],
+      [
+        0.375,
+        0.8125
+      ],
+      [
+        0.390625,
+        0.8464
+      ],
+      [
+        0.40625,
+        0.8802
+      ],
+      [
+        0.421875,
+        0.912
+      ],
+      [
+        0.4375,
+        0.929
+      ],
+      [
+        0.453125,
+        0.9459
+      ],
+      [
+        0.46875,
+        0.9628
+      ],
+      [
+        0.484375,
+        0.9797
+      ],
+      [
+        0.5,
+        0.9967
+      ],
+      [
+        0.515625,
+        1.0136
+      ],
+      [
+        0.53125,
+        1.0305
+      ],
+      [
+        0.546875,
+        1.0474
+      ],
+      [
+        0.5625,
+        1.0644
+      ],
+      [
+        0.578125,
+        1.0813
+      ],
+      [
+        0.59375,
+        1.0982
+      ],
+      [
+        0.609375,
+        1.1152
+      ],
+      [
+        0.625,
+        1.1321
+      ],
+      [
+        0.640625,
+        1.149
+      ],
+      [
+        0.65625,
+        1.1659
+      ],
+      [
+        0.671875,
+        1.2472
+      ],
+      [
+        0.6875,
+        1.3488
+      ],
+      [
+        0.703125,
+        1.4503
+      ],
+      [
+        0.71875,
+        1.5519
+      ],
+      [
+        0.734375,
+        1.6534
+      ],
+      [
+        0.75,
+        1.755
+      ],
+      [
+        0.765625,
+        1.8566
+      ],
+      [
+        0.78125,
+        1.9581
+      ],
+      [
+        0.796875,
+        2.0597
+      ],
+      [
+        0.8125,
+        2.1613
+      ],
+      [
+        0.828125,
+        2.2628
+      ],
+      [
+        0.84375,
+        2.2834
+      ],
+      [
+        0.859375,
+        2.0478
+      ],
+      [
+        0.875,
+        1.8122
+      ],
+      [
+        0.890625,
+        1.5766
+      ],
+      [
+        0.90625,
+        1.3409
+      ],
+      [
+        0.921875,
+        1.1053
+      ],
+      [
+        0.9375,
+        0.8697
+      ],
+      [
+        0.953125,
+        0.65
+      ],
+      [
+        0.96875,
+        0.4333
+      ],
+      [
+        0.984375,
+        0.2167
+      ],
+      [
+        1.0,
+        0.0
+      ]
+    ],
+    "quality": "MODELED_NOT_SURVEYED",
+    "source": "APEX_BASE_JSON_MODEL"
+  },
+  "roadWidthProfile": {
+    "schema": "APEX_ROAD_WIDTH_PROFILE_V1",
+    "fields": [
+      "lapFraction",
+      "widthM"
+    ],
+    "samples": [
+      [
+        0.0,
+        13.0
+      ],
+      [
+        0.03125,
+        12.792
+      ],
+      [
+        0.0625,
+        12.583
+      ],
+      [
+        0.09375,
+        12.375
+      ],
+      [
+        0.125,
+        12.24
+      ],
+      [
+        0.15625,
+        12.49
+      ],
+      [
+        0.1875,
+        12.74
+      ],
+      [
+        0.21875,
+        12.99
+      ],
+      [
+        0.25,
+        13.24
+      ],
+      [
+        0.28125,
+        13.49
+      ],
+      [
+        0.3125,
+        13.74
+      ],
+      [
+        0.34375,
+        13.705
+      ],
+      [
+        0.375,
+        13.58
+      ],
+      [
+        0.40625,
+        13.455
+      ],
+      [
+        0.4375,
+        13.33
+      ],
+      [
+        0.46875,
+        13.205
+      ],
+      [
+        0.5,
+        13.08
+      ],
+      [
+        0.53125,
+        13.113
+      ],
+      [
+        0.5625,
+        13.425
+      ],
+      [
+        0.59375,
+        13.738
+      ],
+      [
+        0.625,
+        14.05
+      ],
+      [
+        0.65625,
+        14.363
+      ],
+      [
+        0.6875,
+        14.675
+      ],
+      [
+        0.71875,
+        14.988
+      ],
+      [
+        0.75,
+        14.213
+      ],
+      [
+        0.78125,
+        13.392
+      ],
+      [
+        0.8125,
+        12.572
+      ],
+      [
+        0.84375,
+        11.752
+      ],
+      [
+        0.875,
+        10.931
+      ],
+      [
+        0.90625,
+        11.281
+      ],
+      [
+        0.9375,
+        11.854
+      ],
+      [
+        0.96875,
+        12.427
+      ],
+      [
+        1.0,
+        13.0
+      ]
+    ],
+    "minM": 10.0,
+    "maxM": 15.0,
+    "quality": "MODELED_BASE_PROFILE"
+  },
+  "banking": {
+    "mode": "MODEL_CAP",
+    "maxBankDeg": 1.6,
+    "zones": [],
+    "quality": "MODELED_BASE_PROFILE"
+  },
+  "corners": [
+    {
+      "turn": 1,
+      "name": "Jones",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 353.032,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO",
+      "nameQuality": "KNOWN_SECTION_NAME"
+    },
+    {
+      "turn": 2,
+      "name": "Brabham",
+      "quality": "NUMBERED_CORNER_AUDITED_2026_LOTE1_VALIDATED",
+      "s": 435.848,
+      "direction": "LEFT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO",
+      "nameQuality": "KNOWN_SECTION_NAME",
+      "directionQuality": "F1_FIA_GEOMETRY_AUDIT_2026"
+    },
+    {
+      "turn": 3,
+      "name": "T3",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 1081.437,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 4,
+      "name": "T4",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 1239.319,
+      "direction": "LEFT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 5,
+      "name": "T5",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 1434.297,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 6,
+      "name": "T6",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 1863.854,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 7,
+      "name": "T7",
+      "quality": "NUMBERED_CORNER_AUDITED_2026_LOTE1_VALIDATED",
+      "s": 1986.351,
+      "direction": "LEFT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO",
+      "directionQuality": "F1_FIA_GEOMETRY_AUDIT_2026"
+    },
+    {
+      "turn": 8,
+      "name": "T8",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 2156.354,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 9,
+      "name": "T9",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 3278.31,
+      "direction": "LEFT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 10,
+      "name": "T10",
+      "quality": "NUMBERED_CORNER_AUDITED_2026_LOTE1_VALIDATED",
+      "s": 3382.797,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO",
+      "directionQuality": "F1_FIA_GEOMETRY_AUDIT_2026"
+    },
+    {
+      "turn": 11,
+      "name": "T11",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 4086.913,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 12,
+      "name": "T12",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 4358.241,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 13,
+      "name": "T13",
+      "quality": "NUMBERED_CORNER_AUDITED_2026",
+      "s": 4607.645,
+      "direction": "LEFT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO"
+    },
+    {
+      "turn": 14,
+      "name": "T14",
+      "quality": "NUMBERED_CORNER_AUDITED_2026_LOTE1_VALIDATED",
+      "s": 4764.132,
+      "direction": "RIGHT",
+      "sourceQuality": "FASTF1_2026_CIRCUIT_INFO",
+      "directionQuality": "F1_FIA_GEOMETRY_AUDIT_2026"
+    }
+  ],
+  "namedSections": [
+    {
+      "name": "Jones",
+      "lapFraction": 0.04,
+      "quality": "KNOWN_SECTION_NAME_APPROX_POSITION",
+      "previewDx": 12.0,
+      "previewDy": -10.0
+    },
+    {
+      "name": "Brabham",
+      "lapFraction": 0.095,
+      "quality": "KNOWN_SECTION_NAME_APPROX_POSITION",
+      "previewDx": 12.0,
+      "previewDy": 8.0
+    },
+    {
+      "name": "Lakeside",
+      "lapFraction": 0.355,
+      "quality": "KNOWN_SECTION_NAME_APPROX_POSITION",
+      "previewDx": 12.0,
+      "previewDy": -10.0
+    },
+    {
+      "name": "Ascari",
+      "lapFraction": 0.56,
+      "quality": "KNOWN_SECTION_NAME_APPROX_POSITION",
+      "previewDx": 12.0,
+      "previewDy": 10.0
+    },
+    {
+      "name": "Stewart",
+      "lapFraction": 0.805,
+      "quality": "KNOWN_SECTION_NAME_APPROX_POSITION",
+      "previewDx": -54.0,
+      "previewDy": 0.0
+    },
+    {
+      "name": "Prost",
+      "lapFraction": 0.925,
+      "quality": "KNOWN_SECTION_NAME_APPROX_POSITION",
+      "previewDx": -48.0,
+      "previewDy": 0.0
+    }
+  ],
+  "timing": {
+    "controlSchema": "APEX_TIMING_CONTROLS_V4",
+    "startS": 5277.148,
+    "finishS": 5277.148,
+    "startFinishQuality": "CONTROL_LINE_SOURCE_MARKER_PROJECTED_TRANSFORM_AWARE; START_OFFSET_FIA_OFFICIAL_2026",
+    "sectors": [
+      {
+        "n": 1,
+        "from": 0,
+        "to": 0.32,
+        "endControlId": "sector-1-control"
+      },
+      {
+        "n": 2,
+        "from": 0.32,
+        "to": 0.69,
+        "endControlId": "sector-2-control"
+      },
+      {
+        "n": 3,
+        "from": 0.69,
+        "to": 1,
+        "endControlId": "finish-line"
+      }
+    ],
+    "controls": [
+      {
+        "id": "start-line",
+        "role": "start-line",
+        "s": 5277.148,
+        "name": "Línea de salida",
+        "timingPoint": false,
+        "quality": "FIA_OFFICIAL_2026",
+        "raceStart": true,
+        "offsetFromControlM": 0.0,
+        "source": "FIA Competition Visa 2026",
+        "status": "OFFICIAL_FIA"
+      },
+      {
+        "id": "sector-1-control",
+        "role": "sector-line",
+        "sector": "1",
+        "name": "Fin S1 / Inicio S2",
+        "timingPoint": true,
+        "anchor": {
+          "turn": 6,
+          "offsetM": -120
+        },
+        "lapFractionFallback": 0.32,
+        "quality": "FIA_CIRCUIT_MAP",
+        "sourceYear": 2023,
+        "s": 1743.854,
+        "resolvedQuality": "ANCHOR_RESOLVED_FROM_AUDITED_TURN_V76",
+        "status": "OFFICIAL_FIA"
+      },
+      {
+        "id": "sector-2-control",
+        "role": "sector-line",
+        "sector": "2",
+        "name": "Fin S2 / Inicio S3",
+        "timingPoint": true,
+        "anchor": {
+          "turn": 9,
+          "offsetM": -140
+        },
+        "lapFractionFallback": 0.69,
+        "quality": "FIA_CIRCUIT_MAP",
+        "sourceYear": 2023,
+        "s": 3138.31,
+        "resolvedQuality": "ANCHOR_RESOLVED_FROM_AUDITED_TURN_V76",
+        "status": "OFFICIAL_FIA"
+      },
+      {
+        "id": "speed-trap",
+        "role": "speed-trap",
+        "name": "Speed trap",
+        "timingPoint": true,
+        "anchor": {
+          "turn": 1,
+          "offsetM": -120
+        },
+        "quality": "FIA_CIRCUIT_MAP",
+        "sourceYear": 2023,
+        "s": 233.032,
+        "resolvedQuality": "ANCHOR_RESOLVED_FROM_AUDITED_TURN_V76",
+        "status": "OFFICIAL_FIA"
+      },
+      {
+        "id": "finish-line",
+        "role": "finish-line",
+        "s": 5277.148,
+        "name": "Control / meta",
+        "timingPoint": true,
+        "quality": "SOURCE_SVG_FINISH_MARKER_PROJECTED_TRANSFORM_AWARE",
+        "lapCounter": true,
+        "status": "DERIVED"
+      }
+    ],
+    "reference": "TRACK_CENTERLINE_S",
+    "finishLine": {
+      "s": 5277.148,
+      "reference": "TRACK_CENTERLINE_S",
+      "source": "F1_CIRCUITS_SVG_DETAILED_FINISH_MARKER",
+      "sourceLayout": "melbourne-2",
+      "projection": "TRANSFORM_AWARE_NEAREST_CENTERLINE_SEGMENT",
+      "status": "DERIVED"
+    },
+    "startLine": {
+      "s": 5277.148,
+      "reference": "TRACK_CENTERLINE_S",
+      "offsetFromControlM": 0.0,
+      "source": "FIA Competition Visa 2026",
+      "status": "OFFICIAL_FIA"
+    },
+    "firstLap": {
+      "distanceM": 5278.0,
+      "shorterThanNormalLapM": 0.0,
+      "modelRaceDistanceM": 306124.0
+    },
+    "finishIsExplicit": true,
+    "pathOriginIsTimingLine": false
+  },
+  "pitLane": {
+    "schema": "APEX_PIT_LANE_V1",
+    "schemaVersion": 1,
+    "reference": "PIT_CENTERLINE",
+    "primaryRunId": 0,
+    "totalLengthM": 717.911,
+    "source": {
+      "geometry": "SAVED_SVG_CENTERLINE",
+      "width": "APEX_BASE_MODEL",
+      "vertical": "TRACK_MATCHED_ENDPOINTS",
+      "boxes": "MODELED_11_TEAM_SLOTS",
+      "geometryQuality": "SVG_MEASURED"
+    },
+    "trackConnection": {
+      "entryTrackS": -543.7,
+      "exitTrackS": 190.035,
+      "entryPitS": 0.0,
+      "exitPitS": 717.911,
+      "quality": "SVG_PROJECTED"
+    },
+    "speedLimit": {
+      "kph": 80,
+      "quality": "EVENT_DEFAULT_MODEL"
+    },
+    "verticalProfile": {
+      "reference": "START_FINISH_ZERO",
+      "fields": [
+        "pitS",
+        "elevationM"
+      ],
+      "samples": [
+        [
+          0.0,
+          0.7882
+        ],
+        [
+          44.87,
+          0.7077
+        ],
+        [
+          89.739,
+          0.6273
+        ],
+        [
+          134.61,
+          0.5468
+        ],
+        [
+          179.477,
+          0.4663
+        ],
+        [
+          224.347,
+          0.3859
+        ],
+        [
+          269.216,
+          0.3054
+        ],
+        [
+          314.085,
+          0.225
+        ],
+        [
+          358.955,
+          0.1445
+        ],
+        [
+          403.824,
+          0.064
+        ],
+        [
+          448.693,
+          0.0026
+        ],
+        [
+          493.564,
+          0.0151
+        ],
+        [
+          538.433,
+          0.0277
+        ],
+        [
+          583.303,
+          0.0403
+        ],
+        [
+          628.172,
+          0.0529
+        ],
+        [
+          673.041,
+          0.0654
+        ],
+        [
+          717.911,
+          0.078
+        ]
+      ],
+      "quality": "MODELED_NOT_SURVEYED",
+      "matchTrackEndpoints": true
+    },
+    "widthProfile": {
+      "fields": [
+        "pitS",
+        "leftWidthM",
+        "rightWidthM",
+        "totalWidthM"
+      ],
+      "samples": [
+        [
+          0.0,
+          2.7,
+          2.7,
+          5.4
+        ],
+        [
+          107.686,
+          2.7,
+          2.7,
+          5.4
+        ],
+        [
+          215.372,
+          2.7,
+          2.7,
+          5.4
+        ],
+        [
+          358.955,
+          2.7,
+          2.7,
+          5.4
+        ],
+        [
+          502.537,
+          2.7,
+          2.7,
+          5.4
+        ],
+        [
+          610.223,
+          2.7,
+          2.7,
+          5.4
+        ],
+        [
+          717.911,
+          2.7,
+          2.7,
+          5.4
+        ]
+      ],
+      "defaultTotalWidthM": 5.4,
+      "quality": "MODELED_BASE_WIDTH"
+    },
+    "boxZone": {
+      "startPitS": 201.015,
+      "endPitS": 516.896,
+      "lengthM": 315.881,
+      "slotCount": 11,
+      "slotPitchM": 28.716,
+      "quality": "MODELED_OPERATIONAL_LAYOUT"
+    },
+    "boxSlots": [
+      {
+        "id": "box-01",
+        "index": 1,
+        "pitS": 215.372,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.402,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-02",
+        "index": 2,
+        "pitS": 244.09,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.3505,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-03",
+        "index": 3,
+        "pitS": 272.806,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.299,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-04",
+        "index": 4,
+        "pitS": 301.522,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.2475,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-05",
+        "index": 5,
+        "pitS": 330.239,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.196,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-06",
+        "index": 6,
+        "pitS": 358.955,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.1445,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-07",
+        "index": 7,
+        "pitS": 387.672,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.093,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-08",
+        "index": 8,
+        "pitS": 416.388,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.0415,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-09",
+        "index": 9,
+        "pitS": 445.105,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.0016,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-10",
+        "index": 10,
+        "pitS": 473.821,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.0096,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      },
+      {
+        "id": "box-11",
+        "index": 11,
+        "pitS": 502.537,
+        "garageSide": "OUTER",
+        "lateralOffsetM": 4.428,
+        "elevationM": 0.0177,
+        "teamAssignment": null,
+        "status": "MODELED_POSITION"
+      }
+    ],
+    "notes": "Longitud y conexiones medidas en el SVG guardado. Los extremos del perfil vertical se ajustan a la calzada activa."
+  },
+  "terrain": {
+    "contourReference": "LOCAL_ABSOLUTE",
+    "contourScale": 1,
+    "contourOffsetM": 0,
+    "runoffFlatToWall": true,
+    "embankmentBlendM": 28,
+    "maxCutFillSlopeDeg": 34,
+    "maxDrop": 13,
+    "maxRise": 8
+  },
+  "walls": {
+    "catchFence": true,
+    "fenceHeightM": 1.3
+  },
+  "gameplay": {
+    "aiGripScale": 1,
+    "difficultyScale": 1
+  },
+  "dataQuality": {
+    "raceMetadata": "F1DB_2026_CURRENT",
+    "verticalProfile": "MODELED_NOT_SURVEYED",
+    "roadWidth": "MODELED_BASE_PROFILE",
+    "banking": "MODELED_BASE_PROFILE",
+    "pitLane": "MODELED_OPERATIONAL_BASE",
+    "timingControls": "FIA_CIRCUIT_MAP",
+    "startFinish": "FIA_OR_DERIVED_START_OFFSET_PLUS_SOURCE_SVG_FINISH_MARKER",
+    "cornerMarkers": "AUDITED_2026_F1_FIA_FASTF1_WHEN_AVAILABLE"
+  },
+  "sources": {
+    "raceMetadata": "F1DB 2026 season race YAML",
+    "timingControls": "FIA circuit map 2023",
+    "geometry": "APEX legacy geometry model migrated into BASE JSON",
+    "finishLineGeometry": "julesr0y/f1-circuits-svg detailed finish marker (transform-aware projection)",
+    "startLineOffset": "FIA Competition Visa 2026",
+    "cornerAudit": "Formula1.com 2026 + FIA circuit maps; FastF1/MultiViewer circuit-info distances where available"
+  },
+  "notes": "BASE APEX universal. SVG base/externo define geometría 2D; JSON base define ficha, perfiles físicos, timing y pit. Importaciones JSON/SVG son overrides reversibles. Los campos MODELED/DERIVED no se presentan como mediciones oficiales.",
+  "grandPrix": {
+    "season": 2026,
+    "round": 1,
+    "name": "Gran Premio de Australia",
+    "date": "2026-03-08",
+    "venue": "Circuito de Albert Park",
+    "totalLaps": 58,
+    "raceDistanceKm": 306.124,
+    "sourceQuality": "OFFICIAL_F1_2026"
+  },
+  "dataSources": {
+    "wikipediaSeason2026": "https://es.wikipedia.org/wiki/Temporada_2026_de_F%C3%B3rmula_1",
+    "wikipediaCircuit": "https://es.wikipedia.org/wiki/Circuito_de_Albert_Park",
+    "formula1Official2026": "https://www.formula1.com/en/racing/2026/australia",
+    "checkedOn": "2026-09-29"
+  },
+  "activeAero": {
+    "schema": "APEX_ACTIVE_AERO_V2",
+    "straightModeEnabled": true,
+    "straightMode": {
+      "enabled": true,
+      "zones": [],
+      "status": "MODELED_NOT_SURVEYED",
+      "source": "APEX_GEOMETRY_DERIVED_FROM_BASE_CENTERLINE",
+      "note": "No metre-precise FIA Straight Mode activation geometry authored; runtime derives candidate straight zones."
+    },
+    "zones": [],
+    "source": "APEX_GEOMETRY_DERIVED_FROM_BASE_CENTERLINE",
+    "quality": "MODELED_NOT_SURVEYED",
+    "operationalControls": [
+      {
+        "id": "override-detection",
+        "role": "override-detection",
+        "s": 4650.0,
+        "status": "OFFICIAL_FIA",
+        "source": "FIA 2026 Australian Grand Prix · Power Unit Information"
+      },
+      {
+        "id": "override-activation",
+        "role": "override-activation",
+        "s": 4713.0,
+        "status": "OFFICIAL_FIA",
+        "source": "FIA 2026 Australian Grand Prix · Power Unit Information"
+      }
+    ],
+    "overrideMode": {
+      "status": "OFFICIAL_FIA",
+      "detectionGapS": 1.0,
+      "detectionS": 4650.0,
+      "activationS": 4713.0,
+      "source": "FIA 2026 Australian Grand Prix · Power Unit Information",
+      "sourceUrl": "https://www.fia.com/documents/championships/fia-formula-one-world-championship-14/event/Australian%20Grand%20Prix",
+      "note": "Detection value marked TBC in the published PU information."
+    }
+  },
+  "validation": {
+    "cornerNumbering": {
+      "status": "VALIDATED_FIA_2026_LOTE1",
+      "turns": 14,
+      "source": "FIA 2026 Melbourne Circuit Map V3",
+      "sourceUrl": "https://www.fia.com/system/files/decision-document/2026_melbourne_event_-_circuit_map_-_melbourne_2026_0.pdf"
+    },
+    "brakeBoards": {
+      "policy": "ALL_NON_FAST_TURNS",
+      "placement": "OUTSIDE_OF_ANNOUNCED_TURN_APPROACH",
+      "fastExemptTurns": [
+        5,
+        7,
+        8,
+        9,
+        10
+      ],
+      "status": "MODELED_POSITION_AUDITED_ASSOCIATION"
+    }
+  },
+  "cornerAudit": {
+    "schema": "APEX_F1_CORNER_AUDIT_V1",
+    "checkedOn": "2026-10-01",
+    "sourceQuality": "FASTF1_2026_CIRCUIT_INFO",
+    "officialTurns": 14,
+    "svgAuthoritative": true,
+    "globalTransform": false,
+    "brakeBoards": {
+      "policy": "ONLY_FAST_EXEMPT; LINKED_CORNERS_SHARE_ENTRY_SERIES",
+      "strongSeries": [
+        1,
+        3,
+        11
+      ],
+      "mediumSeries": [
+        6,
+        13
+      ],
+      "compactSeries": [],
+      "fastExempt": [
+        5,
+        7,
+        8,
+        9,
+        10
+      ],
+      "linkedCovered": [
+        2,
+        4,
+        12,
+        14
+      ],
+      "authoritativeSvg": true
+    }
+  }
+}

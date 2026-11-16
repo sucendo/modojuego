@@ -13,6 +13,24 @@ const api=new Function('nearestTrackState','envProfile','renderRibbonFrameAt','a
  code+'return {profile:apexPitVisualMergeProfileV1526,point:apexPitVisualPointV1526,merge:apexPitMergeQuadV1526};')(
  (x,z)=>({s:x,lat:z}),()=>({half:5}),()=>({nx:0,nz:1}),(frame,env,side)=>({end:{x:0,y:0,z:side*env.half}}));
 const sg=(a,b,y=0)=>({x1:0,z1:a,y1:y,x2:20,z2:b,y2:y,width:6,leftWidth:3,rightWidth:3,len:Math.hypot(20,b-a)});
+const joinedSegments=new Function('trackData',section(core,'function apexPitSegments(', 'function apexPitVisualMergeProfileV1526(')+'return apexPitSegments();')(
+ {customWorld:{pitNetwork:{runs:[{width:6,points:[
+  {x:0,y:0,z:16,pitS:0},{x:10,y:0,z:16,pitS:10},{x:18,y:0,z:21,pitS:20}]}]}}});
+for(const width of [-3,3]){
+ assert.deepEqual(api.point(api.profile(joinedSegments[0],1),width),
+  api.point(api.profile(joinedSegments[1],0),width),'Adjacent quads share their complete cross-section');
+}
+const config=JSON.parse(read('circuits/json/apex26_01-australia_pit.json'));
+assert.equal(config.pitLane.totalLengthM,717.911);
+const pitCode=section(read('parts/part-023.txt'),'function apexPitProfileSample(', 'function apexMigratePitNetworkV2(');
+const points=[0,100,200].map(pitS=>({x:pitS,z:0,y:99,pitS}));
+const network={primaryChainId:0,primaryLength:200,runs:[{chainId:0,points}]};
+new Function('trackData','apexPitLaneJsonProfile','apexNearestTrackSurfaceY','apexCloneJson','apexPitPointAtS','raceMetaFor','apexPitServiceLayout','clamp','lerp',pitCode+'apexApplyPitLaneJsonProfile();')(
+ {customWorld:{pitNetwork:network}},()=>config.pitLane,x=>x===0?2:3,x=>x,()=>null,()=>null,()=>null,
+ (x,lo,hi)=>Math.min(hi,Math.max(lo,x)),(a,b,t)=>a+(b-a)*t);
+assert.equal(points[0].y,2,'Entry joins the active road elevation');
+assert.equal(points[2].y,3,'Exit joins the active road elevation');
+assert.ok(points[1].y<1,'Interior elevation is taken from the profile');
 const separated=api.merge(sg(16,16));
 assert.equal(separated.a.width,6);
 assert.equal(separated.b.width,6);

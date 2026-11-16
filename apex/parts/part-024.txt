@@ -6,7 +6,32 @@ ALL_F1',wallStyle:r.wallStyle||'wall_f1',color:r.wallColor||null,fence:r.fence,f
 function apexPitSegments(){
  const cw=trackData&&trackData.customWorld,n=cw&&cw.pitNetwork;if(!n||!Array.isArray(n.runs))return[];
  if(Array.isArray(n._segments))return n._segments;const segs=[];
- for(const r of n.runs||[]){const pts=r.points||[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.02)continue;const aw=Number.isFinite(+a.width)?+a.width:(r.width||5.9),bw=Number.isFinite(+b.width)?+b.width:(r.width||5.9),al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;segs.push({runId:r.id,entryS:pts[0].pitS,exitS:pts[pts.length-1].pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len})}}
+ for(const r of n.runs){
+  const pts=r.points||[];
+  // Use the same cross-section on both sides of each joint. Segment-local
+  // normals otherwise pull the pavement and paint apart on outside bends.
+  const normal=(a,b)=>{
+   const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);
+   return len>=.02?{x:-dz/len,z:dx/len}:null;
+  };
+  const normals=pts.slice(1).map((p,i)=>normal(pts[i],p));
+  const cuts=pts.map((_,i)=>{
+   const a=normals[i-1],b=normals[i];
+   if(!a||!b)return a||b;
+   const divisor=Math.max(1,1+a.x*b.x+a.z*b.z);
+   return{x:(a.x+b.x)/divisor,z:(a.z+b.z)/divisor};
+  });
+  const width=p=>Number.isFinite(+p.width)?+p.width:(r.width||5.9);
+  for(let i=0;i<pts.length-1;i++){
+   if(!normals[i])continue;
+   const a=pts[i],b=pts[i+1],aw=width(a),bw=width(b),
+    al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,
+    ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;
+   segs.push({runId:r.id,exitS:pts.at(-1).pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,
+    visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,visualNormalA:cuts[i],visualNormalB:cuts[i+1],
+    x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len:Math.hypot(b.x-a.x,b.z-a.z)});
+  }
+ }
  n._segments=segs;return segs;
 }
 // V15.2.6 — pit merge geometry, visual only. A pitlane crossing the main
@@ -19,7 +44,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  if(Object.prototype.hasOwnProperty.call(sg,key))return sg[key];
  const x=end?sg.x2:sg.x1,z=end?sg.z2:sg.z1,y=end?sg.y2:sg.y1,
   dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=Math.hypot(dx,dz)||1,
-  nx=-dz/len,nz=dx/len;
+  normal=end?sg.visualNormalB:sg.visualNormalA,nx=normal?.x??(-dz/len),nz=normal?.z??(dx/len);
  const left=Math.max(.05,Number(end?sg.visualLeftB:sg.visualLeftA)||sg.leftWidth||sg.width*.5),
   right=Math.max(.05,Number(end?sg.visualRightB:sg.visualRightA)||sg.rightWidth||sg.width*.5);
  let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false,paintEdges=null,paintCrossesTrack=false;
@@ -6486,7 +6511,7 @@ function collectExactPitRenderItems(cam){
     b=lat=>worldToCamera(sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat,cam);
    const toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
    const first=apexPitVisualMergeProfileV1526(sg,0),last=apexPitVisualMergeProfileV1526(sg,1);
-   const mergePaint=first.paintEdges&&last.paintEdges&&(first.paintCrossesTrack||last.paintCrossesTrack);
+   const mergePaint=first.paintEdges&&last.paintEdges&&(first.paintCrossesTrack||last.paintCrossesTrack||first.clipped||last.clipped);
    const merged=apexPitMergeQuadV1526(sg);
    if(merged){
     const {a:pa,b:pb,quad}=merged;
