@@ -15,27 +15,28 @@ if not defined PHP_EXE (
 
 if defined PHP_EXE (
   echo Iniciando PC Futbol en %PCF_URL%
-  echo Manten esta ventana abierta mientras juegas.
+  echo Mantente atento a la ventana del servidor mientras juegas.
+  start "Servidor PC Futbol" "%PHP_EXE%" -S 127.0.0.1:8765
+  timeout /t 2 /nobreak >nul
   start "" "%PCF_URL%"
-  "%PHP_EXE%" -S 127.0.0.1:8765
   goto :end
 )
 
 where py >nul 2>&1
 if not errorlevel 1 (
   echo Iniciando PC Futbol en %PCF_URL%
-  echo Manten esta ventana abierta mientras juegas.
+  start "Servidor PC Futbol" py -3 -m http.server 8765 --bind 127.0.0.1
+  timeout /t 2 /nobreak >nul
   start "" "%PCF_URL%"
-  py -3 -m http.server 8765 --bind 127.0.0.1
   goto :end
 )
 
 where python >nul 2>&1
 if not errorlevel 1 (
   echo Iniciando PC Futbol en %PCF_URL%
-  echo Manten esta ventana abierta mientras juegas.
+  start "Servidor PC Futbol" python -m http.server 8765 --bind 127.0.0.1
+  timeout /t 2 /nobreak >nul
   start "" "%PCF_URL%"
-  python -m http.server 8765 --bind 127.0.0.1
   goto :end
 )
 
