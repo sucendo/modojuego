@@ -26,7 +26,9 @@ export function getFlagUrlForNationality(nationality) {
 	Dinamarca: 'Flag_of_Denmark.svg',
 	Finlandia: 'Flag_of_Finland.svg',
 	Grecia: 'Flag_of_Greece.svg',
+	Hungría: 'Flag_of_Hungary.svg',
 	Inglaterra: 'Flag_of_England.svg',
+	'GB-ENG': 'Flag_of_England.svg',
 	Islandia: 'Flag_of_Iceland.svg',
 	Francia: 'Flag_of_France.svg',
 	Georgia: 'Flag_of_Georgia.svg',
@@ -62,8 +64,10 @@ export function getFlagUrlForNationality(nationality) {
 	Colombia: 'Flag_of_Colombia.svg',
 	Ecuador: 'Flag_of_Ecuador.svg',
 	'Estados Unidos': 'Flag_of_the_United_States.svg',
+	'Estados Unidos de América': 'Flag_of_the_United_States.svg',
 	Honduras: 'Flag_of_Honduras_2022_present.svg',
 	'Guadalupe (Francia)':  'Flag_of_France.svg',
+	Guadeloupe: 'Flag_of_France.svg',
 	México: 'Flag_of_Mexico.svg',
 	Mexico: 'Flag_of_Mexico.svg',
 	Surinam: 'Flag_of_Suriname.svg',
@@ -78,6 +82,7 @@ export function getFlagUrlForNationality(nationality) {
 	'República Centroafricana': 'Flag_of_the_Central_African_Republic.svg',
 	'República Democrática del Congo': 'Flag_of_the_Democratic_Republic_of_the_Congo.svg',
 	'Costa de Marfil': 'Flag_of_Côte_d_Ivoire.svg',
+	"Côte d'Ivoire": 'Flag_of_Côte_d_Ivoire.svg',
 	Ghana:	'Flag_of_Ghana.svg',
 	Guinea: 'Flag_of_Guinea.svg',
 	'Guinea Ecuatorial': 'Flag_of_Equatorial_Guinea.svg',
@@ -106,9 +111,33 @@ export function getFlagUrlForNationality(nationality) {
   return `img/flags/${filename}`;
 }
 
+// Bandera Unicode para los países presentes en plantillas de Primera cuyo SVG
+// todavía no forma parte del paquete de imágenes local.
+const FALLBACK_COUNTRY_CODES = {
+  argelia: 'DZ', 'guinea-bissau': 'GW', 'corea del sur': 'KR',
+  egipto: 'EG', gambia: 'GM', bolivia: 'BO', indonesia: 'ID',
+  gabón: 'GA', irlanda: 'IE', kenia: 'KE', escocia: 'GB', malí: 'ML',
+};
+
+export function getFlagEmojiForNationality(nationality) {
+  const code = FALLBACK_COUNTRY_CODES[normalizeNationality(nationality).toLocaleLowerCase('es')];
+  if (!code) return null;
+  return [...code].map(char => String.fromCodePoint(127397 + char.charCodeAt(0))).join('');
+}
+
 export function createFlagImgElement(nationality, size = 16) {
   const url = getFlagUrlForNationality(nationality);
-  if (!url) return null;
+  if (!url) {
+    const emoji = getFlagEmojiForNationality(nationality);
+    if (!emoji) return null;
+    const element = document.createElement('span');
+    element.textContent = emoji;
+    element.classList.add('flag-emoji');
+    element.setAttribute('role', 'img');
+    element.setAttribute('aria-label', `Bandera de ${nationality}`);
+    if (size != null) element.style.fontSize = `${size}px`;
+    return element;
+  }
 
   const img = document.createElement('img');
   img.src = url;

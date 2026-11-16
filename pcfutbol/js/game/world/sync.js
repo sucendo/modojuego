@@ -6,6 +6,8 @@
 
 import { GameState } from '../../state.js';
 import { getFixtureKickoffISO } from '../utils/fixtures.js';
+import { advanceAiTransferMarket } from '../transferMarket.js';
+import { getSeasonStartYear } from '../../gameSeason.js';
 
 let _syncMainLeagueUpTo = null;
 let _simulateQuickWorldFixture = null;
@@ -54,7 +56,7 @@ export function computeGameNowISO() {
     return d.toISOString();
   }
 
-  const d = new Date(Date.UTC(2025 + (season - 1), 7, 1, 9, 0, 0));
+  const d = new Date(Date.UTC(getSeasonStartYear(season), 7, 1, 9, 0, 0));
   const md = GameState.currentDate?.matchday || 1;
   d.setUTCDate(d.getUTCDate() + (Math.max(1, md) - 1) * 7);
   return d.toISOString();
@@ -71,7 +73,7 @@ export function computeHorizonISOAfterMatchday(simulatedFixtures) {
   if (last == null) {
     const season = GameState.currentDate?.season || 1;
     const md = GameState.currentDate?.matchday || 1;
-    const d = new Date(Date.UTC(2025 + (season - 1), 7, 1, 20, 0, 0));
+    const d = new Date(Date.UTC(getSeasonStartYear(season), 7, 1, 20, 0, 0));
     d.setUTCDate(d.getUTCDate() + (Math.max(1, md) - 1) * 7);
     last = d.getTime();
   }
@@ -138,4 +140,8 @@ export function syncWorldLeaguesUpToTime(upToISO) {
     if (!lg.currentDate) lg.currentDate = { season: GameState.currentDate?.season || 1, matchday: 1 };
     if (maxPlayed > 0) lg.currentDate.matchday = Math.min((lg.competition?.maxMatchday || maxPlayed), maxPlayed + 1);
   });
+
+  // El mercado solo consume tiempo de juego ya avanzado. Es idempotente:
+  // refrescar el HUB o importar una partida no duplica operaciones.
+  advanceAiTransferMarket(upToISO);
 }

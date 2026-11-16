@@ -1,7 +1,11 @@
 // js/state.js
 
 import { initialLeague, allLeagues } from './data.js';
-import { CALENDAR_ES_LALIGA_2025_26 } from './calendar_es_laLiga_2025_26.js';
+import { getSeasonStartYear } from './gameSeason.js';
+import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
+import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
+import { fitPlayersToFormation } from './game/tactics/identity.js';
+import { ensurePlayerPositionData } from './game/tactics/positions.js';
 
 export const GameState = {
   meta: {
@@ -34,7 +38,39 @@ export const GameState = {
   world: {
     leagues: [],
   },
+  transferHistory: [],
+  marketState: null,
+  currentTimeISO: null,
 };
+
+// Las fotos iniciales de cada temporada permiten conservar el bloque principal
+// de cada plantilla sin depender del orden en que se simulen las ligas.
+export function ensureTransferMarketState() {
+  if (!GameState.marketState || typeof GameState.marketState !== 'object') {
+    GameState.marketState = {};
+  }
+  const market = GameState.marketState;
+  if (!market.baselines || typeof market.baselines !== 'object') market.baselines = {};
+  const season = Number(GameState.currentDate?.season || 1);
+  const leagues = [{ id: GameState.league?.id, clubs: GameState.clubs }, ...(GameState.world?.leagues || [])];
+  for (const league of leagues) {
+    for (const club of league.clubs || []) {
+      const key = `${season}:${league.id}:${club.id}`;
+      if (market.baselines[key]) continue;
+      const players = club.players || [];
+      const ids = new Set(players.map(p => String(p.id)));
+      const xi = (club.lineup || []).filter(id => ids.has(String(id))).slice(0, 11);
+      if (xi.length < 11) {
+        for (const p of [...players].sort((a, b) => (b.overall || 0) - (a.overall || 0))) {
+          if (xi.length === 11) break;
+          if (!xi.some(id => String(id) === String(p.id))) xi.push(p.id);
+        }
+      }
+      market.baselines[key] = { xi: xi.map(String), squad: players.map(p => String(p.id)) };
+    }
+  }
+  return market;
+}
 
 /**
  * Crea una nueva partida rápida usando la liga y clubes de data.js
@@ -66,11 +102,13 @@ export function newGame(options = {}) {
     season: 1,
     matchday: 1,
   };
+  GameState.currentTimeISO = null;
 
   GameState.league = {
     id: league.id,
     name: league.name,
     country: league.country,
+    tier: league.tier || 1,
     cardStrictness:
       league.cardStrictness != null ? league.cardStrictness : 1.0,
   };
@@ -83,6 +121,8 @@ export function newGame(options = {}) {
     maxMatchday: 0,
   };
   GameState.world = { leagues: [] };
+  GameState.transferHistory = [];
+  GameState.marketState = null;
 
   GameState.user.roleMode = roleMode;
   GameState.user.clubId = selectedClubId;
@@ -96,6 +136,7 @@ export function newGame(options = {}) {
   normalizeGameState();
   setupCompetition();
   setupWorldLeagues();
+  ensureTransferMarketState();
 }
 
 /**
@@ -112,6 +153,7 @@ export function applyLoadedState(raw) {
 
   GameState.meta = raw.meta;
   GameState.currentDate = raw.currentDate || GameState.currentDate;
+  GameState.currentTimeISO = raw.currentTimeISO || null;
   GameState.league = raw.league;
   if (GameState.league.cardStrictness == null) {
     GameState.league.cardStrictness = 1.0;
@@ -125,6 +167,8 @@ export function applyLoadedState(raw) {
   
   // Mundo (otras ligas)
   GameState.world = raw.world || GameState.world || { leagues: [] };
+  GameState.transferHistory = Array.isArray(raw.transferHistory) ? raw.transferHistory : [];
+  GameState.marketState = raw.marketState || null;
 
   normalizeGameState();
   if (!GameState.fixtures || GameState.fixtures.length === 0) {
@@ -141,7 +185,8 @@ export function applyLoadedState(raw) {
     setupWorldLeagues();
   } else {
     normalizeWorldLeagues();
-  }  
+  }
+  ensureTransferMarketState();
 }
 
 /**
@@ -173,13 +218,15 @@ function isPlayerUnavailable(player) {
 function ensureClubDefaults(club) {
   if (!club) return;
 
-  // Táctica base
+  // Identidad de 2026/27 para partidas nuevas; las tácticas de partidas
+  // guardadas nunca se sobrescriben al normalizar el estado.
+  const identity = club.tacticalIdentity || {};
   if (!club.alignment) {
     club.alignment = {
-      formation: '4-4-2',
-      mentality: 'BALANCED',
-      tempo: 'NORMAL',
-      pressure: 'NORMAL',
+      formation: identity.formation || '4-4-2',
+      mentality: identity.mentality || 'BALANCED',
+      tempo: identity.tempo || 'NORMAL',
+      pressure: identity.pressure || 'NORMAL',
     };
   } else {
     if (!club.alignment.formation) club.alignment.formation = '4-4-2';
@@ -187,46 +234,44 @@ function ensureClubDefaults(club) {
     if (!club.alignment.tempo) club.alignment.tempo = 'NORMAL';
     if (!club.alignment.pressure) club.alignment.pressure = 'NORMAL';
   }
+  if (!club.tactics) {
+    club.tactics = {
+      formation: club.alignment.formation,
+      mentality: club.alignment.mentality,
+      tempo: club.alignment.tempo,
+      pressure: club.alignment.pressure,
+      playStyle: identity.playStyle || 'POSSESSION',
+    };
+  }
 
   // XI (11) + Convocados (banquillo 9)
   if (!Array.isArray(club.lineup)) club.lineup = [];
   if (!Array.isArray(club.bench)) club.bench = [];
 
-  // Si vienes de save viejo o está vacío: autogenerar una convocatoria razonable
-  if ((club.lineup.length === 0 && Array.isArray(club.players) && club.players.length) || club.bench.length === 0) {
-    const available = (club.players || [])
-      .filter((p) => p && p.id && !p.injury && !p.suspension)
-      .slice()
-      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
-
-    const pickedXI = [];
-    // asegurar un portero si existe
-    const gk = available.find((p) => String(p.position || '').toUpperCase() === 'POR');
-    if (gk) pickedXI.push(gk.id);
-
-    for (let i = 0; i < available.length && pickedXI.length < 11; i++) {
-      const id = available[i].id;
-      if (id && !pickedXI.includes(id)) pickedXI.push(id);
-    }
-
-    const xiSet = new Set(pickedXI);
-    const pickedBench = [];
-    for (let i = 0; i < available.length && pickedBench.length < 9; i++) {
-      const id = available[i].id;
-      if (id && !xiSet.has(id) && !pickedBench.includes(id)) pickedBench.push(id);
-    }
-
-    club.lineup = pickedXI.slice(0, 11);
-    club.bench = pickedBench.slice(0, 9);
-  } else {
-    // limpieza: únicos y limitar tamaños
-    club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
-    const xiSet = new Set(club.lineup);
-    club.bench = Array.from(new Set(club.bench)).filter((id) => id && !xiSet.has(id)).slice(0, 9);
-  }
+  const available = (club.players || [])
+    .filter(p => p?.id && !isPlayerUnavailable(p))
+    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+  const preferredXI = club.lineup.length ? club.lineup : fitPlayersToFormation(
+    available, club.tactics?.formation || club.alignment?.formation,
+  ).map(s => s.player?.id).filter(Boolean);
+  club.lineup = selectValidStartingXI(club.players, preferredXI, isPlayerUnavailable);
+  const chosen = new Set(club.lineup.map(String));
+  const bench = [];
+  const addToBench = id => {
+    const player = available.find(p => String(p.id) === String(id));
+    if (!player || chosen.has(String(id)) || bench.length >= 9) return;
+    bench.push(player.id);
+    chosen.add(String(id));
+  };
+  for (const id of club.bench) addToBench(id);
+  for (const player of available) addToBench(player.id);
+  club.bench = bench;
 }
 
 function ensurePlayerDefaults(player, season) {
+  // Guardados anteriores a la ampliación de posiciones: migración no
+  // destructiva y sin alterar la valoración, el equipo ni el contrato.
+  ensurePlayerPositionData(player);
   if (player.morale == null) player.morale = 0.7;
   if (player.fitness == null) player.fitness = 0.9;
   if (player.transferListed == null) player.transferListed = false;
@@ -536,7 +581,7 @@ function applyStatsToFixture(fx, season, playerIndex) {
   (Array.isArray(fx.homeLineupIds) ? fx.homeLineupIds : []).forEach((pid) => {
     const info = playerIndex.get(pid);
     if (!info || !info.player) return;
-    if (String(info.player.position || '').toUpperCase() !== 'POR') return;
+    if (!isGoalkeeper(info.player)) return;
     if (homeGA !== 0) return;
     ensurePlayerSeasonStats(info.player, season);
     info.player.stats[key].cleanSheets += 1;
@@ -544,7 +589,7 @@ function applyStatsToFixture(fx, season, playerIndex) {
   (Array.isArray(fx.awayLineupIds) ? fx.awayLineupIds : []).forEach((pid) => {
     const info = playerIndex.get(pid);
     if (!info || !info.player) return;
-    if (String(info.player.position || '').toUpperCase() !== 'POR') return;
+    if (!isGoalkeeper(info.player)) return;
     if (awayGA !== 0) return;
     ensurePlayerSeasonStats(info.player, season);
     info.player.stats[key].cleanSheets += 1;
@@ -659,11 +704,14 @@ function generateAttributesForPosition(position, overall) {
   const isGK = pos === 'POR' || pos === 'GK';
   const isCB = pos === 'DFC' || pos === 'CB';
   const isFB =
-    pos === 'LD' || pos === 'LI' || pos === 'RB' || pos === 'LB' || pos === 'CAD';
-  const isDM = pos === 'MCD' || pos === 'DM';
-  const isCM = pos === 'MC';
-  const isAM = pos === 'MCO' || pos === 'MP';
-  const isWinger = pos === 'EI' || pos === 'ED';
+    pos === 'LD' || pos === 'LI' || pos === 'RB' || pos === 'LB'
+    || pos === 'RWB' || pos === 'LWB' || pos === 'CAD';
+  const isDM = pos === 'MCD' || pos === 'DM' || pos === 'CDM';
+  const isCM = pos === 'MC' || pos === 'CM';
+  const isAM = pos === 'MCO' || pos === 'MP' || pos === 'CAM';
+  const isWideMid = pos === 'RM' || pos === 'LM';
+  const isWinger = ['EI', 'ED', 'RW', 'LW'].includes(pos);
+  const isSS = pos === 'SS';
   const isST =
     pos === 'DC' || pos === 'SD' || pos === 'ST' || pos === 'FW' || pos === 'CF';
 
@@ -757,6 +805,18 @@ function generateAttributesForPosition(position, overall) {
     physical.pace = clampAttr(base + 2);
     physical.stamina = clampAttr(base + 1);
     physical.strength = clampAttr(base - 1);
+  } else if (isWideMid) {
+    technical.passing = clampAttr(base + 3);
+    technical.shooting = clampAttr(base - 1);
+    technical.dribbling = clampAttr(base + 3);
+    technical.tackling = clampAttr(base);
+    mental.vision = clampAttr(base + 3);
+    mental.composure = clampAttr(base + 1);
+    mental.workRate = clampAttr(base + 4);
+    mental.leadership = clampAttr(base);
+    physical.pace = clampAttr(base + 4);
+    physical.stamina = clampAttr(base + 5);
+    physical.strength = clampAttr(base);
   } else if (isWinger) {
     // Extremos: velocidad y regate
     technical.passing = clampAttr(base + 1);
@@ -772,6 +832,18 @@ function generateAttributesForPosition(position, overall) {
     physical.pace = clampAttr(base + 7);
     physical.stamina = clampAttr(base + 3);
     physical.strength = clampAttr(base - 2);
+  } else if (isSS) {
+    technical.passing = clampAttr(base + 3);
+    technical.shooting = clampAttr(base + 4);
+    technical.dribbling = clampAttr(base + 5);
+    technical.tackling = clampAttr(base - 5);
+    mental.vision = clampAttr(base + 4);
+    mental.composure = clampAttr(base + 3);
+    mental.workRate = clampAttr(base + 1);
+    mental.leadership = clampAttr(base);
+    physical.pace = clampAttr(base + 4);
+    physical.stamina = clampAttr(base + 2);
+    physical.strength = clampAttr(base);
   } else if (isST) {
     // Delanteros: definición, algo de fuerza, menos defensa
     technical.passing = clampAttr(base - 1);
@@ -819,19 +891,14 @@ function clampAttr(v) {
  * Prepara el calendario y la clasificación inicial.
  *
  * Regla:
- *  - Temporada 1 (2025/26) en LaLiga: usa calendario oficial si encaja con los IDs de clubs.
- *  - Resto de temporadas/ligas: genera round-robin + asigna fechas internas.
+ *  - Todas las competiciones 2026/27 generan round-robin hasta incorporar
+ *    sus calendarios oficiales respectivos. Nunca reutilizar el de 2025/26.
  */
 function setupCompetition() {
   const season = Number(GameState.currentDate?.season || 1);
-  const leagueId = GameState.league?.id || null;
   const clubIds = (GameState.clubs || []).map((c) => c?.id).filter(Boolean);
-
-  let built = tryBuildOfficialFixturesForLeague(leagueId, season, clubIds);
-  if (!built) {
-    built = generateRoundRobinFixtures(clubIds);
-    decorateGeneratedFixturesWithSchedule(built.fixtures, season);
-  }
+  const built = generateRoundRobinFixtures(clubIds);
+  decorateGeneratedFixturesWithSchedule(built.fixtures, season);
 
   GameState.fixtures = built.fixtures || [];
 
@@ -857,164 +924,16 @@ function setupCompetition() {
 // Calendario oficial / generado
 // ----------------------------
 
-function tryBuildOfficialFixturesForLeague(leagueId, season, clubIds) {
-  if (Number(season) !== 1) return null;
-  if (!leagueId) return null;
-
-  // Por ahora: único calendario oficial integrado
-  if (leagueId !== CALENDAR_ES_LALIGA_2025_26?.leagueId) return null;
-
-  const clubSet = new Set((clubIds || []).map(String));
-  const matchdays = Array.isArray(CALENDAR_ES_LALIGA_2025_26?.matchdays)
-    ? CALENDAR_ES_LALIGA_2025_26.matchdays
-    : [];
-  if (!matchdays.length) return null;
-
-  const clubIndex = new Map((GameState.clubs || []).filter(Boolean).map((c) => [String(c.id), c]));
-
-  const fixtures = [];
-  for (const md of matchdays) {
-    const round = Number(md?.matchday || 0);
-    const matches = Array.isArray(md?.matches) ? md.matches : [];
-    if (!round || !matches.length) continue;
-
-    for (const m of matches) {
-      const homeId = String(m?.homeId || '');
-      const awayId = String(m?.awayId || '');
-      if (!homeId || !awayId) return null;
-      if (!clubSet.has(homeId) || !clubSet.has(awayId)) {
-        // si el calendario no cuadra con los clubs activos -> fallback a generado
-        return null;
-      }
-
-      const referee = getRandomReferee();
-      const homeClub = clubIndex.get(homeId) || null;
-      const cap = Number(homeClub?.stadium?.capacity || homeClub?.stadiumCapacity || 0) || null;
-
-      fixtures.push({
-        id: String(m?.matchId || `fx_off_${round}_${homeId}_${awayId}`),
-        matchday: round,
-        homeClubId: homeId,
-        awayClubId: awayId,
-        kickoffDate: m?.kickoffUtc || m?.kickoffLocal || (m?.date ? `${m.date}T${m.time || '20:00'}:00` : null),
-        kickoffTime: m?.time || null,
-        homeGoals: null,
-        awayGoals: null,
-        played: false,
-        events: [],
-        substitutions: [],
-        refereeName: referee.name,
-        refereeStrictness: referee.strictness,
-        meta: {
-          official: true,
-          source: 'CALENDAR_ES_LALIGA_2025_26',
-          stadiumName: m?.stadium || homeClub?.stadium?.name || homeClub?.stadiumName || null,
-          capacity: cap,
-          kickoffLocal: m?.kickoffLocal || null,
-          kickoffUtc: m?.kickoffUtc || null,
-          dateFrom: md?.dateFrom || null,
-          dateTo: md?.dateTo || null,
-        },
-      });
-    }
-  }
-
-  // Validación mínima
-  if (!fixtures.length) return null;
-  const maxMatchday = Math.max(...fixtures.map((f) => Number(f.matchday || 1)));
-
-  // Orden estable por jornada + hora
-  fixtures.sort((a, b) => {
-    const amd = Number(a.matchday || 0);
-    const bmd = Number(b.matchday || 0);
-    if (amd !== bmd) return amd - bmd;
-    const at = String(a.kickoffTime || '');
-    const bt = String(b.kickoffTime || '');
-    return at.localeCompare(bt);
-  });
-
-  return { fixtures, maxMatchday };
-}
-
-function getSeasonStartUTCInternal(season) {
-  const year = 2025 + (Number(season || 1) - 1);
-  return new Date(Date.UTC(year, 7, 1)); // 1 de agosto
-}
-
-// ---------------------------
-// World leagues: calendario base por liga (para kickoffDate)
-// ---------------------------
-function getSeasonStartUTCForLeagueId(leagueId, season) {
-  const year = 2025 + (Number(season || 1) - 1);
-  const map = {
-    league_en_premier: { month: 8, day: 1 },     // 01/08
-    league_it_seriea: { month: 8, day: 10 },     // 10/08
-    league_de_bundesliga: { month: 8, day: 15 }, // 15/08
-    __default: { month: 8, day: 1 },
-  };
-  const cfg = map[String(leagueId || '')] || map.__default;
-  const m0 = Math.max(1, Math.min(12, Number(cfg.month || 8))) - 1;
-  const d0 = Math.max(1, Math.min(31, Number(cfg.day || 1)));
-  return new Date(Date.UTC(year, m0, d0, 12, 0, 0, 0));
-}
-
 function decorateWorldFixturesWithSchedule(fixtures, season, leagueId) {
-  if (!Array.isArray(fixtures) || fixtures.length === 0) return;
-  const start = getSeasonStartUTCForLeagueId(leagueId, season);
-  const slots = ['13:00', '16:15', '18:30', '21:00'];
-
-  const byMd = new Map();
-  fixtures.forEach((fx) => {
-    const md = Math.max(1, Number(fx?.matchday || 1));
-    if (!byMd.has(md)) byMd.set(md, []);
-    byMd.get(md).push(fx);
-  });
-
-  for (const [md, arr] of byMd.entries()) {
-    arr.sort((a, b) => `${a?.homeClubId||''}|${a?.awayClubId||''}`.localeCompare(`${b?.homeClubId||''}|${b?.awayClubId||''}`));
-    arr.forEach((fx, i) => {
-      if (!fx) return;
-      if (fx.kickoffDate) return;
-      const t = slots[i % slots.length];
-      const [hh, mm] = t.split(':').map((n) => Number(n || 0));
-      const d = new Date(start.getTime());
-      d.setUTCDate(d.getUTCDate() + (md - 1) * 7);
-      d.setUTCHours(hh, mm, 0, 0);
-      fx.kickoffTime = fx.kickoffTime || t;
-      fx.kickoffDate = d.toISOString();
-    });
-  }
+  assignLeagueFixtureDates(fixtures, leagueId, season);
 }
 
 function decorateGeneratedFixturesWithSchedule(fixtures, season) {
   if (!Array.isArray(fixtures) || fixtures.length === 0) return;
-
+  assignLeagueFixtureDates(fixtures, GameState.league?.id, season);
   const clubIndex = new Map((GameState.clubs || []).filter(Boolean).map((c) => [String(c.id), c]));
-  const slots = ['16:00', '18:15', '20:30', '22:00'];
-
-  // Agrupar por jornada para asignar horas "tipo TV"
-  const byMd = new Map();
   fixtures.forEach((fx) => {
-    const md = Number(fx?.matchday || 1);
-    if (!byMd.has(md)) byMd.set(md, []);
-    byMd.get(md).push(fx);
-  });
-
-  for (const [md, list] of byMd.entries()) {
-    list.forEach((fx, idx) => {
       if (!fx) return;
-      const time = slots[idx % slots.length];
-      fx.kickoffTime = fx.kickoffTime || time;
-
-      // Fecha base: cada jornada +7 días
-      const d = getSeasonStartUTCInternal(season);
-      d.setUTCDate(d.getUTCDate() + (Math.max(1, md) - 1) * 7);
-
-      // Hora en UTC (simple). Si quieres "hora local", ya lo ajustaremos.
-      const [hh, mm] = String(fx.kickoffTime).split(':').map((x) => Number(x || 0));
-      if (Number.isFinite(hh)) d.setUTCHours(hh, Number.isFinite(mm) ? mm : 0, 0, 0);
-      fx.kickoffDate = fx.kickoffDate || d.toISOString();
-
       const homeClub = clubIndex.get(String(fx.homeClubId)) || null;
       if (!fx.meta || typeof fx.meta !== 'object') fx.meta = {};
       if (!fx.meta.stadiumName) fx.meta.stadiumName = homeClub?.stadium?.name || homeClub?.stadiumName || null;
@@ -1024,8 +943,7 @@ function decorateGeneratedFixturesWithSchedule(fixtures, season) {
       }
       if (fx.meta.official == null) fx.meta.official = false;
       if (!fx.meta.source) fx.meta.source = 'round_robin';
-    });
-  }
+  });
 }
 
 function normalizeWorldLeagues() {
@@ -1073,6 +991,7 @@ function setupWorldLeagues() {
       id: l.id,
       name: l.name || l.id,
       country: l.country || '',
+      tier: l.tier || 1,
       clubs,
       fixtures,
       leagueTable: [],
@@ -1280,10 +1199,25 @@ export function advanceToNextSeason() {
     season: nextSeason,
     matchday: 1,
   };
+  GameState.currentTimeISO = new Date(Date.UTC(getSeasonStartYear(nextSeason), 7, 1, 9)).toISOString();
 
   // Re-generar calendario principal
   setupCompetition();
 
-  // Re-generar ligas paralelas sincronizadas (con fixtures nuevos)
-  setupWorldLeagues();
+  // Conservamos fichajes y presupuestos de las ligas paralelas. Solo renovamos
+  // calendarios y resultados; reconstruir desde data.js borraría los traspasos.
+  if (!Array.isArray(GameState.world?.leagues) || !GameState.world.leagues.length) {
+    setupWorldLeagues();
+  } else {
+    for (const league of GameState.world.leagues) {
+      const { fixtures, maxMatchday } = generateRoundRobinFixtures((league.clubs || []).map(c => c.id));
+      fixtures.forEach(fx => { fx.season = nextSeason; fx.statsApplied = false; });
+      decorateWorldFixturesWithSchedule(fixtures, nextSeason, league.id);
+      league.fixtures = fixtures;
+      league.competition = { maxMatchday };
+      league.leagueTable = [];
+      league.currentDate = { season: nextSeason, matchday: 1 };
+    }
+  }
+  ensureTransferMarketState();
 }

@@ -84,6 +84,7 @@ function simulateFixturesBatch(fixturesToPlay) {
   fixturesToPlay.forEach((fx) => {
      simulateFixture(fx, {
        getClubById,
+       userClubId: GameState.user?.clubId,
        applyMatchEffectsToClub: applyMatchEffectsToClubWithCtx,
        getTacticalAggression,
        effectsCtx,
@@ -157,6 +158,7 @@ export function simulateCurrentMatchday() {
   // Simular SOLO tu partido
   simulateFixture(userFx, {
     getClubById,
+    userClubId: GameState.user?.clubId,
     currentDate: GameState.currentDate,
     applyMatchEffectsToClub: applyMatchEffectsToClubWithCtx,
     getTacticalAggression,

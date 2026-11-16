@@ -3,6 +3,7 @@
 // Inspiración UI: PC Fútbol (capturas proporcionadas)
 
 import { GameState } from '../state.js';
+import { getSeasonLabel } from '../gameSeason.js';
 import { getUserClub } from '../game/selectors.js';
 import { advanceToNextUserMatchPrep } from '../game/simulateMatchday.js';
 import {
@@ -821,7 +822,7 @@ export function updateNextMatchView() {
   // Cabecera
   const season = Number(GameState.currentDate?.season || 1);
   const currentMd = Number(GameState.currentDate?.matchday || 1);
-  setText('nextmatch-season-label', `${2024 + season}/${2025 + season}`);
+  setText('nextmatch-season-label', getSeasonLabel(season));
   setText('nextmatch-current-matchday-label', String(currentMd));
   // La fecha de la cabecera se intentará ajustar al kickoff real del próximo partido (si existe)
   const baseDate = getGameDateFor(season, currentMd);
@@ -1167,6 +1168,20 @@ export function updateNextMatchView() {
       if (poss >= 58) lines.push('Dominio de la posesión.');
       else if (poss <= 42) lines.push('Equipo replegado y saliendo a la contra.');
       else lines.push('Alternancia en el centro del campo.');
+    }
+
+    const kickoffTactics = lastFx.tacticalPhases?.[0];
+    if (kickoffTactics) {
+      lines.push(`Sistemas iniciales: ${lastHomeName} ${kickoffTactics.home.formation} · ${lastAwayName} ${kickoffTactics.away.formation}.`);
+    }
+    for (const change of lastFx.tacticalChanges || []) {
+      const clubName = change.clubId === lastFx.homeClubId ? lastHomeName : lastAwayName;
+      const reason = change.reason === 'CHASING_GAME' ? 'para buscar el empate' :
+        change.reason === 'PROTECTING_LEAD' ? 'para proteger su ventaja' : 'para adaptarse al encuentro';
+      const changeDetail = change.toFormation !== change.fromFormation
+        ? `cambió de ${change.fromFormation} a ${change.toFormation}`
+        : 'ajustó su planteamiento';
+      lines.push(`Min. ${change.minute}: ${clubName} ${changeDetail} ${reason}.`);
     }
 
     sensEl.innerHTML = `<div class="pcf-sensations__text">${lines.map((t) => `• ${escapeHtml(t)}`).join('<br>')}</div>`;

@@ -7,12 +7,13 @@ export function showDashboard(startScreen, dashboardScreen) {
 }
 
 /**
- * view: 'dashboard' | 'squad' | 'alignment' | 'tactics' | 'calendar' | 'results' | 'nextmatch' | 'standings' | 'stats' | 'medical'
+ * view: 'dashboard' | 'squad' | 'alignment' | 'tactics' | 'calendar' | 'results' | 'nextmatch' | 'standings' | 'stats' | 'medical' | 'transfermarket'
  */
 export function setActiveSubview(view, ctx) {
   const {
     viewDashboard,
     viewSquad,
+    viewTransferMarket,
     viewAlignment,
     viewTactics,
     viewCalendar,
@@ -23,6 +24,7 @@ export function setActiveSubview(view, ctx) {
     viewMedical,
     btnNavDashboard,
     btnNavSquad,
+    btnNavTransferMarket,
     btnNavAlignment,
     btnNavTactics,
     btnNavCalendar,
@@ -36,6 +38,7 @@ export function setActiveSubview(view, ctx) {
   // Ocultar todas
   viewDashboard?.classList.add('hidden');
   viewSquad?.classList.add('hidden');
+  viewTransferMarket?.classList.add('hidden');
   viewAlignment?.classList.add('hidden');
   viewTactics?.classList.add('hidden');
   viewCalendar?.classList.add('hidden');
@@ -49,6 +52,7 @@ export function setActiveSubview(view, ctx) {
   [
     btnNavDashboard,
     btnNavSquad,
+    btnNavTransferMarket,
     btnNavAlignment,
     btnNavTactics,
     btnNavCalendar,
@@ -71,6 +75,10 @@ export function setActiveSubview(view, ctx) {
     viewSquad?.classList.remove('hidden');
     btnNavSquad?.classList.add('active');
     btnNavSquad?.classList.add('is-active');
+  } else if (view === 'transfermarket') {
+    viewTransferMarket?.classList.remove('hidden');
+    btnNavTransferMarket?.classList.add('active');
+    btnNavTransferMarket?.classList.add('is-active');
   } else if (view === 'alignment') {
     viewAlignment?.classList.remove('hidden');
     btnNavAlignment?.classList.add('active');

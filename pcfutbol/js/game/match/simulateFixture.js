@@ -7,6 +7,8 @@ import { generateAdvancedStatsForFixture } from './advancedStats.js';
 import { generateEventsForFixture, attachFixtureMeta } from './events.js';
 import { getStartingXIForFixture, getBenchForFixture } from './selection.js';
 import { getClubStrengthProfile } from '../tactics/strength.js';
+import { chooseMatchPlan } from '../tactics/matchPlans.js';
+import { applyFixturePositionExperience } from '../tactics/positionExperience.js';
 import { computeMatchLambdas, sampleGoals } from './scoring.js';
 
 export function simulateFixture(fx, deps = {}) {
@@ -41,21 +43,44 @@ export function simulateFixture(fx, deps = {}) {
   fx.awayBenchIds = getBenchForFixture(awayClub, fx.awayLineupIds, 9);
   if (!Array.isArray(fx.substitutions)) fx.substitutions = [];
 
-  const homeProfile = getClubStrengthProfile(homeClub, true);
-  const awayProfile = getClubStrengthProfile(awayClub, false);
-
-  const homeAgg = getAgg(homeClub);
-  const awayAgg = getAgg(awayClub);
-
-  const { homeLambda, awayLambda } = computeMatchLambdas(
-    homeProfile,
-    awayProfile,
-    homeAgg,
-    awayAgg
+  // Dos fases: el técnico puede reaccionar al resultado al llegar al 65',
+  // sin reescribir los esquemas habituales ni el once inicial del club.
+  const initialHomePlan = chooseMatchPlan(homeClub, awayClub, { userClubId: deps.userClubId });
+  const initialAwayPlan = chooseMatchPlan(awayClub, homeClub, { userClubId: deps.userClubId });
+  const calculatePhaseLambdas = (homePlan, awayPlan) => computeMatchLambdas(
+    getClubStrengthProfile(homeClub, true, { lineupIds: fx.homeLineupIds, tactics: homePlan }),
+    getClubStrengthProfile(awayClub, false, { lineupIds: fx.awayLineupIds, tactics: awayPlan }),
+    getAgg(homeClub, homePlan),
+    getAgg(awayClub, awayPlan),
   );
 
-  fx.homeGoals = sampleGoals(homeLambda);
-  fx.awayGoals = sampleGoals(awayLambda);
+  const early = calculatePhaseLambdas(initialHomePlan, initialAwayPlan);
+  const earlyHomeGoals = sampleGoals(early.homeLambda * (65 / 90));
+  const earlyAwayGoals = sampleGoals(early.awayLambda * (65 / 90));
+  const lateHomePlan = chooseMatchPlan(homeClub, awayClub, {
+    minute: 65, goalDifference: earlyHomeGoals - earlyAwayGoals, userClubId: deps.userClubId,
+  });
+  const lateAwayPlan = chooseMatchPlan(awayClub, homeClub, {
+    minute: 65, goalDifference: earlyAwayGoals - earlyHomeGoals, userClubId: deps.userClubId,
+  });
+  const late = calculatePhaseLambdas(lateHomePlan, lateAwayPlan);
+  const lateHomeGoals = sampleGoals(late.homeLambda * (25 / 90));
+  const lateAwayGoals = sampleGoals(late.awayLambda * (25 / 90));
+  fx.homeGoals = earlyHomeGoals + lateHomeGoals;
+  fx.awayGoals = earlyAwayGoals + lateAwayGoals;
+  fx.goalPhases = { splitMinute: 65, home: [earlyHomeGoals, lateHomeGoals], away: [earlyAwayGoals, lateAwayGoals] };
+  fx.tacticalPhases = [
+    { minute: 0, home: initialHomePlan, away: initialAwayPlan },
+    { minute: 65, home: lateHomePlan, away: lateAwayPlan },
+  ];
+  fx.tacticalChanges = [
+    { clubId: homeClub.id, initial: initialHomePlan, final: lateHomePlan },
+    { clubId: awayClub.id, initial: initialAwayPlan, final: lateAwayPlan },
+  ].filter(change => ['formation', 'mentality', 'pressure', 'tempo'].some(
+    key => change.initial[key] !== change.final[key],
+  )).map(change => ({ minute: 65, clubId: change.clubId,
+    reason: change.final.reason, fromFormation: change.initial.formation,
+    toFormation: change.final.formation, mentality: change.final.mentality }));
 
   // Eventos (goles + subs tácticas + tarjetas/lesión vía hook del motor)
   fx.events = generateEventsForFixture(fx, homeClub, awayClub, {
@@ -66,4 +91,5 @@ export function simulateFixture(fx, deps = {}) {
   // Meta + estadísticas avanzadas (para UI nueva)
   attachFixtureMeta(fx, homeClub, awayClub);
   generateAdvancedStatsForFixture(fx, homeClub, awayClub);
+  applyFixturePositionExperience(fx, homeClub, awayClub);
 }

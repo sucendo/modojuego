@@ -3,18 +3,22 @@
 // Se inicializa con refs al DOM desde ui.js.
 
 import { getPlayerGameAge } from './utils/calendar.js';
+import { GameState } from '../state.js';
+import { getReleaseClause, evaluateReleaseClause } from '../game/contracts.js';
 
 let refs = {
   yearsInput: null,
   wageInput: null,
+  clauseInput: null,
   resultEl: null,
   hintEl: null,
   sectionEl: null,
 };
 
-export function initNegotiationUI({ yearsInput, wageInput, resultEl, hintEl, sectionEl } = {}) {
+export function initNegotiationUI({ yearsInput, wageInput, clauseInput, resultEl, hintEl, sectionEl } = {}) {
   refs.yearsInput = yearsInput || null;
   refs.wageInput = wageInput || null;
+  refs.clauseInput = clauseInput || null;
   refs.resultEl = resultEl || null;
   refs.hintEl = hintEl || null;
   refs.sectionEl = sectionEl || null;
@@ -26,7 +30,7 @@ export function scrollToNegotiationSection() {
 }
 
 export function prepareNegotiationUI(player) {
-  if (!refs.yearsInput || !refs.wageInput || !refs.resultEl || !refs.hintEl) return;
+  if (!refs.yearsInput || !refs.wageInput || !refs.clauseInput || !refs.resultEl || !refs.hintEl) return;
 
   const currentYears = player?.contractYears ?? 2;
   const currentWage = player?.wage ?? 200_000;
@@ -36,17 +40,28 @@ export function prepareNegotiationUI(player) {
 
   const defaultWage = Math.round((currentWage * 1.15) / 1000) * 1000;
   refs.wageInput.value = String(defaultWage);
+  refs.clauseInput.value = String(getReleaseClause(player));
 
   refs.resultEl.textContent = '';
   refs.resultEl.classList.remove('modal-neg-result--accept', 'modal-neg-result--reject');
 
   refs.hintEl.textContent =
-    'El jugador espera una oferta acorde a su nivel y situación. ' +
-    'Una mejora demasiado baja puede ser rechazada.';
+    `Cláusula actual: ${getReleaseClause(player).toLocaleString('es-ES')} €. ` +
+    'Negocia años, salario y una cláusula equilibrada. Una cláusula muy alta puede exigir un sueldo mayor.';
 }
 
-function evaluateOffer(player, years, wage) {
+export function evaluateRenewalOffer(player, { years, wage, releaseClause }, club, randomValue = Math.random()) {
+  if (!Number.isSafeInteger(years) || years < 1 || years > 5) {
+    return { accepted: false, reason: 'El contrato debe durar de 1 a 5 años.' };
+  }
+  if (!Number.isSafeInteger(wage) || wage <= 0) {
+    return { accepted: false, reason: 'Introduce un sueldo anual válido en euros enteros.' };
+  }
   const currentWage = player?.wage ?? 200_000;
+  const salaryDifference = wage - currentWage;
+  if (!club || Number(club.wageBudget || 0) < salaryDifference) {
+    return { accepted: false, reason: 'El club no tiene margen salarial suficiente para ofrecer esa renovación.' };
+  }
   const overall = player?.overall ?? 60;
   const age = getPlayerGameAge(player, 26);
   const morale = player?.morale ?? 0.7;
@@ -74,10 +89,14 @@ function evaluateOffer(player, years, wage) {
     };
   }
 
-  const baseChance = 0.7 + (morale - 0.5);
-  const random = Math.random();
+  const clauseDecision = evaluateReleaseClause({ player, years, wage, releaseClause });
+  if (!clauseDecision.ok) {
+    return { accepted: false, reason: clauseDecision.message, clauseDecision };
+  }
 
-  if (random < baseChance) return { accepted: true };
+  const baseChance = Math.min(0.95, Math.max(0.05, 0.7 + (morale - 0.5)));
+
+  if (randomValue < baseChance) return { accepted: true, releaseClause, salaryDifference };
 
   return {
     accepted: false,
@@ -85,32 +104,48 @@ function evaluateOffer(player, years, wage) {
   };
 }
 
-export function attemptRenewal(player) {
-  if (!refs.yearsInput || !refs.wageInput || !refs.resultEl) return { accepted: false, reason: 'UI no inicializada.' };
+export function attemptRenewal(player, randomValue = Math.random()) {
+  if (!refs.yearsInput || !refs.wageInput || !refs.clauseInput || !refs.resultEl) {
+    return { accepted: false, reason: 'UI no inicializada.' };
+  }
 
-  const years = Number.parseInt(refs.yearsInput.value, 10);
-  const wage = Number.parseInt(refs.wageInput.value, 10);
+  const years = Number(refs.yearsInput.value);
+  const wage = Number(refs.wageInput.value);
+  const releaseClause = Number(refs.clauseInput.value);
+  const club = GameState.clubs?.find(c => String(c.id) === String(GameState.user?.clubId));
+  const owned = club?.players?.some(p => p === player);
+  if (!owned) {
+    refs.resultEl.textContent = 'Solo puedes renovar a jugadores de tu propia plantilla.';
+    return { accepted: false, reason: refs.resultEl.textContent };
+  }
 
-  if (!Number.isFinite(years) || years <= 0) {
-    refs.resultEl.textContent = 'Introduce un número de años válido.';
+  if (!Number.isSafeInteger(years) || years < 1 || years > 5) {
+    refs.resultEl.textContent = 'Introduce un contrato de 1 a 5 años.';
     refs.resultEl.classList.remove('modal-neg-result--accept', 'modal-neg-result--reject');
     return { accepted: false, reason: 'Años inválidos.' };
   }
 
-  if (!Number.isFinite(wage) || wage <= 0) {
+  if (!Number.isSafeInteger(wage) || wage <= 0) {
     refs.resultEl.textContent = 'Introduce un sueldo válido.';
     refs.resultEl.classList.remove('modal-neg-result--accept', 'modal-neg-result--reject');
     return { accepted: false, reason: 'Sueldo inválido.' };
   }
+  if (!Number.isSafeInteger(releaseClause) || releaseClause < 10000) {
+    refs.resultEl.textContent = 'Introduce una cláusula de rescisión válida.';
+    refs.resultEl.classList.remove('modal-neg-result--accept', 'modal-neg-result--reject');
+    return { accepted: false, reason: 'Cláusula inválida.' };
+  }
 
-  const result = evaluateOffer(player, years, wage);
+  const result = evaluateRenewalOffer(player, { years, wage, releaseClause }, club, randomValue);
 
   if (result.accepted) {
+    club.wageBudget = Number(club.wageBudget || 0) - (wage - Number(player.wage || 0));
     player.contractYears = years;
     player.wage = wage;
+    player.releaseClause = releaseClause;
     player.morale = Math.min(1, (player.morale ?? 0.7) + 0.12);
 
-    refs.resultEl.textContent = 'El jugador acepta la oferta y firma la renovación.';
+    refs.resultEl.textContent = `El jugador renueva con una cláusula de ${releaseClause.toLocaleString('es-ES')} €.`;
     refs.resultEl.classList.remove('modal-neg-result--reject');
     refs.resultEl.classList.add('modal-neg-result--accept');
   } else {

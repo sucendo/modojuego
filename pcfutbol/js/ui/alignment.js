@@ -7,6 +7,8 @@ import { GameState } from '../state.js';
 import { getUserClub } from '../game/selectors.js';
 import { createFlagImgElement } from './utils/flags.js';
 import { getPlayerGameAge } from './utils/calendar.js';
+import { selectValidStartingXI } from '../game/utils/lineupSelection.js';
+import { getEffectiveOverall, getPositionAffinity } from '../game/tactics/positions.js';
 import {
   ensureClubTactics,
   autoPickMatchdaySquad,
@@ -74,6 +76,7 @@ const DEMARCATION_LABELS = {
   LW : 'Extremo izquierdo',
   CF: 'Delantero móvil / falso 9',
   ST: 'Delantero centro',
+  SS: 'Segundo delantero',
 };
 
 const ROLE_DESCRIPTIONS = {
@@ -217,7 +220,7 @@ function paintSelection() {
   });
 }
 
-const FORMATIONS = ['4-4-2','4-3-3','4-2-3-1','3-5-2','3-4-3','5-3-2'];
+const FORMATIONS = ['4-4-2','4-3-3','4-2-3-1','3-5-2','3-4-3','5-3-2','5-4-1','4-1-4-1','4-5-1'];
 const MENTALITIES = [
   { v:'DEFENSIVE', t:'Defensiva' },
   { v:'BALANCED',  t:'Equilibrada' },
@@ -379,7 +382,7 @@ function normalizeLineupBench(club) {
   club.lineup = normalizeIdArray(club.lineup, club);
   club.bench  = normalizeIdArray(club.bench, club);
 
-  club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
+  club.lineup = selectValidStartingXI(club.players, club.lineup, isPlayerUnavailable);
   const setXI = new Set(club.lineup);
   club.bench = Array.from(new Set(club.bench)).filter((id) => id && !setXI.has(id)).slice(0, 9);
 }
@@ -518,6 +521,18 @@ export function updateAlignmentView() {
   const xiIds = club.lineup.filter((id) => byId.has(id));
   const benchIds = club.bench.filter((id) => byId.has(id));
   const squadSet = new Set([...xiIds, ...benchIds]);
+  const xiRoleById = new Map();
+  try {
+    const assigned = assignPlayersToSlots(
+      xiIds.map((id) => byId.get(id)).filter(Boolean),
+      getFormationSlots(club.tactics?.formation || '4-4-2'),
+    );
+    assigned.forEach(({ player, position }) => {
+      if (player?.id != null && position) xiRoleById.set(String(player.id), position);
+    });
+  } catch (_) {
+    // La tabla se puede seguir mostrando incluso si no se asigna la formación.
+  }
 
   const outPlayers = players
     .filter((p) => p && p.id && !squadSet.has(p.id))
@@ -569,7 +584,13 @@ export function updateAlignmentView() {
     tr.appendChild(td(params.CO != null ? Math.round(params.CO) : '-'));
     tr.appendChild(td(params.MO != null ? params.MO : '-'));
     tr.appendChild(td(params.EF != null ? params.EF : '-'));
-    tr.appendChild(td(params.ME != null ? Math.round(params.ME) : '-'));
+    const assignedRole = group === 'XI' ? xiRoleById.get(String(p.id)) : null;
+    const effectiveMe = assignedRole ? getEffectiveOverall(p, assignedRole) : params.ME;
+    const tdMe = td(effectiveMe != null ? Math.round(effectiveMe) : '-');
+    tdMe.title = assignedRole
+      ? `Media efectiva en ${assignedRole}: ${effectiveMe} · media original: ${params.ME} · afinidad: ${Math.round(getPositionAffinity(p, assignedRole) * 100)} %`
+      : 'Media original del jugador; la penalización depende del puesto asignado en el XI.';
+    tr.appendChild(tdMe);
 	
     // ROL (tooltip por jugador)
     const tdRol = td(params.ROL);

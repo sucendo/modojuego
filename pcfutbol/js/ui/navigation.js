@@ -24,6 +24,7 @@ export function initNavigation(ctx, updaters = {}) {
   const {
     btnNavDashboard,
     btnNavSquad,
+    btnNavTransferMarket,
     btnNavAlignment,	
     btnNavTactics,
     btnNavCalendar,
@@ -41,6 +42,10 @@ export function initNavigation(ctx, updaters = {}) {
   btnNavSquad?.addEventListener('click', () => {
     setActiveSubview('squad', ctx);
     updaters.updateSquadView?.();
+  });
+  btnNavTransferMarket?.addEventListener('click', () => {
+    setActiveSubview('transfermarket', ctx);
+    updaters.updateTransferMarketView?.();
   });
   btnNavAlignment?.addEventListener('click', () => {
     setActiveSubview('alignment', ctx);

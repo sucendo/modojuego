@@ -51,6 +51,7 @@ import { initStatsUI, updateStatsView } from './ui/stats.js';
 import { initMedicalUI, updateMedicalView } from './ui/medical.js';
 
 import { initSquadUI, bindSquadActions, updateSquadView } from './ui/squad.js';
+import { initTransferMarketUI, updateTransferMarketView } from './ui/transferMarketView.js';
 import { getPlayerGameAge } from './ui/utils/calendar.js';
 
 import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js';
@@ -73,6 +74,7 @@ window.GameState = GameState;
 
 let negYearsInput = null;
 let negWageInput = null;
+let negClauseInput = null;
 let negResultEl = null;
 let negHintEl = null;
 let negSectionEl = null;
@@ -85,6 +87,7 @@ function openPlayerModal(player) {
   if (!player) return;
   currentModalPlayer = player;
   openPlayerModalImpl(player);
+  prepareNegotiationUI(player);
 }
 
 function closePlayerModal() {
@@ -122,6 +125,7 @@ export function initUI() {
   // Navegación
   const btnNavDashboard = document.getElementById('btn-nav-dashboard');
   const btnNavSquad = document.getElementById('btn-nav-squad');
+  const btnNavTransferMarket = document.getElementById('btn-nav-transfermarket');
   const btnNavAlignment = document.getElementById('btn-nav-alignment');
   const btnNavTactics = document.getElementById('btn-nav-tactics');
   const btnNavCalendar = document.getElementById('btn-nav-calendar');
@@ -133,6 +137,7 @@ export function initUI() {
 
   const viewDashboard = document.getElementById('view-dashboard');
   const viewSquad = document.getElementById('view-squad');
+  const viewTransferMarket = document.getElementById('view-transfermarket');
   const viewAlignment = document.getElementById('view-alignment');
   const viewTactics = document.getElementById('view-tactics');
   const viewCalendar = document.getElementById('view-calendar');
@@ -149,12 +154,14 @@ export function initUI() {
 
   negYearsInput = document.getElementById('player-neg-years');
   negWageInput = document.getElementById('player-neg-wage');
+  negClauseInput = document.getElementById('player-neg-clause');
   negResultEl = document.getElementById('player-modal-neg-result');
   negHintEl = document.getElementById('player-modal-neg-hint');
   negSectionEl = document.getElementById('player-modal-neg-section');
   initNegotiationUI({
     yearsInput: negYearsInput,
     wageInput: negWageInput,
+    clauseInput: negClauseInput,
     resultEl: negResultEl,
     hintEl: negHintEl,
     sectionEl: negSectionEl,
@@ -174,6 +181,7 @@ export function initUI() {
   const ctx = {
     viewDashboard,
     viewSquad,
+    viewTransferMarket,
     viewAlignment,
     viewTactics,
     viewCalendar,
@@ -184,6 +192,7 @@ export function initUI() {
     viewMedical,
     btnNavDashboard,
     btnNavSquad,
+    btnNavTransferMarket,
     btnNavAlignment,
     btnNavTactics,
     btnNavCalendar,
@@ -199,6 +208,7 @@ export function initUI() {
     try { ensureGameTimeAndWorldSync(); } catch (e) { console.warn(e); }
     updateDashboard();
     updateSquadView();
+    updateTransferMarketView();
     updateAlignmentView();
     updateTacticsView();
     updateCalendarView();
@@ -232,12 +242,20 @@ export function initUI() {
   if (startLeagueSelect) {
     // Rellenar select de ligas
     startLeagueSelect.innerHTML = '';
+    let countryGroup = null;
+    let lastCountry = '';
     allLeagues.forEach((l) => {
+      if (l.country !== lastCountry) {
+        countryGroup = document.createElement('optgroup');
+        countryGroup.label = l.country;
+        startLeagueSelect.appendChild(countryGroup);
+        lastCountry = l.country;
+      }
       const opt = document.createElement('option');
       opt.value = l.id;
-      opt.textContent = l.name || l.id;
+      opt.textContent = `${l.tier === 2 ? '2ª' : '1ª'} · ${l.name || l.id}`;
       if (l.id === initialLeague.id) opt.selected = true;
-      startLeagueSelect.appendChild(opt);
+      countryGroup.appendChild(opt);
     });
 
     startLeagueSelect.addEventListener('change', refreshStartClubSelect);
@@ -262,9 +280,19 @@ export function initUI() {
   // Estadísticas (vista nueva)
   initStatsUI?.();
 
+  initTransferMarketUI({ onTransfer: () => {
+    updateDashboard();
+    updateSquadView();
+    updateAlignmentView();
+    updateTacticsView();
+    updateNextMatchView();
+    updateStatsView();
+  }});
+
   initNavigation(ctx, {
     updateDashboard,
     updateSquadView,
+    updateTransferMarketView,
     updateAlignmentView,
     updateTacticsView,
     updateCalendarView,
@@ -304,6 +332,7 @@ export function initUI() {
       const map = {
         dashboard: btnNavDashboard,
         squad: btnNavSquad,
+        transfermarket: btnNavTransferMarket,
         alignment: btnNavAlignment,
         tactics: btnNavTactics,
         calendar: btnNavCalendar,
@@ -432,7 +461,11 @@ export function initUI() {
   if (negSendBtn) {
     negSendBtn.addEventListener('click', () => {
       if (!currentModalPlayer) return;
-      attemptRenewal(currentModalPlayer);
+      const result = attemptRenewal(currentModalPlayer);
+      if (result.accepted) {
+        updateDashboard();
+        updateSquadView();
+      }
     });
   }
 

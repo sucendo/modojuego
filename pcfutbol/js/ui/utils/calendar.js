@@ -1,11 +1,12 @@
 import { GameState } from '../../state.js';
+import { FIRST_SEASON_YEAR } from '../../gameSeason.js';
 
 // Calendario interno del juego:
-//  - Temporada 1 comienza el 1 de agosto de 2025
+//  - Temporada 1 comienza el 1 de agosto de 2026
 //  - Cada jornada suma 7 días
 //  - Cada temporada suma 1 año
 export const GAME_CALENDAR = {
-  BASE_SEASON_YEAR: 2025,
+  BASE_SEASON_YEAR: FIRST_SEASON_YEAR,
   SEASON_START_MONTH: 8, // agosto
   SEASON_START_DAY: 1,
   DAYS_PER_MATCHDAY: 7,
@@ -30,9 +31,16 @@ export function getGameDateFor(season, matchday) {
 
 // Fecha actual de juego según GameState.currentDate
 export function getCurrentGameDate() {
+  if (GameState.currentTimeISO) {
+    const date = new Date(GameState.currentTimeISO);
+    if (Number.isFinite(date.getTime())) return date;
+  }
   const season = GameState.currentDate?.season || 1;
   const matchday = GameState.currentDate?.matchday || 1;
-  return getGameDateFor(season, matchday);
+  const firstFixture = (GameState.fixtures || []).filter(f => Number(f?.matchday) === Number(matchday))
+    .map(f => new Date(f.kickoffDate)).filter(d => Number.isFinite(d.getTime()))
+    .sort((a, b) => a.getTime() - b.getTime())[0];
+  return firstFixture || getGameDateFor(season, matchday);
 }
 
 // Formato "15/09/2025"
