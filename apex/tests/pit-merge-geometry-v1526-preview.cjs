@@ -32,6 +32,17 @@ assert.ok(Math.abs(overlap.quad[2].z-4.45)<1e-9,'pit exit crosses the main edge 
 assert.ok(overlap.quad[2].y>0,'pit asphalt sits above the track at the join');
 assert.match(core,/apexClipTerrainAtPit\(poly\)\?\?\[poly\]/,'main paint cedes to the pit footprint');
 assert.match(render,/paved&&!d.material.merge/,'pit overlap is drawn after the main road');
+for(const key of ['entryS','exitS']){
+ const joined={...sg(1,1),s1:0,s2:20,[key]:key==='entryS'?0:20};
+ assert.equal(api.merge(joined),null,'main asphalt is already underneath');
+ for(const end of [0,1]){
+  const stripe=api.profile(joined,end).separator;
+  assert.ok(stripe.every(p=>p.z<5&&p.y===.045),'pit separator remains above the main asphalt');
+  assert.ok(Math.abs(Math.hypot(stripe[1].x-stripe[0].x,stripe[1].z-stripe[0].z)-.09)<1e-9);
+ }
+}
+const overpass={...sg(3,3,8),entryS:0,exitS:20,s1:0,s2:20};
+assert.equal(api.profile(overpass,0).separator,null);
 const opposite=api.merge(sg(-7,-7));
 assert.ok(opposite.a.clipped&&opposite.a.side===-1,'opposite track side is supported');
 const bridge=api.merge(sg(7,7,8));

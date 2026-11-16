@@ -6,7 +6,7 @@ ALL_F1',wallStyle:r.wallStyle||'wall_f1',color:r.wallColor||null,fence:r.fence,f
 function apexPitSegments(){
  const cw=trackData&&trackData.customWorld,n=cw&&cw.pitNetwork;if(!n||!Array.isArray(n.runs))return[];
  if(Array.isArray(n._segments))return n._segments;const segs=[];
- for(const r of n.runs||[]){const pts=r.points||[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.02)continue;const aw=Number.isFinite(+a.width)?+a.width:(r.width||5.9),bw=Number.isFinite(+b.width)?+b.width:(r.width||5.9),al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;segs.push({runId:r.id,exitS:pts[pts.length-1].pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len})}}
+ for(const r of n.runs||[]){const pts=r.points||[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.02)continue;const aw=Number.isFinite(+a.width)?+a.width:(r.width||5.9),bw=Number.isFinite(+b.width)?+b.width:(r.width||5.9),al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;segs.push({runId:r.id,entryS:pts[0].pitS,exitS:pts[pts.length-1].pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len})}}
  n._segments=segs;return segs;
 }
 // V15.2.6 — pit merge geometry, visual only. A pitlane crossing the main
@@ -22,7 +22,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   nx=-dz/len,nz=dx/len;
  const left=Math.max(.05,Number(end?sg.visualLeftB:sg.visualLeftA)||sg.leftWidth||sg.width*.5),
   right=Math.max(.05,Number(end?sg.visualRightB:sg.visualRightA)||sg.rightWidth||sg.width*.5);
- let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false;
+ let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false,separator=null;
  const st=nearestTrackState(x,z,null);
  if(st&&Number.isFinite(st.lat)&&Number.isFinite(st.s)){
   const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),
@@ -36,6 +36,18 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
    // Track-facing edge can be the left OR right of the pit path.
    side=dot>=0?1:-1;
    merge=Number.isFinite(sg.exitS)&&sg.exitS-(end?sg.s2:sg.s1)<=45;
+   const pitS=end?sg.s2:sg.s1;
+   if(merge||Number.isFinite(sg.entryS)&&pitS-sg.entryS<=45){
+    // The separator follows the original pit edge, even where its asphalt
+    // wedge narrows to zero. Project each edge of the paint onto its surface.
+    const near=side>0?lo:hi;
+    separator=[near,near+side*.09].map(lat=>{
+     const xPaint=x+nx*lat,zPaint=z+nz*lat,offset=off+dot*lat;
+     const onTrack=offset<=0;
+     const yPaint=onTrack?edge.y+Math.tan(frame.bank||0)*bankSide*offset:y;
+     return {x:xPaint,y:yPaint+.045,z:zPaint};
+    });
+   }
    // Keep the authored exit over the track edge only within the merge.
    const overlap=merge?.55:0;
    trackSlope=Math.tan(frame.bank||0)*dot*bankSide;
@@ -53,7 +65,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  }
  const width=Math.max(0,hi-lo);
  const p={lo,hi,near:side>0?lo:hi,far:side>0?hi:lo,
-  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,outerExcess};
+  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,separator,outerExcess};
  sg[key]=p;return p;
 }
 function apexPitVisualPointV1526(p,lat,lift=.012){
@@ -6465,9 +6477,12 @@ function collectExactPitRenderItems(cam){
    const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=sg.len||1,nx=-dz/len,nz=dx/len;
    const a=lat=>worldToCamera(sg.x1+nx*lat,sg.y1+.012,sg.z1+nz*lat,cam),
     b=lat=>worldToCamera(sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat,cam);
+   const toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
+   const first=apexPitVisualMergeProfileV1526(sg,0),last=apexPitVisualMergeProfileV1526(sg,1);
+   const continuousSeparator=first.separator&&last.separator;
    const merged=apexPitMergeQuadV1526(sg);
    if(merged){
-    const {a:pa,b:pb,quad}=merged,toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
+    const {a:pa,b:pb,quad}=merged;
     add(...quad.map(toCam),null,null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PITLANE',merge:merged.overlap});
     // Separate physical paint, never a 2-D screen-space outline. Keep the
     // track-facing pit-exit line; taper its width with the wedge itself.
@@ -6482,10 +6497,14 @@ function collectExactPitRenderItems(cam){
      if(Math.max(pa.width,pb.width)<.035)return;
      add(A[0],A[1],B[1],B[0],nearSide?'#f6f7f8':'#e4e8ec',null,{kind:'PIT_PAINT',merge:merged.overlap});
     };
-    stripe(true);
+    if(!continuousSeparator)stripe(true);
     // At the merge, a second white edge over the racing surface looks like
     // a parallel phantom lane. Draw the outer boundary only on distinct pit.
     if(!pa.clipped&&!pb.clipped)stripe(false);
+   }
+   if(continuousSeparator){
+    const [A,B]=first.separator.map(toCam),[D,C]=last.separator.map(toCam);
+    add(A,B,C,D,'#f6f7f8',null,{kind:'PIT_PAINT',merge:true});
    }
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
      const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);
