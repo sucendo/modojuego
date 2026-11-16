@@ -530,7 +530,7 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
 // Stored fine cells contain cut geometry and heights. Invalidate copies
 // compiled before the SVG curb/escape-area and shared-edge changes.
-const APEX_CIRCUIT_COMPILE_REV=230700;
+const APEX_CIRCUIT_COMPILE_REV=230701;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){

@@ -27,7 +27,7 @@ function apexPitSegments(){
    const a=pts[i],b=pts[i+1],aw=width(a),bw=width(b),
     al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,
     ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;
-   segs.push({runId:r.id,entryS:pts[0].pitS,exitS:pts.at(-1).pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,
+   segs.push({runId:r.id,entryS:pts[0].pitS,exitS:pts.at(-1).pitS,rejoinPavementFromPitS:r.chainId===n.primaryChainId?n.rejoinPavementFromPitS:null,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,
     visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,visualNormalA:cuts[i],visualNormalB:cuts[i+1],
     x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len:Math.hypot(b.x-a.x,b.z-a.z)});
   }
@@ -81,8 +81,14 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
    // Close narrow wedges at a same-level merge. Keep a wider separation
    // between independent roads and ease out the extension at its threshold.
    const overlap=merge?.55:0,nearOffset=Math.min(lowerOffset,upperOffset);
-   if(merge&&nearOffset>-overlap&&nearOffset<1){
-    const extension=(nearOffset+overlap)*terrainEase((1-nearOffset)/.4);
+   const from=sg.rejoinPavementFromPitS,
+    authoredRejoin=Number.isFinite(from)&&sg.exitS-pitS<=90,
+    transition=authoredRejoin?terrainEase((pitS-from)/2.6):0;
+   // The merge can fill the space after the authored separator wall ends.
+   const normalBlend=authoredRejoin&&pitS<from?0:terrainEase((1-nearOffset)/.4);
+   const fill=Math.max(normalBlend,transition*terrainEase((3-nearOffset)/.65));
+   if(merge&&nearOffset>-overlap&&fill>0){
+    const extension=(nearOffset+overlap)*fill;
     if(dot>0)lo-=extension/dot;
     else hi-=extension/dot;
    }

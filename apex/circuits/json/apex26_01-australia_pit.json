@@ -887,6 +887,7 @@
       "exitTrackS": 190.035,
       "entryPitS": 0.0,
       "exitPitS": 717.911,
+      "rejoinPavementFromPitS": 652.7,
       "quality": "SVG_PROJECTED"
     },
     "speedLimit": {

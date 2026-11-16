@@ -3652,6 +3652,8 @@ function apexApplyPitLaneJsonProfile(){
    }
    if(countW)r.width=sumW/countW;
  }
+ const rejoinStart=cfg.trackConnection?.rejoinPavementFromPitS;
+ pn.rejoinPavementFromPitS=Number.isFinite(rejoinStart)?toRuntimeS(rejoinStart):null;
  pn._segments=null;
  if(cfg.speedLimit&&Number.isFinite(+cfg.speedLimit.kph))pn.speedKph=clamp(+cfg.speedLimit.kph,30,120);
  pn.profileSource='JSON:pitLane';pn.profileSchema=cfg.schema;pn.profileTotalLengthM=cfgLen;
