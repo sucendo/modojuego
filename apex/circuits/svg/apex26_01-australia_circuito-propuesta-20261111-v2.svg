@@ -286,7 +286,7 @@
   </g>
   <g style="">
     <bx:title>Boxes</bx:title>
-    <rect data-apex-type="pit" data-apex-family="structure" data-apex-role="pit-building" data-apex-style="pit_modern_f1" data-apex-height="18" data-apex-length="72" data-apex-depth="16" data-apex-garage-bays="8" data-apex-glass="true" data-apex-balcony="true" data-apex-pitwall="true" class="pit race-infra" x="-367.93" y="57.595" width="59.122" height="7.251" rx="2" data-apex-pit-style="pit_modern_f1" style="fill: rgb(69, 77, 86); stroke: rgb(220, 229, 237); stroke-width: 0px; transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0.71017, -0.704031, 0.704031, 0.71017, -139.753329, 151.004504)"></rect>
+    <rect data-apex-type="pit" data-apex-family="structure" data-apex-role="pit-building" data-apex-style="pit_modern_f1" data-apex-height="18" data-apex-length="72" data-apex-depth="16" data-apex-garage-bays="8" data-apex-glass="true" data-apex-balcony="true" data-apex-pitwall="false" class="pit race-infra" x="-367.93" y="57.595" width="59.122" height="7.251" rx="2" data-apex-pit-style="pit_modern_f1" style="fill: rgb(69, 77, 86); stroke: rgb(220, 229, 237); stroke-width: 0px; transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0.71017, -0.704031, 0.704031, 0.71017, -139.753329, 151.004504)"></rect>
   </g>
   <g id="APEX_TIMING" data-apex-layer="timing" transform="matrix(1, 0, 0, 1, -858.833435, -49.183609)" style="">
     <bx:title>Cronometraje</bx:title>
