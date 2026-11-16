@@ -6,7 +6,32 @@ ALL_F1',wallStyle:r.wallStyle||'wall_f1',color:r.wallColor||null,fence:r.fence,f
 function apexPitSegments(){
  const cw=trackData&&trackData.customWorld,n=cw&&cw.pitNetwork;if(!n||!Array.isArray(n.runs))return[];
  if(Array.isArray(n._segments))return n._segments;const segs=[];
- for(const r of n.runs||[]){const pts=r.points||[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.02)continue;const aw=Number.isFinite(+a.width)?+a.width:(r.width||5.9),bw=Number.isFinite(+b.width)?+b.width:(r.width||5.9),al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;segs.push({runId:r.id,exitS:pts[pts.length-1].pitS,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len})}}
+ for(const r of n.runs){
+  const pts=r.points||[];
+  // Use the same cross-section on both sides of each joint. Segment-local
+  // normals otherwise pull the pavement and paint apart on outside bends.
+  const normal=(a,b)=>{
+   const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);
+   return len>=.02?{x:-dz/len,z:dx/len}:null;
+  };
+  const normals=pts.slice(1).map((p,i)=>normal(pts[i],p));
+  const cuts=pts.map((_,i)=>{
+   const a=normals[i-1],b=normals[i];
+   if(!a||!b)return a||b;
+   const divisor=Math.max(1,1+a.x*b.x+a.z*b.z);
+   return{x:(a.x+b.x)/divisor,z:(a.z+b.z)/divisor};
+  });
+  const width=p=>Number.isFinite(+p.width)?+p.width:(r.width||5.9);
+  for(let i=0;i<pts.length-1;i++){
+   if(!normals[i])continue;
+   const a=pts[i],b=pts[i+1],aw=width(a),bw=width(b),
+    al=Number.isFinite(+a.leftWidth)?+a.leftWidth:aw*.5,bl=Number.isFinite(+b.leftWidth)?+b.leftWidth:bw*.5,
+    ar=Number.isFinite(+a.rightWidth)?+a.rightWidth:aw*.5,br=Number.isFinite(+b.rightWidth)?+b.rightWidth:bw*.5;
+   segs.push({runId:r.id,entryS:pts[0].pitS,exitS:pts.at(-1).pitS,rejoinPavementFromPitS:r.chainId===n.primaryChainId?n.rejoinPavementFromPitS:null,width:(aw+bw)*.5,leftWidth:(al+bl)*.5,rightWidth:(ar+br)*.5,
+    visualLeftA:al,visualRightA:ar,visualLeftB:bl,visualRightB:br,visualNormalA:cuts[i],visualNormalB:cuts[i+1],
+    x1:a.x,z1:a.z,y1:a.y,x2:b.x,z2:b.z,y2:b.y,s1:a.pitS,s2:b.pitS,len:Math.hypot(b.x-a.x,b.z-a.z)});
+  }
+ }
  n._segments=segs;return segs;
 }
 // V15.2.6 — pit merge geometry, visual only. A pitlane crossing the main
@@ -19,10 +44,10 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  if(Object.prototype.hasOwnProperty.call(sg,key))return sg[key];
  const x=end?sg.x2:sg.x1,z=end?sg.z2:sg.z1,y=end?sg.y2:sg.y1,
   dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=Math.hypot(dx,dz)||1,
-  nx=-dz/len,nz=dx/len;
+  normal=end?sg.visualNormalB:sg.visualNormalA,nx=normal?.x??(-dz/len),nz=normal?.z??(dx/len);
  const left=Math.max(.05,Number(end?sg.visualLeftB:sg.visualLeftA)||sg.leftWidth||sg.width*.5),
   right=Math.max(.05,Number(end?sg.visualRightB:sg.visualRightA)||sg.rightWidth||sg.width*.5);
- let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false;
+ let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null,trackSlope=0,merge=false,paintEdges=null,paintCrossesTrack=false;
  const st=nearestTrackState(x,z,null);
  if(st&&Number.isFinite(st.lat)&&Number.isFinite(st.s)){
   const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),
@@ -35,9 +60,38 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
   if(Math.abs(trackY-y)<1.25&&Math.abs(dot)>.075){
    // Track-facing edge can be the left OR right of the pit path.
    side=dot>=0?1:-1;
-   merge=Number.isFinite(sg.exitS)&&sg.exitS-(end?sg.s2:sg.s1)<=45;
-   // Keep the authored exit over the track edge only within the merge.
-   const overlap=merge?.55:0;
+   const pitS=end?sg.s2:sg.s1;
+   merge=(pitS-sg.entryS<=90)||(sg.exitS-pitS<=90);
+   // The asphalt overlap window does not bound the white lines. Use the
+   // original pit edges and the full main-road width to locate the crossing.
+   const otherEdge=apexTrackEdgeSection(frame,env,-bankSide).end;
+   const trackWidth=bankSide*((edge.x-otherEdge.x)*frame.nx+(edge.z-otherEdge.z)*frame.nz);
+   const paintInside=offset=>offset<=0&&offset>=-trackWidth;
+   const lowerOffset=off+dot*lo,upperOffset=off+dot*hi;
+   paintCrossesTrack=Math.min(lowerOffset,upperOffset)<=0&&Math.max(lowerOffset,upperOffset)>=-trackWidth;
+   const paintPoint=lat=>{
+    const offset=off+dot*lat;
+    const height=paintInside(offset)?edge.y+Math.tan(frame.bank||0)*bankSide*offset:y;
+    return {x:x+nx*lat,y:height+.045,z:z+nz*lat};
+   };
+   paintEdges=[
+    [paintPoint(lo),paintPoint(lo+.09)],
+    [paintPoint(hi),paintPoint(hi-.09)]
+   ];
+   // Close narrow wedges at a same-level merge. Keep a wider separation
+   // between independent roads and ease out the extension at its threshold.
+   const overlap=merge?.55:0,nearOffset=Math.min(lowerOffset,upperOffset);
+   const from=sg.rejoinPavementFromPitS,
+    authoredRejoin=Number.isFinite(from)&&sg.exitS-pitS<=90,
+    transition=authoredRejoin?terrainEase((pitS-from)/2.6):0;
+   // The merge can fill the space after the authored separator wall ends.
+   const normalBlend=authoredRejoin&&pitS<from?0:terrainEase((1-nearOffset)/.4);
+   const fill=Math.max(normalBlend,transition*terrainEase((3-nearOffset)/.65));
+   if(merge&&nearOffset>-overlap&&fill>0){
+    const extension=(nearOffset+overlap)*fill;
+    if(dot>0)lo-=extension/dot;
+    else hi-=extension/dot;
+   }
    trackSlope=Math.tan(frame.bank||0)*dot*bankSide;
    trackY-=Math.tan(frame.bank||0)*bankSide*overlap;
    const vLo=off+overlap+dot*lo,vHi=off+overlap+dot*hi;
@@ -53,7 +107,7 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  }
  const width=Math.max(0,hi-lo);
  const p={lo,hi,near:side>0?lo:hi,far:side>0?hi:lo,
-  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,outerExcess};
+  side,clipped,width,nx,nz,x,z,y,trackY,trackSlope,merge,paintEdges,paintCrossesTrack,outerExcess};
  sg[key]=p;return p;
 }
 function apexPitVisualPointV1526(p,lat,lift=.012){
@@ -155,7 +209,7 @@ function apexUnifiedSurfaceAtWorld(x,z,opts=null){
  }
  let zone='TRACK',kind='ASPHALT',grip=1,steerGrip=1,driveGrip=1;
  const set=(z0,k,g,sg,dg)=>{zone=z0;kind=k;grip=g;steerGrip=sg;driveGrip=dg;};
- if(driveNetwork==='PIT'&&pit&&(pit.dist<=pit.width*.58+.35||apexPitWorkAreaContains(pit))){
+ if(driveNetwork==='PIT'&&pit&&(pit.dist<=pit.width*.58+.35||apexPitWorkAreaContains(pit,x,z))){
   set('PIT','ASPHALT',.96,.96,.97);
  }else if(apexAuthoredCurbMesh()&&window.ApexSvgCurbs.contains(apexAuthoredCurbMesh(),x,z)){
   set('KERB','KERB',.91,.88,.91);
@@ -182,7 +236,13 @@ function apexUnifiedSurfaceAtWorld(x,z,opts=null){
      else if(k==='SAND')set('RUNOFF','SAND',.28,.20,.36);
      else if(k==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
      else set('RUNOFF','ASPHALT',.78,.75,.82);
-    }else if(drivable===true)set('RUNOFF','ASPHALT',.78,.75,.82);
+    }else if(drivable===true){
+     const k=terrainVisualProfile({s,env}).near;
+     if(k==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
+     else if(k==='GRAVEL')set('RUNOFF','GRAVEL',.34,.25,.42);
+     else if(k==='SAND')set('RUNOFF','SAND',.28,.20,.36);
+     else set('RUNOFF','ASPHALT',.78,.75,.82);
+    }
     else if(abs<=env.half+env.curb+env.runoff){
      if(env.runoffSurface==='GRAVEL')set('RUNOFF','GRAVEL',.34,.25,.42);
      else if(env.runoffSurface==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
@@ -274,7 +334,7 @@ function apexGradeSpatialIndex(){
      bx=Array.isArray(b)?+b[0]:+b.x,bz=Array.isArray(b)?+b[1]:+b.z,len=Math.hypot(bx-ax,bz-az);
    if(!Number.isFinite(len)||len<.12)continue;
    const ay=ys?+ys[i-1]:(Number.isFinite(a.y)?a.y:0),by=ys?+ys[i]:(Number.isFinite(b.y)?b.y:0);
-   const seg={kind,ax,az,bx,bz,ay,by,width,extra,len};
+   const seg={kind,ax,az,bx,bz,ay,by,width,extra,len,a,b};
    const j=segments.length;segments.push(seg);
    const margin=Math.max(36,width*.5+32);
    for(let ix=Math.floor((Math.min(ax,bx)-margin)/size);ix<=Math.floor((Math.max(ax,bx)+margin)/size);ix++)
@@ -309,7 +369,13 @@ function apexNearestGradeSegment(x,z,kind=null,maxD=86){
  for(let i=-n;i<=n;i++)for(let j=-n;j<=n;j++)for(const id of idx.buckets.get((ix+i)+','+(iz+j))||[]){
   if(seen.has(id))continue;seen.add(id);const sg=idx.segments[id];if(kind&&!(kind==='PAVED'?(sg.kind==='PIT'||sg.kind==='ROAD'):sg.kind===kind))continue;
   const dx=sg.bx-sg.ax,dz=sg.bz-sg.az,len2=dx*dx+dz*dz,t=clamp(((x-sg.ax)*dx+(z-sg.az)*dz)/len2,0,1),px=sg.ax+t*dx,pz=sg.az+t*dz,d2=(x-px)**2+(z-pz)**2;
-  if(d2<best2){best2=d2;best={...sg,dist:Math.sqrt(d2),x:px,z:pz,y:lerp(sg.ay,sg.by,t)}}
+  if(d2<best2){
+   best2=d2;best={...sg,dist:Math.sqrt(d2),x:px,z:pz,y:lerp(sg.ay,sg.by,t)};
+   if(sg.kind==='PIT'){
+    const side=(x-px)*-dz+(z-pz)*dx>=0?'leftWidth':'rightWidth';
+    best.halfWidth=lerp(sg.a?.[side]??sg.width*.5,sg.b?.[side]??sg.width*.5,t);
+   }
+  }
  }
  return best;
 }
@@ -443,7 +509,7 @@ function apexPitGradeOwnsPoint(st,pit){
  if(!st)return true;
  const env=envProfile(st.s),lat=Math.abs(st.lat);
  if(lat<=env.half+.2)return false;
- if(pit.dist<pit.width*.5)return true;
+ if(pit.dist<(pit.halfWidth??pit.width*.5))return true;
  const side=st.lat>=0?1:-1,limit=apexRoadFlatLimit(st.s,env,side);
  if(lat>limit)return true;
  const q=renderRibbonFrameAt(st.s);
@@ -470,7 +536,8 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
    const edge=apexTrackEdgeSection(q,env,side).end,
     distance=(x-edge.x)*q.nx*side+(z-edge.z)*q.nz*side;
    if(distance<=0){
-    out=q.y+Math.tan(q.bank||0)*st.lat-.18;
+    const insideY=q.y+Math.tan(q.bank||0)*st.lat-.18;
+    out=lerp(edge.y,insideY,terrainEase(-distance));
     mainProtected=true;
    }else{
     const rise=Math.abs(natural-edge.y),blend=Math.max(cfg.blendM,1.5*rise/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
@@ -482,12 +549,12 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
  // modifica la placa: los viales se renderizan después apoyados sobre el relieve.
  const sg=apexNearestGradeSegment(x,z,'PIT',42);
  if(sg){
-  const shoulder=sg.width*.5+3;
+  const distance=sg.dist-(sg.halfWidth??sg.width*.5),edgeY=sg.y+.012;
   if(apexPitGradeOwnsPoint(st,sg)){
-   if(sg.dist<=shoulder)out=sg.y-.18;
+   if(distance<=3)out=edgeY-.192*terrainEase(Math.max(0,-distance));
    else if(!mainProtected){
-    const blend=Math.max(cfg.blendM,Math.abs(natural-sg.y)/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
-    if(sg.dist<shoulder+blend)out=lerp(sg.y-.18,out,terrainEase((sg.dist-shoulder)/blend));
+    const blend=Math.max(cfg.blendM,Math.abs(out-edgeY)/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
+    if(distance<3+blend)out=lerp(edgeY,out,terrainEase((distance-3)/blend));
    }
   }
  }
@@ -551,7 +618,7 @@ function apexRegroundImportedWorld(){
      if(a._apexGroundCache)a._apexGroundCache.clear();
    }
    if(Array.isArray(it.worldPath)&&Array.isArray(it.worldPathY)&&it.type!=='road'&&it.type!=='tunnel'&&it.type!=='bridge')it.worldPathY=it.worldPath.map(p=>ground(p[0],p[1]));
-   if(Array.isArray(it.worldFootprint)&&Array.isArray(it.worldY))it.worldY=it.worldFootprint.map(p=>it.type==='surfaceZone'||it.type==='pit'?apexAlignedCircuitSurfaceY(p[0],p[1]):it.type==='marking'?apexSvgSurfaceMarkingY(it,p[0],p[1]):ground(p[0],p[1]));
+   if(Array.isArray(it.worldFootprint)&&Array.isArray(it.worldY))it.worldY=it.worldFootprint.map(p=>it.type==='surfaceZone'?apexSvgPavedSurfaceY(it,p[0],p[1]):it.type==='pit'?apexAlignedCircuitSurfaceY(p[0],p[1]):it.type==='marking'?apexSvgSurfaceMarkingY(it,p[0],p[1]):ground(p[0],p[1]));
    if(Array.isArray(it.forestPoints))for(const p of it.forestPoints)p[2]=ground(p[0],p[1]);
  }
  // Los muros detallados pueden superar los 2.000 segmentos; las colisiones conservan
@@ -589,7 +656,11 @@ function apexForestScatter(poly,seedText,count=18){
  if(!Array.isArray(poly)||poly.length<3)return[];let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(const p of poly){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])}let seed=apexStringHash(seedText),out=[],tries=0;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};while(out.length<count&&tries<count*18){tries++;const x=minX+rnd()*(maxX-minX),z=minZ+rnd()*(maxZ-minZ);if(apexPointInPolyXZ(x,z,poly))out.push([x,z,apexWorldGroundY(x,z)])}return out;
 }
 function apexSvgLandmarkExact(el,index,ctx){
- const sourceRole=String(el.getAttribute('data-apex-role')||'').trim().toLowerCase(),rawType=String(el.getAttribute('data-apex-type')||roleNameToImportType(sourceRole)||'').trim();if(!rawType||sourceRole==='advertising')return null;
+ const pitRejoin=el.localName==='polygon'&&!!el.closest('#APEX_PIT_REJOIN');
+ const pitWork=el.localName==='polygon'&&!!el.closest('#APEX_PIT_WORK_AREA');
+ const sourceRole=pitWork?'pit-work-area':pitRejoin?'pit-rejoin':String(el.getAttribute('data-apex-role')||'').trim().toLowerCase();
+ const rawType=pitWork?'surfaceZone':pitRejoin?'marking':String(el.getAttribute('data-apex-type')||roleNameToImportType(sourceRole)||'').trim();
+ if(!rawType||sourceRole==='advertising')return null;
  const pitSpeedColor=apexPitSpeedMarkColor(sourceRole);
  let pts=apexSvgSampleMounted(ctx.root,el,{step:5}).map(ctx.toWorld);
  if(pitSpeedColor&&el.localName==='line'){
@@ -607,13 +678,16 @@ function apexSvgLandmarkExact(el,index,ctx){
  const wAttr=(parseFloat(el.getAttribute('data-apex-width'))||0),dAttr=(parseFloat(el.getAttribute('data-apex-depth'))||0),lAttr=(parseFloat(el.getAttribute('data-apex-length'))||0);
  if(type==='gantry'){node.startGantry=sourceRole==='start-gantry';node.finishGantry=sourceRole==='finish-gantry';node.text=node.startGantry?'START':(node.finishGantry?'FINISH':node.name)}
  if(type==='block'||type==='parking'||type==='terrainZone'||type==='surfaceZone'||type==='water'||type==='marking'||type==='forestZone'){
-   node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexAlignedCircuitSurfaceY(p[0],p[1]):type==='marking'?apexSvgSurfaceMarkingY(node,p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
+   node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexSvgPavedSurfaceY(node,p[0],p[1]):type==='marking'?apexSvgSurfaceMarkingY(node,p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
    if(type==='block'){node.height=node.height||12;node.buildingStyle=node.apexStyle||'building_generic';}else node.height=node.height||.04;
    if(type==='forestZone'){node.variant='fir';node.color=node.color||'#245032';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
    if(type==='terrainZone')node.color=node.color||'#667a4d';
-   if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
+   if(type==='surfaceZone'){node.surfaceKind=pitWork?'PIT_WORK':String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
-   if(type==='marking'){node.markingKind=/^pit-speed-limit-(start|end)$/.test(sourceRole)?'PIT_SPEED_LIMIT':sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||pitSpeedColor||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
+   if(pitRejoin){
+    node.markingKind='PIT_REJOIN';
+    node.color=apexSvgSurfaceColor(el)||'#8ee5ff';
+   }else if(type==='marking'){node.markingKind=/^pit-speed-limit-(start|end)$/.test(sourceRole)?'PIT_SPEED_LIMIT':sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||pitSpeedColor||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
   if(apexIsCurbAuthoringMark(node)){
    node.width=wAttr||1.25;node.curbRuns=apexSvgElementWorldRunsExact(ctx,el,1.5);node.worldPath=node.curbRuns[0]||[];
    const dash=parseFloat(getComputedStyle(el).strokeDasharray),m=apexSvgRelativeMatrix(ctx.root,el),scale=m?Math.hypot(m.a,m.b):1;
@@ -1921,16 +1995,19 @@ function apexStaticBoundInView(bound,cam,far=1900,margin=1.22){
 // marking = pintura: queda ligeramente por encima para evitar z-fighting.
 function apexGroundPatchYOffset(it){
  const t=String(it&&it.type||'').toLowerCase();
- if(t==='surfacezone')return -.055;
+ if(t==='surfacezone'){
+  if(it.surfaceKind==='PIT_WORK')return .012;
+  return ['SAND','GRAVEL','GRASS'].includes(it.surfaceKind)?0:-.055;
+ }
  if(t==='water')return -.010;
- if(t==='marking')return .025;
+ if(t==='marking')return it.markingKind==='PIT_REJOIN'?.055:.025;
  return .002;
 }
 function apexGroundPatchDepthBias(it){
  const t=String(it&&it.type||'').toLowerCase();
- if(t==='surfacezone')return .045;
+ if(t==='surfacezone')return it.surfaceKind==='PIT_WORK'?-.022:.045;
  if(t==='water')return .012;
- if(t==='marking')return -.020;
+ if(t==='marking')return it.markingKind==='PIT_REJOIN'?-.080:-.020;
  return .006;
 }
 
@@ -2034,6 +2111,20 @@ function apexRunoffRoadClipIndex(){
   }
   prev=cur;
  }
+ if(trackData.customWorld?.curbGeometryAuthoritative){
+  // The authored curb mesh is separate from the asphalt ribbon.
+  for(const face of apexAuthoredCurbVisual()){
+   const poly=face.points.map(([x,y,z])=>({x,y,z}));
+   const [a,b,c,d]=poly;
+   const mid={x:(a.x+b.x)*.5,z:(a.z+b.z)*.5};
+   if(apexTunnelCutAt(mid.x,mid.z))continue;
+   const st=nearestTrackState(mid.x,mid.z,null);
+   const structure=apexPhase1StructureAtWorld(mid.x,mid.z,st.s);
+   if(structure?.kind==='OVER'||structure?.kind==='UNDER')continue;
+   add([a,b,c]);if(d)add([a,c,d]);
+   for(let i=0;i<poly.length;i++)seam(poly[i],poly[(i+1)%poly.length]);
+  }
+ }
  for(const sg of apexPitSegments()){
   // V15.2.7: pit terrain cut MUST equal the visible V15.2.6 merge footprint.
   // Otherwise the original rectangular, full-width pit cutter removes terrain
@@ -2063,7 +2154,8 @@ function apexTrackSeamHeight(idx,p){
     if(length2<1e-12)continue;
     const t=clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/length2,0,1),
      d=Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz);
-    if(d<=closest){closest=d;height=lerp(a.y,b.y,t);}
+    const y=lerp(a.y,b.y,t);
+    if(d<closest-1e-9||(d<=closest&&y>(height??-Infinity))){closest=d;height=y;}
    }
   }
  return height;
@@ -2171,8 +2263,8 @@ function apexClipRunoffSurfaceTriangles(triangles){
      let y=v.y;
      const ns=nearestTrackState(v.x,v.z,null,{radius:80,allowGlobal:true,fallbackDist:75});
      const pit=apexNearestGradeSegment(v.x,v.z,'PIT',16);
-     if(pit&&pit.dist<=pit.width*.5+3&&apexPitGradeOwnsPoint(ns,pit)){
-      y=pit.y-.042;
+     if(pit&&pit.dist<=(pit.halfWidth??pit.width*.5)+3&&apexPitGradeOwnsPoint(ns,pit)){
+      y=pit.y+.012;
      }
      return [v.x,y,v.z];
     }));
@@ -2188,6 +2280,14 @@ window.apexRunoffClipDiagnostics=()=>{
   sourceTriangles:i.clipped,resultTriangles:i.generated}:null;
 };
 
+function apexSvgPavedSurfaceY(it,x,z){
+ if(/^runoff-(sand|gravel|grass)$/.test(it.sourceRole))return apexWorldGroundY(x,z);
+ if(it.sourceRole==='pit-work-area'){
+   const pit=apexNearestGradeSegment(x,z,'PIT',16);
+   if(pit)return pit.y;
+ }
+ return apexAlignedCircuitSurfaceY(x,z);
+}
 function apexSvgSurfaceMarkingY(it,x,z){
  // Sólo las pinturas sobre corredor rodable usan su rasante; las lejanas
  // (viales/terreno) mantienen el relieve real de la zona donde fueron dibujadas.
@@ -2199,6 +2299,11 @@ function apexSvgSurfaceMarkingY(it,x,z){
   const st=nearestTrackState(x,z,null,{radius:48,allowGlobal:true,fallbackDist:42});
   if(st&&Number.isFinite(st.s)){
    const env=envProfile(st.s);
+   if(it.sourceRole==='pit-rejoin'){
+    if(Math.abs(st.lat)<=env.half)return apexNearestTrackSurfaceY(x,z);
+    const pit=apexNearestGradeSegment(x,z,'PIT',12);
+    if(pit&&pit.dist<=pit.width*.5+.5)return pit.y;
+   }
    if(Math.abs(st.lat)<=env.half+env.curb+2)return apexAlignedCircuitSurfaceY(x,z);
   }
  }
@@ -2523,10 +2628,22 @@ function apexClipGenericRunoffPolygon(poly){
   for(const part of parts)next.push(...apexInspectorSubtractFoot(part,f.foot,false));
   parts=next;if(!parts.length)break;
  }
- const area=parts.reduce((v,p)=>v+Math.abs(apexInspectorPolyArea(p)),0);
- // Evita reproyectar piezas idénticas cuando las cajas coinciden, pero
- // los polígonos no se pisan realmente.
- return origArea-area>Math.max(.00005,origArea*1e-7)?parts:null;
+ const area=parts.reduce((v,p)=>v+Math.abs(apexInspectorPolyArea(p)),0),
+  clipped=origArea-area>Math.max(.00005,origArea*1e-7);
+ const joins=[...seen].map(id=>idx.faces[id]).filter(f=>['SAND','GRAVEL','GRASS'].includes(f.kind));
+ if(!joins.length)return clipped?parts:null;
+ let snapped=false;
+ const result=(clipped?parts:[poly]).map(part=>part.map(p=>{
+  for(const f of joins){
+   if(p.x<f.minX-1e-5||p.x>f.maxX+1e-5||p.z<f.minZ-1e-5||p.z>f.maxZ+1e-5)continue;
+   const A=f.tri[0],dx=p.x-A[0],dz=p.z-A[2],u=(dx*f.vz-dz*f.vx)*f.inv,v=(f.ux*dz-f.uz*dx)*f.inv;
+   if(u<-.00001||v<-.00001||u+v>1.00001)continue;
+   const y=apexInspectorFootHeight(f.foot,p);
+   if(Math.abs(y-p.y)>1e-7&&Math.abs(y-p.y)<=.5){snapped=true;return {...p,y};}
+  }
+  return p;
+ }));
+ return clipped||snapped?result:null;
 }
 window.apexRunoffFallbackMaskDiagnostics=()=>{
  const i=trackData&&trackData._apexRunoffDriveSurfaceIndex;
@@ -2650,6 +2767,7 @@ function apexBuildUnifiedGroundAtlas(cw){
 // A root data-apex-road-color can explicitly override the track stroke.
 function apexRoadSvgNormalizeColorV15(value){
  const raw=String(value||'').trim();
+ if(!raw)return null;
  if(/^#[0-9a-f]{6}$/i.test(raw))return raw.toLowerCase();
  if(/^#[0-9a-f]{3}$/i.test(raw))return '#'+raw.slice(1).split('').map(x=>x+x).join('').toLowerCase();
  const rgb=raw.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
@@ -2661,6 +2779,8 @@ function apexRoadSvgNormalizeColorV15(value){
   if(ctx){
    ctx.fillStyle='#010203';ctx.fillStyle=raw;
    const css=String(ctx.fillStyle||'').toLowerCase();
+   ctx.fillStyle='#040506';ctx.fillStyle=raw;
+   if(css!==String(ctx.fillStyle||'').toLowerCase())return null;
    if(/^#[0-9a-f]{6}$/.test(css))return css;
    const m=css.match(/^rgb\(\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\s*\)$/);
    if(m)return '#'+[1,2,3].map(i=>Math.min(255,+m[i]).toString(16).padStart(2,'0')).join('');
@@ -4041,8 +4161,6 @@ function apexWebglRenderPitExact(it,cam,pitch,lod){
  if(it.hasBalcony!==false){const bo=1.35,q0=apexPitEdgeWorld(edge,.02,bo),q1=apexPitEdgeWorld(edge,.98,bo);webglPushCamQuad(worldToCamera(e0[0],yy0+h*.70,e0[1],cam),worldToCamera(e1[0],yy1+h*.70,e1[1],cam),worldToCamera(q1[0],apexPitGroundAt(it,q1[0],q1[1])+clear+h*.70,q1[1],cam),worldToCamera(q0[0],apexPitGroundAt(it,q0[0],q0[1])+clear+h*.70,q0[1],cam),pitch,prof.balcony,.60,-.020)}
  // Parapeto superior.
  webglPushCamQuad(worldToCamera(e0[0],yy0+h*.91,e0[1],cam),worldToCamera(e1[0],yy1+h*.91,e1[1],cam),worldToCamera(e1[0],yy1+h,e1[1],cam),worldToCamera(e0[0],yy0+h,e0[1],cam),pitch,prof.parapet,.60,-.018);
- // Pit wall independiente, paralelo al edificio y gobernado por SVG.
- if(it.hasPitwall!==false&&lod===0){const off=4.6,w0=apexPitEdgeWorld(edge,.03,off),w1=apexPitEdgeWorld(edge,.97,off),wy0=apexPitGroundAt(it,w0[0],w0[1]),wy1=apexPitGroundAt(it,w1[0],w1[1]),wh=1.05;webglPushCamQuad(worldToCamera(w0[0],wy0,w0[1],cam),worldToCamera(w1[0],wy1,w1[1],cam),worldToCamera(w1[0],wy1+wh,w1[1],cam),worldToCamera(w0[0],wy0+wh,w0[1],cam),pitch,prof.pitwall,.60,-.022)}
  return true;
 }
 
@@ -4393,7 +4511,6 @@ function drawWorldLandmarks(cam,pitch){
          const e0=apexPitEdgeWorld(edge,.01,.10),e1=apexPitEdgeWorld(edge,.99,.10),yy0=apexPitGroundAt(it,e0[0],e0[1])+clear,yy1=apexPitGroundAt(it,e1[0],e1[1])+clear;
          polyCam([worldToCamera(e0[0],yy0+h*.31,e0[1],cam),worldToCamera(e1[0],yy1+h*.31,e1[1],cam),worldToCamera(e1[0],yy1+h*.36,e1[1],cam),worldToCamera(e0[0],yy0+h*.36,e0[1],cam)],prof.frame,null,1,1);
          if(it.hasBalcony!==false&&detailAlpha>.18){const bo=1.35,q0=apexPitEdgeWorld(edge,.02,bo),q1=apexPitEdgeWorld(edge,.98,bo);polyCam([worldToCamera(e0[0],yy0+h*.70,e0[1],cam),worldToCamera(e1[0],yy1+h*.70,e1[1],cam),worldToCamera(q1[0],apexPitGroundAt(it,q1[0],q1[1])+clear+h*.70,q1[1],cam),worldToCamera(q0[0],apexPitGroundAt(it,q0[0],q0[1])+clear+h*.70,q0[1],cam)],prof.balcony,null,1,.98)}
-         if(it.hasPitwall!==false&&detailAlpha>.35){const off=4.6,w0=apexPitEdgeWorld(edge,.03,off),w1=apexPitEdgeWorld(edge,.97,off),wy0=apexPitGroundAt(it,w0[0],w0[1]),wy1=apexPitGroundAt(it,w1[0],w1[1]),wh=1.05;polyCam([worldToCamera(w0[0],wy0,w0[1],cam),worldToCamera(w1[0],wy1,w1[1],cam),worldToCamera(w1[0],wy1+wh,w1[1],cam),worldToCamera(w0[0],wy0+wh,w0[1],cam)],prof.pitwall,null,1,1)}
         }
        }
        continue;
@@ -6465,32 +6582,38 @@ function collectExactPitRenderItems(cam){
    const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=sg.len||1,nx=-dz/len,nz=dx/len;
    const a=lat=>worldToCamera(sg.x1+nx*lat,sg.y1+.012,sg.z1+nz*lat,cam),
     b=lat=>worldToCamera(sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat,cam);
+   const toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
+   const first=apexPitVisualMergeProfileV1526(sg,0),last=apexPitVisualMergeProfileV1526(sg,1);
+   const mergePaint=first.paintEdges&&last.paintEdges&&(first.paintCrossesTrack||last.paintCrossesTrack||first.clipped||last.clipped);
    const merged=apexPitMergeQuadV1526(sg);
    if(merged){
-    const {a:pa,b:pb,quad}=merged,toCam=p=>worldToCamera(p.x,p.y,p.z,cam);
+    const {a:pa,b:pb,quad}=merged;
     add(...quad.map(toCam),null,null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PITLANE',merge:merged.overlap});
-    // Separate physical paint, never a 2-D screen-space outline. Keep the
-    // track-facing pit-exit line; taper its width with the wedge itself.
-    const stripe=(nearSide)=>{
-     const lineEnd=(p)=>{
-      const edge=nearSide?p.near:p.far,dir=nearSide?p.side:-p.side,
-       thick=Math.min(.09,Math.max(0,p.width*.24));
-      return [toCam(apexPitVisualPointV1526(p,edge,.045)),
-              toCam(apexPitVisualPointV1526(p,edge+dir*thick,.045))];
+    if(!mergePaint&&Math.max(pa.width,pb.width)>=.035){
+     const stripe=(nearSide)=>{
+      const lineEnd=p=>{
+       const edge=nearSide?p.near:p.far,dir=nearSide?p.side:-p.side,
+        thick=Math.min(.09,p.width*.24);
+       return [toCam(apexPitVisualPointV1526(p,edge,.045)),
+               toCam(apexPitVisualPointV1526(p,edge+dir*thick,.045))];
+      };
+      const [A,B]=lineEnd(pa),[D,C]=lineEnd(pb);
+      add(A,B,C,D,nearSide?'#f6f7f8':'#e4e8ec',null,{kind:'PIT_PAINT',merge:merged.overlap});
      };
-     const A=lineEnd(pa),B=lineEnd(pb);
-     if(Math.max(pa.width,pb.width)<.035)return;
-     add(A[0],A[1],B[1],B[0],nearSide?'#f6f7f8':'#e4e8ec',null,{kind:'PIT_PAINT',merge:merged.overlap});
-    };
-    stripe(true);
-    // At the merge, a second white edge over the racing surface looks like
-    // a parallel phantom lane. Draw the outer boundary only on distinct pit.
-    if(!pa.clipped&&!pb.clipped)stripe(false);
+     stripe(true);
+     if(!pa.clipped&&!pb.clipped)stripe(false);
+    }
+   }
+   if(mergePaint){
+    for(const index of [0,1]){
+     const [A,B]=first.paintEdges[index].map(toCam),[D,C]=last.paintEdges[index].map(toCam);
+     add(A,B,C,D,'#f6f7f8',null,{kind:'PIT_PAINT',merge:true});
+    }
    }
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
      const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);
      const outer=s=>inner+side*apexPitWorkWidthAt(work,s);
-     add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56',null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PIT_WORK'});
+     if(!pn.workFootprints?.length)add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56',null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PIT_WORK'});
      const strip=(lo,hi,y,color)=>{
        const point=(x,z,height,lat)=>worldToCamera(x+nx*lat,height+y,z+nz*lat,cam);
        add(point(sg.x1,sg.z1,sg.y1,lo),point(sg.x1,sg.z1,sg.y1,hi),point(sg.x2,sg.z2,sg.y2,hi),point(sg.x2,sg.z2,sg.y2,lo),color);

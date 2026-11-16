@@ -56,5 +56,36 @@ assert.equal(api.clip(poly(5,8)),null,
  'Natural ground must survive under bridges and tunnels');
 assert.ok(index.buckets.size>0,
  'SVG runoff mask must retain the regular road footprint at crossings');
+// Exact SVG kerbs own their actual area beyond the base asphalt ribbon.
+gradeSeparated=false;data._apexRunoffRoadClipIndex=null;data.customWorld={curbGeometryAuthoritative:true};
+const curbFactory=new Function('trackData','apexRoadMeshSamples','renderRibbonFrameAt',
+ 'envProfile','ribbonWorldPoint','apexPhase1StructureAtWorld','curbInfo','clamp','lerp','apexPitSegments',
+ 'apexAuthoredCurbVisual','apexTunnelCutAt','nearestTrackState',src+'\nreturn apexClipTerrainAtDrive;');
+const curbClip=curbFactory(data,()=>[0,10],q,()=>({...env,curb:0}),ribbon,()=>null,()=>({}),
+ (v,a,b)=>Math.max(a,Math.min(b,v)),(a,b,t)=>a+(b-a)*t,()=>[],
+ ()=>[{points:[[3,1,0],[3,1,10],[5,1,10],[5,1,0]]}],()=>false,()=>({s:0}));
+const curbEdge=curbClip(poly(4,7)).flat();
+assert.ok(curbEdge.every(v=>v.x>=5-1e-8),'Terrain is clipped away from the rendered curb');
+assert.ok(curbEdge.some(v=>v.x===5&&Math.abs(v.y-1)<1e-8),'The kerb edge and terrain share a height');
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t;
+const ease=x=>{const t=clamp(x,0,1);return t*t*(3-2*t)};
+let pitActive=false,under=false;
+const ground=new Function('trackData','apexPhase1Config','nearestTrackState','envProfile',
+ 'renderRibbonFrameAt','apexPhase1StructureAtWorld','apexTunnelCutAt','apexNearestGradeSegment',
+ 'apexPitGradeOwnsPoint','terrainEase','lerp','ribbonWorldPoint',
+ ['apexTrackEdgeSection','apexPhase1GroundBlend'].map(n=>get(part24,n)).join('\n')+
+ '\nreturn apexPhase1GroundBlend;')(
+ {},()=>({blendM:8,maxSlopeDeg:25}), (x,z)=>({s:z,lat:x}),()=>env,q,
+ ()=>null,()=>under, (x,z)=>pitActive?{dist:Math.abs(x-16),width:6,halfWidth:x<16?2:4,y:9}:null,
+ ()=>true,ease,lerp,ribbon);
+const roadY=q(2).y+3*Math.tan(q(2).bank);
+assert.ok(Math.abs(ground(3,2,6)-roadY)<1e-10);
+assert.ok(Math.abs(ground(3+.0001,2,6)-ground(3-.0001,2,6))<1e-7);
+pitActive=true;
+for(const x of [14,20,22])assert.ok(Math.abs(ground(x,2,6)-9.012)<1e-10,'Pit shoulder matches paved grade');
+assert.ok(Math.abs(ground(16,2,6)-8.82)<1e-10,'Buried pit subgrade stays under pavement');
+assert.equal(ground(50,2,6),6,'Far ground retains its authored grade');
+under=true;
+assert.equal(ground(20,2,6),6,'Tunnel terrain is unchanged');
 console.log(JSON.stringify({test:'terrain-runoff-corridor',
  bankedTerrainSeam:true,roadSvgClipIntact:true,overpassPreserved:true,ok:true}));

@@ -2003,8 +2003,10 @@ async function importEditableCircuitSvgText(text,spec,options={}){
    if(pitSpeedKph>0)pitNetwork.speedKph=clamp(pitSpeedKph,30,120);
    const excluded=new Set([...pitEls,...wallLeftEls,...wallRightEls,...edgeLeftEls,...edgeRightEls,...drivableEls,...cornerImport.elements,...terrainImport.elements,...(terrainBase?[...ctx.root.querySelectorAll('[data-apex-role="terrain-base"]')]:[]),...timingImport.elements.filter(el=>!['start-line','finish-line'].includes(String(el.getAttribute('data-apex-role')||'').toLowerCase())),ctx.trackEl]);
    const startEls=apexSvgFindAll(ctx.root,['start_finish','start-finish','start_marker','start-marker']);for(const x of startEls)excluded.add(x);
-   const candidates=[...ctx.root.querySelectorAll('[data-apex-type],[data-apex-role]')].filter(el=>!excluded.has(el)&&!el.hasAttribute('data-apex-library-zone')&&String(el.getAttribute('data-apex-role')||'').toLowerCase()!=='racing-line'&&!el.closest('#apex_ideal_racing_line,#APEX_RACING_LINE_EXPORT')&&!apexSvgElementInsideLibrary(ctx,el,libraryZone));const landmarks=[];
+   const candidates=[...ctx.root.querySelectorAll('[data-apex-type],[data-apex-role],#APEX_PIT_REJOIN polygon,#APEX_PIT_WORK_AREA polygon')].filter(el=>!excluded.has(el)&&!el.hasAttribute('data-apex-library-zone')&&String(el.getAttribute('data-apex-role')||'').toLowerCase()!=='racing-line'&&!el.closest('#apex_ideal_racing_line,#APEX_RACING_LINE_EXPORT')&&!apexSvgElementInsideLibrary(ctx,el,libraryZone));const landmarks=[];
    for(let i=0;i<candidates.length;i++){const item=apexSvgLandmarkExact(candidates[i],i,ctx);if(item)landmarks.push(item)}
+   const workFootprints=landmarks.filter(it=>it.surfaceKind==='PIT_WORK').map(it=>it.worldFootprint);
+   if(workFootprints.length)pitNetwork.workFootprints=workFootprints;
    const brakeBoards=apexImportedBrakeBoards(landmarks,ctx.km*1000),circuitLandmarks=landmarks.filter(it=>it.type!=='distanceBoard'),curbZones=apexImportedCurbZones(circuitLandmarks,ctx.km*1000);
    const structureZones=apexImportedStructureZones(circuitLandmarks,ctx.km*1000),barrierSegments=apexImportedBarrierSegments(circuitLandmarks,ctx.km*1000),surfaceZones=apexImportedSurfaceZones(circuitLandmarks),brakeBoardsFlag=String(rootDoc.getAttribute('data-apex-brake-boards-authoritative')||'').trim().toLowerCase(),brakeBoardsAuthoritative=brakeBoardsFlag==='true'||(!brakeBoardsFlag&&(brakeBoards.length>0||!!rootDoc.querySelector('#APEX_BRAKING_MARKERS'))),racingLineElement=[...ctx.root.querySelectorAll('[data-apex-role="racing-line"]')].find(el=>!el.closest('[data-apex-library-item],#APEX_ELEMENT_LIBRARY')&&!apexSvgElementInsideLibrary(ctx,el,libraryZone)),
        racingLine=racingLineElement?apexSvgElementWorldRunsExact(ctx,racingLineElement,4).flat().filter(p=>Array.isArray(p)&&p.length>=2&&p.every(Number.isFinite)):[]; 
@@ -3629,16 +3631,29 @@ function apexApplyPitLaneJsonProfile(){
  if(!cfg||!pn||!Array.isArray(pn.runs)||!pn.runs.length)return false;
  const cfgLen=Math.max(1,+cfg.totalLengthM||+pn.primaryLength||+pn.totalLength||1),runtimeLen=Math.max(1,+pn.primaryLength||+pn.totalLength||cfgLen),toCfgS=s=>clamp((+s||0)*cfgLen/runtimeLen,0,cfgLen),toRuntimeS=s=>clamp((+s||0)*runtimeLen/cfgLen,0,runtimeLen);
  const vs=cfg.verticalProfile&&Array.isArray(cfg.verticalProfile.samples)?cfg.verticalProfile.samples:null,ws=cfg.widthProfile&&Array.isArray(cfg.widthProfile.samples)?cfg.widthProfile.samples:null,defaultW=Math.max(3.8,+((cfg.widthProfile||{}).defaultTotalWidthM)||+((raceMetaFor(trackData.spec)||{}).pit||{}).width||5.9);
+ const primary=pn.runs.filter(r=>!r.detached&&r.chainId===pn.primaryChainId&&r.points?.length);
+ const first=primary[0]?.points[0],last=primary.at(-1)?.points.at(-1);
+ const anchor=cfg.verticalProfile?.matchTrackEndpoints===true&&vs?.length&&first&&last;
+ const blendM=Math.min(60,runtimeLen*.5);
+ const correction=p=>apexNearestTrackSurfaceY(p.x,p.z)-apexPitProfileSample(vs,toCfgS(p.pitS));
+ const entryDelta=anchor?correction(first):0,exitDelta=anchor?correction(last):0;
+ const blend=distance=>{const t=clamp(distance/blendM,0,1);return 1-t*t*(3-2*t)};
  for(const r of pn.runs){
    const pts=Array.isArray(r.points)?r.points:[];let sumW=0,countW=0;
    for(const p of pts){
      const ps=toCfgS(p.pitS);
-     const elev=apexPitProfileSample(vs,ps,1,null);if(Number.isFinite(elev))p.y=elev;
+     const elev=apexPitProfileSample(vs,ps,1,null);
+     if(Number.isFinite(elev)){
+       p.y=elev;
+       if(anchor&&r.chainId===pn.primaryChainId)p.y+=entryDelta*blend(p.pitS-first.pitS)+exitDelta*blend(last.pitS-p.pitS);
+     }
      const lw=apexPitProfileSample(ws,ps,1,null),rw=apexPitProfileSample(ws,ps,2,null),tw=apexPitProfileSample(ws,ps,3,null),w=Number.isFinite(tw)?tw:(Number.isFinite(lw)&&Number.isFinite(rw)?lw+rw:defaultW);
      p.leftWidth=Number.isFinite(lw)?lw:w*.5;p.rightWidth=Number.isFinite(rw)?rw:w*.5;p.width=Math.max(3.8,w);sumW+=p.width;countW++;
    }
    if(countW)r.width=sumW/countW;
  }
+ const rejoinStart=cfg.trackConnection?.rejoinPavementFromPitS;
+ pn.rejoinPavementFromPitS=Number.isFinite(rejoinStart)?toRuntimeS(rejoinStart):null;
  pn._segments=null;
  if(cfg.speedLimit&&Number.isFinite(+cfg.speedLimit.kph))pn.speedKph=clamp(+cfg.speedLimit.kph,30,120);
  pn.profileSource='JSON:pitLane';pn.profileSchema=cfg.schema;pn.profileTotalLengthM=cfgLen;
