@@ -4,6 +4,7 @@
 // Mantenerlo separado evita duplicar criterios entre motor y UI.
 
 import { ensureClubTactics, isPlayerUnavailable } from '../utils/index.js';
+import { FORMATION_EFFECTS, getFormationFit } from './identity.js';
 
 // Wrapper defensivo: sanciones + unavailable base
 function isPlayerUnavailableNow(p) {
@@ -13,7 +14,7 @@ function isPlayerUnavailableNow(p) {
   return !!isPlayerUnavailable(p);
 }
 
-export function getClubStrengthProfile(club, isHome) {
+export function getClubStrengthProfile(club, isHome, options = {}) {
   ensureClubTactics(club);
 
   const players =
@@ -22,10 +23,11 @@ export function getClubStrengthProfile(club, isHome) {
       : null;
 
   let lineupPlayers = [];
-  if (players && Array.isArray(club.lineup) && club.lineup.length > 0) {
-    const lineupSet = new Set(club.lineup);
+  const lineupIds = options.lineupIds || club.lineup;
+  if (players && Array.isArray(lineupIds) && lineupIds.length > 0) {
+    const lineupSet = new Set(lineupIds.map(String));
     lineupPlayers = players.filter(
-      (p) => lineupSet.has(p.id) && !isPlayerUnavailableNow(p)
+      (p) => lineupSet.has(String(p.id)) && !isPlayerUnavailableNow(p)
     );
   }
 
@@ -44,9 +46,19 @@ export function getClubStrengthProfile(club, isHome) {
   let attack = avgOverall * 0.9;
   let defense = avgOverall * 0.9;
 
-  const t = club.alignment || {};
+  // Las opciones del usuario viven en club.tactics. alignment se conserva
+  // como compatibilidad con los guardados y pantallas antiguos.
+  const t = { ...(club.alignment || {}), ...(club.tactics || {}), ...(options.tactics || {}) };
   const mentality = t.mentality || 'BALANCED';
   const pressure = t.pressure || 'NORMAL';
+  const formation = FORMATION_EFFECTS[t.formation] ? t.formation : '4-4-2';
+  const formationEffect = FORMATION_EFFECTS[formation];
+  const tacticalFit = getFormationFit(lineupPlayers, formation);
+
+  // La formación sí modifica las fortalezas, sin crear ventajas extremas;
+  // situar titulares fuera de su demarcación cuesta una penalización gradual.
+  attack += formationEffect.attack - (1 - tacticalFit) * 5;
+  defense += formationEffect.defense - (1 - tacticalFit) * 6;
 
   if (mentality === 'OFFENSIVE') attack += 5;
   else if (mentality === 'DEFENSIVE') defense += 5;
@@ -58,14 +70,20 @@ export function getClubStrengthProfile(club, isHome) {
     defense += 1;
   }
 
+  if (t.playStyle === 'DIRECT') attack += 0.8;
+  else if (t.playStyle === 'COUNTER') defense += 0.8;
+  else if (t.playStyle === 'POSSESSION') { attack += 0.3; defense += 0.3; }
+  if (t.tempo === 'FAST') { attack += 0.6; defense -= 0.4; }
+  else if (t.tempo === 'SLOW') { attack -= 0.3; defense += 0.5; }
+
   if (isHome) attack += 1;
 
-  return { attack, defense };
+  return { attack, defense, formation, tacticalFit };
 }
 
-export function getTacticalAggression(club) {
+export function getTacticalAggression(club, overrides = {}) {
   ensureClubTactics(club);
-  const t = club.alignment || {};
+  const t = { ...(club.alignment || {}), ...(club.tactics || {}), ...overrides };
   let factor = 1.0;
 
   if (t.mentality === 'OFFENSIVE') factor += 0.15;

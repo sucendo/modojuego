@@ -1170,6 +1170,20 @@ export function updateNextMatchView() {
       else lines.push('Alternancia en el centro del campo.');
     }
 
+    const kickoffTactics = lastFx.tacticalPhases?.[0];
+    if (kickoffTactics) {
+      lines.push(`Sistemas iniciales: ${lastHomeName} ${kickoffTactics.home.formation} · ${lastAwayName} ${kickoffTactics.away.formation}.`);
+    }
+    for (const change of lastFx.tacticalChanges || []) {
+      const clubName = change.clubId === lastFx.homeClubId ? lastHomeName : lastAwayName;
+      const reason = change.reason === 'CHASING_GAME' ? 'para buscar el empate' :
+        change.reason === 'PROTECTING_LEAD' ? 'para proteger su ventaja' : 'para adaptarse al encuentro';
+      const changeDetail = change.toFormation !== change.fromFormation
+        ? `cambió de ${change.fromFormation} a ${change.toFormation}`
+        : 'ajustó su planteamiento';
+      lines.push(`Min. ${change.minute}: ${clubName} ${changeDetail} ${reason}.`);
+    }
+
     sensEl.innerHTML = `<div class="pcf-sensations__text">${lines.map((t) => `• ${escapeHtml(t)}`).join('<br>')}</div>`;
   }
 

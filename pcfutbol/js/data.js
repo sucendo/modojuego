@@ -11,6 +11,7 @@ import { PUBLISHED_SQUADS_2026_27 } from './published_squads_2026_27.js';
 import { CLUB_OFFICIAL_SQUADS_2026_27 } from './club_official_squads_2026_27.js';
 import { SQUAD_SUPPLEMENTS_2026_27 } from './squadSupplements2026.js';
 import { buildSquadFromSnapshot } from './rosterSnapshot.js';
+import { createClubTacticalIdentity } from './game/tactics/identity.js';
 
 // Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
 // La clave es el id del club (real_madrid, barcelona, arsenal, astonvilla, ...).
@@ -98,6 +99,7 @@ function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
       cash: c.cash,
       wageBudget: c.wageBudget,
       players,
+      tacticalIdentity: createClubTacticalIdentity({ id: c.id, players }, c.baseOverall, id),
       squadSource: officiallySourced ? 'official-roster' : verifiedSnapshot ? 'published-roster' : hasRealSquad ? 'legacy' : 'generated',
       squadSeason: verifiedSnapshot ? '2026/27' : hasRealSquad ? '2025/26' : null,
       squadReference: verifiedSnapshot ? snapshot.source : null,

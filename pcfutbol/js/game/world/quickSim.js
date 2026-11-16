@@ -6,6 +6,10 @@
 // Nota: Para evitar ciclos de imports, el generador de stats avanzadas
 // se inyecta desde fuera (simulateMatchday.js).
 
+import { getStartingXIForFixture } from '../match/selection.js';
+import { getClubStrengthProfile } from '../tactics/strength.js';
+import { chooseMatchPlan } from '../tactics/matchPlans.js';
+
 let _generateAdvancedStatsForFixture = null;
 
 export function configureAdvancedStatsGenerator(fn) {
@@ -34,33 +38,69 @@ export function simulateQuickWorldFixture(fx, ls) {
   const awayOv = wAvgOverall(awayXI);
   const diff = wClamp((homeOv - awayOv) / 25, -1, 1); // -1..+1 aprox
 
-  // goles esperados (Poisson) -> estilo rápido
-  const baseLambda = 1.25;
-  const homeLambda = Math.max(0.15, baseLambda + diff * 0.65);
-  const awayLambda = Math.max(0.15, baseLambda - diff * 0.55);
-
-  const hg = wClamp(wPoisson(homeLambda), 0, 6);
-  const ag = wClamp(wPoisson(awayLambda), 0, 6);
+  // Conservar el modelo Poisson rápido, sumando diferencias tácticas
+  // MODERADAS. No se simulan encuentros ajenos con el motor pesado.
+  const homeInitial = chooseMatchPlan(home, away);
+  const awayInitial = chooseMatchPlan(away, home);
+  const lambdas = (homePlan, awayPlan) => {
+    const hp = getClubStrengthProfile(home, true, { lineupIds: fx.homeLineupIds, tactics: homePlan });
+    const ap = getClubStrengthProfile(away, false, { lineupIds: fx.awayLineupIds, tactics: awayPlan });
+    return {
+      home: Math.max(0.15, 1.25 + diff * 0.65 + ((hp.attack - homeOv * 0.9) - (ap.defense - awayOv * 0.9)) * 0.028),
+      away: Math.max(0.15, 1.25 - diff * 0.55 + ((ap.attack - awayOv * 0.9) - (hp.defense - homeOv * 0.9)) * 0.028),
+    };
+  };
+  const early = lambdas(homeInitial, awayInitial);
+  const hgEarly = wClamp(wPoisson(early.home * 65 / 90), 0, 6);
+  const agEarly = wClamp(wPoisson(early.away * 65 / 90), 0, 6);
+  const homeLate = chooseMatchPlan(home, away, { minute: 65, goalDifference: hgEarly - agEarly });
+  const awayLate = chooseMatchPlan(away, home, { minute: 65, goalDifference: agEarly - hgEarly });
+  const late = lambdas(homeLate, awayLate);
+  const hgLate = wClamp(wPoisson(late.home * 25 / 90), 0, 6);
+  const agLate = wClamp(wPoisson(late.away * 25 / 90), 0, 6);
+  const hg = Math.min(6, hgEarly + hgLate);
+  const ag = Math.min(6, agEarly + agLate);
   fx.homeGoals = hg;
   fx.awayGoals = ag;
+  fx.goalPhases = { splitMinute: 65, home: [Math.min(hgEarly, hg), Math.max(0, hg - hgEarly)],
+    away: [Math.min(agEarly, ag), Math.max(0, ag - agEarly)] };
+  fx.tacticalPhases = [
+    { minute: 0, home: homeInitial, away: awayInitial },
+    { minute: 65, home: homeLate, away: awayLate },
+  ];
+  fx.tacticalChanges = [
+    { clubId: home.id, from: homeInitial, to: homeLate },
+    { clubId: away.id, from: awayInitial, to: awayLate },
+  ].filter(x => ['formation', 'mentality', 'pressure', 'tempo'].some(k => x.from[k] !== x.to[k]))
+    .map(x => ({ minute: 65, clubId: x.clubId, reason: x.to.reason,
+      fromFormation: x.from.formation, toFormation: x.to.formation, mentality: x.to.mentality }));
 
   fx.events = Array.isArray(fx.events) ? fx.events : [];
   fx.events.length = 0;
 
   const pickMinute = wCreateFixtureMinutePicker();
+  const pickGoalMinute = (start, end) => {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const minute = start + Math.floor(Math.random() * (end - start + 1));
+      if (!fx.events.some(e => e.minute === minute)) return minute;
+    }
+    return pickMinute();
+  };
 
   // HOME goals
   for (let i = 0; i < hg; i++) {
     const scorer = wPickGoalScorer(homeXI);
     if (!scorer) break;
-    fx.events.push({ type: 'GOAL', minute: pickMinute(), clubId: home.id, playerId: scorer.id });
+    const minute = i < fx.goalPhases.home[0] ? pickGoalMinute(1, 64) : pickGoalMinute(65, 90);
+    fx.events.push({ type: 'GOAL', minute, clubId: home.id, playerId: scorer.id });
   }
 
   // AWAY goals
   for (let i = 0; i < ag; i++) {
     const scorer = wPickGoalScorer(awayXI);
     if (!scorer) break;
-    fx.events.push({ type: 'GOAL', minute: pickMinute(), clubId: away.id, playerId: scorer.id });
+    const minute = i < fx.goalPhases.away[0] ? pickGoalMinute(1, 64) : pickGoalMinute(65, 90);
+    fx.events.push({ type: 'GOAL', minute, clubId: away.id, playerId: scorer.id });
   }
 
   fx.events.sort((a, b) => (a.minute || 0) - (b.minute || 0));
@@ -79,12 +119,9 @@ export function simulateQuickWorldFixture(fx, ls) {
 // -------------------------------------------------
 
 function wPickBestXI(club) {
-  const players = Array.isArray(club?.players) ? club.players : [];
-  const sorted = players
-    .filter(Boolean)
-    .slice()
-    .sort((a, b) => Number(b?.overall || 0) - Number(a?.overall || 0));
-  return sorted.slice(0, 11);
+  const ids = getStartingXIForFixture(club);
+  const byId = new Map((club?.players || []).map(p => [String(p.id), p]));
+  return ids.map(id => byId.get(String(id))).filter(Boolean);
 }
 
 function wAvgOverall(xi) {

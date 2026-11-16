@@ -3,6 +3,7 @@
 import { initialLeague, allLeagues } from './data.js';
 import { getSeasonStartYear } from './gameSeason.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
+import { fitPlayersToFormation } from './game/tactics/identity.js';
 
 export const GameState = {
   meta: {
@@ -215,19 +216,30 @@ function isPlayerUnavailable(player) {
 function ensureClubDefaults(club) {
   if (!club) return;
 
-  // Táctica base
+  // Identidad de 2026/27 para partidas nuevas; las tácticas de partidas
+  // guardadas nunca se sobrescriben al normalizar el estado.
+  const identity = club.tacticalIdentity || {};
   if (!club.alignment) {
     club.alignment = {
-      formation: '4-4-2',
-      mentality: 'BALANCED',
-      tempo: 'NORMAL',
-      pressure: 'NORMAL',
+      formation: identity.formation || '4-4-2',
+      mentality: identity.mentality || 'BALANCED',
+      tempo: identity.tempo || 'NORMAL',
+      pressure: identity.pressure || 'NORMAL',
     };
   } else {
     if (!club.alignment.formation) club.alignment.formation = '4-4-2';
     if (!club.alignment.mentality) club.alignment.mentality = 'BALANCED';
     if (!club.alignment.tempo) club.alignment.tempo = 'NORMAL';
     if (!club.alignment.pressure) club.alignment.pressure = 'NORMAL';
+  }
+  if (!club.tactics) {
+    club.tactics = {
+      formation: club.alignment.formation,
+      mentality: club.alignment.mentality,
+      tempo: club.alignment.tempo,
+      pressure: club.alignment.pressure,
+      playStyle: identity.playStyle || 'POSSESSION',
+    };
   }
 
   // XI (11) + Convocados (banquillo 9)
@@ -237,7 +249,10 @@ function ensureClubDefaults(club) {
   const available = (club.players || [])
     .filter(p => p?.id && !isPlayerUnavailable(p))
     .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
-  club.lineup = selectValidStartingXI(club.players, club.lineup, isPlayerUnavailable);
+  const preferredXI = club.lineup.length ? club.lineup : fitPlayersToFormation(
+    available, club.tactics?.formation || club.alignment?.formation,
+  ).map(s => s.player?.id).filter(Boolean);
+  club.lineup = selectValidStartingXI(club.players, preferredXI, isPlayerUnavailable);
   const chosen = new Set(club.lineup.map(String));
   const bench = [];
   const addToBench = id => {

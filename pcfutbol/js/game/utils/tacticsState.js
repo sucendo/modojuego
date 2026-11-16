@@ -3,23 +3,7 @@
 
 import { isPlayerUnavailable } from './availability.js';
 import { selectValidStartingXI } from './lineupSelection.js';
-
-function getPositionGroup(position) {
-  const pos = (position || '').toUpperCase();
-  if (pos === 'POR' || pos === 'GK') return 0;
-  if (
-    pos.startsWith('D') ||
-    ['DF', 'LD', 'LI', 'DFC', 'CB', 'RB', 'LB', 'CAD', 'CAI'].includes(pos)
-  )
-    return 1;
-  if (
-    pos.startsWith('M') ||
-    ['CM', 'DM', 'AM', 'MC', 'MCD', 'MCO', 'MD', 'MI', 'MP'].includes(pos)
-  )
-    return 2;
-  if (['DC', 'DL', 'ED', 'EI', 'ST', 'FW', 'CF', 'SD'].includes(pos)) return 3;
-  return 2;
-}
+import { FORMATION_ROLES, fitPlayersToFormation, fitPlayersToRoles } from '../tactics/identity.js';
 
 export function autoPickMatchdaySquad(club, benchMax = 9) {
   if (!club || !Array.isArray(club.players)) return;
@@ -29,7 +13,9 @@ export function autoPickMatchdaySquad(club, benchMax = 9) {
     .slice()
     .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
 
-  const xi = selectValidStartingXI(available);
+  const suited = fitPlayersToFormation(available, club.tactics?.formation || club.alignment?.formation)
+    .map(slot => slot.player?.id).filter(Boolean);
+  const xi = selectValidStartingXI(available, suited);
 
   const xiSet = new Set(xi);
   const bench = [];
@@ -46,11 +32,18 @@ export function ensureClubTactics(club) {
   if (!club) return;
 
   if (!club.alignment) {
+    const identity = club.tacticalIdentity || {};
     club.alignment = {
-      formation: '4-4-2',
-      mentality: 'BALANCED',
-      tempo: 'NORMAL',
-      pressure: 'NORMAL',
+      formation: identity.formation || '4-4-2',
+      mentality: identity.mentality || 'BALANCED',
+      tempo: identity.tempo || 'NORMAL',
+      pressure: identity.pressure || 'NORMAL',
+    };
+  }
+  if (!club.tactics) {
+    club.tactics = {
+      ...club.alignment,
+      playStyle: club.tacticalIdentity?.playStyle || 'POSSESSION',
     };
   }
 
@@ -71,14 +64,16 @@ function spreadX(count) {
 }
 
 export function getFormationSlots(formation) {
-  const parts = String(formation || '4-4-2')
+  const normalized = FORMATION_ROLES[formation] ? formation : '4-4-2';
+  const positions = FORMATION_ROLES[normalized];
+  const parts = String(normalized)
     .split('-')
     .map((n) => parseInt(n, 10))
     .filter((n) => Number.isFinite(n) && n > 0);
   const lines = parts.length ? parts : [4, 4, 2];
 
   const slots = [];
-  slots.push({ role: 'GK', x: 50, y: 86 });
+  slots.push({ role: 'GK', position: 'GK', x: 50, y: 86 });
 
   const baseY = 70;
   const step = lines.length > 1 ? 52 / (lines.length - 1) : 0;
@@ -91,6 +86,7 @@ export function getFormationSlots(formation) {
     for (let i = 0; i < count; i++) {
       slots.push({
         role: li === 0 ? 'DEF' : li === lines.length - 1 ? 'FWD' : 'MID',
+        position: positions[slots.length],
         x: xs[i],
         y,
       });
@@ -101,21 +97,7 @@ export function getFormationSlots(formation) {
 }
 
 export function assignPlayersToSlots(players, slots) {
-  const list = (players || []).slice();
-
-  const gks = list.filter((p) => String(p.position || '').toUpperCase() === 'GK');
-  const defs = list.filter((p) => getPositionGroup(p.position) === 1 && String(p.position || '').toUpperCase() !== 'GK');
-  const mids = list.filter((p) => getPositionGroup(p.position) === 2);
-  const fwds = list.filter((p) => getPositionGroup(p.position) >= 3);
-
-  const pick = (arr) => arr.shift() || null;
-
-  return (slots || []).map((s) => {
-    let p = null;
-    if (s.role === 'GK') p = pick(gks) || pick(defs) || pick(mids) || pick(fwds);
-    else if (s.role === 'DEF') p = pick(defs) || pick(mids) || pick(fwds) || pick(gks);
-    else if (s.role === 'MID') p = pick(mids) || pick(defs) || pick(fwds) || pick(gks);
-    else p = pick(fwds) || pick(mids) || pick(defs) || pick(gks);
-    return { ...s, player: p };
-  });
+  const positions = (slots || []).map(s => s.position || (s.role === 'GK' ? 'GK' : 'CM'));
+  const assigned = fitPlayersToRoles(players, positions);
+  return (slots || []).map((slot, index) => ({ ...slot, player: assigned[index]?.player || null }));
 }
