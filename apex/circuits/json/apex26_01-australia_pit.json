@@ -879,7 +879,7 @@
       "geometry": "SAVED_SVG_CENTERLINE",
       "width": "APEX_BASE_MODEL",
       "vertical": "TRACK_MATCHED_ENDPOINTS",
-      "boxes": "MODELED_11_TEAM_SLOTS",
+      "boxes": "SVG_SERVICE_MARKERS",
       "geometryQuality": "SVG_MEASURED"
     },
     "trackConnection": {
@@ -1027,123 +1027,123 @@
       "quality": "MODELED_BASE_WIDTH"
     },
     "boxZone": {
-      "startPitS": 201.015,
-      "endPitS": 516.896,
-      "lengthM": 315.881,
+      "startPitS": 349.233,
+      "endPitS": 595.61,
+      "lengthM": 246.377,
       "slotCount": 11,
-      "slotPitchM": 28.716,
-      "quality": "MODELED_OPERATIONAL_LAYOUT"
+      "slotPitchM": 19.639,
+      "quality": "SVG_PROJECTED"
     },
     "boxSlots": [
       {
         "id": "box-01",
         "index": 1,
-        "pitS": 215.372,
+        "pitS": 374.226,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.402,
+        "lateralOffsetM": 4.498,
+        "elevationM": 0.1171,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-02",
         "index": 2,
-        "pitS": 244.09,
+        "pitS": 393.865,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.3505,
+        "lateralOffsetM": 4.499,
+        "elevationM": 0.0819,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-03",
         "index": 3,
-        "pitS": 272.806,
+        "pitS": 413.506,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.299,
+        "lateralOffsetM": 4.499,
+        "elevationM": 0.0508,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-04",
         "index": 4,
-        "pitS": 301.522,
+        "pitS": 433.142,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.2475,
+        "lateralOffsetM": 4.497,
+        "elevationM": 0.0239,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-05",
         "index": 5,
-        "pitS": 330.239,
+        "pitS": 452.785,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.196,
+        "lateralOffsetM": 4.499,
+        "elevationM": 0.0037,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-06",
         "index": 6,
-        "pitS": 358.955,
+        "pitS": 472.419,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.1445,
+        "lateralOffsetM": 4.501,
+        "elevationM": 0.0092,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-07",
         "index": 7,
-        "pitS": 387.672,
+        "pitS": 492.055,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.093,
+        "lateralOffsetM": 4.5,
+        "elevationM": 0.0147,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-08",
         "index": 8,
-        "pitS": 416.388,
+        "pitS": 511.697,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.0415,
+        "lateralOffsetM": 4.498,
+        "elevationM": 0.0202,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-09",
         "index": 9,
-        "pitS": 445.105,
+        "pitS": 531.336,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.0016,
+        "lateralOffsetM": 4.5,
+        "elevationM": 0.0257,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-10",
         "index": 10,
-        "pitS": 473.821,
+        "pitS": 550.978,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.0096,
+        "lateralOffsetM": 4.5,
+        "elevationM": 0.0312,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       },
       {
         "id": "box-11",
         "index": 11,
-        "pitS": 502.537,
+        "pitS": 570.614,
         "garageSide": "OUTER",
-        "lateralOffsetM": 4.428,
-        "elevationM": 0.0177,
+        "lateralOffsetM": 4.499,
+        "elevationM": 0.0367,
         "teamAssignment": null,
-        "status": "MODELED_POSITION"
+        "status": "SVG_PROJECTED"
       }
     ],
     "notes": "Longitud y conexiones medidas en el SVG guardado. Los extremos del perfil vertical se ajustan a la calzada activa."

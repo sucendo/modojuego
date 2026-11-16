@@ -3973,7 +3973,11 @@ function apexPitServiceLayout(pn,cfg){
  const track=nearestTrackState(q.x,q.z,null),side=(track.x-q.x)*q.nx+(track.z-q.z)*q.nz>0?-1:1;
  const width=cfg.widthProfile?.defaultTotalWidthM||q.width;
  const offset=side*(width*.5+1.8);
- return pn.serviceLayout={slots,offset,start:Math.max(0,first-25),end:Math.min(pn.primaryLength,last+25)};
+ const zone=pn.workFootprints?.length&&cfg.boxZone?.quality==='SVG_PROJECTED'?cfg.boxZone:null;
+ const station=s=>clamp(s*pn.primaryLength/cfg.totalLengthM,0,pn.primaryLength);
+ const start=zone?station(zone.startPitS):Math.max(0,first-25);
+ const end=zone?station(zone.endPitS):Math.min(pn.primaryLength,last+25);
+ return pn.serviceLayout={slots,offset,start,end};
 }
 function apexPitServiceOffset(plan,box,pitS){
  const distance=plan.dir*(pitS-box.pitS),limit=distance<0?plan.dir*(box.pitS-plan.entryPitS):plan.dir*(plan.exitPitS-box.pitS);
@@ -3983,15 +3987,17 @@ function apexPitServiceOffset(plan,box,pitS){
 function apexPitWorkWidthAt(area,s){
  return 3.5*clamp(Math.min(s-area.start,area.end-s)/12,0,1);
 }
-function apexPitWorkAreaContains(pit){
- const area=trackData?.customWorld?.pitNetwork?.serviceLayout;
+function apexPitWorkAreaContains(pit,x,z){
+ const network=trackData?.customWorld?.pitNetwork;
+ if(network?.workFootprints?.length)return network.workFootprints.some(poly=>apexPointInPolyXZ(x,z,poly));
+ const area=network?.serviceLayout;
  return !!(area&&pit&&pit.pitS>=area.start&&pit.pitS<=area.end&&pit.lat*Math.sign(area.offset)>=0&&Math.abs(pit.lat)<=Math.abs(area.offset)-1.8+apexPitWorkWidthAt(area,pit.pitS));
 }
 function apexPlayerDriveBoundaryContains(x,z){
  const main=apexDrivableAreaContains(x,z);if(main!==false||!player||player.driveNetwork!=='PIT')return main;
  // The authored PIT ribbon is driveable even where the main-area polygon omits it.
  // This unions only its actual lane width; movePlayerWithWalls still resolves barriers.
- const pit=nearestPitState(x,z,player.pitIndex);return !!(pit&&(pit.dist<=pit.width*.5||apexPitWorkAreaContains(pit)));
+ const pit=nearestPitState(x,z,player.pitIndex);return !!(pit&&(pit.dist<=pit.width*.5||apexPitWorkAreaContains(pit,x,z)));
 }
 function apexPitPolylineIssue(points,scale=1){
  for(let i=1;i<points.length-1;i++){

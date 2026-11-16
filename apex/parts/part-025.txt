@@ -3309,7 +3309,7 @@ function apexPavedExtraGpuZonesV1524(){
    // the painted 3-D separator, never the legacy full-width rectangle.
    const merge=apexPitMergeQuadV1526(sg);
    if(merge&&!merge.overlap)lane.push(merge.quad.map(p=>[p.x,p.y,p.z]));
-   if(work&&sg.s2>=work.start&&sg.s1<=work.end){
+   if(!pn.workFootprints?.length&&work&&sg.s2>=work.start&&sg.s1<=work.end){
     const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8),
      outer=t=>inner+side*apexPitWorkWidthAt(work,t);
     apron.push([a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner)]);

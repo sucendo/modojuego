@@ -196,7 +196,7 @@ function apexUnifiedSurfaceAtWorld(x,z,opts=null){
  }
  let zone='TRACK',kind='ASPHALT',grip=1,steerGrip=1,driveGrip=1;
  const set=(z0,k,g,sg,dg)=>{zone=z0;kind=k;grip=g;steerGrip=sg;driveGrip=dg;};
- if(driveNetwork==='PIT'&&pit&&(pit.dist<=pit.width*.58+.35||apexPitWorkAreaContains(pit))){
+ if(driveNetwork==='PIT'&&pit&&(pit.dist<=pit.width*.58+.35||apexPitWorkAreaContains(pit,x,z))){
   set('PIT','ASPHALT',.96,.96,.97);
  }else if(apexAuthoredCurbMesh()&&window.ApexSvgCurbs.contains(apexAuthoredCurbMesh(),x,z)){
   set('KERB','KERB',.91,.88,.91);
@@ -592,7 +592,7 @@ function apexRegroundImportedWorld(){
      if(a._apexGroundCache)a._apexGroundCache.clear();
    }
    if(Array.isArray(it.worldPath)&&Array.isArray(it.worldPathY)&&it.type!=='road'&&it.type!=='tunnel'&&it.type!=='bridge')it.worldPathY=it.worldPath.map(p=>ground(p[0],p[1]));
-   if(Array.isArray(it.worldFootprint)&&Array.isArray(it.worldY))it.worldY=it.worldFootprint.map(p=>it.type==='surfaceZone'||it.type==='pit'?apexAlignedCircuitSurfaceY(p[0],p[1]):it.type==='marking'?apexSvgSurfaceMarkingY(it,p[0],p[1]):ground(p[0],p[1]));
+   if(Array.isArray(it.worldFootprint)&&Array.isArray(it.worldY))it.worldY=it.worldFootprint.map(p=>it.type==='surfaceZone'?apexSvgPavedSurfaceY(it,p[0],p[1]):it.type==='pit'?apexAlignedCircuitSurfaceY(p[0],p[1]):it.type==='marking'?apexSvgSurfaceMarkingY(it,p[0],p[1]):ground(p[0],p[1]));
    if(Array.isArray(it.forestPoints))for(const p of it.forestPoints)p[2]=ground(p[0],p[1]);
  }
  // Los muros detallados pueden superar los 2.000 segmentos; las colisiones conservan
@@ -631,8 +631,9 @@ function apexForestScatter(poly,seedText,count=18){
 }
 function apexSvgLandmarkExact(el,index,ctx){
  const pitRejoin=el.localName==='polygon'&&!!el.closest('#APEX_PIT_REJOIN');
- const sourceRole=pitRejoin?'pit-rejoin':String(el.getAttribute('data-apex-role')||'').trim().toLowerCase();
- const rawType=pitRejoin?'marking':String(el.getAttribute('data-apex-type')||roleNameToImportType(sourceRole)||'').trim();
+ const pitWork=el.localName==='polygon'&&!!el.closest('#APEX_PIT_WORK_AREA');
+ const sourceRole=pitWork?'pit-work-area':pitRejoin?'pit-rejoin':String(el.getAttribute('data-apex-role')||'').trim().toLowerCase();
+ const rawType=pitWork?'surfaceZone':pitRejoin?'marking':String(el.getAttribute('data-apex-type')||roleNameToImportType(sourceRole)||'').trim();
  if(!rawType||sourceRole==='advertising')return null;
  const pitSpeedColor=apexPitSpeedMarkColor(sourceRole);
  let pts=apexSvgSampleMounted(ctx.root,el,{step:5}).map(ctx.toWorld);
@@ -651,11 +652,11 @@ function apexSvgLandmarkExact(el,index,ctx){
  const wAttr=(parseFloat(el.getAttribute('data-apex-width'))||0),dAttr=(parseFloat(el.getAttribute('data-apex-depth'))||0),lAttr=(parseFloat(el.getAttribute('data-apex-length'))||0);
  if(type==='gantry'){node.startGantry=sourceRole==='start-gantry';node.finishGantry=sourceRole==='finish-gantry';node.text=node.startGantry?'START':(node.finishGantry?'FINISH':node.name)}
  if(type==='block'||type==='parking'||type==='terrainZone'||type==='surfaceZone'||type==='water'||type==='marking'||type==='forestZone'){
-   node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexAlignedCircuitSurfaceY(p[0],p[1]):type==='marking'?apexSvgSurfaceMarkingY(node,p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
+   node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexSvgPavedSurfaceY(node,p[0],p[1]):type==='marking'?apexSvgSurfaceMarkingY(node,p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
    if(type==='block'){node.height=node.height||12;node.buildingStyle=node.apexStyle||'building_generic';}else node.height=node.height||.04;
    if(type==='forestZone'){node.variant='fir';node.color=node.color||'#245032';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
    if(type==='terrainZone')node.color=node.color||'#667a4d';
-   if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
+   if(type==='surfaceZone'){node.surfaceKind=pitWork?'PIT_WORK':String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
    if(pitRejoin){
     node.markingKind='PIT_REJOIN';
@@ -1968,14 +1969,14 @@ function apexStaticBoundInView(bound,cam,far=1900,margin=1.22){
 // marking = pintura: queda ligeramente por encima para evitar z-fighting.
 function apexGroundPatchYOffset(it){
  const t=String(it&&it.type||'').toLowerCase();
- if(t==='surfacezone')return -.055;
+ if(t==='surfacezone')return it.surfaceKind==='PIT_WORK'?.012:-.055;
  if(t==='water')return -.010;
  if(t==='marking')return it.markingKind==='PIT_REJOIN'?.055:.025;
  return .002;
 }
 function apexGroundPatchDepthBias(it){
  const t=String(it&&it.type||'').toLowerCase();
- if(t==='surfacezone')return .045;
+ if(t==='surfacezone')return it.surfaceKind==='PIT_WORK'?-.022:.045;
  if(t==='water')return .012;
  if(t==='marking')return it.markingKind==='PIT_REJOIN'?-.080:-.020;
  return .006;
@@ -2235,6 +2236,13 @@ window.apexRunoffClipDiagnostics=()=>{
   sourceTriangles:i.clipped,resultTriangles:i.generated}:null;
 };
 
+function apexSvgPavedSurfaceY(it,x,z){
+ if(it.sourceRole==='pit-work-area'){
+   const pit=apexNearestGradeSegment(x,z,'PIT',16);
+   if(pit)return pit.y;
+ }
+ return apexAlignedCircuitSurfaceY(x,z);
+}
 function apexSvgSurfaceMarkingY(it,x,z){
  // Sólo las pinturas sobre corredor rodable usan su rasante; las lejanas
  // (viales/terreno) mantienen el relieve real de la zona donde fueron dibujadas.
@@ -6551,7 +6559,7 @@ function collectExactPitRenderItems(cam){
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
      const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);
      const outer=s=>inner+side*apexPitWorkWidthAt(work,s);
-     add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56',null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PIT_WORK'});
+     if(!pn.workFootprints?.length)add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56',null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PIT_WORK'});
      const strip=(lo,hi,y,color)=>{
        const point=(x,z,height,lat)=>worldToCamera(x+nx*lat,height+y,z+nz*lat,cam);
        add(point(sg.x1,sg.z1,sg.y1,lo),point(sg.x1,sg.z1,sg.y1,hi),point(sg.x2,sg.z2,sg.y2,hi),point(sg.x2,sg.z2,sg.y2,lo),color);
