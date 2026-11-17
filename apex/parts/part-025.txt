@@ -3746,7 +3746,10 @@ window.apexPhase5GpuDiagnostics=()=>{
 // Otherwise the early return in PrepareGpu* retains the previous GP indefinitely.
 let apexGpuSceneTrack=null;
 function apexReleaseGpuScene(){
- apexPhase5GpuRelease(true);apexPhase5TerrainRelease(false);apexPhase6RoadRelease(false);apexGpuSceneTrack=null;
+ apexPhase5GpuRelease(true);apexPhase5TerrainRelease(false);apexPhase6RoadRelease(false);
+ // Retry road textures on the next scene, while keeping failures latched within a scene.
+ apexPhase6RoadGPU.failedGl=null;
+ apexGpuSceneTrack=null;
 }
 function apexSyncGpuScene(){
  if(apexGpuSceneTrack===trackData)return;

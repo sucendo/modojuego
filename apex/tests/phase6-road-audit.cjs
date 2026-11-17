@@ -23,13 +23,14 @@ const c=vm.createContext({console,performance,Float32Array,Uint32Array,Uint8Arra
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),lerp:(a,b,t)=>a+(b-a)*t,
  mobile:false,mobilePerformanceMode:()=>c.mobile,mobileControlProfile:()=>({curbMax:600}),mobileRenderPressure:()=>.5,
  apexInspectionActive:()=>false,apexInspectionFullScene:()=>false,apexRoadMeshSamples:()=>td.samples,apexRoadWorldNode:world,apexCompilerYield:async()=>{},
+ apexPhase5GpuRelease:()=>{},apexPhase5TerrainRelease:()=>{},
  apexPhase5GpuProgram:()=>({program:{},attrs:{world:0,color:1},uniforms:{}}),
  apexRoadMaterialColorV15:()=>c.roadColor||'#484d52',palette:()=>({road:c.roadColor||'#484d52'}),circuitCurbPair:seed=>(seed&1)?['#f3f4f5','#d93a48']:['#d93a48','#f3f4f5'],
  apexUnifiedGroundStrip:()=>({runoffLeft:[],runoffRight:[]}),surfaceColor:()=> '#000000',
  webglPushCamQuad:(a,b,d,e,pitch,color)=>{for(const vertices of [[a,b,d],[a,d,e]])cpu.push({color:c.webglCssColor(color),verts:vertices.map(p=>[p.x,p.y,p.z])});},
 });
-const names=['apexPhase6QueueDynamicRoadQuad','apexPhase6QueueDynamicRoadSegment','camMix','shadeColor','webglCssColor','webglCircuitRoadColor','apexPhase6CompileRoadMesh','apexPhase6RoadRelease','apexPhase6RoadError','apexPhase6BeginRoad','apexPhase6RoadSegmentId','apexPhase6RoadStyle','apexPhase6RoadGroup','apexPhase6RoadQuad','apexPhase6QueueRoadBase','apexPhase6SealRoad','apexPhase6DrawRoad','apexWebglRoadBase'];
-vm.runInContext(decl('apexPhase6RoadGPU')+'\n'+names.map(n=>func(source,n)).join('\n'),c);
+const names=['apexReleaseGpuScene','apexSyncGpuScene','apexPhase6QueueDynamicRoadQuad','apexPhase6QueueDynamicRoadSegment','camMix','shadeColor','webglCssColor','webglCircuitRoadColor','apexPhase6CompileRoadMesh','apexPhase6RoadRelease','apexPhase6RoadError','apexPhase6BeginRoad','apexPhase6RoadSegmentId','apexPhase6RoadStyle','apexPhase6RoadGroup','apexPhase6RoadQuad','apexPhase6QueueRoadBase','apexPhase6SealRoad','apexPhase6DrawRoad','apexWebglRoadBase'];
+vm.runInContext('let apexGpuSceneTrack=null;\n'+decl('apexPhase6RoadGPU')+'\n'+names.map(n=>func(source,n)).join('\n'),c);
 vm.runInContext(func(old,'apexUnifiedGroundDrawCorridor').replace('function apexUnifiedGroundDrawCorridor','function referenceCorridor'),c);
 function step(i){const w=world(samples[i===128?0:i]),p=w.points;return{meshNode:i,s:samples[i],sd:10,q:w.q,env:w.env,curb:w.curb,v:{c:p[0],l:p[1],r:p[2],lo:p[3],ro:p[4],lx:p[5],rx:p[6]}};}
 function segment(a,b){return{a:step(a),b:step(b),z:400};}
@@ -37,6 +38,7 @@ const cam={x:0,y:0,z:0,nx:1,nz:0,tx:0,tz:1,viewPitchRad:0};
 function key(t){return t.color.map(v=>v.toFixed(6)).join(',')+':'+t.verts.flat().map(v=>Math.fround(v).toFixed(6)).join(',');}
 function compare(expected,actual){assert.deepEqual(actual.map(key).sort(),expected.map(key).sort());}
 (async()=>{
+ c.apexSyncGpuScene();
  const mesh=await c.apexPhase6CompileRoadMesh();assert.equal(mesh.sectors.length,4);assert.equal(mesh.data.length,129*18);
  // Shared node indices guarantee exact equality at all sector seams.
  for(let i=32;i<128;i+=32){const shared=Array.from(mesh.data.slice(i*18,(i+1)*18));assert.ok(shared.every(Number.isFinite));assert.equal(mesh.sectors[i/32-1].end,mesh.sectors[i/32].first);}
@@ -61,7 +63,15 @@ function compare(expected,actual){assert.deepEqual(actual.map(key).sort(),expect
  const near=segment(0,1);near.a.v.l={...near.a.v.l,z:.5};c.apexWebglRoadBase(near,0);assert.equal(cpu.length,4);
  // Fail while sealing: replay only suppressed bases, never runoff or a second road.
  cpu.length=0;c.apexPhase6BeginRoad(cam,0);c.apexWebglRoadBase(all[0],0);const originalSub=gl.bufferSubData;gl.bufferSubData=()=>{throw Error('injected upload failure');};vm.runInContext('apexPhase6RoadGPU.indexCount=-1',c);assert.equal(c.apexPhase6SealRoad(),false);assert.equal(cpu.length,6);gl.bufferSubData=originalSub;
- vm.runInContext('apexPhase6RoadGPU.failedGl=null',c);c.apexPhase6BeginRoad(cam,0);c.apexPhase6RoadRelease(true);assert.equal(vm.runInContext('apexPhase6RoadGPU.buffer===null&&apexPhase6RoadGPU.indexBuffer===null&&apexPhase6RoadGPU.mesh===null',c),true);
+ const failedAllocations=stats.allocations;
+ c.apexSyncGpuScene();
+ assert.equal(c.apexPhase6BeginRoad(cam,0),false);
+ assert.equal(stats.allocations,failedAllocations);
+ c.apexReleaseGpuScene();
+ c.apexSyncGpuScene();
+ assert.equal(c.apexPhase6BeginRoad(cam,0),true);
+ console.log('PASS phase6: the same WebGL context retries on scene restart');
+ c.apexPhase6RoadRelease(true);assert.equal(vm.runInContext('apexPhase6RoadGPU.buffer===null&&apexPhase6RoadGPU.indexBuffer===null&&apexPhase6RoadGPU.mesh===null',c),true);
  console.log('PASS phase6: weather palette, moving endpoints, near clipping, same-frame failure replay, complete buffer release');
  // Mobile cheap mode uses only one asphalt quad, never both asphalt meshes.
  c.mobile=true;c.mobileRenderPressure=()=>.2;triangles.length=0;cpu.length=0;c.apexPhase6BeginRoad(cam,0);
