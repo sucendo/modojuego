@@ -54,7 +54,7 @@ import { initSquadUI, bindSquadActions, updateSquadView } from './ui/squad.js';
 import { initTransferMarketUI, updateTransferMarketView } from './ui/transferMarketView.js';
 import { getPlayerGameAge } from './ui/utils/calendar.js';
 
-import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=10';
+import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=11';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
 import { simulateCurrentMatchday, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js';

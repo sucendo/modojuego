@@ -1,7 +1,7 @@
 // js/main.js
 
 //import { initUI } from './ui.js';
-import { initUI } from './ui/index.js?v=10';
+import { initUI } from './ui/index.js?v=11';
 
 document.addEventListener('DOMContentLoaded', () => {
   initUI();
