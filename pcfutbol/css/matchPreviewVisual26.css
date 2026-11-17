@@ -1,0 +1,332 @@
+/* PC FÚTBOL 26 · Previa v13. Solo afecta a la previa; el postpartido mantiene
+   sus estilos y todos los controles originales. */
+
+#view-nextmatch .pcf-match-header {
+  margin-bottom: 8px;
+  padding: 9px 13px;
+  border: 1px solid #347eac;
+  border-radius: 10px;
+  background: linear-gradient(110deg, #0b4169, #052440 80%);
+  box-shadow: inset 0 1px 0 #b2eaff33;
+}
+#view-nextmatch .pcf-match-header .competition-header { align-items: center; gap: 10px; }
+#view-nextmatch .pcf-match-header h2 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.2;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+#view-nextmatch .pcf-match-header .competition-meta {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #b6d8ea;
+}
+#view-nextmatch .pcf-match-layout { gap: 0; }
+#view-nextmatch #nextmatch-card-pre {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #50aee0;
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 50% 0%, #0e568035, transparent 60%),
+    linear-gradient(180deg, #072c4b, #03172d);
+  box-shadow: inset 0 1px 0 #c7f2ff45, 0 15px 32px #00102588;
+}
+#view-nextmatch #nextmatch-card-pre .pcf-match-card__title {
+  text-align: left;
+  margin-bottom: 8px;
+  padding: 5px 8px;
+  border: 0;
+  border-bottom: 1px solid #448fb9;
+  border-radius: 0;
+  background: transparent;
+  color: #f6c654;
+  font-size: 11px;
+}
+#view-nextmatch #nextmatch-card-pre .pcf-match-card__title span {
+  color: #9fc7de;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+#view-nextmatch .pcf-pre-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(268px, .76fr) minmax(0, 1.12fr);
+  gap: 9px;
+  align-items: stretch;
+}
+#view-nextmatch .pcf-pre-shell .pcf-teambox,
+#view-nextmatch .pcf-pre-shell .pcf-centerbox {
+  min-width: 0;
+  border: 1px solid #317eaa;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #0a3858 0%, #051d36 100%);
+  box-shadow: inset 0 1px 0 #a5e4ff38;
+}
+#view-nextmatch .pcf-pre-shell .pcf-teambox { overflow: hidden; }
+#view-nextmatch .pcf-pre-shell .pcf-teambox__head {
+  min-height: 71px;
+  padding: 9px 10px;
+  gap: 8px;
+  border-bottom: 1px solid #3787b8;
+  background: linear-gradient(180deg, #12527c, #0a3657);
+}
+#view-nextmatch .pcf-pre-shell .pcf-teambox__club { gap: 8px; }
+#view-nextmatch .pcf-pre-shell .pcf-teambox__coat img {
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 1px 4px #030a21);
+}
+#view-nextmatch .pcf-pre-shell .pcf-teambox__name {
+  font-size: clamp(12px, 1.1vw, 17px);
+  color: #fff;
+  line-height: 1.15;
+  white-space: normal;
+}
+#view-nextmatch .pcf-pre-shell .pcf-teambox__coach { flex: 1 1 auto; min-width: 0; }
+#view-nextmatch .pcf-pre-shell .pcf-teambox__coach-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #e9f5fe;
+}
+#view-nextmatch .pcf-pre-shell .pcf-teambox__coach-sub { color: #9ec7da; }
+#view-nextmatch .pcf-pre-shell .pcf-teambox__body { padding: 9px; }
+
+#view-nextmatch .pcf-team-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  min-height: 25px;
+  margin-bottom: 8px;
+  color: #d4eaf7;
+  font-size: 10px;
+}
+#view-nextmatch .pcf-team-context__standing { font-weight: 800; }
+#view-nextmatch .pcf-team-form { display: flex; gap: 3px; align-items: center; color: #8eb3ca; }
+#view-nextmatch .pcf-form-result {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #386285;
+  background: #10273f;
+  color: #c4d9e7;
+  font-size: 10px;
+  font-weight: 900;
+}
+#view-nextmatch .pcf-form-result--w { border-color: #388c70; background: #105140; color: #c3f8d5; }
+#view-nextmatch .pcf-form-result--d { border-color: #ae9847; background: #554825; color: #fff0b5; }
+#view-nextmatch .pcf-form-result--l { border-color: #af555e; background: #532331; color: #ffced0; }
+
+#view-nextmatch .pcf-team-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(95px, 1fr);
+  gap: 8px;
+  margin-bottom: 9px;
+  align-items: stretch;
+}
+#view-nextmatch .pcf-team-feature .pcf-pitch--mini {
+  margin: 0;
+  min-height: 156px;
+  height: 100%;
+  border: 2px solid #7bcfa9;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px #103f2b;
+}
+#view-nextmatch .pcf-team-feature .pcf-pitch-dot { width: 21px; height: 21px; font-size: 9px; }
+#view-nextmatch .pcf-keyplayer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #245f8c;
+  border-radius: 5px;
+  background: linear-gradient(160deg, #124b74, #041b33);
+}
+#view-nextmatch .pcf-keyplayer__caption { color: #f5c85b; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+#view-nextmatch .pcf-keyplayer__portrait {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid #73bbdb;
+  border-radius: 7px;
+  background: linear-gradient(160deg, #2377a0, #103959);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 900;
+}
+#view-nextmatch .pcf-keyplayer__name { color: #fff; font-size: 11px; font-weight: 900; line-height: 1.25; overflow-wrap: anywhere; text-align: center; }
+#view-nextmatch .pcf-keyplayer__details { color: #aecfe0; text-align: center; font-size: 10px; }
+#view-nextmatch .pcf-keyplayer__rating { text-align: center; font-weight: 900; color: #ffdc79; font-size: 21px; line-height: 1; }
+#view-nextmatch .pcf-keyplayer__rating small { display:block; color: #91b7d0; font-size: 8px; line-height: 1.6; }
+
+#view-nextmatch .pcf-pre-shell .pcf-squadcols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+#view-nextmatch .pcf-pre-shell .pcf-squadcol {
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid #2b719e;
+  border-radius: 5px;
+  background: #082842;
+}
+#view-nextmatch .pcf-pre-shell .pcf-squadcol--xi { grid-column: 1 / -1; }
+#view-nextmatch .pcf-pre-shell .pcf-squadcol__title {
+  margin: 0 0 6px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid #347eab;
+  font-size: 10px;
+  color: #fff;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+#view-nextmatch .pcf-pre-shell .pcf-lineup { gap: 2px; }
+#view-nextmatch .pcf-pre-shell .pcf-lineup-item {
+  min-height: 22px;
+  padding: 2px 5px;
+  gap: 6px;
+  border: 0;
+  border-radius: 2px;
+  background: #0c3654;
+  font-size: 11px;
+}
+#view-nextmatch .pcf-pre-shell .pcf-lineup-item:nth-child(even) { background: #0c2d49; }
+#view-nextmatch .pcf-pre-shell .pcf-lineup-item__num { width: 21px; flex: 0 0 21px; color: #f6d276; }
+#view-nextmatch .pcf-pre-shell .pcf-lineup-item__name { min-width: 0; color: #eef8ff; }
+#view-nextmatch .pcf-pre-shell .pcf-lineup-item__pos { flex: 0 0 30px; color: #a2c7dd; text-align: right; font-size: 9px; }
+#view-nextmatch .pcf-pre-shell .pcf-lineup-item__note { min-width: 22px; text-align: right; color: #d8f4ac; font-weight: 900; font-size: 10px; opacity: 1; }
+#view-nextmatch .pcf-pre-shell .pcf-lineup-item.is-selected {
+  outline: 1px solid #f2c75b;
+  background: #235a7d;
+  box-shadow: inset 3px 0 #f2c75b;
+}
+#view-nextmatch .pcf-pre-shell .pcf-squadcol--scroll .pcf-lineup {
+  max-height: 153px;
+  overflow-y: auto;
+  scrollbar-color: #358bc1 #08233e;
+  scrollbar-width: thin;
+}
+#view-nextmatch .pcf-team-absences {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid #264b66;
+  border-radius: 4px;
+  background: #071e32;
+  color: #b8d6e8;
+  font-size: 10px;
+  line-height: 1.35;
+}
+#view-nextmatch .pcf-team-absences strong { color: #f7d173; }
+
+#view-nextmatch .pcf-pre-shell .pcf-centerbox { padding: 8px; gap: 8px; }
+#view-nextmatch .pcf-centerbox__top {
+  padding: 6px;
+  border-bottom: 1px solid #347eab;
+  background: #0b3453;
+  border-radius: 4px 4px 0 0;
+}
+#view-nextmatch .pcf-centerbox__title { font-size: 12px; line-height: 1.35; color: #fff; }
+#view-nextmatch .pcf-centerbox__meta { margin-top: 4px; color: #e6c872; font-size: 10px; }
+#view-nextmatch .pcf-stadium {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border: 1px solid #3275a2;
+  border-radius: 5px;
+  background: #071c32;
+  overflow: hidden;
+}
+#view-nextmatch .pcf-stadium__img {
+  width: 100%;
+  height: 103px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(0deg, #051d34bb, #051d3411), url('../img/resources/stadium-night-2026.webp') center 52% / cover no-repeat;
+}
+#view-nextmatch .pcf-stadium__info { padding: 7px; }
+#view-nextmatch .pcf-stadium__name { font-size: 12px; line-height: 1.3; }
+#view-nextmatch .pcf-stadium__att { margin-top: 3px; font-size: 10px; color: #bed3e4; }
+#view-nextmatch .pcf-stadium__illustration-note { padding: 0 7px 6px; color: #7ea5bc; font-size: 9px; }
+#view-nextmatch .pcf-match-facts { display: flex; flex-direction: column; gap: 4px; }
+#view-nextmatch .pcf-match-fact {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid #235f8b;
+  border-radius: 4px;
+  background: #082c49;
+  font-size: 10px;
+}
+#view-nextmatch .pcf-match-fact span { color: #adcbdc; }
+#view-nextmatch .pcf-match-fact strong { text-align: right; font-weight: 800; color: #f5faff; overflow-wrap: anywhere; }
+#view-nextmatch .pcf-match-comparison,
+#view-nextmatch .pcf-expect {
+  padding: 8px;
+  border: 1px solid #2c729d;
+  border-radius: 5px;
+  background: #062640;
+}
+#view-nextmatch .pcf-match-comparison__title,
+#view-nextmatch .pcf-expect__title {
+  margin: 0 0 7px;
+  color: #f4d276;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+#view-nextmatch .pcf-comparison-row { display: grid; grid-template-columns: 25px 1fr 25px; gap: 5px; align-items: center; margin: 5px 0; font-size: 10px; }
+#view-nextmatch .pcf-comparison-row strong { color: #ecf8ff; text-align: center; }
+#view-nextmatch .pcf-comparison-row__track { display: flex; height: 17px; overflow: hidden; border-radius: 3px; background: #123450; }
+#view-nextmatch .pcf-comparison-row__home,
+#view-nextmatch .pcf-comparison-row__away { height: 100%; }
+#view-nextmatch .pcf-comparison-row__home { background: linear-gradient(90deg, #2a83af, #55c2e9); }
+#view-nextmatch .pcf-comparison-row__away { background: linear-gradient(90deg, #e7c574, #b59140); }
+#view-nextmatch .pcf-comparison-row__label { text-align: center; margin-top: 2px; font-size: 9px; color: #a6cee2; }
+#view-nextmatch .pcf-expect__row { margin: 7px 0; font-size: 10px; }
+#view-nextmatch .pcf-meter { height: 8px; background: #193b57; }
+#view-nextmatch .pcf-centerbox__actions { flex-direction: column; gap: 6px; }
+#view-nextmatch .pcf-centerbox__actions > button { width: 100%; }
+#view-nextmatch .pcf-centerbox__prep { display: flex; gap: 6px; width: 100%; }
+#view-nextmatch .pcf-centerbox__prep .btn { flex: 1; padding: 6px 3px; }
+
+@media (max-width: 1130px) {
+  #view-nextmatch .pcf-pre-shell { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #view-nextmatch .pcf-pre-shell .pcf-centerbox { grid-column: 1 / -1; grid-row: 1; }
+  #view-nextmatch .pcf-centerbox { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; }
+  #view-nextmatch .pcf-centerbox__actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+  #view-nextmatch .pcf-centerbox__actions > button { width: auto; flex: 1 1 160px; }
+  #view-nextmatch .pcf-centerbox__prep { width: auto; flex: 1 1 160px; }
+}
+@media (max-width: 710px) {
+  #view-nextmatch .pcf-pre-shell { grid-template-columns: minmax(0, 1fr); }
+  #view-nextmatch .pcf-pre-shell .pcf-centerbox { grid-column: auto; grid-row: 1; }
+  #view-nextmatch .pcf-centerbox { display: flex; }
+  #view-nextmatch .pcf-centerbox__actions { flex-direction: column; }
+  #view-nextmatch .pcf-centerbox__prep { width: 100%; }
+  #view-nextmatch .pcf-centerbox__actions > button { width: 100%; }
+  #view-nextmatch .pcf-match-header .competition-header { align-items: stretch; }
+}
+@media (max-width: 380px) {
+  #view-nextmatch .pcf-team-feature { grid-template-columns: minmax(0, 1.4fr) minmax(86px, 1fr); }
+  #view-nextmatch .pcf-pre-shell .pcf-lineup-item { font-size: 10px; }
+  #view-nextmatch .pcf-pre-shell .pcf-teambox__coat img { width: 35px; height: 35px; }
+}

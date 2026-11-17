@@ -8,6 +8,7 @@
 	<link rel="stylesheet" href="css/transferMarket.css" />
 	<link rel="stylesheet" href="css/dashboardVisual26.css?v=9" />
 	<link rel="stylesheet" href="css/alignmentVisual26.css?v=3" />
+	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
 </head>
 <body>
 	<header class="app-header">
@@ -991,8 +992,7 @@
 				<article class="card pcf-match-header">
 					<header class="competition-header">
 						<div>
-							<h2>Partido</h2>
-							<p class="competition-subtitle">Previa + Final (estilo PC Fútbol). Temporada 2026/27 con calendario generado.</p>
+							<h2>Previa del partido</h2>
 						</div>
 						<div class="competition-header-right">
 							<button id="btn-simulate-current-matchday" class="btn btn-primary" type="button">Simular jornada actual</button>
@@ -1007,7 +1007,7 @@
 				<div class="pcf-match-layout">
 					<!-- PREVIA (PCF) -->
 					<article id="nextmatch-card-pre" class="card pcf-match-card">
-						<div class="pcf-match-card__title">PREVIA DEL PARTIDO</div>
+						<div class="pcf-match-card__title">ANÁLISIS DEL ENCUENTRO <span>· Equipos, convocatoria y condiciones</span></div>
 						<div id="nextmatch-pre" class="pcf-pre-shell">
 							<!-- HOME -->
 							<section class="pcf-teambox pcf-teambox--home">
@@ -1023,22 +1023,30 @@
 								</div>
 
 								<div class="pcf-teambox__body">
-									<div class="pcf-pitch pcf-pitch--mini" id="nextmatch-pre-home-pitch" aria-label="Esquema local"></div>
+									<div class="pcf-team-context">
+										<div id="nextmatch-pre-home-standing" class="pcf-team-context__standing">Clasificación: —</div>
+										<div id="nextmatch-pre-home-form" class="pcf-team-form" aria-label="Últimos cinco partidos">Sin partidos anteriores</div>
+									</div>
+									<div class="pcf-team-feature">
+										<div class="pcf-pitch pcf-pitch--mini" id="nextmatch-pre-home-pitch" aria-label="Esquema local"></div>
+										<aside id="nextmatch-pre-home-key" class="pcf-keyplayer" aria-label="Jugador destacado del local"></aside>
+									</div>
 
 									<div class="pcf-squadcols">
-										<div class="pcf-squadcol">
+										<div class="pcf-squadcol pcf-squadcol--xi">
 											<div class="pcf-squadcol__title">Titulares</div>
 											<div id="nextmatch-pre-home-xi" class="pcf-lineup"></div>
 										</div>
-										<div class="pcf-squadcol">
+										<div class="pcf-squadcol pcf-squadcol--scroll">
 											<div class="pcf-squadcol__title">Suplentes</div>
 											<div id="nextmatch-pre-home-bench" class="pcf-lineup"></div>
 										</div>
-										<div class="pcf-squadcol">
+										<div class="pcf-squadcol pcf-squadcol--scroll">
 											<div class="pcf-squadcol__title">No convocados</div>
 											<div id="nextmatch-pre-home-out" class="pcf-lineup pcf-lineup--small"></div>
 										</div>
 									</div>
+									<div id="nextmatch-pre-home-absences" class="pcf-team-absences"></div>
 								</div>
 							</section>
 
@@ -1055,6 +1063,16 @@
 										<div id="nextmatch-next-stadium" class="pcf-stadium__name">—</div>
 										<div id="nextmatch-next-attendance" class="pcf-stadium__att">—</div>
 									</div>
+									<div class="pcf-stadium__illustration-note">Imagen ilustrativa del estadio</div>
+								</div>
+								<div class="pcf-match-facts">
+									<div class="pcf-match-fact"><span>Árbitro</span><strong id="nextmatch-pre-referee">—</strong></div>
+									<div class="pcf-match-fact"><span>Climatología</span><strong id="nextmatch-pre-weather">Por determinar</strong></div>
+									<div class="pcf-match-fact"><span>Antecedentes</span><strong id="nextmatch-pre-head-to-head">Sin partidos anteriores</strong></div>
+								</div>
+								<div class="pcf-match-comparison">
+									<div class="pcf-match-comparison__title">Comparativa de plantillas</div>
+									<div id="nextmatch-pre-comparison"></div>
 								</div>
 
 								<div class="pcf-expect">
@@ -1071,6 +1089,10 @@
 
 								<div class="pcf-centerbox__actions">
 									<button id="nextmatch-open-next-detail" class="btn btn-small" type="button">Ver historial de partidos</button>
+									<div class="pcf-centerbox__prep">
+										<button class="btn btn-small" type="button" data-nav-target="alignment">Alineación</button>
+										<button class="btn btn-small" type="button" data-nav-target="tactics">Tácticas</button>
+									</div>
 									<!-- NUEVO: Simular desde esta pantalla -->
 									<button id="nextmatch-simulate" class="btn btn-primary" type="button">
 										Simular partido
@@ -1092,22 +1114,30 @@
 								</div>
 
 								<div class="pcf-teambox__body">
-									<div class="pcf-pitch pcf-pitch--mini" id="nextmatch-pre-away-pitch" aria-label="Esquema visitante"></div>
+									<div class="pcf-team-context">
+										<div id="nextmatch-pre-away-standing" class="pcf-team-context__standing">Clasificación: —</div>
+										<div id="nextmatch-pre-away-form" class="pcf-team-form" aria-label="Últimos cinco partidos">Sin partidos anteriores</div>
+									</div>
+									<div class="pcf-team-feature">
+										<div class="pcf-pitch pcf-pitch--mini" id="nextmatch-pre-away-pitch" aria-label="Esquema visitante"></div>
+										<aside id="nextmatch-pre-away-key" class="pcf-keyplayer" aria-label="Jugador destacado del visitante"></aside>
+									</div>
 
 									<div class="pcf-squadcols">
-										<div class="pcf-squadcol">
+										<div class="pcf-squadcol pcf-squadcol--xi">
 											<div class="pcf-squadcol__title">Titulares</div>
 											<div id="nextmatch-pre-away-xi" class="pcf-lineup"></div>
 										</div>
-										<div class="pcf-squadcol">
+										<div class="pcf-squadcol pcf-squadcol--scroll">
 											<div class="pcf-squadcol__title">Suplentes</div>
 											<div id="nextmatch-pre-away-bench" class="pcf-lineup"></div>
 										</div>
-										<div class="pcf-squadcol">
+										<div class="pcf-squadcol pcf-squadcol--scroll">
 											<div class="pcf-squadcol__title">No convocados</div>
 											<div id="nextmatch-pre-away-out" class="pcf-lineup pcf-lineup--small"></div>
 										</div>
 									</div>
+									<div id="nextmatch-pre-away-absences" class="pcf-team-absences"></div>
 								</div>
 							</section>
 						</div>
@@ -1707,7 +1737,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=11"></script>
+	<script type="module" src="js/main.js?v=12"></script>
 	
 </body>
 </html>
