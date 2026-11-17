@@ -342,6 +342,13 @@ export function initAlignmentUI() {
 
       handlePlayerClick(pid);
     });
+    tbody.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const row = e.target?.closest?.('tr[data-player-id]');
+      if (!row) return;
+      e.preventDefault();
+      handlePlayerClick(row.dataset.playerId);
+    });
   };
 
   bindBody(xiBody);
@@ -353,6 +360,13 @@ export function initAlignmentUI() {
     const pid = dot?.dataset?.playerId;
     if (!pid) return;
     handlePlayerClick(pid);
+  });
+  pitch?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const dot = e.target?.closest?.('.pcf-dot[data-player-id]');
+    if (!dot) return;
+    e.preventDefault();
+    handlePlayerClick(dot.dataset.playerId);
   });
 }
 
@@ -546,6 +560,8 @@ export function updateAlignmentView() {
 
     const tr = document.createElement('tr');
     tr.dataset.playerId = String(p.id);
+    tr.tabIndex = 0;
+    tr.setAttribute('aria-label', `${p.name || 'Jugador'}; ${group === 'XI' ? 'titular' : group === 'BENCH' ? 'convocado' : 'no convocado'}. Seleccionar o intercambiar.`);
     if (String(selectedPlayerId) === String(p.id)) tr.classList.add('pcf-selected-row');
     if (unavailable) tr.classList.add('row-disabled');
 
@@ -560,6 +576,14 @@ export function updateAlignmentView() {
     const td = (text) => {
       const x = document.createElement('td');
       x.textContent = text == null ? '-' : String(text);
+      return x;
+    };
+    const ratingTd = (value) => {
+      const x = td(value);
+      const rating = Number(value);
+      if (value != null && value !== '-' && Number.isFinite(rating)) {
+        x.classList.add(rating >= 85 ? 'pcf-rating-high' : rating < 65 ? 'pcf-rating-low' : 'pcf-rating-standard');
+      }
       return x;
     };
 
@@ -577,16 +601,16 @@ export function updateAlignmentView() {
     tr.appendChild(tdName);
 
     // EN..ME + ROL/DEM
-    tr.appendChild(td(params.EN));
-    tr.appendChild(td(params.CF != null ? Math.round(params.CF) : '-'));
-    tr.appendChild(td(params.CM != null ? Math.round(params.CM) : '-'));
-    tr.appendChild(td(params.CD != null ? Math.round(params.CD) : '-'));
-    tr.appendChild(td(params.CO != null ? Math.round(params.CO) : '-'));
-    tr.appendChild(td(params.MO != null ? params.MO : '-'));
-    tr.appendChild(td(params.EF != null ? params.EF : '-'));
+    tr.appendChild(ratingTd(params.EN));
+    tr.appendChild(ratingTd(params.CF != null ? Math.round(params.CF) : '-'));
+    tr.appendChild(ratingTd(params.CM != null ? Math.round(params.CM) : '-'));
+    tr.appendChild(ratingTd(params.CD != null ? Math.round(params.CD) : '-'));
+    tr.appendChild(ratingTd(params.CO != null ? Math.round(params.CO) : '-'));
+    tr.appendChild(ratingTd(params.MO != null ? params.MO : '-'));
+    tr.appendChild(ratingTd(params.EF != null ? params.EF : '-'));
     const assignedRole = group === 'XI' ? xiRoleById.get(String(p.id)) : null;
     const effectiveMe = assignedRole ? getEffectiveOverall(p, assignedRole) : params.ME;
-    const tdMe = td(effectiveMe != null ? Math.round(effectiveMe) : '-');
+    const tdMe = ratingTd(effectiveMe != null ? Math.round(effectiveMe) : '-');
     tdMe.title = assignedRole
       ? `Media efectiva en ${assignedRole}: ${effectiveMe} · media original: ${params.ME} · afinidad: ${Math.round(getPositionAffinity(p, assignedRole) * 100)} %`
       : 'Media original del jugador; la penalización depende del puesto asignado en el XI.';
@@ -617,6 +641,21 @@ export function updateAlignmentView() {
   outPlayers.forEach((p) => outBody.appendChild(renderRow(p, 'OUT')));
 
   updateXIcount(club);
+
+  const formation = club.tactics?.formation || club.alignment?.formation || '4-4-2';
+  ['alignment-formation-label', 'alignment-pitch-formation'].forEach((id) => {
+    const label = document.getElementById(id);
+    if (label) label.textContent = formation;
+  });
+
+  const selectionHint = document.getElementById('alignment-selection-hint');
+  if (selectionHint) {
+    const selected = selectedPlayerId != null ? byId.get(selectedPlayerId) : null;
+    selectionHint.classList.toggle('is-choosing', !!selected);
+    selectionHint.textContent = selected
+      ? `${selected.name}: seleccionado. Pulsa otro jugador del listado o del campo para intercambiarlos; vuelve a pulsar el mismo para cancelar.`
+      : 'Selecciona un jugador para consultar su ficha. Después puedes pulsar otro para intercambiarlos entre titulares, banquillo o no convocados.';
+  }
 
   // La tarjeta puede mostrar un jugador “por defecto”, pero NO debe auto-seleccionar.
   const cardPlayer =
@@ -899,6 +938,7 @@ function renderPitch(club) {
     const dot = document.createElement('div');
     const unavailable = p ? isPlayerUnavailable(p) : false;
     dot.className = 'pcf-dot' + (unavailable ? ' is-unavailable' : '');
+    if (/^(POR|GK)$/i.test(p?.position || '')) dot.classList.add('is-gk');
 
     // Campo horizontal: left = 100 - y, top = x
     // Si existe posición manual desde Tácticas, usarla
@@ -909,6 +949,10 @@ function renderPitch(club) {
     dot.style.left = `${left}%`;
     dot.style.top  = `${top}%`;
     dot.dataset.playerId = p?.id != null ? String(p.id) : '';
+    dot.dataset.shortName = String(p?.name || '').trim().split(/\s+/).slice(-1)[0] || '';
+    dot.tabIndex = 0;
+    dot.setAttribute('role', 'button');
+    dot.setAttribute('aria-label', p ? `Seleccionar ${p.name}, ${p.position || 'jugador'}` : 'Posición vacía');
     dot.title = p ? `${p.name} (${p.position})` : '';
     dot.textContent = p?.shirtNumber ?? p?.number ?? (p?.position || '?');
     pitch.appendChild(dot);
