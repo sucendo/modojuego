@@ -13,7 +13,7 @@ import {
   formatFixtureKickoffLabel,
 } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
-import { renderMatchTimeline } from './utils/matchTimeline.js';
+import { renderMatchTimeline } from './utils/matchTimeline.js?v=14';
 import { getFormationSlots, assignPlayersToSlots } from './utils/tacticsState.js';
 import { isPlayerInjuredNow, isPlayerSuspendedNow } from '../game/utils/index.js';
 import { computePreviewInsights, getPreviewKeyPlayer, getPreviewRatings } from './utils/matchPreviewInsights.js';
