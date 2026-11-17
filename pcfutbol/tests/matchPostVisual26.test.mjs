@@ -37,6 +37,15 @@ test('postpartido conserva todos los paneles, datos y controles de navegación',
   assert.match(css, /@media \(max-width:530px\)/);
 });
 
+test('la cadena de módulos invalida las versiones cacheadas de la previa v13', () => {
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  assert.match(html, /main\.js\?v=14/);
+  assert.match(read('../js/main.js'), /ui\/index\.js\?v=14/);
+  assert.match(read('../js/ui/index.js'), /ui\.js\?v=14/);
+  assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=14/);
+  assert.match(read('../js/ui/nextMatchView.js'), /matchTimeline\.js\?v=14/);
+});
+
 test('la crónica utiliza resultado, goles y decisiones tácticas registrados', () => {
   const names = new Map([['a1','Lina'],['a2','Mario'],['b1','Pedro']]);
   const report = buildPostMatchReport(fixture(), {homeName:'Local',awayName:'Visitante',playerNames:names});
