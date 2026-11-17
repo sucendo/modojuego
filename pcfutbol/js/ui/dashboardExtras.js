@@ -95,6 +95,12 @@ function bindExtras() {
   });
   document.getElementById('pcf-shortcuts-close')?.addEventListener('click', () => togglePicker(false));
   document.getElementById('pcf-mobile-more')?.addEventListener('click', () => togglePicker(true));
+  document.getElementById('pcf-news-more')?.addEventListener('click', (event) => {
+    const panel = document.querySelector('#view-dashboard .pcf-news');
+    const expanded = panel?.classList.toggle('is-expanded') || false;
+    event.currentTarget.setAttribute('aria-expanded', String(expanded));
+    event.currentTarget.firstChild.textContent = expanded ? 'Ver menos noticias ' : 'Ver todas las noticias ';
+  });
   document.getElementById('view-dashboard')?.addEventListener('click', (event) => {
     const toggle = event.target instanceof Element ? event.target.closest('[data-category-toggle]') : null;
     if (!toggle) return;
@@ -121,6 +127,12 @@ function addFeedItem(container, item, variant) {
 
   const emblem = document.createElement('span');
   emblem.className = 'pcf-feed-item__emblem';
+  if (variant === 'news') {
+    const photoType = item.tag === 'FICHAJES' ? 'transfer'
+      : item.tag === 'RESULTADOS' ? 'crowd'
+        : item.tag === 'PRÓXIMO RIVAL' ? 'stadium' : 'press';
+    emblem.classList.add('pcf-feed-item__emblem--photo', `pcf-feed-item__emblem--${photoType}`);
+  }
   const related = item.clubId && createCoatImgElement(item.clubId, item.title, 46);
   if (related) emblem.appendChild(related);
   else emblem.textContent = item.icon || '•';
@@ -163,10 +175,22 @@ export function updateDashboardExtras() {
     const items = buildClubInbox(GameState, club);
     inbox.replaceChildren();
     for (const item of items) addFeedItem(inbox, item, 'task');
-    if (count) count.textContent = String(items.filter(item => item.severity !== 'normal').length);
+    if (count) {
+      const urgent = items.filter(item => item.severity !== 'normal').length;
+      count.textContent = String(urgent);
+      count.hidden = urgent === 0;
+    }
   }
   if (news) {
     news.replaceChildren();
-    for (const item of buildFootballNews(GameState, club)) addFeedItem(news, item, 'news');
+    const items = buildFootballNews(GameState, club);
+    for (const item of items) addFeedItem(news, item, 'news');
+    const more = document.getElementById('pcf-news-more');
+    if (more) {
+      more.hidden = items.length <= 3;
+      more.setAttribute('aria-expanded', 'false');
+      more.firstChild.textContent = 'Ver todas las noticias ';
+    }
+    news.closest('.pcf-news')?.classList.remove('is-expanded');
   }
 }

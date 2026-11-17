@@ -1,0 +1,332 @@
+/* PC FÚTBOL 26 · portada cinematográfica.
+   Solo afecta al dashboard; los destinos y la simulación siguen en sus módulos. */
+
+/* Unificamos los elementos que ocultaba una regla antigua del desplegable móvil. */
+#screen-dashboard .pcf-panel__category-toggle > .pcf-category__art { display:grid; }
+#screen-dashboard .pcf-panel__category-toggle > .pcf-category__label { display:inline; }
+#screen-dashboard .pcf-panel__category-toggle > .pcf-category__chevron { display:none; }
+
+.app-header {
+  position:relative;
+  min-height:60px;
+  background:linear-gradient(113deg,#03152b 0%,#0a3b65 45%,#031a35 75%,#041226 100%);
+  border-bottom:2px solid #2cbaff;
+  box-shadow:inset 0 -3px 12px #168ce644,0 2px 13px #0009;
+}
+.app-header::after {
+  content:"";position:absolute;left:1.5%;right:1.5%;bottom:-2px;height:1px;
+  background:linear-gradient(90deg,transparent,#b3ebff 24%,#009cff 55%,transparent);
+  pointer-events:none;
+}
+.pcf-brand__wordmark { text-shadow:0 2px 3px #000,0 0 12px #1b8ee455; }
+.pcf-brand__wordmark b { color:#f9c84c; text-shadow:0 1px #815211,0 0 14px #ffd36977; }
+.pcf-brand__crest { border-color:#95e8ff; box-shadow:0 0 0 3px #2daeff32,0 0 14px #14aaff88; }
+.app-header-actions .btn-secondary,
+.app-header-actions .file-button {
+  border:1px solid #4ba8d9;
+  background:linear-gradient(145deg,#135482,#041d3a 85%);
+  box-shadow:inset 0 1px #b4edff63,0 0 7px #168bdb33;
+}
+
+#screen-dashboard { max-width:1660px; box-shadow:0 18px 40px #0006; }
+#screen-dashboard > .pcf-hud {
+  min-height:107px; padding:9px 14px;
+  background:linear-gradient(95deg,#04172be0 0%,#0b4677e5 43%,#031327e8 100%),
+    url('../img/resources/stadium-night-2026.webp') center 28%/cover;
+  border:1px solid #45bfff; border-bottom-color:#64d6ff;
+  box-shadow:inset 0 1px 0 #e4fbff45,0 0 18px #007adf28;
+}
+#screen-dashboard .pcf-hud__coat img {
+  width:73px; height:73px; filter:drop-shadow(0 4px 8px #000c) drop-shadow(0 0 3px #32adff);
+}
+#screen-dashboard .pcf-hud__club {
+  font-size:clamp(19px,2vw,28px); text-transform:uppercase;
+  text-shadow:0 2px 4px #000a,0 0 10px #57a9ff6b;
+}
+#screen-dashboard .pcf-hud__club { order:0; }
+#screen-dashboard .pcf-hud__manager { order:1; font-size:12px; }
+#screen-dashboard .pcf-hud__money { order:2; }
+#screen-dashboard .pcf-hud__id { gap:5px; }
+#screen-dashboard .pcf-hud__money { font-size:12px; font-weight:650; }
+#screen-dashboard .pcf-hud__center {
+  align-self:flex-start; padding:4px 8px 0;
+  border-radius:0 0 12px 12px;
+  background:linear-gradient(90deg,transparent,#00589c45,transparent);
+}
+#screen-dashboard .pcf-center__now-date { font-size:13px; color:#eafaff; }
+#screen-dashboard .pcf-center__now-time { font-size:18px; color:#ffe7ad; text-shadow:0 0 7px #ffcd3970; }
+#screen-dashboard .pcf-hud__next {
+  min-height:86px; padding:7px 10px; gap:5px;
+  border-color:#5ed0ff;
+  background:linear-gradient(117deg,#062642e8,#126da087 55%,#021329e8);
+  box-shadow:inset 0 1px #d2f7ff73,0 0 13px #00aaff3d;
+  clip-path:polygon(11px 0,calc(100% - 11px) 0,100% 11px,100% calc(100% - 11px),calc(100% - 11px) 100%,11px 100%,0 calc(100% - 11px),0 11px);
+}
+#screen-dashboard .pcf-hud__next-title { font-size:13px; color:#ffd454; text-shadow:0 0 8px #e6a02255; }
+#screen-dashboard .pcf-hud__next-main .pcf-inline-match__team {
+  background:linear-gradient(110deg,#0b345c,#175f96a1);
+  border-color:#56abdc; color:#fff;
+}
+#screen-dashboard .pcf-hud__next-logo img { height:58px; max-width:72px; }
+#screen-dashboard .pcf-hud__next-logo img[src=""] { display:none; }
+
+.pcf-shortcuts {
+  min-height:53px; padding:6px 10px;
+  background:linear-gradient(180deg,#07385f,#031a33);
+  box-shadow:inset 0 1px #85dafa4d,0 0 10px #008ddb1f;
+  border-bottom-color:#62caff;
+}
+.pcf-shortcuts__title {
+  border:1px solid #318ac1; border-radius:7px;
+  background:linear-gradient(130deg,#0b5180,#06203e);
+  padding:8px 12px; color:#ffe8a2; font-size:12px;
+}
+.pcf-shortcuts__chip,.pcf-shortcuts__edit {
+  background:linear-gradient(145deg,#176c9c,#08385f 55%,#031e3b);
+  border-color:#59c5f5; border-radius:7px;
+  box-shadow:inset 0 2px #acf1ff57,0 0 8px #00a9ff28;
+  clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);
+}
+
+#screen-dashboard .pcf-hub {
+  position:relative; padding:12px 12px 19px;
+  background:linear-gradient(180deg,#031b35a6 0%,#0423439f 58%,#03112899 100%),
+    url('../img/resources/stadium-night-2026.webp') center center/cover no-repeat;
+}
+#screen-dashboard .pcf-hub::after { display:none; }
+#screen-dashboard .pcf-hub::before {
+  background:radial-gradient(circle at 49% 39%,#0189e31c,transparent 36%),
+    linear-gradient(90deg,#010e23a4,transparent 23%,transparent 77%,#010d24a4);
+}
+#screen-dashboard .pcf-hub__grid {
+  grid-template-columns:minmax(194px,1.05fr) minmax(190px,1fr) minmax(260px,1.45fr) minmax(190px,1fr) minmax(194px,1.05fr);
+  gap:9px;
+}
+#screen-dashboard .pcf-hub .pcf-panel {
+  position:relative; background:linear-gradient(126deg,#062442ed 0%,#03162deb 100%);
+  border:1px solid #4ebdf5; border-radius:10px;
+  box-shadow:inset 0 0 0 1px #2db8ec26,inset 0 1px #cbf5ff69,0 0 12px #058ddf48,0 8px 17px #0008;
+}
+#screen-dashboard .pcf-hub .pcf-panel__head {
+  position:relative; z-index:2; padding:7px 9px;
+  background:linear-gradient(120deg,#0a6398,#0b355b 72%,#051e3c);
+  border-bottom:1px solid #3dbbf9;
+  box-shadow:inset 0 1px #bef2ff5a,0 2px 7px #0005;
+}
+#screen-dashboard .pcf-hub .pcf-panel__head h2 { color:#f4fdff; font-size:clamp(11px,.95vw,14px); font-style:italic; text-shadow:0 1px 3px #000; }
+#screen-dashboard .pcf-hub .pcf-panel__list { position:relative; z-index:2; gap:4px; padding:7px; }
+#screen-dashboard .pcf-hub .pcf-hub-item {
+  min-height:34px; border:1px solid #2487bd; border-radius:5px;
+  background:linear-gradient(125deg,#0c4a78c7,#051a39e9);
+  box-shadow:inset 0 1px #a7e8ff34; padding:5px 8px;
+}
+#screen-dashboard .pcf-hub-item__icon { width:26px; height:26px; background:#0b3458; border-color:#367bad; }
+#screen-dashboard .pcf-hub-item__label { font-size:12px; }
+#screen-dashboard .pcf-hub-item__chev { color:#b6ebff; }
+#screen-dashboard .pcf-hub .pcf-hub-item:disabled { opacity:.54; }
+
+#screen-dashboard .pcf-panel__category-toggle { display:flex; align-items:center; justify-content:flex-start; gap:8px; }
+#screen-dashboard .pcf-panel__category-toggle > .pcf-category__art {
+  width:31px; height:31px; flex:0 0 31px;
+  border:1px solid #91defa; border-radius:6px;
+  background-image:url('../img/resources/dashboard-category-icons-2026.webp');
+  background-size:200% 200%; background-position:0 0;
+  box-shadow:inset 0 0 0 1px #fff3,0 0 8px #42aafa85;
+}
+#screen-dashboard .pcf-panel--style .pcf-category__art { background-position:100% 0; }
+#screen-dashboard .pcf-panel--club .pcf-category__art { background-position:0 100%; }
+#screen-dashboard .pcf-panel--market .pcf-category__art { background-position:100% 100%; }
+#screen-dashboard .pcf-category__art svg { display:none; }
+
+/* Ilustración difuminada del apartado sin reducir el área de los botones. */
+#screen-dashboard .pcf-panel--competitions::before,
+#screen-dashboard .pcf-panel--style::before,
+#screen-dashboard .pcf-panel--club::before,
+#screen-dashboard .pcf-panel--market::before {
+  content:""; position:absolute; bottom:-7px; right:-9px;
+  width:118px; height:118px; pointer-events:none;
+  background:url('../img/resources/dashboard-category-icons-2026.webp') 0 0/200% 200% no-repeat;
+  opacity:.23; mask-image:linear-gradient(90deg,transparent,#000 65%);
+}
+#screen-dashboard .pcf-panel--style::before { background-position:100% 0; }
+#screen-dashboard .pcf-panel--club::before { background-position:0 100%; }
+#screen-dashboard .pcf-panel--market::before { background-position:100% 100%; }
+
+#screen-dashboard .pcf-center { padding:10px 0 0; gap:12px; }
+#screen-dashboard .pcf-center__ball { width:clamp(190px,17vw,262px); height:clamp(190px,17vw,262px); }
+#screen-dashboard .pcf-center__ball::before { background:radial-gradient(circle,#16b5ff55,transparent 68%); }
+#screen-dashboard .pcf-center__ball::after {
+  content:""; position:absolute; inset:3%; pointer-events:none; border-radius:50%;
+  background:radial-gradient(circle at 23% 15%,#fff9,transparent 35%);
+  box-shadow:inset -12px -18px 23px #01112b7d;
+}
+#screen-dashboard .pcf-ball__badge {
+  position:absolute; z-index:4; top:47%; left:50%; transform:translate(-50%,-50%);
+  padding:6px 8px; border-radius:8px; border:2px solid #9fdfff;
+  color:#fff; font-size:clamp(14px,1.6vw,21px); font-weight:1000; font-style:italic;
+  letter-spacing:-.07em; background:linear-gradient(120deg,#01162f,#072c4d,#000d22);
+  box-shadow:inset 0 1px #c7f0ff78,0 2px 10px #000e,0 0 13px #18c8ff9c;
+  text-shadow:0 2px 2px #000;
+}
+#screen-dashboard .pcf-ball__badge strong { color:#ffd45d; }
+#screen-dashboard .pcf-nextcard {
+  max-width:100%; padding:9px 11px 8px; border:2px solid #58ccff;
+  background:linear-gradient(105deg,#06395cce,#082a50e8,#014979b9);
+  box-shadow:inset 0 1px #d2f7ff83,0 0 14px #0085ec8a,0 6px 20px #0009;
+  clip-path:polygon(13px 0,calc(100% - 13px) 0,100% 13px,100% calc(100% - 13px),calc(100% - 13px) 100%,13px 100%,0 calc(100% - 13px),0 13px);
+}
+#screen-dashboard .pcf-nextcard__teams { margin-bottom:6px; }
+#screen-dashboard .pcf-nextcard__vs { color:#fff; font-style:italic; font-size:15px; border-color:#5fccff; }
+#screen-dashboard .pcf-nextcard__coat,
+#screen-dashboard .pcf-nextcard__coat .coat-icon { width:48px; height:48px; }
+#screen-dashboard .pcf-nextcard__row { border-radius:4px; padding:3px 6px; font-size:11px; }
+#screen-dashboard .pcf-nextcard__meta { gap:4px; }
+#screen-dashboard .pcf-big-action {
+  max-width:330px; border:2px solid #fff0b8;
+  clip-path:polygon(17px 0,calc(100% - 17px) 0,100% 50%,calc(100% - 17px) 100%,17px 100%,0 50%);
+  box-shadow:inset 0 3px #fff9,0 0 16px #ffba3478,0 6px 18px #000a;
+}
+
+#screen-dashboard .pcf-feed-list { position:relative; z-index:1; padding:7px; gap:6px; }
+#screen-dashboard .pcf-feed-item {
+  min-height:68px; padding:8px 6px; border:1px solid #319cd3;
+  background:linear-gradient(118deg,#082b4fdd,#021832e8);
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+  border-radius:2px; box-shadow:inset 0 1px #83c9ee45;
+}
+#screen-dashboard .pcf-feed-item__emblem { position:relative; flex:0 0 48px; height:53px; font-size:29px; }
+#screen-dashboard .pcf-feed-item__tag { font-size:11px; color:#ffdb61; }
+#screen-dashboard .pcf-feed-item__title { font-size:12px; color:#f4faff; }
+#screen-dashboard .pcf-feed-item__description { font-size:11px; }
+#screen-dashboard .pcf-feed-item__action {
+  padding:5px 9px; font-size:11px; border-color:#93dffc;
+  background:linear-gradient(180deg,#2379ad,#04416c);
+}
+#screen-dashboard .pcf-feed-item--urgent { border-color:#ffae66; }
+#screen-dashboard .pcf-feed-item--urgent .pcf-feed-item__tag { color:#ff9f6c; }
+#screen-dashboard .pcf-feed-item__emblem--photo {
+  background-image:url('../img/resources/dashboard-news-2026.webp');
+  background-size:200% 200%; background-position:0 0; border:1px solid #448bb5;
+  box-shadow:0 0 7px #007ac66c;
+}
+#screen-dashboard .pcf-feed-item__emblem--crowd { background-position:100% 100%; }
+#screen-dashboard .pcf-feed-item__emblem--stadium { background-position:100% 100%; }
+#screen-dashboard .pcf-feed-item__emblem--press { background-position:0 100%; }
+#screen-dashboard .pcf-feed-item__emblem--photo img {
+  position:absolute; right:0; bottom:0; width:25px; height:25px;
+  border-radius:50%; background:#0a294a; filter:drop-shadow(0 0 2px #0f3556);
+}
+#screen-dashboard .pcf-feed-count[hidden],
+#screen-dashboard .pcf-news__more[hidden] { display:none; }
+#screen-dashboard .pcf-news__more {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:calc(100% - 18px); margin:9px auto 2px;
+  border:1px solid #71cbff; border-radius:5px; padding:9px 5px;
+  color:#f6fbff; font-weight:800; cursor:pointer;
+  background:linear-gradient(145deg,#17669e,#063453);
+  box-shadow:inset 0 1px #c9eefe66,0 0 8px #1b8ddd55;
+}
+#screen-dashboard .pcf-news__more:hover { border-color:#fff2b3; }
+#screen-dashboard .pcf-news__more span { font-size:21px; line-height:1; }
+#screen-dashboard .pcf-news .pcf-feed-item:nth-child(n + 4) { display:none; }
+#screen-dashboard .pcf-news.is-expanded .pcf-feed-item:nth-child(n + 4) { display:flex; }
+
+@media(max-width:1240px) and (min-width:781px) {
+  #screen-dashboard .pcf-hub__grid { grid-template-columns:minmax(175px,1fr) minmax(255px,1.4fr) minmax(175px,1fr); }
+  #screen-dashboard .pcf-center__ball { width:210px; height:210px; }
+  #screen-dashboard .pcf-hud__coat img { width:56px; height:56px; }
+}
+
+@media(max-width:780px) {
+  .app-header { min-height:51px; }
+  .pcf-brand__crest { border-color:#7de1ff; }
+  #screen-dashboard > .pcf-hud {
+    display:grid; grid-template-columns:1fr; grid-template-rows:auto auto;
+    position:relative; gap:8px; padding:9px 10px;
+    background:linear-gradient(98deg,#051930d9,#0b4270d8),
+      url('../img/resources/stadium-night-2026.webp') center 23%/cover;
+  }
+  #screen-dashboard .pcf-hud__left { grid-column:1;grid-row:1;align-self:center; min-height:48px; padding-right:110px; }
+  #screen-dashboard .pcf-hud__center {
+    position:absolute; top:10px; right:8px; width:110px; padding:4px 2px;
+    text-align:center; grid-column:auto;grid-row:auto;
+  }
+  #screen-dashboard .pcf-center__now-date { font-size:9px; }
+  #screen-dashboard .pcf-center__now-time { font-size:13px; }
+  #screen-dashboard .pcf-hud__right { grid-column:1; grid-row:2; }
+  #screen-dashboard .pcf-hud__club { font-size:clamp(14px,4vw,19px); line-height:1.12; }
+  #screen-dashboard .pcf-hud__manager { font-size:10px; }
+  #screen-dashboard .pcf-hud__season { font-size:10px; }
+  #screen-dashboard .pcf-hud__coat img { width:46px; height:46px; }
+  #screen-dashboard .pcf-hud__money { display:none; }
+  #screen-dashboard .pcf-hud__next { justify-content:center; gap:4px; min-height:62px; padding:7px 9px; }
+  #screen-dashboard .pcf-hud__next-main { font-size:11px; }
+  #screen-dashboard .pcf-hud__next-main .pcf-inline-match__name { max-width:114px; font-size:10px; }
+  #screen-dashboard .pcf-hud__next-main .pcf-inline-match__team img { width:25px; height:25px; }
+  #screen-dashboard .pcf-hud__next-title { font-size:11px; }
+  #screen-dashboard .pcf-hud__next-row { font-size:10px; }
+  #screen-dashboard .pcf-hud__next-logo { display:block; }
+  #screen-dashboard .pcf-hud__next-logo img { display:block; width:36px; height:auto; max-height:38px; }
+  .pcf-shortcuts { padding:6px; }
+  .pcf-shortcuts__title { padding:5px 8px; }
+  .pcf-shortcuts__chip { font-size:11px; padding:7px 9px; }
+
+  #screen-dashboard .pcf-hub { padding:8px 7px 18px; background-position:center 65%; }
+  #screen-dashboard .pcf-hub__grid { gap:7px; }
+  #screen-dashboard .pcf-inbox .pcf-feed-list { grid-template-columns:1fr; }
+  #screen-dashboard .pcf-inbox .pcf-feed-item { min-height:0; align-items:center; }
+  #screen-dashboard .pcf-inbox .pcf-feed-item__emblem { height:37px; flex-basis:37px; font-size:22px; }
+  #screen-dashboard .pcf-feed-item__action { font-size:10px; }
+  #screen-dashboard .pcf-hub .pcf-panel__head h2 { font-size:12px; }
+
+  #screen-dashboard .pcf-panel--competitions,
+  #screen-dashboard .pcf-panel--style,
+  #screen-dashboard .pcf-panel--club,
+  #screen-dashboard .pcf-panel--market { min-height:117px; }
+  #screen-dashboard .pcf-hub .pcf-panel--competitions .pcf-panel__head,
+  #screen-dashboard .pcf-hub .pcf-panel--style .pcf-panel__head,
+  #screen-dashboard .pcf-hub .pcf-panel--club .pcf-panel__head,
+  #screen-dashboard .pcf-hub .pcf-panel--market .pcf-panel__head {
+    display:flex; align-items:center; justify-content:center; padding:5px;
+    height:100%; border-bottom:0;
+    background:linear-gradient(135deg,#0f609b7d,#051d3ac7);
+  }
+  #screen-dashboard .pcf-panel__category-toggle {
+    min-height:104px; flex-direction:column; align-items:center; gap:3px;
+    justify-content:center; text-align:center; padding:3px;
+  }
+  #screen-dashboard .pcf-panel__category-toggle > .pcf-category__art {
+    width:47px; height:47px; flex:0 0 47px; border-color:#b0ecff;
+    border-radius:9px; background-image:url('../img/resources/dashboard-category-icons-2026.webp');
+  }
+  #screen-dashboard .pcf-panel__category-toggle > .pcf-category__label {
+    display:block; font-size:10px; line-height:1.1; font-style:italic;
+  }
+  #screen-dashboard .pcf-panel__category-toggle > .pcf-category__chevron { display:block; font-size:14px; line-height:12px; }
+  #screen-dashboard .pcf-panel--competitions,
+  #screen-dashboard .pcf-panel--club { padding-right:39px; }
+  #screen-dashboard .pcf-panel--style,
+  #screen-dashboard .pcf-panel--market { padding-left:39px; }
+  #screen-dashboard .pcf-center__ball { width:clamp(118px,34vw,151px); height:clamp(118px,34vw,151px); }
+  #screen-dashboard .pcf-ball__badge { font-size:12px; padding:3px 5px; border-width:1px; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-panel__head { height:auto; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-panel__category-toggle { min-height:76px; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-panel__list { padding:5px; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-hub-item { padding:5px; }
+  #screen-dashboard .pcf-news__more { margin-bottom:6px; }
+  #screen-dashboard .pcf-nextcard__teams { margin-bottom:6px; }
+  #screen-dashboard .pcf-nextcard__name { font-size:12px; }
+  #screen-dashboard .pcf-big-action { font-size:19px; }
+}
+
+@media(max-width:380px) {
+  #screen-dashboard .pcf-hud__left { padding-right:96px; }
+  #screen-dashboard .pcf-hud__center { width:98px; }
+  #screen-dashboard .pcf-hud__next-main .pcf-inline-match__name { max-width:80px; }
+  #screen-dashboard .pcf-panel--competitions,
+  #screen-dashboard .pcf-panel--club { padding-right:32px; }
+  #screen-dashboard .pcf-panel--style,
+  #screen-dashboard .pcf-panel--market { padding-left:32px; }
+  #screen-dashboard .pcf-panel__category-toggle > .pcf-category__art { width:40px;height:40px;flex-basis:40px; }
+  #screen-dashboard .pcf-panel__category-toggle > .pcf-category__label { font-size:9px; }
+}
