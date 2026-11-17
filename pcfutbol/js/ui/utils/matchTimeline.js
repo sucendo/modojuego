@@ -114,6 +114,11 @@ function buildEntryHTML({ fx, ev, clubIndex, playerIndex }) {
 
   const minute = minuteLabel(ev?.minute);
   const iconId = eventIconId(t);
+  const kind = t === 'GOAL' ? 'goal'
+    : (t === 'RED' || t === 'RED_CARD' || t === 'CARD_RED') ? 'red'
+      : (t === 'YELLOW' || t === 'YELLOW_CARD' || t === 'CARD_YELLOW') ? 'yellow'
+        : t === 'SUB' ? 'sub' : t === 'TACTICAL' ? 'tactical' : 'other';
+  const kindText = kind === 'goal' ? 'GOL' : kind === 'red' ? 'EXPULSIÓN' : '';
 
   const isHome = String(ev?.clubId) === String(fx?.homeClubId);
   const isAway = String(ev?.clubId) === String(fx?.awayClubId);
@@ -121,6 +126,7 @@ function buildEntryHTML({ fx, ev, clubIndex, playerIndex }) {
 
   const entry = `
     <div class="pcf-mtl__entry">
+      ${kindText ? `<div class="pcf-mtl__kind">${kindText}</div>` : ''}
       <div class="pcf-mtl__main">${escapeHtml(main || teamLabel || '—')}</div>
       ${sub ? `<div class="pcf-mtl__sub">${escapeHtml(sub)}</div>` : ''}
     </div>
@@ -138,7 +144,7 @@ function buildEntryHTML({ fx, ev, clubIndex, playerIndex }) {
 
   if (side === 'home') {
     return `
-      <div class="pcf-mtl__item is-home">
+      <div class="pcf-mtl__item is-home is-${kind}">
         <div class="pcf-mtl__col pcf-mtl__col--left">
           ${entry}
           <div class="pcf-mtl__min">${escapeHtml(minute)}</div>
@@ -151,7 +157,7 @@ function buildEntryHTML({ fx, ev, clubIndex, playerIndex }) {
 
   if (side === 'away') {
     return `
-      <div class="pcf-mtl__item is-away">
+      <div class="pcf-mtl__item is-away is-${kind}">
         <div class="pcf-mtl__col pcf-mtl__col--left"></div>
         ${center}
         <div class="pcf-mtl__col pcf-mtl__col--right">
@@ -164,7 +170,7 @@ function buildEntryHTML({ fx, ev, clubIndex, playerIndex }) {
 
   // Neutral (árbitro, VAR, etc.) → centrado
   return `
-    <div class="pcf-mtl__item is-neutral">
+    <div class="pcf-mtl__item is-neutral is-${kind}">
       <div class="pcf-mtl__col pcf-mtl__col--left"></div>
       ${center}
       <div class="pcf-mtl__col pcf-mtl__col--right">
@@ -197,7 +203,7 @@ export function buildMatchTimelineHTML(containerOpts) {
       try { return !!filter(e); } catch { return true; }
     });
   }
-  if (!events.length) return `<div class="muted">Sin cronología.</div>`;
+  if (!events.length) return `<div class="muted">${typeof filter === 'function' ? 'No hay acontecimientos de este tipo registrados.' : 'Sin cronología.'}</div>`;
 
   const sliced = events.slice(0, maxItems);
   const hasFirstHalf = sliced.some((e) => n0(e?.minute) > 0 && n0(e?.minute) <= 45);
@@ -209,13 +215,11 @@ export function buildMatchTimelineHTML(containerOpts) {
   if (withFinalLabel) html += `<div class="pcf-mtl__sep">${order === 'asc' ? 'Inicio del partido' : 'Final del partido'}</div>`;
 
   let insertedBreak = false;
-  let seenSecondHalf = false;
 
   sliced.forEach((ev) => {
     const m = n0(ev?.minute);
     if (hasFirstHalf && hasSecondHalf) {
-      if ((order === 'asc' && m > 45) || (order !== 'asc' && m > 45)) seenSecondHalf = true;
-      if (!insertedBreak && ((order === 'asc' && seenSecondHalf) || (order !== 'asc' && seenSecondHalf && m <= 45))) {
+      if (!insertedBreak && ((order === 'asc' && m > 45) || (order !== 'asc' && m <= 45))) {
         html += `<div class="pcf-mtl__sep">Descanso</div>`;
         insertedBreak = true;
       }
@@ -224,6 +228,7 @@ export function buildMatchTimelineHTML(containerOpts) {
   });
 
   if (withFinalLabel && order === 'asc') html += `<div class="pcf-mtl__sep">Final del partido</div>`;
+  if (withFinalLabel && order !== 'asc') html += `<div class="pcf-mtl__sep">Inicio del partido</div>`;
 
   html += `</div>`;
   if (withWrap) html += `</div>`;
