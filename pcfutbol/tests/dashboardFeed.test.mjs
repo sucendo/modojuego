@@ -122,3 +122,19 @@ test('la pantalla de referencia presenta fotos, competición centrada y partido 
   assert.match(css, /\.pcf-news:not\(\.is-expanded\) \.pcf-feed-item:nth-child\(n \+ 3\)/);
   assert.match(js, /function syncNewsMoreButton\(\)/);
 });
+
+test('la portada distingue las fotos de noticias y las alas ilustradas del centro', () => {
+  const css = readFileSync(new URL('../css/dashboardVisual26.css', import.meta.url), 'utf8');
+  for (const [type, position] of [
+    ['transfer', '0 0'],
+    ['crowd', '100% 100%'],
+    ['stadium', '100% 0'],
+    ['press', '0 100%'],
+  ]) {
+    assert.match(css, new RegExp(`#screen-dashboard \\.pcf-news \\.pcf-feed-item__emblem--${type} \\{ background-position:${position}; \\}`));
+  }
+  assert.match(css, /clip-path:polygon\(0 13px,13px 0/);
+  assert.match(css, /clip-path:polygon\(23px 0,calc\(100% - 13px\)/);
+  assert.match(css, /background:repeating-conic-gradient|repeating-conic-gradient\(/);
+  assert.match(css, /pcf-news__caption \{ display:none; \}/);
+});
