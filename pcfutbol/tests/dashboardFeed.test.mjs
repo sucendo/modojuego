@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { buildClubInbox, buildFootballNews } from '../js/ui/dashboardFeed.js';
 
 const home = {
@@ -79,4 +79,18 @@ test('la portada 26 mantiene las cuatro familias de opciones accesibles en móvi
   assert.match(styles, /\.pcf-category__art/);
   assert.match(styles, /@media \(max-width:780px\)/);
   assert.match(styles, /#screen-dashboard \.pcf-panel\.is-expanded \.pcf-panel__category-toggle/);
+});
+
+test('el acabado cinematográfico es local y recupera los títulos de los paneles', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/dashboardVisual26.css', import.meta.url), 'utf8');
+  assert.match(html, /css\/dashboardVisual26\.css/);
+  assert.match(html, /id="pcf-news-more"/);
+  assert.match(css, /pcf-panel__category-toggle > \.pcf-category__label \{ display:inline; \}/);
+  for (const asset of ['stadium-night-2026.webp', 'dashboard-category-icons-2026.webp', 'dashboard-news-2026.webp']) {
+    const file = new URL(`../img/resources/${asset}`, import.meta.url);
+    assert.ok(existsSync(file), `${asset} ausente`);
+    assert.ok(statSync(file).size < 200_000, `${asset} no está optimizado`);
+    assert.match(css, new RegExp(asset.replace('.', '\\.')));
+  }
 });
