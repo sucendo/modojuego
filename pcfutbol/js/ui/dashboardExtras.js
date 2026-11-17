@@ -2,7 +2,7 @@
 import { GameState } from '../state.js';
 import { getUserClub } from '../game/selectors.js';
 import { createCoatImgElement } from './utils/coats.js';
-import { buildClubInbox, buildFootballNews, buildRosterSummary } from './dashboardFeed.js';
+import { buildClubInbox, buildFootballNews, buildRosterSummary } from './dashboardFeed.js?v=8.1';
 
 const SHORTCUTS_KEY = 'pcfutbol.dashboard.shortcuts.v1';
 const LINKS = [
