@@ -148,4 +148,6 @@ test('el acabado premium usa el resultado real y no genera gestiones de relleno'
   assert.match(js, /items\.length === 1 && \(items\[0\]\.id === 'nextmatch'/);
   assert.match(css, /\.pcf-inbox__idle\[hidden\]/);
   assert.match(css, /\.pcf-feed-item__score/);
+  assert.match(css, /@media\(min-width:1241px\) and \(min-height:821px\) and \(max-height:1000px\)/);
+  assert.match(css, /@media\(min-width:1241px\) and \(max-height:820px\)/);
 });
