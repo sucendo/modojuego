@@ -2,14 +2,17 @@
 <html lang="es">
 <head>
 	<meta charset="UTF-8" />
-	<title>PcFútbol Manager (prototipo)</title>
+	<title>PC FÚTBOL 26 · Manager</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link rel="stylesheet" href="css/styles.css" />
 	<link rel="stylesheet" href="css/transferMarket.css" />
 </head>
 <body>
 	<header class="app-header">
-		<h1>PcFútbol Manager</h1>
+		<h1 class="pcf-brand" aria-label="PC Fútbol 26 Manager">
+			<span class="pcf-brand__crest" aria-hidden="true">⚽</span>
+			<span class="pcf-brand__wordmark">PC <strong>FÚTBOL</strong> <b>26</b><small>MANAGER</small></span>
+		</h1>
 		
 		<!-- Acciones globales (Guardar/Cargar) en la cabecera -->
 		<div class="app-header-actions">
@@ -203,7 +206,7 @@
 						<div id="pcf-inbox-list" class="pcf-feed-list" aria-live="polite"></div>
 					</aside>
 					<article class="pcf-panel pcf-panel--competitions">
-						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">COMPETICIONES <span aria-hidden="true">⌄</span></button></h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false"><span class="pcf-category__art" aria-hidden="true"><svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-standings"></use></svg></span><span class="pcf-category__label">COMPETICIONES</span><span class="pcf-category__chevron" aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="stats">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -237,7 +240,7 @@
 					</article>
 
 					<article class="pcf-panel pcf-panel--style">
-						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">ESTILO DE JUEGO <span aria-hidden="true">⌄</span></button></h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false"><span class="pcf-category__art" aria-hidden="true"><svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-tactics"></use></svg></span><span class="pcf-category__label">ESTILO DE JUEGO</span><span class="pcf-category__chevron" aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="alignment">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -271,7 +274,7 @@
 					</article>
 
 					<article class="pcf-panel pcf-panel--market">
-						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">MERCADO Y FICHAJES <span aria-hidden="true">⌄</span></button></h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false"><span class="pcf-category__art" aria-hidden="true"><svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-transfers"></use></svg></span><span class="pcf-category__label">MERCADO Y FICHAJES</span><span class="pcf-category__chevron" aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="squad">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -305,7 +308,7 @@
 					</article>
 
 					<article class="pcf-panel pcf-panel--club">
-						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false">CLUB Y ESTADIO <span aria-hidden="true">⌄</span></button></h2></header>
+						<header class="pcf-panel__head"><h2><button class="pcf-panel__category-toggle" data-category-toggle type="button" aria-expanded="false"><span class="pcf-category__art" aria-hidden="true"><svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-stadium"></use></svg></span><span class="pcf-category__label">CLUB Y ESTADIO</span><span class="pcf-category__chevron" aria-hidden="true">⌄</span></button></h2></header>
 						<div class="pcf-panel__list">
 							<button class="pcf-hub-item pcf-linkbtn" disabled>
 								<span class="pcf-hub-item__icon" aria-hidden="true">
@@ -340,7 +343,7 @@
 
 					<article class="pcf-center">
 						<div class="pcf-center__ball" aria-hidden="true">
-							<img src="img/resources/balonfutbol.svg" alt="" loading="lazy" />
+							<img src="img/resources/balonfutbol.svg" alt="" />
 						</div>
 
 						<!-- Próximo partido: centrado, antes de la acción principal. -->
