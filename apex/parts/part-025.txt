@@ -649,7 +649,7 @@ function drawTerrainPlateMesh(cam,pitch){
    const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
     fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col,
     cellX=g.minX+(c.ix+c.x1)*g.cell*.5,cellZ=g.minZ+(c.iz+c.z1)*g.cell*.5,
-    tint=g.tone==='GREEN'?apexSurfaceTintV152('GRASS',fill,cellX,cellZ,Math.sqrt(c.dist2||0)):fill;
+    tint=g.tone==='GREEN'||g.tone==='SAND'?apexSurfaceTintV152(g.tone==='GREEN'?'GRASS':'SAND',fill,cellX,cellZ,Math.sqrt(c.dist2||0)):fill;
    if(poly&&poly.length>=3)drawCamPoly(poly,pitch,tint,.58);else drawCamQuadTriangles(A,B,C,D,pitch,tint,.58);
  });
  renderProfileAdd('terrainMs',performance.now()-_terrainT0);
@@ -661,7 +661,7 @@ function webglPushTerrainPlateMesh(cam,pitch){
   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
    fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col,
    cellX=g.minX+(c.ix+c.x1)*g.cell*.5,cellZ=g.minZ+(c.iz+c.z1)*g.cell*.5,
-   tint=g.tone==='GREEN'?apexSurfaceTintV152('GRASS',fill,cellX,cellZ,Math.sqrt(c.dist2||0)):fill;
+   tint=g.tone==='GREEN'||g.tone==='SAND'?apexSurfaceTintV152(g.tone==='GREEN'?'GRASS':'SAND',fill,cellX,cellZ,Math.sqrt(c.dist2||0)):fill;
   if(poly&&poly.length>=3)webglPushCamPoly(poly,pitch,tint,.58);
   else webglPushCamQuad(A,B,C,D,pitch,tint,.58);
  };
@@ -3294,6 +3294,16 @@ void main(){
    // SVG tint always dominates: max +/-16% of authored RGB.
    grain=clamp(grain,-0.16,0.16);
    grain*=uGrassTexture*(1.0-0.19*clamp(uGroundWet,0.0,1.0));
+  }else if(vGroundKind>3.5){
+   // Dry sand: fine grains close up, smooth deposits at a distance.
+   float fineFade=1.0-smoothstep(0.018,0.075,px);
+   float clumpFade=1.0-smoothstep(0.08,0.32,px);
+   float fine=groundHash(floor(w*45.0));
+   float clumps=grassPatchV1522(w*9.0);
+   float deposits=grassPatchV1522(w*0.85);
+   grain=(fine-0.5)*0.28*fineFade+(clumps-0.5)*0.25*clumpFade
+        +(deposits-0.5)*0.14;
+   grain=clamp(grain,-0.17,0.17)*(1.0-0.35*clamp(uGroundWet,0.0,1.0));
   }else{
    // Authored asphalt runoff: same grain family as the circuit track.
    float fineFade=1.0-smoothstep(0.045,0.16,px);
@@ -3308,7 +3318,7 @@ void main(){
   }
   albedo=clamp(albedo*(1.0+grain*uGroundTexture),0.0,1.0);
  }
- if(vGroundKind>2.5)albedo=max(vec3(0.0),albedo-vec3(uPavedDark));
+ if(vGroundKind>2.5&&vGroundKind<3.5)albedo=max(vec3(0.0),albedo-vec3(uPavedDark));
  outColor=vec4(albedo,vColor.a);
 }`:String.raw`#version 300 es
 precision mediump float;
@@ -3340,6 +3350,7 @@ function apexPhase5GpuGroundError(e){
 // V15.2: material follows the authored SVG role, never guesses from RGB.
 function apexSurfaceMaterialKindV152(surface){
  const kind=String(surface||'').trim().toUpperCase();
+ if(kind==='SAND')return 4;
  return ['GRASS','DRYGRASS','PARK','FOREST'].includes(kind)?1:
   ['ASPHALT','ROAD','CITY','PLAZA','SERVICE','PIT','PITLANE','PIT_WORK','PITWORK','PADDOCK','PARKING','APRON','TARMAC'].includes(kind)?2:0;
 }
@@ -3689,7 +3700,7 @@ function apexPhase5DrawGpuTerrain(){
  gl.enableVertexAttribArray(s.attrs.color);
  gl.vertexAttribPointer(s.attrs.color,4,gl.FLOAT,false,28,12);
  gl.disableVertexAttribArray(s.attrs.material);
- gl.vertexAttrib1f(s.attrs.material,s.grid?.tone==='BROWN'||s.grid?.tone==='SAND'?0:1);
+ gl.vertexAttrib1f(s.attrs.material,s.grid?.tone==='SAND'?4:s.grid?.tone==='BROWN'?0:1);
  const u=s.uniforms;
  gl.uniform3f(u.uCamera,cam.x,cam.y,cam.z);
  gl.uniform2f(u.uRight,cam.nx,cam.nz);

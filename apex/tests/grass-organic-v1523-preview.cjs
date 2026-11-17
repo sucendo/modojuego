@@ -58,6 +58,6 @@ assert.match(body,/grassPatchV1522\(vec2\(organicW\.x\*11\.0,organicW\.y\*6\.5\)
 assert.doesNotMatch(body,/groundHash\(floor\(w\*2\.1\)\)/);
 assert.match(body,/grain=clamp\(grain,-0\.16,0\.16\)/);
 assert.match(body,/uGrassTexture/);
-assert.match(gpu,/apexSurfaceTintV152\('GRASS',fill,cellX,cellZ/);
+assert.match(gpu,/apexSurfaceTintV152\(g\.tone==='GREEN'\?'GRASS':'SAND',fill,cellX,cellZ/);
 console.log(JSON.stringify({test:'grass-organic-v1523-preview',seams:true,
  authoredSvgColor:true,cpuContinuous:true,gpuOrganic:true,asphaltUntouched:true,ok:true}));
