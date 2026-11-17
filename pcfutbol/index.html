@@ -9,6 +9,7 @@
 	<link rel="stylesheet" href="css/dashboardVisual26.css?v=9" />
 	<link rel="stylesheet" href="css/alignmentVisual26.css?v=3" />
 	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
+	<link rel="stylesheet" href="css/matchPostVisual26.css?v=1" />
 </head>
 <body>
 	<header class="app-header">
@@ -1146,29 +1147,49 @@
 					<!-- FINAL (PCF) -->
 					<!-- Por defecto oculto: se muestra tras simular -->
 					<article id="nextmatch-card-post" class="card pcf-match-card hidden">
-						<div class="pcf-match-card__title">FINAL DEL PARTIDO</div>
+					<div class="pcf-match-card__title pcf-post-section-title">INFORME DEL PARTIDO</div>
 						<div id="nextmatch-post" class="pcf-post-shell">
 							<!-- SCOREBOARD -->
 							<div class="pcf-scorebar">
-								<div id="nextmatch-last-title" class="pcf-scorebar__title">Aún no has jugado ningún partido.</div>
+							<div class="pcf-post-final-tag">RESULTADO FINAL</div>
+							<div id="nextmatch-post-hero" class="pcf-post-hero"></div>
+							<div id="nextmatch-last-title" class="pcf-scorebar__title pcf-post-accessible-title">Aún no has jugado ningún partido.</div>
 								<div id="nextmatch-last-meta" class="pcf-scorebar__meta"></div>
 							</div>
 
 							<!-- TABS -->
 							<div id="nextmatch-post-tabs" class="pcf-tabs" role="tablist" aria-label="Pestañas final de partido">
-								<button class="pcf-tab is-active" type="button" data-tab="general">GENERAL</button>
-								<button class="pcf-tab" type="button" data-tab="occasions">OCASIONES</button>
-								<button class="pcf-tab" type="button" data-tab="contrib">APORTACIONES</button>
-								<button class="pcf-tab" type="button" data-tab="sensations">SENSACIONES</button>
+							<button class="pcf-tab is-active" type="button" data-tab="general">RESUMEN</button>
+							<button class="pcf-tab" type="button" data-tab="stats">ESTADÍSTICAS</button>
+							<button class="pcf-tab" type="button" data-tab="timeline">CRONOLOGÍA</button>
+							<button class="pcf-tab" type="button" data-tab="occasions">MOMENTOS CLAVE</button>
+							<button class="pcf-tab" type="button" data-tab="contrib">JUGADORES</button>
+							<button class="pcf-tab" type="button" data-tab="sensations">ANÁLISIS</button>
 								<button class="pcf-tab" type="button" data-tab="referee">EL ÁRBITRO</button>
 							</div>
 
 							<div class="pcf-post-layout">
 								<div id="nextmatch-post-panels" class="pcf-post-main">
 									<section id="nextmatch-post-panel-general" class="pcf-post-panel is-active">
+									<div id="nextmatch-post-report" class="pcf-post-report"></div>
 										<div id="nextmatch-post-highlights" class="pcf-highlights"></div>
+									<div id="nextmatch-post-snapshot" class="pcf-post-snapshot"></div>
+								</section>
+								<section id="nextmatch-post-panel-stats" class="pcf-post-panel">
 										<div id="nextmatch-last-stats" class="pcf-laststats"></div>
-										<h4 class="pcf-subtitle">Cronología</h4>
+								</section>
+								<section id="nextmatch-post-panel-timeline" class="pcf-post-panel">
+									<div class="pcf-post-panel-head">
+										<h4 class="pcf-subtitle">Cronología completa</h4>
+										<div id="nextmatch-timeline-controls" class="pcf-post-filters" aria-label="Filtros de cronología">
+											<button class="is-active" type="button" data-post-filter="all">Todos</button>
+											<button type="button" data-post-filter="goal">Goles</button>
+											<button type="button" data-post-filter="card">Tarjetas</button>
+											<button type="button" data-post-filter="sub">Cambios</button>
+											<button type="button" data-post-filter="tactical">Táctica</button>
+											<button type="button" data-post-order="asc">1' → 90'</button>
+										</div>
+									</div>
 										<div id="nextmatch-last-timeline" class="pcf-timeline-wrap"></div>
 									</section>
 
@@ -1179,11 +1200,11 @@
 									<section id="nextmatch-post-panel-contrib" class="pcf-post-panel">
 										<div class="pcf-two-cols">
 											<div>
-												<h4 class="pcf-subtitle">Tu equipo</h4>
+												<h4 class="pcf-subtitle" id="nextmatch-post-contrib-home-label">Equipo local</h4>
 												<div id="nextmatch-last-players" class="pcf-playerstats"></div>
 											</div>
 											<div>
-												<h4 class="pcf-subtitle">Rival</h4>
+												<h4 class="pcf-subtitle" id="nextmatch-post-contrib-away-label">Equipo visitante</h4>
 												<div id="nextmatch-last-players-opp" class="pcf-playerstats"></div>
 											</div>
 										</div>
@@ -1737,7 +1758,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=12"></script>
+	<script type="module" src="js/main.js?v=13"></script>
 	
 </body>
 </html>
