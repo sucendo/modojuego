@@ -36,6 +36,7 @@ test('postpartido conserva todos los paneles, datos y controles de navegación',
     assert.match(html, new RegExp(`data-tab="${tab}"`));
   assert.match(html, /matchPostVisual26\.css/);
   assert.match(css, /@media \(max-width:530px\)/);
+  assert.doesNotMatch(html, /class="pcf-match-card__title pcf-post-section-title"/, 'La cabecera general no debe duplicarse dentro del postpartido');
 });
 
 test('la cadena de módulos y el CSS invalidan las versiones cacheadas de la v14', () => {
