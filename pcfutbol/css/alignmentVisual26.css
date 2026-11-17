@@ -16,33 +16,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 8px;
-  padding: 7px 11px 10px;
+  gap: 8px;
+  margin-bottom: 5px;
+  padding: 4px 8px 6px;
   border-bottom: 1px solid rgba(94, 202, 252, .48);
 }
 
 #view-alignment .pcf-alignment-heading__intro { min-width: 0; }
-#view-alignment .pcf-alignment-eyebrow {
-  color: #f6ce65;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .12em;
-}
 #view-alignment .pcf-alignment-heading h2 {
-  margin: 2px 0 3px;
-  font-size: clamp(17px, 1.5vw, 23px);
-  line-height: 1.1;
-  letter-spacing: .025em;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: .04em;
   text-transform: uppercase;
   color: #f6fbff;
   text-shadow: 0 1px 8px rgba(66, 189, 255, .25);
-}
-#view-alignment .pcf-alignment-heading .pcf-subtitle {
-  margin: 0;
-  color: #bcdcf0;
-  font-size: 11px;
-  line-height: 1.4;
 }
 #view-alignment .pcf-alignment-heading__status {
   display: flex;
@@ -52,28 +40,25 @@
   gap: 8px;
   flex: 0 0 auto;
 }
-#view-alignment .pcf-alignment-formation,
 #view-alignment #alignment-xi-count {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 35px;
-  padding: 7px 12px;
+  min-height: 26px;
+  padding: 4px 9px;
   border: 1px solid #397eaa;
   border-radius: 7px;
   background: linear-gradient(180deg, #0e466f, #062c4e);
   box-shadow: inset 0 1px 0 rgba(213, 248, 255, .18);
-  font-size: 12px;
+  font-size: 11px;
   color: #e8f6ff;
   white-space: nowrap;
 }
-#view-alignment .pcf-alignment-formation span { color: #a9cfe9; font-size: 10px; font-weight: 800; }
-#view-alignment .pcf-alignment-formation strong { color: #ffdb72; font-size: 15px; }
 #view-alignment #alignment-xi-count { color: #ffdf84; }
 
 #view-alignment .pcf-alignment-selection-hint {
-  margin: 0 0 8px;
-  padding: 7px 10px;
+  margin: 0 0 6px;
+  padding: 5px 8px;
   border: 1px solid rgba(82, 184, 237, .33);
   border-left: 3px solid #e8bb4a;
   border-radius: 3px 7px 7px 3px;
@@ -100,12 +85,7 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  max-height: max(450px, calc(100vh - 330px));
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-color: #3986b5 #061d34;
-  scrollbar-width: thin;
-  padding: 1px 4px 2px 1px;
+  padding: 1px;
 }
 #view-alignment .pcf-alignment-card .pcf-panel {
   flex: 0 0 auto;
@@ -145,6 +125,20 @@
 
 /* Se conservan las 14 columnas de cada tabla; no se ocultan estadísticas. */
 #view-alignment .pcf-table-wrapper { overflow-x: auto; overflow-y: visible; }
+#view-alignment .pcf-alignment-starters .pcf-table-wrapper { max-height: none; }
+#view-alignment .pcf-alignment-scroll-list .pcf-table-wrapper {
+  max-height: 198px;
+  overflow-x: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #3986b5 #061d34;
+  scrollbar-width: thin;
+}
+#view-alignment .pcf-alignment-scroll-list .pcf-table--alignment thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
 #view-alignment .pcf-table--alignment { min-width: 685px; border-collapse: collapse; }
 #view-alignment .pcf-table--alignment th,
 #view-alignment .pcf-table--alignment td {
@@ -260,11 +254,7 @@
   #view-alignment .pcf-table--alignment { min-width: 685px; }
 }
 @media (max-width: 800px) {
-  #view-alignment .pcf-alignment-heading { flex-direction: column; align-items: stretch; }
-  #view-alignment .pcf-alignment-heading__status { justify-content: flex-start; }
   #view-alignment .pcf-alignment-layout { grid-template-columns: minmax(0, 1fr); }
-  #view-alignment .pcf-alignment-left,
-  #view-alignment .pcf-alignment-right { max-height: none; overflow-y: visible; }
   #view-alignment .pcf-alignment-left { order: 2; }
   #view-alignment .pcf-alignment-right { order: 1; }
   #view-alignment .pcf-pitch-panel .pcf-pitch { max-width: 650px; }
@@ -272,9 +262,8 @@
 }
 @media (max-width: 500px) {
   #view-alignment .pcf-alignment-card { padding: 7px; }
-  #view-alignment .pcf-alignment-heading { padding: 6px; }
+  #view-alignment .pcf-alignment-heading { padding: 4px 6px; }
   #view-alignment .pcf-alignment-heading__status { gap: 5px; }
-  #view-alignment .pcf-alignment-formation,
   #view-alignment #alignment-xi-count { font-size: 10px; padding: 6px; }
   #view-alignment .pcf-pitch-panel .pcf-pitch { min-height: 160px; }
   #view-alignment .pcf-pitch .pcf-dot { width: 21px; height: 21px; font-size: 10px; }

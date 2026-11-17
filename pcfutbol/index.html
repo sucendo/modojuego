@@ -7,7 +7,7 @@
 	<link rel="stylesheet" href="css/styles.css" />
 	<link rel="stylesheet" href="css/transferMarket.css" />
 	<link rel="stylesheet" href="css/dashboardVisual26.css?v=9" />
-	<link rel="stylesheet" href="css/alignmentVisual26.css?v=1" />
+	<link rel="stylesheet" href="css/alignmentVisual26.css?v=2" />
 </head>
 <body>
 	<header class="app-header">
@@ -565,20 +565,17 @@
 				<article class="card pcf-alignment-card">
 				  <header class="pcf-header pcf-alignment-heading">
 					<div class="pcf-alignment-heading__intro">
-					  <div class="pcf-alignment-eyebrow">ÁREA DEPORTIVA · GESTIÓN DE PLANTILLA</div>
-					  <h2>Alineación y convocatoria</h2>
-					  <p class="pcf-subtitle">Gestiona titulares, banquillo y no convocados. Selecciona dos jugadores para intercambiarlos y consulta su ficha y posición en el campo.</p>
+					  <h2>Alineación</h2>
 					</div>
 					<div class="pcf-header-right pcf-alignment-heading__status">
-					  <div class="pcf-alignment-formation"><span>ESQUEMA</span><strong id="alignment-formation-label">4-4-2</strong></div>
 					  <strong id="alignment-xi-count">0/11 titulares</strong>
 					</div>
 				  </header>
-				  <div id="alignment-selection-hint" class="pcf-alignment-selection-hint" role="status" aria-live="polite">Selecciona un jugador para consultar sus datos o preparar un intercambio.</div>
+				  <div id="alignment-selection-hint" class="pcf-alignment-selection-hint" role="status" aria-live="polite">Selecciona un jugador; pulsa otro para intercambiarlos.</div>
 
 				  <div class="pcf-alignment-layout">
 					<div class="pcf-alignment-left">
-					  <div class="pcf-panel">
+					  <div class="pcf-panel pcf-alignment-starters">
 						<div class="pcf-panel-title">Titulares <span class="pcf-alignment-title-hint">Once inicial</span></div>
 						<div class="pcf-table-wrapper">
 						  <table class="table pcf-table pcf-table--alignment">
@@ -605,7 +602,7 @@
 						</div>
 					  </div>
 
-					  <div class="pcf-panel">
+					  <div class="pcf-panel pcf-alignment-scroll-list pcf-alignment-bench">
 						<div class="pcf-panel-title">Convocados (banquillo) <span class="pcf-alignment-title-hint">Hasta 9 futbolistas</span></div>
 						<div class="pcf-table-wrapper">
 						  <table class="table pcf-table pcf-table--alignment">
@@ -632,7 +629,7 @@
 						</div>
 					  </div>
 
-					  <div class="pcf-panel">
+					  <div class="pcf-panel pcf-alignment-scroll-list pcf-alignment-out">
 						<div class="pcf-panel-title">No convocados <span class="pcf-alignment-title-hint">Resto de plantilla</span></div>
 						<div class="pcf-table-wrapper">
 						  <table class="table pcf-table pcf-table--alignment">
@@ -1710,7 +1707,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=10"></script>
+	<script type="module" src="js/main.js?v=11"></script>
 	
 </body>
 </html>

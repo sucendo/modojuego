@@ -643,18 +643,16 @@ export function updateAlignmentView() {
   updateXIcount(club);
 
   const formation = club.tactics?.formation || club.alignment?.formation || '4-4-2';
-  ['alignment-formation-label', 'alignment-pitch-formation'].forEach((id) => {
-    const label = document.getElementById(id);
-    if (label) label.textContent = formation;
-  });
+  const formationLabel = document.getElementById('alignment-pitch-formation');
+  if (formationLabel) formationLabel.textContent = formation;
 
   const selectionHint = document.getElementById('alignment-selection-hint');
   if (selectionHint) {
     const selected = selectedPlayerId != null ? byId.get(selectedPlayerId) : null;
     selectionHint.classList.toggle('is-choosing', !!selected);
     selectionHint.textContent = selected
-      ? `${selected.name}: seleccionado. Pulsa otro jugador del listado o del campo para intercambiarlos; vuelve a pulsar el mismo para cancelar.`
-      : 'Selecciona un jugador para consultar su ficha. Después puedes pulsar otro para intercambiarlos entre titulares, banquillo o no convocados.';
+      ? `${selected.name}: pulsa otro para intercambiarlo o el mismo para cancelar.`
+      : 'Selecciona un jugador; pulsa otro para intercambiarlos.';
   }
 
   // La tarjeta puede mostrar un jugador “por defecto”, pero NO debe auto-seleccionar.
