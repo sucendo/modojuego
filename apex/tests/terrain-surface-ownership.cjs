@@ -140,7 +140,7 @@ assert.ok(fullTile.filter(poly=>poly.some(v=>v.x<2.5)).some(poly=>poly.includes(
 
 roadIndex.faces[0].terrainCut=false;
 assert.equal(audit.road(square),null,'Bridges and tunnels must preserve underlying terrain');
-assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230702/,'Old compiled meshes must be invalidated');
+assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230703/,'Old compiled meshes must be invalidated');
 assert.match(parts[25],/else y=apexWorldGroundY\(x,z\);/,'Fine terrain must sample the same ground height as the vehicle');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'circuits/manifest.json'),'utf8'));
 for(const gp of ['01-australia','14-spain']){
@@ -149,4 +149,4 @@ for(const gp of ['01-australia','14-spain']){
  assert.ok(fs.existsSync(path.join(root,'circuits',entry.svg)),'Missing saved SVG '+gp);
 }
 console.log(JSON.stringify({test:'terrain-surface-ownership',finePolygons:fine.length,
- coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230702,ok:true}));
+ coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230703,ok:true}));

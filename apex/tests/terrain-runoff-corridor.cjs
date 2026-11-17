@@ -69,18 +69,23 @@ assert.ok(curbEdge.every(v=>v.x>=5-1e-8),'Terrain is clipped away from the rende
 assert.ok(curbEdge.some(v=>v.x===5&&Math.abs(v.y-1)<1e-8),'The kerb edge and terrain share a height');
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t;
 const ease=x=>{const t=clamp(x,0,1);return t*t*(3-2*t)};
-let pitActive=false,under=false;
+let pitActive=false,under=false,flatToWall=false;
 const ground=new Function('trackData','apexPhase1Config','nearestTrackState','envProfile',
  'renderRibbonFrameAt','apexPhase1StructureAtWorld','apexTunnelCutAt','apexNearestGradeSegment',
- 'apexPitGradeOwnsPoint','terrainEase','lerp','ribbonWorldPoint',
+ 'apexPitGradeOwnsPoint','terrainEase','lerp','ribbonWorldPoint','apexRoadAuthoredBarrierLimit',
  ['apexTrackEdgeSection','apexPhase1GroundBlend'].map(n=>get(part24,n)).join('\n')+
  '\nreturn apexPhase1GroundBlend;')(
- {},()=>({blendM:8,maxSlopeDeg:25}), (x,z)=>({s:z,lat:x}),()=>env,q,
+ {},()=>({blendM:8,maxSlopeDeg:25,flatToWall}), (x,z)=>({s:z,lat:x}),()=>env,q,
  ()=>null,()=>under, (x,z)=>pitActive?{dist:Math.abs(x-16),width:6,halfWidth:x<16?2:4,y:9}:null,
- ()=>true,ease,lerp,ribbon);
+ ()=>true,ease,lerp,ribbon,(s,e,side)=>side===1?10:7);
 const roadY=q(2).y+3*Math.tan(q(2).bank);
 assert.ok(Math.abs(ground(3,2,6)-roadY)<1e-10);
 assert.ok(Math.abs(ground(3+.0001,2,6)-ground(3-.0001,2,6))<1e-7);
+flatToWall=true;
+for(const x of [3.5,5,8,10])assert.ok(Math.abs(ground(x,2,6)-roadY)<1e-10,'The outer shoulder follows the banked edge until the wall');
+assert.ok(ground(12,2,6)>roadY,'The grade starts blending beyond the wall');
+assert.ok(Math.abs(ground(-7,2,6)-(q(2).y-3*Math.tan(.2)))<1e-10,'The two sides use their own edge height');
+flatToWall=false;
 pitActive=true;
 for(const x of [14,20,22])assert.ok(Math.abs(ground(x,2,6)-9.012)<1e-10,'Pit shoulder matches paved grade');
 assert.ok(Math.abs(ground(16,2,6)-8.82)<1e-10,'Buried pit subgrade stays under pavement');

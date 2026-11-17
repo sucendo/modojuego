@@ -290,19 +290,51 @@ function apexPhase1Config(){
 function apexRoadSideHeight(q,env,side){
  return q.y+Math.tan(Number.isFinite(q.bank)?q.bank:0)*env.half*side;
 }
+function apexRoadAuthoredBarrierLimit(s,env,side){
+ const cw=trackData?.customWorld,L=trackData?.km*1000;
+ if(!cw||!(L>0))return null;
+ const samples=side>0?cw.wallLeftSamples:cw.wallRightSamples;
+ const hit=guideContinuousSample(samples||[],s,L,18,24);
+ let limit=hit&&Number.isFinite(hit.lat)&&Math.sign(hit.lat)===side?Math.abs(hit.lat):Infinity;
+ // Explicit SVG barriers are separate from the wall-left/right guides.
+ // Index by station once, then intersect the actual segment with the cross-section.
+ if(cw.barrierSegments?.length){
+  const count=Math.max(1,Math.ceil(L/16)),step=L/count;
+  if(!cw._apexShoulderBarrierBins){
+   const bins=new Map();
+   for(const seg of cw.barrierSegments){
+    if(!Number.isFinite(seg.s))continue;
+    const reach=Math.min(L*.5,Math.hypot(seg.x2-seg.x1,seg.z2-seg.z1)*.5+step);
+    for(let i=Math.floor((seg.s-reach)/step),end=Math.floor((seg.s+reach)/step);i<=end;i++){
+     const key=mod(i,count);
+     if(!bins.has(key))bins.set(key,[]);
+     bins.get(key).push(seg);
+    }
+   }
+   cw._apexShoulderBarrierBins=bins;
+  }
+  const candidates=cw._apexShoulderBarrierBins.get(Math.floor(mod(s,L)/step))||[];
+  if(candidates.length){
+   const q=renderRibbonFrameAt(s);
+   for(const seg of candidates){
+    const a=(seg.x1-q.x)*q.tx+(seg.z1-q.z)*q.tz,b=(seg.x2-q.x)*q.tx+(seg.z2-q.z)*q.tz;
+    if(a*b>0||Math.abs(a-b)<1e-8)continue;
+    const t=a/(a-b),x=lerp(seg.x1,seg.x2,t),z=lerp(seg.z1,seg.z2,t);
+    const lat=side*((x-q.x)*q.ox+(z-q.z)*q.oz);
+    if(lat>env.half+.05)limit=Math.min(limit,lat);
+   }
+  }
+ }
+ return Number.isFinite(limit)?Math.max(env.half,limit):null;
+}
 function apexRoadFlatLimit(s,env,side){
- const base=env.half+env.curb+env.runoff,cw=trackData&&trackData.customWorld,
-       samples=cw&&(side>0?cw.wallLeftSamples:cw.wallRightSamples);
- if(!apexPhase1Config().flatToWall||!Array.isArray(samples)||!samples.length)return base;
- const hit=guideContinuousSample(samples,s,trackData.km*1000,18,24);
- // No atravesar huecos de muro. Si el muro no cubre este punto,
- // la escapatoria de respaldo termina en la anchura configurada por envProfile.
- if(!hit||!Number.isFinite(hit.lat)||Math.sign(hit.lat)!==side)return base;
- return Math.max(env.half+.12,Math.abs(hit.lat));
+ const base=env.half+env.curb+env.runoff;
+ return apexPhase1Config().flatToWall?(apexRoadAuthoredBarrierLimit(s,env,side)??base):base;
 }
 function apexRoadShoulderYAt(s,lat){
  const q=renderRibbonFrameAt(s),env=envProfile(s),side=lat>=0?1:-1;
- return q.y+Math.tan(Number.isFinite(q.bank)?q.bank:0)*clamp(lat,-env.half,env.half);
+ if(Math.abs(lat)>=env.half)return apexTrackEdgeSection(q,env,side).end.y;
+ return q.y+Math.tan(Number.isFinite(q.bank)?q.bank:0)*lat;
 }
 // La zona UNDER/OVER nunca excava ni levanta el terreno natural para seguir
 // la plataforma. También se comprueban las huellas SVG: en un cruce a distinta
@@ -541,7 +573,9 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
     mainProtected=true;
    }else{
     const rise=Math.abs(natural-edge.y),blend=Math.max(cfg.blendM,1.5*rise/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
-    if(distance<blend)out=lerp(edge.y,natural,terrainEase(distance/blend));
+    const limit=cfg.flatToWall?(apexRoadAuthoredBarrierLimit(st.s,env,side)??(env.wall?env.half+env.curb+env.runoff:null)):null;
+    const fromWall=limit===null?distance:Math.max(0,lat-limit);
+    if(fromWall<blend)out=lerp(edge.y,natural,terrainEase(fromWall/blend));
    }
   }
  }
@@ -583,7 +617,9 @@ function apexAlignedCircuitSurfaceY(x,z,opts=null){
 function apexWorldGroundY(x,z){
  const ns=nearestTrackState(x,z,null,{radius:190,allowGlobal:true,fallbackDist:165}),q=renderRibbonFrameAt(ns.s),env=envProfile(ns.s),st={s:ns.s,q,env},base=terrainGroundY(st),natural=apexTerrainHeightAtWorld(x,z,base);
  const pg=apexPlateTerrainGrid();
- return pg?natural:apexPhase1GroundBlend(x,z,natural,ns);
+ const onPlate=pg&&x>=pg.minX&&x<=pg.maxX&&z>=pg.minZ&&z<=pg.maxZ;
+ const raw=onPlate?apexTerrainRawInterpolated(pg,x,z):natural;
+ return apexPhase1GroundBlend(x,z,Number.isFinite(raw)?raw:natural,ns);
 }
 // v5.230.40 · Geometría X/Z autoritativa SVG, elevación reanclada al JSON activo.
 // Se ejecuta al preparar el circuito, jamás durante el dibujo. Un cambio de perfil
