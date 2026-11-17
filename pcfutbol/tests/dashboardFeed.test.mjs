@@ -108,3 +108,17 @@ test('el acabado cinematográfico es local y recupera los títulos de los panele
     assert.match(asset === 'dashboard-ball-2026-v4.webp' ? html : css, new RegExp(asset.replace('.', '\\.')));
   }
 });
+
+test('la pantalla de referencia presenta fotos, competición centrada y partido a todo el ancho', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/dashboardVisual26.css', import.meta.url), 'utf8');
+  const js = readFileSync(new URL('../js/ui/dashboardExtras.js', import.meta.url), 'utf8');
+  assert.equal((html.match(/id="hub-next-comp-logo"/g) || []).length, 1);
+  assert.match(html, /class="pcf-nextcard__competition"/);
+  assert.match(css, /#screen-dashboard \.pcf-news \.pcf-feed-item__emblem--photo \{/);
+  assert.match(css, /'inbox match match match news'/);
+  assert.match(css, /'inbox action action action news'/);
+  assert.match(css, /@media\(min-width:1241px\) and \(max-height:820px\)/);
+  assert.match(css, /\.pcf-news:not\(\.is-expanded\) \.pcf-feed-item:nth-child\(n \+ 3\)/);
+  assert.match(js, /function syncNewsMoreButton\(\)/);
+});
