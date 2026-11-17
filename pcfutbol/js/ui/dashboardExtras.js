@@ -85,6 +85,20 @@ function togglePicker(open) {
   if (open) picker.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
+function syncNewsMoreButton() {
+  const panel = document.querySelector('#view-dashboard .pcf-news');
+  const list = document.getElementById('pcf-news-list');
+  const more = document.getElementById('pcf-news-more');
+  if (!panel || !list || !more) return;
+  const mobile = window.matchMedia?.('(max-width: 780px)').matches ?? false;
+  more.hidden = list.children.length <= (mobile ? 2 : 4);
+  if (more.hidden) {
+    panel.classList.remove('is-expanded');
+    more.setAttribute('aria-expanded', 'false');
+    more.firstChild.textContent = 'Ver todas las noticias ';
+  }
+}
+
 function bindExtras() {
   if (bound || !document.getElementById('pcf-shortcuts-list')) return;
   bound = true;
@@ -95,6 +109,7 @@ function bindExtras() {
   });
   document.getElementById('pcf-shortcuts-close')?.addEventListener('click', () => togglePicker(false));
   document.getElementById('pcf-mobile-more')?.addEventListener('click', () => togglePicker(true));
+  window.addEventListener('resize', syncNewsMoreButton, { passive: true });
   document.getElementById('pcf-news-more')?.addEventListener('click', (event) => {
     const panel = document.querySelector('#view-dashboard .pcf-news');
     const expanded = panel?.classList.toggle('is-expanded') || false;
@@ -187,10 +202,10 @@ export function updateDashboardExtras() {
     for (const item of items) addFeedItem(news, item, 'news');
     const more = document.getElementById('pcf-news-more');
     if (more) {
-      more.hidden = items.length <= 3;
       more.setAttribute('aria-expanded', 'false');
       more.firstChild.textContent = 'Ver todas las noticias ';
     }
     news.closest('.pcf-news')?.classList.remove('is-expanded');
+    syncNewsMoreButton();
   }
 }

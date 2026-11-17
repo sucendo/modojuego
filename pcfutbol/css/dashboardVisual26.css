@@ -218,6 +218,18 @@
   box-shadow:inset 0 1px #d2f7ff83,0 0 14px #0085ec8a,0 6px 20px #0009;
   clip-path:polygon(13px 0,calc(100% - 13px) 0,100% 13px,100% calc(100% - 13px),calc(100% - 13px) 100%,13px 100%,0 calc(100% - 13px),0 13px);
 }
+#screen-dashboard .pcf-nextcard__competition {
+  display:flex; justify-content:center; align-items:center; gap:9px;
+  color:#ffe07e; font-weight:1000; font-size:12px;
+  text-align:center; text-transform:uppercase; letter-spacing:.035em;
+  text-shadow:0 1px 4px #000,0 0 12px #e2ab3955;
+  padding:0 4px 5px; margin-bottom:5px;
+  border-bottom:1px solid #71cfff55;
+}
+#screen-dashboard .pcf-nextcard__competition .pcf-nextcard__comp-logo {
+  margin:0; width:27px; height:27px; max-width:42px; object-fit:contain;
+  filter:drop-shadow(0 0 4px #6dceff88);
+}
 #screen-dashboard .pcf-nextcard__teams { margin-bottom:6px; }
 #screen-dashboard .pcf-nextcard__vs { color:#fff; font-style:italic; font-size:15px; border-color:#5fccff; }
 #screen-dashboard .pcf-nextcard__coat,
@@ -247,7 +259,8 @@
 }
 #screen-dashboard .pcf-feed-item--urgent { border-color:#ffae66; }
 #screen-dashboard .pcf-feed-item--urgent .pcf-feed-item__tag { color:#ff9f6c; }
-#screen-dashboard .pcf-feed-item__emblem--photo {
+#screen-dashboard .pcf-news .pcf-feed-item__emblem--photo {
+  /* Supera la antigua regla de fondo sólido de .pcf-news: las fotos eran invisibles. */
   background-image:url('../img/resources/dashboard-news-2026.webp');
   background-size:200% 200%; background-position:0 0; border:1px solid #448bb5;
   box-shadow:0 0 7px #007ac66c;
@@ -271,8 +284,7 @@
 }
 #screen-dashboard .pcf-news__more:hover { border-color:#fff2b3; }
 #screen-dashboard .pcf-news__more span { font-size:21px; line-height:1; }
-#screen-dashboard .pcf-news .pcf-feed-item:nth-child(n + 4) { display:none; }
-#screen-dashboard .pcf-news.is-expanded .pcf-feed-item:nth-child(n + 4) { display:flex; }
+#screen-dashboard .pcf-news:not(.is-expanded) .pcf-feed-item:nth-child(n + 5) { display:none; }
 
 /* Tratamiento de boletín y bandeja de gestiones, con jerarquía visual diferenciada. */
 #screen-dashboard .pcf-inbox .pcf-panel__head {
@@ -287,7 +299,7 @@
   background:linear-gradient(105deg,#0d4168e8,#03192fed);
 }
 #screen-dashboard .pcf-news .pcf-feed-item__emblem--photo {
-  border-radius:5px; flex-basis:55px; height:58px;
+  border-radius:5px; flex-basis:64px; height:68px;
 }
 #screen-dashboard .pcf-feed-item__tag { letter-spacing:.07em; }
 #screen-dashboard .pcf-feed-item__action {
@@ -305,6 +317,76 @@
   box-shadow:inset 0 2px #fffde1,0 4px 0 #6f4009,0 0 21px #ffb83177,0 9px 22px #000b;
 }
 #screen-dashboard .pcf-big-action:hover { filter:brightness(1.12); }
+
+/* PC: composición radial de la referencia. Las cuatro familias rodean al
+   balón; el partido ocupa una fila ancha propia bajo los cuatro apartados. */
+@media(min-width:1241px) {
+  #screen-dashboard .pcf-hub__grid {
+    grid-template-areas:
+      'inbox competitions center style news'
+      'inbox club center market news'
+      'inbox match match match news'
+      'inbox action action action news';
+    grid-template-rows: minmax(157px,auto) minmax(157px,auto) auto auto;
+    row-gap:10px;
+  }
+  #screen-dashboard .pcf-center { display:contents; }
+  #screen-dashboard .pcf-center__ball {
+    grid-area:center; place-self:center; z-index:3;
+    width:clamp(225px,19vw,284px); height:clamp(225px,19vw,284px);
+  }
+  #screen-dashboard .pcf-nextcard {
+    grid-area:match; justify-self:center; align-self:end;
+    width:min(100%,575px); max-width:575px;
+    padding:11px 18px 9px; z-index:2;
+  }
+  #screen-dashboard .pcf-nextcard__teams {
+    justify-content:space-around; margin-bottom:7px;
+  }
+  #screen-dashboard .pcf-nextcard__coat,
+  #screen-dashboard .pcf-nextcard__coat .coat-icon { width:49px; height:49px; }
+  #screen-dashboard .pcf-big-action {
+    grid-area:action; justify-self:center; align-self:start;
+    width:min(100%,340px); max-width:340px; margin:0 0 4px;
+  }
+  #screen-dashboard .pcf-hub .pcf-panel--competitions,
+  #screen-dashboard .pcf-hub .pcf-panel--club { margin-right:-13px; padding-right:13px; }
+  #screen-dashboard .pcf-hub .pcf-panel--style,
+  #screen-dashboard .pcf-hub .pcf-panel--market { margin-left:-13px; padding-left:13px; }
+  #screen-dashboard .pcf-hub__grid::before {
+    content:""; position:absolute; z-index:0; inset:4% 18% 24%; pointer-events:none;
+    background:repeating-conic-gradient(from 3deg at 50% 42%,transparent 0 14deg,#20bbff30 14.2deg 14.8deg,transparent 15deg 28deg);
+    mask-image:radial-gradient(ellipse at 50% 42%,#000 13%,transparent 65%);
+  }
+  #screen-dashboard .pcf-center__ball,
+  #screen-dashboard .pcf-nextcard,
+  #screen-dashboard .pcf-big-action { position:relative; }
+  #screen-dashboard .pcf-panel--competitions,
+  #screen-dashboard .pcf-panel--club { border-top-left-radius:17px; }
+  #screen-dashboard .pcf-panel--style,
+  #screen-dashboard .pcf-panel--market { border-top-right-radius:17px; }
+  #screen-dashboard .pcf-hud__center { min-width:200px; }
+  #screen-dashboard .pcf-center__now-date { white-space:nowrap; font-size:12px; }
+}
+
+/* Monitores panorámicos de 768p: se mantiene visible el botón PARTIDO. */
+@media(min-width:1241px) and (max-height:820px) {
+  #screen-dashboard .pcf-hub { padding-top:8px; padding-bottom:8px; }
+  #screen-dashboard .pcf-hub__grid { row-gap:5px; grid-template-rows:minmax(143px,auto) minmax(143px,auto) auto auto; }
+  #screen-dashboard .pcf-hub .pcf-panel__head { padding-top:4px; padding-bottom:4px; }
+  #screen-dashboard .pcf-hub .pcf-panel__list { padding-top:4px; padding-bottom:4px; gap:2px; }
+  #screen-dashboard .pcf-hub .pcf-hub-item { min-height:27px; padding-top:2px; padding-bottom:2px; }
+  #screen-dashboard .pcf-panel__category-toggle > .pcf-category__art { width:31px; height:31px; flex-basis:31px; }
+  #screen-dashboard .pcf-hub-item__icon { width:22px; height:22px; }
+  #screen-dashboard .pcf-center__ball { width:clamp(200px,17.5vw,250px); height:clamp(200px,17.5vw,250px); }
+  #screen-dashboard .pcf-nextcard { padding:6px 15px; }
+  #screen-dashboard .pcf-nextcard__coat,
+  #screen-dashboard .pcf-nextcard__coat .coat-icon { width:34px; height:34px; }
+  #screen-dashboard .pcf-nextcard__competition { font-size:11px; padding-bottom:3px; margin-bottom:3px; }
+  #screen-dashboard .pcf-nextcard__competition .pcf-nextcard__comp-logo { width:21px; height:21px; }
+  #screen-dashboard .pcf-nextcard__teams { margin-bottom:1px; }
+  #screen-dashboard .pcf-big-action { font-size:20px; padding:7px 18px; }
+}
 
 @media(max-width:1240px) and (min-width:781px) {
   #screen-dashboard .pcf-hub__grid { grid-template-columns:minmax(175px,1fr) minmax(255px,1.4fr) minmax(175px,1fr); }
@@ -398,6 +480,7 @@
   #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-panel__list { padding:5px; }
   #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-hub-item { padding:5px; }
   #screen-dashboard .pcf-news__more { margin-bottom:6px; }
+  #screen-dashboard .pcf-news:not(.is-expanded) .pcf-feed-item:nth-child(n + 3) { display:none; }
   #screen-dashboard .pcf-nextcard__teams { margin-bottom:6px; }
   #screen-dashboard .pcf-nextcard__name { font-size:12px; }
   #screen-dashboard .pcf-big-action { font-size:19px; }
