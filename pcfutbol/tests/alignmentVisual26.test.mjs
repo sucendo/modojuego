@@ -8,7 +8,7 @@ const js = readFileSync(new URL('../js/ui/alignment.js', import.meta.url), 'utf8
 const alignment = html.split('<!-- SUBVISTA: ALINEACIÓN -->')[1]?.split('<!-- SUBVISTA: TÁCTICAS -->')[0] || '';
 
 test('el rediseño conserva las tres listas, el campo, las medias y la ficha existentes', () => {
-  assert.match(html, /css\/alignmentVisual26\.css\?v=2/);
+  assert.match(html, /css\/alignmentVisual26\.css\?v=3/);
   for (const id of [
     'alignment-xi-body', 'alignment-bench-body', 'alignment-out-body',
     'alignment-pitch', 'alignment-team-card', 'alignment-player-card', 'alignment-xi-count',
@@ -50,4 +50,13 @@ test('cabecera compacta, titulares completos y desplazamiento independiente por 
   assert.match(css, /\.pcf-alignment-scroll-list \.pcf-table-wrapper \{[^}]*max-height: 198px;[^}]*overflow-y: auto;/);
   assert.doesNotMatch(css, /\.pcf-alignment-left,\s*#view-alignment \.pcf-alignment-right \{[^}]*overflow-y: auto;/);
   assert.match(css, /\.pcf-alignment-scroll-list \.pcf-table--alignment thead th \{[^}]*position: sticky;/);
+});
+
+test('Alineación comparte el único marco exterior sin duplicar borde ni margen inferior', () => {
+  const frame = css.match(/#view-alignment \.pcf-alignment-card \{([^}]*)\}/)?.[1];
+  assert.ok(frame, 'Falta el contenedor de Alineación');
+  assert.match(frame, /margin:\s*0;/);
+  assert.match(frame, /border:\s*0;/);
+  assert.match(frame, /border-radius:\s*0;/);
+  assert.match(frame, /box-shadow:\s*none;/);
 });
