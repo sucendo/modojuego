@@ -178,3 +178,15 @@ test('la v8 no confunde al próximo rival con un resultado y muestra cifras real
   assert.match(dashboard, /hubSimSeason\.textContent = `TEMPORADA/);
   assert.match(html, /id="hub-sim-season"/);
 });
+
+test('la v9 mejora la lectura de los paneles sin alterar sus destinos', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/dashboardVisual26.css', import.meta.url), 'utf8');
+  assert.match(html, /dashboardVisual26\.css\?v=9/);
+  assert.match(html, /id="pcf-shortcuts-home"/);
+  assert.match(html, /id="btn-go-next-match"/);
+  assert.match(css, /V9 · Remate visual de la portada/);
+  assert.match(css, /font-size:clamp\(11\.7px,\.9vw,13px\)/);
+  assert.match(css, /@media\(min-width:1241px\) and \(max-height:820px\)/);
+  assert.match(css, /width:clamp\(198px,16\.2vw,230px\)/);
+});
