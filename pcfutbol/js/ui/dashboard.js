@@ -1,6 +1,6 @@
 import { GameState } from '../state.js';
 import { getUserClub } from '../game/selectors.js';
-import { updateDashboardExtras } from './dashboardExtras.js';
+import { updateDashboardExtras } from './dashboardExtras.js?v=8.1';
 import { getFixtureKickoffDate, formatGameDateLabel } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
 

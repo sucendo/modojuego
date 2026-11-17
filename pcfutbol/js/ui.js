@@ -9,7 +9,7 @@ import { exportGameToFile } from './saveLoad.js';
 import { showDashboard, setActiveSubview } from './ui/nav.js';
 import { initNavigation } from './ui/navigation.js';
 
-import { updateDashboard } from './ui/dashboard.js';
+import { updateDashboard } from './ui/dashboard.js?v=8.1';
 
 import {
   initPlayerModal as initPlayerModalImpl,
