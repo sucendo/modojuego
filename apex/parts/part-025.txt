@@ -276,7 +276,7 @@ function apexTerrainCellNeedsDetail(g,x,z,span){
  return sg&&sg.dist<sg.width*.5+span*1.4+12?'PAVED':null;
 }
 // Cut the same planar triangles that the ground renderer would draw.
-function apexClipTerrainSurface(poly){
+function apexClipTerrainSurface(poly,stitch=true){
  const source=poly.length===4?[[poly[0],poly[1],poly[2]],[poly[0],poly[2],poly[3]]]:[poly];
  let changed=false;
  const pieces=[];
@@ -289,7 +289,7 @@ function apexClipTerrainSurface(poly){
    pieces.push(...(drive??[piece]));
   }
  }
- return changed?apexStitchTerrainPieces(pieces):null;
+ return changed?(stitch?apexStitchTerrainPieces(pieces):pieces):null;
 }
 function apexStitchTerrainPieces(pieces){
  if(pieces.length<2)return pieces;
@@ -299,7 +299,12 @@ function apexStitchTerrainPieces(pieces){
   const prev=vertices.get(key);
   if(!prev||p.y>prev.y)vertices.set(key,p);
  }
- const all=[...vertices.values()],result=[];
+ const result=[],buckets=new Map(),cell=2;
+ for(const p of vertices.values()){
+  const key=Math.floor(p.x/cell)+':'+Math.floor(p.z/cell);
+  if(!buckets.has(key))buckets.set(key,[]);
+  buckets.get(key).push(p);
+ }
  for(const piece of pieces){
   const ring=[];let subdivided=false;
   for(let i=0;i<piece.length;i++){
@@ -307,13 +312,16 @@ function apexStitchTerrainPieces(pieces){
    ring.push(vertices.get(Math.round(a.x/epsilon)+':'+Math.round(a.z/epsilon)));
    if(length2<epsilon*epsilon)continue;
    const cuts=[];
-   for(const p of all){
-    if(p.x<Math.min(a.x,b.x)-epsilon||p.x>Math.max(a.x,b.x)+epsilon||
-       p.z<Math.min(a.z,b.z)-epsilon||p.z>Math.max(a.z,b.z)+epsilon)continue;
-    const t=((p.x-a.x)*dx+(p.z-a.z)*dz)/length2;
-    if(t<=epsilon||t>=1-epsilon)continue;
-    if(Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t)<=epsilon)cuts.push({p,t});
-   }
+   const minX=Math.min(a.x,b.x)-epsilon,maxX=Math.max(a.x,b.x)+epsilon,
+    minZ=Math.min(a.z,b.z)-epsilon,maxZ=Math.max(a.z,b.z)+epsilon;
+   for(let ix=Math.floor(minX/cell);ix<=Math.floor(maxX/cell);ix++)
+    for(let iz=Math.floor(minZ/cell);iz<=Math.floor(maxZ/cell);iz++)
+     for(const p of buckets.get(ix+':'+iz)||[]){
+      if(p.x<minX||p.x>maxX||p.z<minZ||p.z>maxZ)continue;
+      const t=((p.x-a.x)*dx+(p.z-a.z)*dz)/length2;
+      if(t<=epsilon||t>=1-epsilon)continue;
+      if(Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t)<=epsilon)cuts.push({p,t});
+     }
    if(cuts.length){
     subdivided=true;
     cuts.sort((a,b)=>a.t-b.t);
@@ -405,6 +413,8 @@ function apexTerrainFinePatch(g,ix,iz,kind){
  const x0=g.minX+ix*g.cell,z0=g.minZ+iz*g.cell,
        x1=Math.min(g.maxX,x0+g.cell),z1=Math.min(g.maxZ,z0+g.cell),n=kind==='PORTAL'?20:(kind==='TUNNEL'?18:kind==='PIT'?8:4),
        dx=(x1-x0)/n,dz=(z1-z0)/n,points=[],quads=[];
+ const stitchCell=kind!=='TUNNEL'&&kind!=='PORTAL';
+ let clippedCell=false;
  const [A,B,C,D]=apexPhase4TerrainPacket(g,ix,iz,ix+1,iz+1);
  for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){
   const x=i===n?x1:x0+dx*i,z=j===n?z1:z0+dz*j;
@@ -438,12 +448,17 @@ function apexTerrainFinePatch(g,ix,iz,kind){
   // el recorte geométrico conserva precisamente sus triángulos exteriores.
   // Los túneles conservan la máscara original de su portal y techo.
   for(const poly of apexClipTerrainQuadByTunnel(A,B,C,D))if(poly&&poly.length>=3){
-   for(const q of apexClipTerrainSurface(poly)??[poly])
+   const clipped=apexClipTerrainSurface(poly,!stitchCell);
+   if(clipped!==null)clippedCell=true;
+   for(const q of clipped??[poly])
     if(Math.abs(apexInspectorPolyArea(q))>1e-8)quads.push(q);
   }
  }
  if(!g._keepCompiledFineCache&&g.fineCache.size>540){const first=g.fineCache.keys().next().value;g.fineCache.delete(first)}
- g.fineCache.set(key,quads);return quads;
+ // A road cut can insert a raised vertex in just one subdivision. Join
+ // it to the untouched neighbour as well, before caching the whole tile.
+ const pieces=stitchCell&&clippedCell?apexStitchTerrainPieces(quads):quads;
+ g.fineCache.set(key,pieces);return pieces;
 }
 /* Fase 4: paquetes de vertices de relieve inmutables por celda/LOD.
    Las cotas provienen de la misma malla SVG; solo se proyectan por camara. */
@@ -530,7 +545,7 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
 // Stored fine cells contain cut geometry and heights. Invalidate copies
 // compiled before the SVG curb/escape-area and shared-edge changes.
-const APEX_CIRCUIT_COMPILE_REV=230701;
+const APEX_CIRCUIT_COMPILE_REV=230702;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){

@@ -123,9 +123,24 @@ assert.ok(slopeVertices.some(v=>v.x===45&&v.z===0&&v.y===3),'Fine edge uses the 
 assert.ok(slopeVertices.some(v=>v.x===40&&v.z===5&&v.y===6),'Fine boundary lies on the adjacent coarse edge');
 assert.ok(slopeVertices.some(v=>v.x===45&&v.z===5&&v.y===0),'Interior still uses the ground sampler');
 
+// The cut changes only the right subdivision; its new point must also
+// appear on the untouched left subdivision in the same cached fine tile.
+const splitPoint=point(2.5,1,.25);
+const patchFunctions=['apexTerrainFinePatch','apexClipTerrainSurface','apexStitchTerrainPieces','apexPhase4TerrainPacket']
+ .map(name=>pick(parts[25],name)).join('\n');
+const tiled=new Function('apexClipGenericRunoffPolygon','apexClipTerrainAtDrive','lerp','apexWorldGroundY',
+ 'apexPortalTerrainCutAtWorld','apexClipTerrainQuadByTunnel','apexInspectorPolyArea','apexPhase4TerrainStats',
+ patchFunctions+'\nreturn apexTerrainFinePatch;')(
+ ()=>null,tri=>!tri.some(v=>v.x===5&&v.z===2.5)||!tri.some(v=>v.x===2.5&&v.z===0)||
+  !tri.some(v=>v.x===2.5&&v.z===2.5)?null:[[...tri,splitPoint]],
+ (a,b,t)=>a+(b-a)*t,()=>0,()=>null,(...quad)=>[quad],audit.area,{packetHits:0,packetEvicted:0,packetsBuilt:0});
+const fullTile=tiled({...grid,fineCache:new Map()},0,0,'TRACK');
+assert.ok(fullTile.filter(poly=>poly.some(v=>v.x<2.5)).some(poly=>poly.includes(splitPoint)),
+ 'An uncut fine subdivision shares the exact raised vertex with its cut neighbour');
+
 roadIndex.faces[0].terrainCut=false;
 assert.equal(audit.road(square),null,'Bridges and tunnels must preserve underlying terrain');
-assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230701/,'Old compiled meshes must be invalidated');
+assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230702/,'Old compiled meshes must be invalidated');
 assert.match(parts[25],/else y=apexWorldGroundY\(x,z\);/,'Fine terrain must sample the same ground height as the vehicle');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'circuits/manifest.json'),'utf8'));
 for(const gp of ['01-australia','14-spain']){
@@ -134,4 +149,4 @@ for(const gp of ['01-australia','14-spain']){
  assert.ok(fs.existsSync(path.join(root,'circuits',entry.svg)),'Missing saved SVG '+gp);
 }
 console.log(JSON.stringify({test:'terrain-surface-ownership',finePolygons:fine.length,
- coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230701,ok:true}));
+ coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230702,ok:true}));
