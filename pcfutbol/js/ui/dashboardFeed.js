@@ -16,6 +16,16 @@ function resultScore(fixture) {
   return `${Number(fixture.homeGoals ?? 0)}-${Number(fixture.awayGoals ?? 0)}`;
 }
 
+/** Valores de la plantilla de esta partida, sin inferir bajas ni crear tareas. */
+export function buildRosterSummary(club) {
+  const players = Array.isArray(club?.players) ? club.players : [];
+  const unavailable = players.filter(player =>
+    Number(player?.injury?.matchesRemaining) > 0 ||
+    Number(player?.suspension?.matchesRemaining) > 0
+  ).length;
+  return { total: players.length, available: players.length - unavailable, unavailable };
+}
+
 export function buildClubInbox(state, club) {
   if (!club) return [];
   const players = Array.isArray(club.players) ? club.players : [];

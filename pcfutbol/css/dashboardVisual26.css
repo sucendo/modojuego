@@ -782,3 +782,167 @@
   #screen-dashboard .pcf-feed-item__score { font-size:10px; }
   #screen-dashboard .pcf-big-action { min-height:46px; }
 }
+
+/* V8 · La información manda: paneles menos apretados y partido protagonista.
+   Solo modificamos la presentación de los datos existentes de la partida. */
+#screen-dashboard .pcf-center__season {
+  margin-bottom:4px;
+  color:#e9faff; font-size:clamp(12px,1.05vw,17px); font-weight:950;
+  letter-spacing:.09em; white-space:nowrap;
+  text-shadow:0 2px 3px #000,0 0 11px #68d6ffb7;
+}
+#screen-dashboard .pcf-center__now-date { font-weight:750; }
+#screen-dashboard .pcf-hud__center {
+  background:linear-gradient(90deg,transparent,#0063a035 24%,#0a70b647 50%,#0063a035 76%,transparent);
+}
+#screen-dashboard .pcf-inbox__idle {
+  display:grid; grid-template-columns:38px minmax(0,1fr); grid-template-rows:auto auto;
+  align-items:center; gap:3px 9px; text-align:left;
+  margin:10px 11px 14px; padding:10px 9px;
+  border-radius:8px;
+  background:linear-gradient(106deg,#0c578190,#072642cf);
+}
+#screen-dashboard .pcf-inbox__idle::before { display:none; }
+#screen-dashboard .pcf-inbox__idle-symbol {
+  grid-row:1 / 3; width:36px; height:36px; font-size:21px;
+}
+#screen-dashboard .pcf-inbox__idle strong { font-size:11px; }
+#screen-dashboard .pcf-inbox__idle > span:last-child {
+  max-width:none; font-size:10px; line-height:1.3;
+}
+#screen-dashboard .pcf-inbox__details {
+  margin:auto 10px 10px; padding:10px 8px;
+  border:1px solid #2b87b9; border-top:2px solid #6dcfff; border-radius:7px;
+  background:linear-gradient(165deg,#14547b9c,#041f3cde 76%);
+  box-shadow:inset 0 1px #c0f2ff7d,0 0 12px #008ed44a;
+}
+#screen-dashboard .pcf-inbox__details-title {
+  margin-bottom:9px; font-size:10px; font-weight:900; letter-spacing:.065em;
+  color:#f5d77f; text-align:center; text-shadow:0 1px 3px #000a;
+}
+#screen-dashboard .pcf-inbox__details-stats {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:4px;
+}
+#screen-dashboard .pcf-inbox__details-stats > div {
+  display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0;
+  padding:5px 1px 4px; border:1px solid #2c77a4a8; border-radius:5px;
+  background:linear-gradient(160deg,#0c4269e0,#031a34b8);
+}
+#screen-dashboard .pcf-inbox__details-stats strong {
+  color:#f4fcff; font-size:clamp(16px,1.65vw,23px); line-height:1.1;
+  font-variant-numeric:tabular-nums; text-shadow:0 0 8px #18a6ff9a;
+}
+#screen-dashboard .pcf-inbox__details-stats > div:last-child strong { color:#ffdb79; }
+#screen-dashboard .pcf-inbox__details-stats span {
+  color:#a9d5ee; font-size:9px; text-align:center;
+}
+#screen-dashboard .pcf-news .pcf-feed-item__emblem--rival {
+  /* El rival todavía no ha jugado: nunca mostramos un marcador de fantasía. */
+  background-image:url('../img/resources/stadium-night-2026.webp');
+  background-size:cover; background-position:center 75%;
+}
+#screen-dashboard .pcf-news .pcf-feed-item__emblem--photo img {
+  border:1px solid #8feaff; box-shadow:0 0 9px #43b6ffab,0 1px 4px #000c;
+}
+#screen-dashboard .pcf-news .pcf-feed-item {
+  border-left-color:#72cffa;
+  background:linear-gradient(115deg,#104e78e8,#041e3bf2 55%,#021329f5);
+}
+#screen-dashboard .pcf-news .pcf-feed-item__description { line-height:1.38; }
+#screen-dashboard .pcf-nextcard {
+  position:relative;
+  background:linear-gradient(115deg,#063557f5,#0a4e7dfe 16%,#031b3bef 48%,#0a4e7dfe 83%,#052442f5);
+}
+#screen-dashboard .pcf-nextcard__competition {
+  margin-bottom:5px; padding-bottom:5px;
+  border-bottom-color:#7fd8ff8f;
+}
+#screen-dashboard .pcf-nextcard__vs {
+  flex-shrink:0; font-size:16px; font-style:italic; letter-spacing:.01em;
+}
+#screen-dashboard .pcf-nextcard__name { font-size:clamp(12px,1.04vw,15px); }
+#screen-dashboard .pcf-big-action { position:relative; isolation:isolate; }
+#screen-dashboard .pcf-big-action::after {
+  content:""; position:absolute; z-index:-1; inset:2px 12%; pointer-events:none;
+  background:linear-gradient(180deg,#ffffff78,transparent 50%);
+  clip-path:polygon(12% 0,88% 0,100% 100%,0 100%);
+}
+
+@media(min-width:1241px) {
+  #screen-dashboard .pcf-hub__grid { row-gap:7px; }
+  #screen-dashboard .pcf-nextcard {
+    width:min(100%,640px); max-width:640px; padding:7px 17px;
+  }
+  #screen-dashboard .pcf-nextcard__teams {
+    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    align-items:center; gap:13px; margin-bottom:4px;
+  }
+  #screen-dashboard .pcf-nextcard__team {
+    display:flex; flex-direction:row; justify-content:flex-end; align-items:center;
+    gap:10px; min-width:0;
+  }
+  #screen-dashboard .pcf-nextcard__team:last-child {
+    flex-direction:row-reverse; justify-content:flex-end;
+  }
+  #screen-dashboard .pcf-nextcard__coat,
+  #screen-dashboard .pcf-nextcard__coat .coat-icon {
+    width:52px; height:52px; flex:0 0 52px;
+  }
+  #screen-dashboard .pcf-nextcard__name {
+    max-width:174px; white-space:normal; overflow:visible; text-align:left;
+    line-height:1.2; font-size:14px;
+  }
+  #screen-dashboard .pcf-nextcard__team:last-child .pcf-nextcard__name { text-align:right; }
+  #screen-dashboard .pcf-nextcard__meta { margin-top:5px; }
+  #screen-dashboard .pcf-hub .pcf-panel--competitions .pcf-hub-item__label,
+  #screen-dashboard .pcf-hub .pcf-panel--club .pcf-hub-item__label,
+  #screen-dashboard .pcf-hub .pcf-panel--style .pcf-hub-item__label,
+  #screen-dashboard .pcf-hub .pcf-panel--market .pcf-hub-item__label {
+    font-size:clamp(11px,.84vw,12px); font-weight:780;
+  }
+  #screen-dashboard .pcf-hub .pcf-panel--competitions::before,
+  #screen-dashboard .pcf-hub .pcf-panel--club::before,
+  #screen-dashboard .pcf-hub .pcf-panel--style::before,
+  #screen-dashboard .pcf-hub .pcf-panel--market::before {
+    opacity:.75;
+  }
+}
+
+@media(min-width:1241px) and (max-height:820px) {
+  #screen-dashboard .pcf-hub { padding-top:6px; padding-bottom:11px; }
+  #screen-dashboard .pcf-hub__grid { row-gap:4px; }
+  #screen-dashboard .pcf-nextcard { padding:5px 14px; }
+  #screen-dashboard .pcf-nextcard__competition { margin-bottom:3px; padding-bottom:3px; }
+  #screen-dashboard .pcf-nextcard__coat,
+  #screen-dashboard .pcf-nextcard__coat .coat-icon { width:44px; height:44px; flex-basis:44px; }
+  #screen-dashboard .pcf-nextcard__vs { padding:5px 11px; }
+  #screen-dashboard .pcf-nextcard__meta { margin-top:2px; }
+  #screen-dashboard .pcf-nextcard__row { padding:2px 6px; }
+  #screen-dashboard .pcf-big-action { padding:5px 16px; font-size:19px; }
+  #screen-dashboard .pcf-inbox__details { margin-bottom:8px; padding:7px 5px; }
+  #screen-dashboard .pcf-inbox__details-title { margin-bottom:6px; }
+  #screen-dashboard .pcf-inbox__idle { margin-top:7px; margin-bottom:7px; padding:7px 6px; }
+  #screen-dashboard .pcf-center__season { font-size:13px; margin-bottom:2px; }
+}
+
+@media(min-width:1241px) and (min-height:821px) and (max-height:1000px) {
+  #screen-dashboard .pcf-nextcard__coat,
+  #screen-dashboard .pcf-nextcard__coat .coat-icon { width:47px; height:47px; flex-basis:47px; }
+  #screen-dashboard .pcf-nextcard__meta { margin-top:3px; }
+  #screen-dashboard .pcf-hub { padding-bottom:12px; }
+}
+
+@media(max-width:1240px) {
+  #screen-dashboard .pcf-inbox__details { margin-top:8px; }
+  #screen-dashboard .pcf-inbox__idle { margin-bottom:8px; }
+}
+
+@media(max-width:780px) {
+  #screen-dashboard .pcf-center__season { font-size:11px; margin-bottom:2px; }
+  #screen-dashboard .pcf-inbox__details { margin:8px 9px 10px; }
+  #screen-dashboard .pcf-nextcard__team,
+  #screen-dashboard .pcf-nextcard__team:last-child { flex-direction:column; }
+  #screen-dashboard .pcf-nextcard__name { text-align:center; }
+  #screen-dashboard .pcf-nextcard__competition { font-size:11px; }
+}
