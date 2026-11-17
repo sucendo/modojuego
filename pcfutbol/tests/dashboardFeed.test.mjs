@@ -66,3 +66,17 @@ test('la portada conserva los controles originales y añade una navegación móv
   assert.match(html, /class="pcf-mobile-nav"/);
   assert.match(html, /img\/resources\/balonfutbol\.svg/);
 });
+
+test('la portada 26 mantiene las cuatro familias de opciones accesibles en móvil', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../css/styles.css', import.meta.url), 'utf8');
+  assert.match(html, /class="pcf-brand"/);
+  assert.match(html, /PC <strong>FÚTBOL<\/strong> <b>26<\/b>/);
+  for (const icon of ['ico-standings', 'ico-tactics', 'ico-stadium', 'ico-transfers']) {
+    assert.match(html, new RegExp(`class="pcf-category__art"[^>]*>[\\s\\S]*?#${icon}`));
+  }
+  assert.equal((html.match(/class="pcf-category__label"/g) || []).length, 4);
+  assert.match(styles, /\.pcf-category__art/);
+  assert.match(styles, /@media \(max-width:780px\)/);
+  assert.match(styles, /#screen-dashboard \.pcf-panel\.is-expanded \.pcf-panel__category-toggle/);
+});

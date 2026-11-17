@@ -3691,3 +3691,210 @@ span#club-name-main img {
     grid-template-columns: 1fr;
   }
 }
+
+/* Portada 26 · segunda pasada visual. Mantener los hooks de navegación intactos. */
+.app-header {
+  min-height:68px;
+  padding:8px clamp(12px,2.2vw,30px);
+  background:linear-gradient(100deg,#071525 0%,#092845 48%,#071321 100%);
+  border-bottom:2px solid #174d76;
+  box-shadow:inset 0 1px rgba(255,255,255,.07);
+}
+.pcf-brand { display:flex; align-items:center; gap:10px; flex:0 1 auto; min-width:0; }
+.pcf-brand__crest {
+  width:42px; height:42px; display:grid; place-items:center; flex:0 0 42px;
+  border-radius:50%; border:2px solid #58b9ed; font-size:24px;
+  background:radial-gradient(circle at 28% 22%,#247db5,#081f39 65%);
+  box-shadow:0 0 0 3px rgba(49,144,208,.16),inset 0 2px rgba(255,255,255,.25);
+}
+.pcf-brand__wordmark { color:#f3fbff; font-size:clamp(17px,1.9vw,27px); font-weight:800; font-style:italic; white-space:nowrap; letter-spacing:-.04em; }
+.pcf-brand__wordmark strong { color:#f4faff; font-weight:1000; }
+.pcf-brand__wordmark b { color:#f5c652; font-size:1.22em; text-shadow:0 1px 8px #b4792499; }
+.pcf-brand__wordmark small { display:block; font-size:9px; font-style:normal; font-weight:900; color:#9ecbe8; letter-spacing:.33em; margin-top:-3px; }
+.app-header-actions { flex-shrink:0; gap:7px; }
+.app-header-actions .btn-secondary,
+.app-header-actions .file-button { border-radius:9px; background:linear-gradient(180deg,#1a4b6f,#0b2948); border:1px solid #41799c; color:#f0f8ff; font-weight:700; }
+.app-header-actions .btn-icon { width:38px; height:38px; padding:9px; display:grid; place-items:center; }
+.app-header-actions .btn-icon svg { fill:#e3f4ff; }
+
+#screen-dashboard .pcf-hud__left { flex:1 1 0; }
+#screen-dashboard .pcf-hud__center { flex:0 1 195px; }
+#screen-dashboard .pcf-hud__right { flex:1 1 0; min-width:360px; }
+#screen-dashboard .pcf-hud__next-details { flex:1; min-width:0; }
+#screen-dashboard .pcf-hud__next { min-height:98px; }
+#screen-dashboard .pcf-hud__next-main .pcf-inline-match { justify-content:center; }
+#screen-dashboard .pcf-hud__next-row { line-height:1.3; }
+#screen-dashboard .pcf-hud__next-logo img { max-width:72px; max-height:68px; }
+
+#screen-dashboard .pcf-hub {
+  background:radial-gradient(ellipse at 50% 32%,#0c5a7a 0%,#092c4b 27%,#06172d 68%,#041126 100%);
+}
+#screen-dashboard .pcf-hub::before {
+  background:radial-gradient(ellipse at 50% 24%,rgba(63,186,242,.24),transparent 34%),
+    linear-gradient(90deg,rgba(0,0,0,.2),transparent 27%,transparent 72%,rgba(0,0,0,.2));
+}
+#screen-dashboard .pcf-hub .pcf-panel {
+  border-color:rgba(57,164,229,.8);
+  box-shadow:inset 0 1px 0 rgba(167,229,255,.2),0 8px 23px rgba(0,0,0,.4);
+}
+#screen-dashboard .pcf-hub .pcf-panel__head {
+  background:linear-gradient(110deg,#175984,#0b2f52 65%,#082542);
+}
+#screen-dashboard .pcf-hub .pcf-panel__head h2 { color:#e8f8ff; }
+#screen-dashboard .pcf-hub .pcf-hub-item:not(:disabled):hover {
+  border-color:#8bd8ff; box-shadow:inset 0 0 0 1px rgba(122,205,255,.2),0 4px 14px #0005;
+}
+.pcf-panel__category-toggle { display:flex; align-items:center; gap:8px; }
+.pcf-category__art {
+  display:grid; place-items:center; width:26px; height:26px; flex:0 0 26px;
+  border-radius:8px; background:#153b5e; border:1px solid rgba(139,211,251,.34);
+  box-shadow:inset 0 1px 3px rgba(255,255,255,.15);
+}
+.pcf-category__art svg { width:19px; height:19px; fill:none; stroke:#d7f1ff; }
+.pcf-panel__category-toggle .pcf-category__chevron { display:none; }
+
+#screen-dashboard .pcf-center { justify-content:center; gap:18px; }
+#screen-dashboard .pcf-center__ball {
+  position:relative; isolation:isolate; flex:0 0 auto;
+  width:clamp(195px,19vw,285px); height:clamp(195px,19vw,285px);
+  overflow:visible; border:0; border-radius:50%;
+  background:radial-gradient(circle at 30% 23%,#fff 0%,#effaff 18%,#94c5de 49%,#32698b 80%,#0a2340 100%);
+  box-shadow:inset -21px -26px 42px rgba(2,13,33,.63),inset 9px 10px 21px #fff9,
+    0 0 0 3px #51c2fa,0 0 0 10px rgba(31,151,224,.11),0 0 55px rgba(51,180,255,.64),0 25px 45px #001126;
+}
+#screen-dashboard .pcf-center__ball::before {
+  content:""; position:absolute; inset:-20%; z-index:-1; border-radius:50%;
+  background:radial-gradient(circle,rgba(40,185,255,.30),rgba(16,142,242,.12) 45%,transparent 71%);
+}
+#screen-dashboard .pcf-center__ball::after {
+  content:""; pointer-events:none; position:absolute; inset:5%; border-radius:50%;
+  background:radial-gradient(ellipse at 26% 16%,rgba(255,255,255,.68),transparent 34%),
+    linear-gradient(135deg,rgba(181,231,255,.14),transparent 40%,rgba(0,20,56,.48));
+  box-shadow:inset -13px -11px 21px rgba(0,13,36,.3);
+}
+#screen-dashboard .pcf-center__ball img {
+  width:100%; height:100%; margin:0; object-fit:contain;
+  filter:drop-shadow(1px 4px 4px rgba(0,9,30,.25));
+}
+#screen-dashboard .pcf-nextcard { width:100%; max-width:390px; padding:13px; border-color:#77caff; }
+#screen-dashboard .pcf-nextcard__teams { margin-bottom:10px; }
+#screen-dashboard .pcf-nextcard__coat,
+#screen-dashboard .pcf-nextcard__coat .coat-icon { width:52px; height:52px; }
+#screen-dashboard .pcf-nextcard__name { font-size:13px; }
+#screen-dashboard .pcf-nextcard__vs { color:#bbdfff; }
+#screen-dashboard .pcf-nextcard__comp-logo { width:30px; height:30px; }
+#screen-dashboard .pcf-nextcard__row { background:#0a2948ad; border-color:#276891; }
+#screen-dashboard .pcf-feed-item { border-color:#3181af; }
+#screen-dashboard .pcf-inbox .pcf-feed-item__emblem { box-shadow:inset 0 0 15px rgba(239,184,67,.15); }
+#screen-dashboard .pcf-news .pcf-feed-item__emblem { background:#073d63; }
+
+@media (max-width:1240px) and (min-width:781px) {
+  #screen-dashboard .pcf-hud__left { flex:0 1 260px; }
+  #screen-dashboard .pcf-hud__center { flex:0 1 170px; }
+  #screen-dashboard .pcf-hud__right { min-width:290px; }
+  #screen-dashboard .pcf-center__ball { width:205px; height:205px; }
+}
+
+@media (max-width:780px) {
+  .app-header { flex-direction:row; align-items:center; min-height:53px; gap:5px; padding:7px 10px; }
+  .pcf-brand { gap:6px; }
+  .pcf-brand__crest { width:27px; height:27px; flex-basis:27px; font-size:15px; border-width:1px; box-shadow:none; }
+  .pcf-brand__wordmark { font-size:clamp(12px,3.3vw,17px); letter-spacing:-.055em; }
+  .pcf-brand__wordmark small { font-size:7px; letter-spacing:.2em; margin-top:-1px; }
+  .app-header-actions { gap:4px; }
+  .app-header-actions .btn { padding:5px 7px; font-size:11px; min-height:28px; }
+  .app-header-actions .btn-icon { width:29px; height:29px; padding:6px; border-radius:50%; }
+  .app-header-actions .btn-icon svg { width:16px; height:16px; }
+
+  #screen-dashboard > .pcf-hud {
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:auto 1fr; gap:7px 9px; padding:10px;
+  }
+  #screen-dashboard .pcf-hud__center { order:0; grid-column:1 / -1; grid-row:1; }
+  #screen-dashboard .pcf-hud__left { grid-column:1; grid-row:2; align-self:center; gap:6px; min-width:0; }
+  #screen-dashboard .pcf-hud__right { grid-column:2; grid-row:2; min-width:0; }
+  #screen-dashboard .pcf-hud__coat img { width:40px; height:40px; }
+  #screen-dashboard .pcf-hud__manager { flex-wrap:wrap; gap:1px 4px; font-size:10px; }
+  #screen-dashboard .pcf-hud__season { font-size:9px; }
+  #screen-dashboard .pcf-hud__club { font-size:clamp(12px,3.4vw,17px); line-height:1.1; }
+  #screen-dashboard .pcf-hud__money { font-size:10px; line-height:1.35; }
+  #screen-dashboard .pcf-dot { margin:0 3px; }
+  #screen-dashboard .pcf-center__now-date { font-size:11px; }
+  #screen-dashboard .pcf-center__now-time { font-size:16px; margin-top:0; }
+  #screen-dashboard .pcf-hud__next { padding:7px 5px; min-height:0; gap:3px; text-align:center; }
+  #screen-dashboard .pcf-hud__next-title { font-size:9px; }
+  #screen-dashboard .pcf-hud__next-main { font-size:10px; }
+  #screen-dashboard .pcf-hud__next-main .pcf-inline-match { gap:2px; }
+  #screen-dashboard .pcf-hud__next-main .pcf-inline-match__team { padding:2px; border:0; background:none; }
+  #screen-dashboard .pcf-hud__next-main .pcf-inline-match__name { max-width:52px; font-size:9px; }
+  #screen-dashboard .pcf-hud__next-main .pcf-inline-match__team img { width:21px; height:21px; }
+  #screen-dashboard .pcf-hud__next-row { font-size:9px; display:block; }
+  #screen-dashboard .pcf-hud__next-logo { display:none; }
+  #screen-dashboard .pcf-hud__next-row--datetime { white-space:normal; }
+
+  #screen-dashboard .pcf-hub { padding:10px 8px 18px; }
+  #screen-dashboard .pcf-hub__grid { gap:8px; }
+  #screen-dashboard .pcf-hub .pcf-panel__head { padding:9px 10px; }
+  #screen-dashboard .pcf-hub .pcf-panel__head h2 { font-size:11px; }
+  #screen-dashboard .pcf-inbox .pcf-feed-list { grid-template-columns:1fr; }
+  #screen-dashboard .pcf-inbox .pcf-feed-item { padding:8px; }
+  #screen-dashboard .pcf-inbox .pcf-feed-item__body { gap:2px; }
+  #screen-dashboard .pcf-panel--competitions,
+  #screen-dashboard .pcf-panel--style,
+  #screen-dashboard .pcf-panel--club,
+  #screen-dashboard .pcf-panel--market { min-height:109px; }
+  #screen-dashboard .pcf-panel--competitions,
+  #screen-dashboard .pcf-panel--club { padding-right:37px; }
+  #screen-dashboard .pcf-panel--style,
+  #screen-dashboard .pcf-panel--market { padding-left:37px; }
+  #screen-dashboard .pcf-panel--competitions .pcf-panel__head,
+  #screen-dashboard .pcf-panel--club .pcf-panel__head,
+  #screen-dashboard .pcf-panel--style .pcf-panel__head,
+  #screen-dashboard .pcf-panel--market .pcf-panel__head {
+    display:flex; align-items:center; justify-content:center; padding:5px;
+    height:100%; border:0; background:radial-gradient(circle at 50% 40%,rgba(40,124,173,.36),transparent 88%);
+  }
+  #screen-dashboard .pcf-panel__category-toggle {
+    min-height:98px; height:100%; gap:5px; padding:7px 0;
+    justify-content:center; align-items:center; text-align:center;
+  }
+  #screen-dashboard .pcf-category__art {
+    width:38px; height:38px; flex-basis:38px;
+    background:radial-gradient(circle at 30% 20%,#247baa,#092e54 70%);
+    border:1px solid #72c4f7; border-radius:12px;
+    box-shadow:inset 0 2px 4px rgba(255,255,255,.23),0 4px 9px #0006;
+  }
+  #screen-dashboard .pcf-category__art svg { width:27px; height:27px; }
+  #screen-dashboard .pcf-category__label { font-size:10px; line-height:1.15; font-weight:900; }
+  #screen-dashboard .pcf-panel__category-toggle .pcf-category__chevron { display:block; line-height:9px; font-size:17px; color:#a1d6fa; }
+  #screen-dashboard .pcf-panel.is-expanded .pcf-panel__category-toggle .pcf-category__chevron { transform:rotate(180deg); }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-panel__head { height:auto; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-panel__list { padding:5px; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-hub-item { padding:6px 4px; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-hub-item__icon { display:none; }
+  #screen-dashboard .pcf-hub .pcf-panel.is-expanded .pcf-hub-item__label { font-size:10px; }
+  #screen-dashboard .pcf-center__ball {
+    width:clamp(112px,31vw,150px); height:clamp(112px,31vw,150px);
+    box-shadow:inset -8px -11px 14px #06132999,inset 4px 4px 10px #fff8,
+      0 0 0 2px #5bceff,0 0 0 5px #1c8ec532,0 0 26px #30bcff;
+  }
+  #screen-dashboard .pcf-nextcard { max-width:none; padding:11px; }
+  #screen-dashboard .pcf-nextcard__coat,
+  #screen-dashboard .pcf-nextcard__coat .coat-icon { width:44px; height:44px; }
+  #screen-dashboard .pcf-nextcard__name { font-size:12px; }
+  #screen-dashboard .pcf-big-action { font-size:19px; max-width:none; padding:10px; }
+}
+
+@media (max-width:380px) {
+  .pcf-brand__crest { display:none; }
+  .pcf-brand__wordmark { font-size:12px; }
+  .app-header-actions .btn { padding:4px 5px; font-size:10px; }
+  .app-header-actions .btn-icon { width:26px; height:26px; }
+  #screen-dashboard > .pcf-hud { padding:8px 7px; gap:6px; }
+  #screen-dashboard .pcf-hud__coat img { width:32px; height:32px; }
+  #screen-dashboard .pcf-hud__left { gap:4px; }
+  #screen-dashboard .pcf-hud__money { font-size:9px; }
+  #screen-dashboard .pcf-hud__next { padding:5px 3px; }
+  #screen-dashboard .pcf-hub .pcf-panel__head h2 { font-size:10px; }
+  #screen-dashboard .pcf-category__label { font-size:9px; }
+}
