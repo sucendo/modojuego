@@ -111,6 +111,7 @@ export function buildFootballNews(state, club) {
     news.push({
       id: `result-${fx.id || `${home}-${away}-${fx.matchday}`}`, icon: '▤', tag: 'RESULTADOS',
       title: `${home} ${resultScore(fx)} ${away}`,
+      score: resultScore(fx),
       description: `Resultado final de la jornada ${fx.matchday || 'actual'}.`,
       clubId: fx.homeClubId, target: isUserLeague ? 'results' : null,
       priority: fx.homeClubId === userId || fx.awayClubId === userId ? 3 : 1,

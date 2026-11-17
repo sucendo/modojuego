@@ -43,6 +43,7 @@ test('la actualidad refleja fichajes, resultados y próximo rival reales', () =>
   const news = buildFootballNews(withEvents, home);
   assert.ok(news.some(item => item.title.includes('Delantero ficha')));
   assert.ok(news.some(item => item.title.includes('Rival 2-1 Club local')));
+  assert.equal(news.find(item => item.tag === 'RESULTADOS')?.score, '2-1');
   assert.ok(news.some(item => item.tag === 'PRÓXIMO RIVAL'));
   assert.ok(news.every(item => ['results', 'transfermarket', 'calendar'].includes(item.target)));
 });
@@ -58,6 +59,7 @@ test('la portada conserva los controles originales y añade una navegación móv
   for (const id of [
     'hud-next-main', 'hub-next-hint', 'hub-next-comp-logo', 'btn-go-next-match',
     'pcf-inbox-list', 'pcf-news-list', 'pcf-shortcuts-home', 'pcf-shortcuts-list', 'pcf-shortcuts-picker',
+    'pcf-inbox-idle',
     'pcf-mobile-more', 'btn-nav-dashboard', 'btn-nav-medical',
   ]) {
     assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, `${id} duplicado o ausente`);
@@ -137,4 +139,13 @@ test('la portada distingue las fotos de noticias y las alas ilustradas del centr
   assert.match(css, /clip-path:polygon\(23px 0,calc\(100% - 13px\)/);
   assert.match(css, /background:repeating-conic-gradient|repeating-conic-gradient\(/);
   assert.match(css, /pcf-news__caption \{ display:none; \}/);
+});
+
+test('el acabado premium usa el resultado real y no genera gestiones de relleno', () => {
+  const js = readFileSync(new URL('../js/ui/dashboardExtras.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/dashboardVisual26.css', import.meta.url), 'utf8');
+  assert.match(js, /if \(variant === 'news' && item\.score\)/);
+  assert.match(js, /items\.length === 1 && \(items\[0\]\.id === 'nextmatch'/);
+  assert.match(css, /\.pcf-inbox__idle\[hidden\]/);
+  assert.match(css, /\.pcf-feed-item__score/);
 });
