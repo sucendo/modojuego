@@ -151,6 +151,13 @@ function addFeedItem(container, item, variant) {
   const related = item.clubId && createCoatImgElement(item.clubId, item.title, 46);
   if (related) emblem.appendChild(related);
   else emblem.textContent = item.icon || '•';
+  if (variant === 'news' && item.score) {
+    const result = document.createElement('span');
+    result.className = 'pcf-feed-item__score';
+    result.setAttribute('aria-hidden', 'true');
+    result.textContent = item.score;
+    emblem.appendChild(result);
+  }
 
   const body = document.createElement('span');
   body.className = 'pcf-feed-item__body';
@@ -190,6 +197,14 @@ export function updateDashboardExtras() {
     const items = buildClubInbox(GameState, club);
     inbox.replaceChildren();
     for (const item of items) addFeedItem(inbox, item, 'task');
+    const idle = document.getElementById('pcf-inbox-idle');
+    if (idle) {
+      idle.hidden = !(items.length === 1 && (items[0].id === 'nextmatch' || items[0].id === 'clear'));
+      const idleMessage = idle.querySelector('span:last-child');
+      if (idleMessage) idleMessage.textContent = items[0]?.id === 'nextmatch'
+        ? 'No hay más gestiones pendientes. Revisa la convocatoria y la táctica para tu próximo partido.'
+        : 'No hay asuntos pendientes. Puedes explorar tu plantilla o avanzar en la temporada.';
+    }
     if (count) {
       const urgent = items.filter(item => item.severity !== 'normal').length;
       count.textContent = String(urgent);
