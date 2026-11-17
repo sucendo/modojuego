@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { buildClubInbox, buildFootballNews } from '../js/ui/dashboardFeed.js';
+import { buildClubInbox, buildFootballNews, buildRosterSummary } from '../js/ui/dashboardFeed.js';
 
 const home = {
   id: 'home', name: 'Club local',
@@ -29,6 +29,17 @@ test('la bandeja contiene bajas reales y acciones disponibles, sin gestiones inv
 test('al no haber urgencias el panel mantiene una acción útil', () => {
   const empty = buildClubInbox({ ...state, fixtures: [] }, { ...home, players: [] });
   assert.deepEqual(empty.map(task => task.id), ['clear']);
+});
+
+test('el resumen de plantilla cuenta cada baja real una única vez', () => {
+  const club = { players: [
+    { injury: { matchesRemaining: 2 }, suspension: { matchesRemaining: 1 } },
+    { injury: { matchesRemaining: 0 } },
+    { suspension: { matchesRemaining: 1 } },
+    {},
+  ] };
+  assert.deepEqual(buildRosterSummary(club), { total: 4, available: 2, unavailable: 2 });
+  assert.deepEqual(buildRosterSummary(null), { total: 0, available: 0, unavailable: 0 });
 });
 
 test('la actualidad refleja fichajes, resultados y próximo rival reales', () => {
@@ -60,6 +71,7 @@ test('la portada conserva los controles originales y añade una navegación móv
     'hud-next-main', 'hub-next-hint', 'hub-next-comp-logo', 'btn-go-next-match',
     'pcf-inbox-list', 'pcf-news-list', 'pcf-shortcuts-home', 'pcf-shortcuts-list', 'pcf-shortcuts-picker',
     'pcf-inbox-idle',
+    'hub-sim-season', 'pcf-roster-total', 'pcf-roster-available', 'pcf-roster-unavailable',
     'pcf-mobile-more', 'btn-nav-dashboard', 'btn-nav-medical',
   ]) {
     assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, `${id} duplicado o ausente`);
@@ -150,4 +162,19 @@ test('el acabado premium usa el resultado real y no genera gestiones de relleno'
   assert.match(css, /\.pcf-feed-item__score/);
   assert.match(css, /@media\(min-width:1241px\) and \(min-height:821px\) and \(max-height:1000px\)/);
   assert.match(css, /@media\(min-width:1241px\) and \(max-height:820px\)/);
+});
+
+test('la v8 no confunde al próximo rival con un resultado y muestra cifras reales', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const extras = readFileSync(new URL('../js/ui/dashboardExtras.js', import.meta.url), 'utf8');
+  const dashboard = readFileSync(new URL('../js/ui/dashboard.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/dashboardVisual26.css', import.meta.url), 'utf8');
+  assert.match(extras, /item\.tag === 'PRÓXIMO RIVAL' \? 'rival'/);
+  assert.match(extras, /buildRosterSummary\(club\)/);
+  assert.match(css, /\.pcf-feed-item__emblem--rival \{/);
+  assert.match(css, /stadium-night-2026\.webp/);
+  assert.match(css, /\.pcf-inbox__details-stats/);
+  assert.match(css, /\.pcf-nextcard__team:last-child \{/);
+  assert.match(dashboard, /hubSimSeason\.textContent = `TEMPORADA/);
+  assert.match(html, /id="hub-sim-season"/);
 });

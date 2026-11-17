@@ -159,6 +159,7 @@ export function updateDashboard() {
   
   // HUB Centro: “fecha/hora del simulador” + tarjeta partido detallada
   const hubSimDate = document.getElementById('hub-sim-date');
+  const hubSimSeason = document.getElementById('hub-sim-season');
   const hubSimTime = document.getElementById('hub-sim-time');
   const hubNextHomeCoat = document.getElementById('hub-next-home-coat');
   const hubNextAwayCoat = document.getElementById('hub-next-away-coat');
@@ -174,6 +175,11 @@ export function updateDashboard() {
   if (hudClub) hudClub.textContent = club.name || club.id || 'Club';
   if (hudLeague) hudLeague.textContent = GameState.league?.name || 'Liga';
   if (hudSeason) hudSeason.textContent = `(Temporada ${GameState.currentDate?.season || 1})`;
+  if (hubSimSeason) {
+    const season = Math.max(1, Math.trunc(Number(GameState.currentDate?.season) || 1));
+    const startYear = 2025 + season;
+    hubSimSeason.textContent = `TEMPORADA ${startYear}/${String(startYear + 1).slice(-2)}`;
+  }
   if (hudMatchday) hudMatchday.textContent = `Jornada ${GameState.currentDate?.matchday || 1}`;
   if (hudCash) hudCash.textContent = formatCurrency(club.cash ?? 0);
   if (hudWage) hudWage.textContent = formatCurrency(club.wageBudget ?? 0);

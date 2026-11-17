@@ -2,7 +2,7 @@
 import { GameState } from '../state.js';
 import { getUserClub } from '../game/selectors.js';
 import { createCoatImgElement } from './utils/coats.js';
-import { buildClubInbox, buildFootballNews } from './dashboardFeed.js';
+import { buildClubInbox, buildFootballNews, buildRosterSummary } from './dashboardFeed.js';
 
 const SHORTCUTS_KEY = 'pcfutbol.dashboard.shortcuts.v1';
 const LINKS = [
@@ -145,7 +145,7 @@ function addFeedItem(container, item, variant) {
   if (variant === 'news') {
     const photoType = item.tag === 'FICHAJES' ? 'transfer'
       : item.tag === 'RESULTADOS' ? 'crowd'
-        : item.tag === 'PRÓXIMO RIVAL' ? 'stadium' : 'press';
+        : item.tag === 'PRÓXIMO RIVAL' ? 'rival' : 'press';
     emblem.classList.add('pcf-feed-item__emblem--photo', `pcf-feed-item__emblem--${photoType}`);
   }
   const related = item.clubId && createCoatImgElement(item.clubId, item.title, 46);
@@ -193,6 +193,16 @@ export function updateDashboardExtras() {
   const inbox = document.getElementById('pcf-inbox-list');
   const news = document.getElementById('pcf-news-list');
   const count = document.getElementById('pcf-inbox-count');
+  const roster = buildRosterSummary(club);
+  const rosterLabels = [
+    ['pcf-roster-total', roster.total],
+    ['pcf-roster-available', roster.available],
+    ['pcf-roster-unavailable', roster.unavailable],
+  ];
+  for (const [id, value] of rosterLabels) {
+    const label = document.getElementById(id);
+    if (label) label.textContent = String(value);
+  }
   if (inbox) {
     const items = buildClubInbox(GameState, club);
     inbox.replaceChildren();
