@@ -26,6 +26,7 @@ let __liveTacticsBound = false;
 let __postTimelineContext = null;
 let __postTimelineFilter = 'all';
 let __postTimelineOrder = 'desc';
+let __matchHeaderContext = { pre: null, post: null };
 
 // --------------------------
 // Helpers
@@ -116,6 +117,15 @@ function applyMatchScreen() {
   const showPost = (__matchScreen === 'post');
   preCard.classList.toggle('hidden', showPost);
   postCard.classList.toggle('hidden', !showPost);
+  const info = __matchHeaderContext[showPost ? 'post' : 'pre'];
+  setText('nextmatch-view-title', showPost ? 'Informe del partido' : 'Previa del partido');
+  setText('nextmatch-matchday-descriptor', showPost ? 'Jornada disputada' : 'Jornada actual');
+  const simButton = document.getElementById('btn-simulate-current-matchday');
+  if (simButton) simButton.classList.toggle('hidden', showPost);
+  if (info) {
+    setText('nextmatch-current-matchday-label', String(info.matchday));
+    setText('nextmatch-date-label', info.date);
+  }
 }
 
 function trySimulateFromMatchScreen() {
@@ -978,6 +988,7 @@ export function updateNextMatchView() {
   // La fecha de la cabecera se intentará ajustar al kickoff real del próximo partido (si existe)
   const baseDate = getGameDateFor(season, currentMd);
   setText('nextmatch-date-label', formatGameDateLabel(baseDate));
+  __matchHeaderContext.pre = { matchday: currentMd, date: formatGameDateLabel(baseDate) };
 
   // ----------------
   // PREVIA: próximo partido (jornada actual)
@@ -1117,6 +1128,7 @@ export function updateNextMatchView() {
   }
 
   if (!lastFx) {
+    __matchHeaderContext.post = null;
     lastFx = fixtures
       .filter((fx) => fx && fx.played && (fx.homeClubId === userId || fx.awayClubId === userId))
       .slice()
@@ -1153,6 +1165,7 @@ export function updateNextMatchView() {
 
   const kDate = getFixtureKickoffDate(lastFx, season, lastFx.matchday || currentMd);
   const kLabel = formatGameDateLabel(kDate);
+  __matchHeaderContext.post = { matchday: lastFx.matchday || currentMd, date: kLabel };
   const kTime = getKickoffTime(lastFx, 0);
   const stName = lastFx.meta?.stadiumName || lastHome?.stadiumName || 'Estadio';
   const attendance = Number(lastFx.meta?.attendance);

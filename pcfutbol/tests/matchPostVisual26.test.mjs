@@ -30,6 +30,7 @@ test('postpartido conserva todos los paneles, datos y controles de navegación',
     'nextmatch-post-sensations','nextmatch-post-referee','nextmatch-post-standings',
     'nextmatch-post-results','nextmatch-open-last-detail','nextmatch-continue',
     'nextmatch-post-report','nextmatch-post-snapshot', 'nextmatch-timeline-controls',
+    'nextmatch-view-title','nextmatch-matchday-descriptor',
   ]) assert.match(html, new RegExp(`id="${id}"`), `Debe conservar ${id}`);
   for (const tab of ['general','stats','timeline','occasions','contrib','sensations','referee'])
     assert.match(html, new RegExp(`data-tab="${tab}"`));
@@ -39,13 +40,21 @@ test('postpartido conserva todos los paneles, datos y controles de navegación',
 
 test('la cadena de módulos y el CSS invalidan las versiones cacheadas de la v14', () => {
   const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
-  assert.match(html, /main\.js\?v=141/);
+  assert.match(html, /main\.js\?v=142/);
   assert.match(html, /matchPostVisual26\.css\?v=141/);
-  assert.match(read('../js/main.js'), /ui\/index\.js\?v=141/);
-  assert.match(read('../js/ui/index.js'), /ui\.js\?v=141/);
-  assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=141/);
+  assert.match(read('../js/main.js'), /ui\/index\.js\?v=142/);
+  assert.match(read('../js/ui/index.js'), /ui\.js\?v=142/);
+  assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=142/);
   assert.match(read('../js/ui/nextMatchView.js'), /matchTimeline\.js\?v=141/);
   assert.match(read('../js/ui/nextMatchView.js'), /matchPostReport\.js\?v=141/);
+});
+
+test('el postpartido cambia la cabecera a la jornada disputada y desactiva el segundo simulador', () => {
+  const view = readFileSync(new URL('../js/ui/nextMatchView.js', import.meta.url), 'utf8');
+  assert.match(view, /Jornada disputada/);
+  assert.match(view, /nextmatch-view-title/);
+  assert.match(view, /nextmatch-date-label', info\.date/);
+  assert.match(view, /simButton\.classList\.toggle\('hidden', showPost\)/);
 });
 
 test('la crónica utiliza resultado, goles y decisiones tácticas registrados', () => {
