@@ -43,8 +43,9 @@ function getClubLabel(clubIndex, id) {
   return (c && (c.shortName || c.name)) || String(id || '');
 }
 
-function normalizeEvents(fx) {
+function normalizeEvents(fx, extraEvents = [], order = 'desc') {
   const events = Array.isArray(fx?.events) ? fx.events.slice() : [];
+  if (Array.isArray(extraEvents)) events.push(...extraEvents.filter(Boolean));
   const subs = Array.isArray(fx?.substitutions) ? fx.substitutions : [];
   subs.forEach((s) => {
     if (!s) return;
@@ -61,7 +62,7 @@ function normalizeEvents(fx) {
   events.sort((a, b) => {
     const ma = typeof a?.minute === 'number' ? a.minute : n0(a?.minute);
     const mb = typeof b?.minute === 'number' ? b.minute : n0(b?.minute);
-    return mb - ma;
+    return order === 'asc' ? ma - mb : mb - ma;
   });
 
   return events;
@@ -72,6 +73,7 @@ function eventIconId(type) {
   if (t === 'GOAL') return 'ico-ball';
   if (t === 'SUB') return 'ico-sub';
   if (t === 'INJURY') return 'ico-injury';
+  if (t === 'TACTICAL') return 'ico-dot';
   if (t === 'YELLOW' || t === 'YELLOW_CARD' || t === 'CARD_YELLOW') return 'ico-yellow';
   if (t === 'RED' || t === 'RED_CARD' || t === 'CARD_RED') return 'ico-red';
   return 'ico-dot';
@@ -99,6 +101,12 @@ function buildEntryHTML({ fx, ev, clubIndex, playerIndex }) {
   } else if (t === 'INJURY') {
     main = getPlayerName(playerIndex, ev?.playerId);
     sub = ev?.injuryType ? String(ev.injuryType) : 'Lesión';
+  } else if (t === 'TACTICAL') {
+    main = ev?.fromFormation && ev?.toFormation && ev.fromFormation !== ev.toFormation
+      ? 'Cambio de formación' : 'Ajuste táctico';
+    const reason = ev?.reason === 'CHASING_GAME' ? 'buscar un resultado' :
+      ev?.reason === 'PROTECTING_LEAD' ? 'proteger la ventaja' : 'adaptarse al encuentro';
+    sub = `${ev?.fromFormation && ev?.toFormation ? `${ev.fromFormation} → ${ev.toFormation} · ` : ''}${reason}`;
   } else {
     main = capFirst(String(ev?.type || 'Evento'));
     if (ev?.playerId) sub = getPlayerName(playerIndex, ev.playerId);
@@ -177,11 +185,13 @@ export function buildMatchTimelineHTML(containerOpts) {
     withFinalLabel = true,
     withWrap = true,
     filter,
+    extraEvents = [],
+    order = 'desc',
   } = containerOpts || {};
   if (!fx?.played) return `<div class="muted">Sin cronología.</div>`;
 
   const idx = passedPlayerIndex || buildPlayerIndexFromClubs(clubs || []);
-  let events = normalizeEvents(fx);
+  let events = normalizeEvents(fx, extraEvents, order);
   if (typeof filter === 'function') {
     events = events.filter((e) => {
       try { return !!filter(e); } catch { return true; }
@@ -196,7 +206,7 @@ export function buildMatchTimelineHTML(containerOpts) {
   let html = '';
   if (withWrap) html += `<div class="pcf-mtl-wrap">`;
   html += `<div class="pcf-mtl">`;
-  if (withFinalLabel) html += `<div class="pcf-mtl__sep">Final del partido</div>`;
+  if (withFinalLabel) html += `<div class="pcf-mtl__sep">${order === 'asc' ? 'Inicio del partido' : 'Final del partido'}</div>`;
 
   let insertedBreak = false;
   let seenSecondHalf = false;
@@ -204,14 +214,16 @@ export function buildMatchTimelineHTML(containerOpts) {
   sliced.forEach((ev) => {
     const m = n0(ev?.minute);
     if (hasFirstHalf && hasSecondHalf) {
-      if (m > 45) seenSecondHalf = true;
-      if (!insertedBreak && seenSecondHalf && m <= 45) {
+      if ((order === 'asc' && m > 45) || (order !== 'asc' && m > 45)) seenSecondHalf = true;
+      if (!insertedBreak && ((order === 'asc' && seenSecondHalf) || (order !== 'asc' && seenSecondHalf && m <= 45))) {
         html += `<div class="pcf-mtl__sep">Descanso</div>`;
         insertedBreak = true;
       }
     }
     html += buildEntryHTML({ fx, ev, clubIndex, playerIndex: idx });
   });
+
+  if (withFinalLabel && order === 'asc') html += `<div class="pcf-mtl__sep">Final del partido</div>`;
 
   html += `</div>`;
   if (withWrap) html += `</div>`;

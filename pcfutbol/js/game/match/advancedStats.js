@@ -69,9 +69,9 @@ export function generateAdvancedStatsForFixture(fx, homeClub, awayClub) {
   const homeCorners = clamp(Math.round(2 + homeShots * 0.18 + Math.random() * 3), 0, 14);
   const awayCorners = clamp(Math.round(2 + awayShots * 0.18 + Math.random() * 3), 0, 14);
 
-  // Paradas = SOT rival - goles rival (min 0)
-  const homeSaves = clamp(awaySOT - homeGoals, 0, 12);
-  const awaySaves = clamp(homeSOT - awayGoals, 0, 12);
+  // Paradas = tiros a puerta del rival menos goles recibidos.
+  const homeSaves = clamp(awaySOT - awayGoals, 0, 12);
+  const awaySaves = clamp(homeSOT - homeGoals, 0, 12);
 
   // Centros: ligado a corners
   const homeCrossesAttempted = clamp(Math.round(10 + Math.random() * 25 + homeCorners * 0.7), 5, 45);
