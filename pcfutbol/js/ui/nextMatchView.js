@@ -15,6 +15,8 @@ import {
 import { createCoatImgElement } from './utils/coats.js';
 import { renderMatchTimeline } from './utils/matchTimeline.js';
 import { getFormationSlots, assignPlayersToSlots } from './utils/tacticsState.js';
+import { isPlayerInjuredNow, isPlayerSuspendedNow } from '../game/utils/index.js';
+import { computePreviewInsights, getPreviewKeyPlayer, getPreviewRatings } from './utils/matchPreviewInsights.js';
 
 let __bound = false;
 let __onOpenMatchDetail = null;
@@ -293,6 +295,7 @@ function renderPlayersList(container, players, { note = 'overall' } = {}) {
     div.innerHTML = `
       <span class="pcf-lineup-item__num">${escapeHtml(num)}</span>
       <span class="pcf-lineup-item__name">${escapeHtml(nm)}</span>
+      <span class="pcf-lineup-item__pos">${escapeHtml(String(p?.position || '').toUpperCase())}</span>
       <span class="pcf-lineup-item__note">${escapeHtml(nte)}</span>
     `;
     container.appendChild(div);
@@ -325,13 +328,17 @@ function setSelectedInMiniPitch(pitchEl, pid) {
     .querySelectorAll('.pcf-pitch-dot.is-selected')
     .forEach((el) => el.classList.remove('is-selected'));
 
-  if (!id) return;
+  if (!id) {
+    updateKeyPlayerFromPitch(pitchEl, '');
+    return;
+  }
 
   const dot = pitchEl.querySelector(
     `.pcf-pitch-dot[data-player-id="${cssEscapeAttr(id)}"]`
   );
   if (dot) dot.classList.add('is-selected');
   else pitchEl.dataset.selectedPlayerId = '';
+  updateKeyPlayerFromPitch(pitchEl, dot ? id : '');
 }
 
 function selectMiniPitchPlayer(pitchEl, lineupEl, pid) {
@@ -381,16 +388,94 @@ function ensureLineupBoundToMiniPitch(lineupEl, pitchEl) {
   if (already) selectMiniPitchPlayer(pitchEl, lineupEl, already);
 }
 
-function renderNotCalledList(container, club, xi, bench, maxItems = 3) {
+function renderNotCalledList(container, club, xi, bench) {
   if (!container) return;
   const all = Array.isArray(club?.players) ? club.players : [];
   const used = new Set([...(xi || []), ...(bench || [])].filter(Boolean).map((p) => p.id));
   const notCalled = all
     .filter((p) => p && p.id && !used.has(p.id))
     .slice()
-    .sort((a, b) => Number(b?.overall || 0) - Number(a?.overall || 0))
-    .slice(0, maxItems);
+    .sort((a, b) => Number(b?.overall || 0) - Number(a?.overall || 0));
   renderPlayersList(container, notCalled, { note: 'overall' });
+}
+
+function renderPreviewKeyPlayer(container, player) {
+  if (!container) return;
+  if (!player) {
+    container.innerHTML = '<span class="pcf-keyplayer__caption">Jugador destacado</span><span class="pcf-keyplayer__details">Sin datos</span>';
+    return;
+  }
+  const name = String(player.name || 'Jugador').trim();
+  const initials = name.split(/\s+/).slice(0, 2).map(word => word[0] || '').join('').toUpperCase();
+  const position = String(player.position || '—').toUpperCase();
+  const age = Number(player.age) > 0 ? ` · ${Math.trunc(Number(player.age))} años` : '';
+  const rating = Number.isFinite(Number(player.overall)) ? String(Math.round(Number(player.overall))) : '—';
+  container.innerHTML = `
+    <span class="pcf-keyplayer__caption">Jugador destacado</span>
+    <span class="pcf-keyplayer__portrait" aria-hidden="true">${escapeHtml(initials)}</span>
+    <span class="pcf-keyplayer__name">${escapeHtml(name)}</span>
+    <span class="pcf-keyplayer__details">${escapeHtml(position + age)}</span>
+    <span class="pcf-keyplayer__rating">${escapeHtml(rating)}<small>MEDIA</small></span>
+  `;
+}
+
+function updateKeyPlayerFromPitch(pitchEl, playerId) {
+  if (!pitchEl) return;
+  const card = document.getElementById(pitchEl.dataset.previewKeyCardId || '');
+  const selected = pitchEl.__previewPlayerIndex?.get(String(playerId || ''));
+  renderPreviewKeyPlayer(card, selected || pitchEl.__previewFeatured || null);
+}
+
+function renderPreviewSide(side, club, lineup, insight) {
+  const prefix = `nextmatch-pre-${side}`;
+  const pitch = document.getElementById(`${prefix}-pitch`);
+  if (pitch) {
+    pitch.dataset.previewKeyCardId = `${prefix}-key`;
+    pitch.__previewFeatured = getPreviewKeyPlayer(lineup.xi);
+    pitch.__previewPlayerIndex = new Map(lineup.xi.filter(p => p?.id != null).map(p => [String(p.id), p]));
+    const pid = String(pitch.dataset.selectedPlayerId || '');
+    if (pid && !pitch.__previewPlayerIndex.has(pid)) pitch.dataset.selectedPlayerId = '';
+    updateKeyPlayerFromPitch(pitch, pitch.dataset.selectedPlayerId);
+  }
+
+  const formation = String(club?.tactics?.formation || club?.formation || '4-4-2');
+  const rank = insight?.rank ? `${insight.rank}.º · ${insight.points} pts.` : 'Sin clasificación';
+  setText(`${prefix}-standing`, `${rank} · ${formation}`);
+
+  const formEl = document.getElementById(`${prefix}-form`);
+  if (formEl) {
+    const form = insight?.form || [];
+    formEl.innerHTML = form.length
+      ? form.map(entry => `<span class="pcf-form-result pcf-form-result--${entry.result === 'V' ? 'w' : entry.result === 'E' ? 'd' : 'l'}" title="${escapeHtml(entry.title)}">${escapeHtml(entry.result)}</span>`).join('')
+      : '<span>Sin partidos previos</span>';
+  }
+
+  const all = Array.isArray(club?.players) ? club.players : [];
+  const injuries = all.filter(isPlayerInjuredNow);
+  const sanctions = all.filter(isPlayerSuspendedNow);
+  const absencesEl = document.getElementById(`${prefix}-absences`);
+  if (absencesEl) {
+    const unavailable = [...new Map([...injuries, ...sanctions].map(p => [p.id, p])).values()];
+    const names = unavailable.slice(0, 3).map(p => p?.name || 'Jugador').join(', ');
+    const extra = unavailable.length > 3 ? ` y ${unavailable.length - 3} más` : '';
+    absencesEl.innerHTML = `<strong>Bajas:</strong> ${injuries.length} lesionados · ${sanctions.length} sancionados` +
+      (unavailable.length ? `<span title="${escapeHtml(unavailable.map(p => p?.name || '').join(', '))}"> · ${escapeHtml(names + extra)}</span>` : ' · Ninguna');
+  }
+}
+
+function renderPreviewComparison(homeLineup, awayLineup) {
+  const container = document.getElementById('nextmatch-pre-comparison');
+  if (!container) return;
+  const h = getPreviewRatings(homeLineup.xi, homeLineup.bench);
+  const a = getPreviewRatings(awayLineup.xi, awayLineup.bench);
+  const values = [['Media XI', h.xi, a.xi], ['Mejor titular', h.best, a.best], ['Media suplentes', h.bench, a.bench]];
+  container.innerHTML = values.map(([label, home, away]) => {
+    if (home == null || away == null) return `<div class="pcf-comparison-row"><strong>—</strong><span class="pcf-comparison-row__label">${label}: sin datos</span><strong>—</strong></div>`;
+    const hWidth = home + away > 0 ? Math.round(100 * home / (home + away)) : 50;
+    return `<div class="pcf-comparison-row" aria-label="${label}: local ${home}, visitante ${away}">
+      <strong>${home}</strong><div><div class="pcf-comparison-row__track"><span class="pcf-comparison-row__home" style="width:${hWidth}%"></span><span class="pcf-comparison-row__away" style="width:${100 - hWidth}%"></span></div><div class="pcf-comparison-row__label">${label}</div></div><strong>${away}</strong>
+    </div>`;
+  }).join('');
 }
 
 function setMeter(container, value01) {
@@ -844,6 +929,13 @@ export function updateNextMatchView() {
     renderPlayersList(document.getElementById('nextmatch-pre-away-xi'), []);
     renderPlayersList(document.getElementById('nextmatch-pre-away-bench'), []);
     renderPlayersList(document.getElementById('nextmatch-pre-away-out'), []);
+    for (const side of ['home', 'away']) {
+      renderPreviewSide(side, null, { xi: [], bench: [] }, null);
+    }
+    renderPreviewComparison({ xi: [], bench: [] }, { xi: [], bench: [] });
+    setText('nextmatch-pre-referee', 'Por designar');
+    setText('nextmatch-pre-weather', 'Por determinar');
+    setText('nextmatch-pre-head-to-head', 'Sin datos');
     const btn = document.getElementById('nextmatch-open-next-detail');
     if (btn) btn.setAttribute('data-fixture-id', '');
   } else {
@@ -880,11 +972,20 @@ export function updateNextMatchView() {
           attendance: Number(nextFx.meta.attendance || 0),
         }
       : estimateAttendance(nextFx, home, away);
-    setText('nextmatch-next-attendance', `Aforo: ${attendance.toLocaleString('es-ES')} esp. / Cap.: ${capacity.toLocaleString('es-ES')}`);
+    const attendanceLabel = nextFx?.meta?.attendance != null ? 'Asistencia' : 'Previsión de público';
+    setText('nextmatch-next-attendance', `${attendanceLabel}: ${attendance.toLocaleString('es-ES')} · Capacidad: ${capacity.toLocaleString('es-ES')}`);
 
     // Alineaciones
     const homeL = getPreLineup(home);
     const awayL = getPreLineup(away);
+    const insights = computePreviewInsights({
+      fixtures,
+      clubs: GameState.clubs || [],
+      season,
+      beforeMatchday: nextFx.matchday || currentMd,
+      homeId: nextFx.homeClubId,
+      awayId: nextFx.awayClubId,
+    });
 
     // Enlaces pitch <-> listado (selección como en Tácticas)
     const homePitchEl = document.getElementById('nextmatch-pre-home-pitch');
@@ -904,6 +1005,16 @@ export function updateNextMatchView() {
     // ✅ home / away para aplicar mirror correcto
     renderMiniPitch(homePitchEl, home, homeL.xi, 'home');
     renderMiniPitch(awayPitchEl, away, awayL.xi, 'away');
+    renderPreviewSide('home', home, homeL, insights.home);
+    renderPreviewSide('away', away, awayL, insights.away);
+    renderPreviewComparison(homeL, awayL);
+
+    setText('nextmatch-pre-referee', nextFx.refereeName || nextFx.meta?.refereeName || 'Por designar');
+    setText('nextmatch-pre-weather', nextFx.meta?.weather || 'Por determinar');
+    const history = insights.headToHead;
+    setText('nextmatch-pre-head-to-head', history.played
+      ? `${history.played} previos · Local ${history.homeWins} · Empates ${history.draws} · Visitante ${history.awayWins}`
+      : 'Sin enfrentamientos previos');
 
     // Click en la lista (Titulares) <-> click en el campo (como en Tácticas)
     ensureLineupBoundToMiniPitch(homeXiEl, homePitchEl);
