@@ -37,24 +37,58 @@ test('postpartido conserva todos los paneles, datos y controles de navegación',
   assert.match(css, /@media \(max-width:530px\)/);
 });
 
-test('la cadena de módulos invalida las versiones cacheadas de la previa v13', () => {
+test('la cadena de módulos y el CSS invalidan las versiones cacheadas de la v14', () => {
   const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
-  assert.match(html, /main\.js\?v=14/);
-  assert.match(read('../js/main.js'), /ui\/index\.js\?v=14/);
-  assert.match(read('../js/ui/index.js'), /ui\.js\?v=14/);
-  assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=14/);
-  assert.match(read('../js/ui/nextMatchView.js'), /matchTimeline\.js\?v=14/);
+  assert.match(html, /main\.js\?v=141/);
+  assert.match(html, /matchPostVisual26\.css\?v=141/);
+  assert.match(read('../js/main.js'), /ui\/index\.js\?v=141/);
+  assert.match(read('../js/ui/index.js'), /ui\.js\?v=141/);
+  assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=141/);
+  assert.match(read('../js/ui/nextMatchView.js'), /matchTimeline\.js\?v=141/);
+  assert.match(read('../js/ui/nextMatchView.js'), /matchPostReport\.js\?v=141/);
 });
 
 test('la crónica utiliza resultado, goles y decisiones tácticas registrados', () => {
   const names = new Map([['a1','Lina'],['a2','Mario'],['b1','Pedro']]);
   const report = buildPostMatchReport(fixture(), {homeName:'Local',awayName:'Visitante',playerNames:names});
-  assert.match(report.headline, /Local.*2-1/);
+  assert.match(report.headline, /Remontada de Local.*2-1/);
+  assert.match(report.paragraphs.join(' '), /llegó a estar por detrás/);
   assert.match(report.paragraphs.join(' '), /Pedro.*15'/);
   assert.match(report.paragraphs.join(' '), /Mario.*88'/);
   assert.match(report.paragraphs.join(' '), /4-4-2.*4-3-3/);
-  assert.equal(report.moment.title, 'Último gol del partido');
+  assert.equal(report.moment.title, 'Gol de la victoria');
   assert.match(report.moment.detail, /Mario/);
+});
+
+test('reconoce un gol ganador tardío sin fingir una remontada', () => {
+  const f = fixture();
+  f.homeGoals = 1; f.awayGoals = 0;
+  f.events = [{type:'GOAL', minute:90, clubId:'a', playerId:'a2'}];
+  const r = buildPostMatchReport(f, {homeName:'Local', awayName:'Visitante', playerNames:new Map([['a2','Ana']])});
+  assert.match(r.headline, /decide al final/);
+  assert.match(r.paragraphs.join(' '), /Ana.*90'/);
+  assert.doesNotMatch(r.paragraphs.join(' '), /remont/);
+});
+
+test('reconoce el empate final y la diferencia entre posesión y disparos', () => {
+  const f = fixture();
+  f.homeGoals = 1; f.awayGoals = 1;
+  f.events = [{type:'GOAL',minute:9,clubId:'a',playerId:'a1'}, {type:'GOAL',minute:89,clubId:'b',playerId:'b1'}];
+  f.teamStats.home.possessionPct = 64; f.teamStats.away.possessionPct = 36;
+  f.teamStats.home.shotsTotal = 7; f.teamStats.away.shotsTotal = 14;
+  const r = buildPostMatchReport(f, {homeName:'Local', awayName:'Visitante'});
+  assert.match(r.headline, /Empate rescatado al final/);
+  assert.equal(r.moment.title, 'Gol del empate');
+  assert.match(r.paragraphs.join(' '), /Local tuvo más posesión.*Sin embargo, Visitante remató más/);
+});
+
+test('partidas antiguas sin goles registrados no generan remontadas inventadas', () => {
+  const f = fixture();
+  f.events = [];
+  const r = buildPostMatchReport(f, {homeName:'Local',awayName:'Visitante'});
+  assert.doesNotMatch(r.headline, /Remontada|decide al final/);
+  assert.match(r.paragraphs.join(' '), /no incluye el detalle individual de los goles/);
+  assert.doesNotMatch(r.paragraphs.join(' '), /Ninguno de los equipos consiguió marcar/);
 });
 
 test('en un 0-0 no inventa goleadores ni ocasiones', () => {
@@ -85,8 +119,15 @@ test('la cronología conserva eventos y puede ordenar ascendente con cambios tá
   assert.ok(timeline.indexOf('Descanso') < timeline.indexOf('Final del partido'));
   assert.match(timeline, /Cambio de formación/);
   assert.match(timeline, /4-4-2.*4-3-3/);
+  assert.match(timeline, /is-goal/);
+  assert.match(timeline, /GOL/);
   const goalsOnly = buildMatchTimelineHTML({...opts,filter:(e)=>e.type==='GOAL'});
   assert.doesNotMatch(goalsOnly, /Cambio de formación/);
+  const reverse = buildMatchTimelineHTML({...opts,order:'desc'});
+  assert.ok(reverse.indexOf('Final del partido') < reverse.indexOf('Descanso'));
+  assert.ok(reverse.indexOf('Descanso') < reverse.indexOf('Inicio del partido'));
+  const empty = buildMatchTimelineHTML({...opts,filter:(e)=>e.type==='RED'});
+  assert.match(empty, /No hay acontecimientos de este tipo/);
 });
 
 test('las paradas descuentan los goles encajados, no los marcados', () => {

@@ -13,11 +13,11 @@ import {
   formatFixtureKickoffLabel,
 } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
-import { renderMatchTimeline } from './utils/matchTimeline.js?v=14';
+import { renderMatchTimeline } from './utils/matchTimeline.js?v=141';
 import { getFormationSlots, assignPlayersToSlots } from './utils/tacticsState.js';
 import { isPlayerInjuredNow, isPlayerSuspendedNow } from '../game/utils/index.js';
 import { computePreviewInsights, getPreviewKeyPlayer, getPreviewRatings } from './utils/matchPreviewInsights.js';
-import { buildPostMatchReport, getPostMatchStatGroups } from './utils/matchPostReport.js';
+import { buildPostMatchReport, getPostMatchStatGroups } from './utils/matchPostReport.js?v=141';
 
 let __bound = false;
 let __onOpenMatchDetail = null;
@@ -707,6 +707,10 @@ function calcPlayerRating(player, st, seed) {
   return clamp(base + perf - disc + jitter, 4.0, 9.9);
 }
 
+function ratingTier(rating) {
+  return rating >= 8.5 ? 'excellent' : rating >= 7.5 ? 'high' : rating >= 6 ? 'normal' : 'low';
+}
+
 function renderPlayerContribTable(container, fx, club, playerStatsById, title, opts = {}) {
   const { showTitle = true } = opts || {};
 
@@ -730,7 +734,8 @@ function renderPlayerContribTable(container, fx, club, playerStatsById, title, o
     .sort((a, b) => (b.rating - a.rating));
 
   const wrap = document.createElement('div');
-  wrap.className = 'pcf-playerstats';
+  // El contenedor ya tiene la clase pcf-playerstats. No anidar dos marcos iguales.
+  wrap.className = 'pcf-playerstats__inner';
   wrap.innerHTML = showTitle && title ? `<div class="pcf-subtitle">${escapeHtml(title)}</div>` : '';
 
   const table = document.createElement('table');
@@ -752,10 +757,11 @@ function renderPlayerContribTable(container, fx, club, playerStatsById, title, o
   const tb = table.querySelector('tbody');
   rows.forEach(({ p, st, rating }) => {
     const tr = document.createElement('tr');
+    tr.className = rating >= 8.5 ? 'pcf-playerstats__standout' : '';
     const cards = `${Number(st.yellows || 0)}/${Number(st.reds || 0)}`;
     tr.innerHTML = `
       <td>${escapeHtml(p.name || 'Jugador')}</td>
-      <td class="num">${rating.toFixed(1)}</td>
+      <td class="num"><span class="pcf-rating pcf-rating--${ratingTier(rating)}" aria-label="Nota ${rating.toFixed(1)} sobre 10">${rating.toFixed(1)}</span></td>
       <td class="num">${int(st.minutes || 0)}</td>
       <td class="num"><strong>${int(st.goals || 0)}</strong></td>
       <td class="num">${int(st.assists || 0)}</td>
@@ -854,10 +860,11 @@ function renderStatComparison(rows) {
     const h = Math.max(0, Number(row.home || 0));
     const a = Math.max(0, Number(row.away || 0));
     const sum = h + a;
-    const hp = sum ? Math.round(h * 100 / sum) : 50;
-    return `<div class="pcf-statrow">
+    const hp = sum ? Math.round(h * 100 / sum) : 0;
+    const ap = sum ? 100 - hp : 0;
+    return `<div class="pcf-statrow${sum ? '' : ' pcf-statrow--zero'}">
       <div class="pcf-statrow__labels"><span>${valueLabel(row.home, row.suffix)}</span><span>${escapeHtml(row.label)}</span><span>${valueLabel(row.away, row.suffix)}</span></div>
-      <div class="pcf-statrow__track" aria-hidden="true"><span class="pcf-statrow__home" style="width:${hp}%"></span><span class="pcf-statrow__away" style="width:${100-hp}%"></span></div>
+      <div class="pcf-statrow__track" aria-hidden="true"><span class="pcf-statrow__home" style="width:${hp}%"></span><span class="pcf-statrow__away" style="width:${ap}%"></span></div>
     </div>`;
   }).join('');
 }
@@ -1152,7 +1159,8 @@ export function updateNextMatchView() {
   const metaParts = [`Jornada ${lastFx.matchday}`, kLabel, kTime, stName];
   if (Number.isFinite(attendance) && attendance > 0) metaParts.push(`${attendance.toLocaleString('es-ES')} espectadores`);
   if (lastFx.meta?.weather) metaParts.push(lastFx.meta.weather);
-  setText('nextmatch-last-meta', metaParts.join('  ·  '));
+  const metaEl = document.getElementById('nextmatch-last-meta');
+  if (metaEl) metaEl.innerHTML = metaParts.filter(Boolean).map((label) => `<span class="pcf-scorebar__meta-item">${escapeHtml(label)}</span>`).join('');
 
   // Sidecards (clasificación/resultados) para la jornada jugada
   const stand = document.getElementById('nextmatch-post-standings');
@@ -1165,17 +1173,20 @@ export function updateNextMatchView() {
 
   // Marcador principal: local, resultado y visitante (sin otro marco superpuesto).
   const goalEvents = (lastFx.events || []).filter((event) => event?.type === 'GOAL');
+  const goalMinute = (minute) => int(minute) > 90 ? `90+${int(minute) - 90}'` : `${int(minute)}'`;
   const goalsFor = (clubId) => goalEvents.filter((event) => event.clubId === clubId)
-    .map((event) => `${playerIndex.get(event.playerId)?.player?.name || 'Jugador'} ${int(event.minute)}'`).join(' · ');
+    .map((event) => `${playerIndex.get(event.playerId)?.player?.name || 'Jugador'} ${goalMinute(event.minute)}`).join(' · ');
   const heroEl = document.getElementById('nextmatch-post-hero');
   if (heroEl) {
     const homeCoat = createCoatImgElement(lastFx.homeClubId, lastHomeName, 48);
     const awayCoat = createCoatImgElement(lastFx.awayClubId, lastAwayName, 48);
-    heroEl.innerHTML = `<div class="pcf-post-hero__team pcf-post-hero__team--home">
+    const homeWins = Number(lastFx.homeGoals) > Number(lastFx.awayGoals);
+    const awayWins = Number(lastFx.awayGoals) > Number(lastFx.homeGoals);
+    heroEl.innerHTML = `<div class="pcf-post-hero__team pcf-post-hero__team--home${homeWins ? ' is-winner' : ''}">
       <div><div class="pcf-post-hero__name">${escapeHtml(lastHomeName)}</div><div class="pcf-post-hero__goals">${escapeHtml(goalsFor(lastFx.homeClubId))}</div></div>
       ${homeCoat?.outerHTML || ''}</div>
       <div class="pcf-post-hero__result">${int(lastFx.homeGoals)}<span>—</span>${int(lastFx.awayGoals)}</div>
-      <div class="pcf-post-hero__team pcf-post-hero__team--away">${awayCoat?.outerHTML || ''}
+      <div class="pcf-post-hero__team pcf-post-hero__team--away${awayWins ? ' is-winner' : ''}">${awayCoat?.outerHTML || ''}
       <div><div class="pcf-post-hero__name">${escapeHtml(lastAwayName)}</div><div class="pcf-post-hero__goals">${escapeHtml(goalsFor(lastFx.awayClubId))}</div></div></div>`;
   }
 
@@ -1231,7 +1242,7 @@ export function updateNextMatchView() {
     const ref = getRefereeName(`ref:${lastFx.id}:${lastFx.matchday}`);
 
     const blocks = [
-      { title: 'Goleador', sub: topG > 0 ? `${topName} · ${topG} gol(es)` : 'Sin goles', stars: '' },
+      { title: 'Goleador', sub: topG > 0 ? `${topName} · ${topG} ${topG === 1 ? 'gol' : 'goles'}` : 'Sin goles', stars: '' },
       { title: 'Dificultad', sub: diffLabel, stars: '' },
       { title: 'Brillantez', sub: 'Valoración del partido', stars },
       { title: 'Árbitro', sub: ref, stars: '' },
@@ -1320,16 +1331,16 @@ export function updateNextMatchView() {
     const poss = isHomeUser ? (lastFx.teamStats?.home?.possessionPct ?? null) : (lastFx.teamStats?.away?.possessionPct ?? null);
 
     const lines = [];
-    if (gd >= 2) lines.push('Partido muy controlado.');
-    else if (gd === 1) lines.push('Victoria trabajada.');
-    else if (gd === 0) lines.push('Reparto de puntos, partido igualado.');
-    else if (gd === -1) lines.push('Derrota ajustada.');
-    else lines.push('Partido complicado.');
+    if (gd >= 2) lines.push(`Victoria por ${gd} goles de diferencia.`);
+    else if (gd === 1) lines.push('Victoria por la mínima.');
+    else if (gd === 0) lines.push('Reparto de puntos en el marcador.');
+    else if (gd === -1) lines.push('Derrota por la mínima.');
+    else lines.push(`Derrota por ${Math.abs(gd)} goles de diferencia.`);
 
     if (poss != null) {
-      if (poss >= 58) lines.push('Dominio de la posesión.');
-      else if (poss <= 42) lines.push('Equipo replegado y saliendo a la contra.');
-      else lines.push('Alternancia en el centro del campo.');
+      if (poss >= 58) lines.push(`Mayor cuota de posesión (${poss}%).`);
+      else if (poss <= 42) lines.push(`Menor cuota de posesión (${poss}%).`);
+      else lines.push(`Posesión equilibrada (${poss}%).`);
     }
 
     const kickoffTactics = lastFx.tacticalPhases?.[0];
@@ -1338,7 +1349,7 @@ export function updateNextMatchView() {
     }
     for (const change of lastFx.tacticalChanges || []) {
       const clubName = change.clubId === lastFx.homeClubId ? lastHomeName : lastAwayName;
-      const reason = change.reason === 'CHASING_GAME' ? 'para buscar el empate' :
+      const reason = change.reason === 'CHASING_GAME' ? 'para intentar recortar diferencias' :
         change.reason === 'PROTECTING_LEAD' ? 'para proteger su ventaja' : 'para adaptarse al encuentro';
       const changeDetail = change.toFormation !== change.fromFormation
         ? `cambió de ${change.fromFormation} a ${change.toFormation}`

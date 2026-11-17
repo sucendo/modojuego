@@ -43,7 +43,7 @@ import {
   initNextMatchUI,
   updateNextMatchView,
   setLastSimulatedMatchday as setNextMatchLastSimulatedMatchday,
-} from './ui/nextMatchView.js?v=14';
+} from './ui/nextMatchView.js?v=141';
 
 import { initStandingsUI, updateStandingsView, setStandingsSelectedMatchday } from './ui/standings.js';
 
