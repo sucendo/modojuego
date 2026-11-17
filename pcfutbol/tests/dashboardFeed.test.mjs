@@ -57,14 +57,28 @@ test('la portada conserva los controles originales y añade una navegación móv
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   for (const id of [
     'hud-next-main', 'hub-next-hint', 'hub-next-comp-logo', 'btn-go-next-match',
-    'pcf-inbox-list', 'pcf-news-list', 'pcf-shortcuts-list', 'pcf-shortcuts-picker',
+    'pcf-inbox-list', 'pcf-news-list', 'pcf-shortcuts-home', 'pcf-shortcuts-list', 'pcf-shortcuts-picker',
     'pcf-mobile-more', 'btn-nav-dashboard', 'btn-nav-medical',
   ]) {
     assert.equal((html.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, `${id} duplicado o ausente`);
   }
   assert.equal((html.match(/data-category-toggle/g) || []).length, 4);
   assert.match(html, /class="pcf-mobile-nav"/);
-  assert.match(html, /img\/resources\/balonfutbol\.svg/);
+  assert.match(html, /img\/resources\/dashboard-ball-2026-v4\.webp/);
+});
+
+test('el menú principal queda anclado a la izquierda y no depende de los accesos guardados', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const js = readFileSync(new URL('../js/ui/dashboardExtras.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/dashboardVisual26.css', import.meta.url), 'utf8');
+  const home = html.indexOf('id="pcf-shortcuts-home"');
+  const list = html.indexOf('id="pcf-shortcuts-list"');
+  const edit = html.indexOf('id="pcf-shortcuts-edit"');
+  assert.ok(home > 0 && home < list && list < edit);
+  assert.match(html, /id="pcf-shortcuts-home"[^>]*data-nav-target="dashboard"/);
+  assert.match(html, /data-tooltip="Personalizar accesos rápidos"/);
+  assert.match(css, /\.pcf-shortcuts__edit:hover::after/);
+  assert.doesNotMatch(js, /\['dashboard',\s*'[^']+'/);
 });
 
 test('la portada 26 mantiene las cuatro familias de opciones accesibles en móvil', () => {
@@ -87,10 +101,10 @@ test('el acabado cinematográfico es local y recupera los títulos de los panele
   assert.match(html, /css\/dashboardVisual26\.css/);
   assert.match(html, /id="pcf-news-more"/);
   assert.match(css, /pcf-panel__category-toggle > \.pcf-category__label \{ display:inline; \}/);
-  for (const asset of ['stadium-night-2026.webp', 'dashboard-category-icons-2026.webp', 'dashboard-news-2026.webp']) {
+  for (const asset of ['stadium-night-2026.webp', 'dashboard-category-icons-2026.webp', 'dashboard-news-2026.webp', 'dashboard-ball-2026-v4.webp']) {
     const file = new URL(`../img/resources/${asset}`, import.meta.url);
     assert.ok(existsSync(file), `${asset} ausente`);
     assert.ok(statSync(file).size < 200_000, `${asset} no está optimizado`);
-    assert.match(css, new RegExp(asset.replace('.', '\\.')));
+    assert.match(asset === 'dashboard-ball-2026-v4.webp' ? html : css, new RegExp(asset.replace('.', '\\.')));
   }
 });

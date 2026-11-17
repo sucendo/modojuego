@@ -172,9 +172,12 @@
 			
 			<nav class="top-bar pcf-shortcuts" aria-label="Accesos rápidos configurables">
 				<div class="pcf-shortcuts__main">
-					<span class="pcf-shortcuts__title">★ Mis accesos rápidos</span>
+					<button id="pcf-shortcuts-home" class="pcf-shortcuts__home" type="button" data-nav-target="dashboard" aria-label="Ir al menú principal" title="Ir al menú principal">
+						<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5H15v-7H9v7H4.5A1.5 1.5 0 0 1 3 19.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+						<span class="pcf-shortcuts__home-label">Menú principal</span>
+					</button>
 					<div id="pcf-shortcuts-list" class="pcf-shortcuts__list"></div>
-					<button id="pcf-shortcuts-edit" type="button" class="pcf-shortcuts__edit" aria-expanded="false" aria-controls="pcf-shortcuts-picker" aria-label="Personalizar accesos rápidos">＋</button>
+					<button id="pcf-shortcuts-edit" type="button" class="pcf-shortcuts__edit" aria-expanded="false" aria-controls="pcf-shortcuts-picker" aria-label="Personalizar accesos rápidos" data-tooltip="Personalizar accesos rápidos" title="Personalizar accesos rápidos">＋</button>
 				</div>
 				<div id="pcf-shortcuts-picker" class="pcf-shortcuts__picker hidden" aria-label="Selecciona tus accesos rápidos">
 					<strong>Personalizar accesos</strong>
@@ -344,7 +347,7 @@
 
 					<article class="pcf-center">
 						<div class="pcf-center__ball" aria-hidden="true">
-							<img src="img/resources/balonfutbol.svg" alt="" />
+							<img src="img/resources/dashboard-ball-2026-v4.webp" alt="" />
 							<span class="pcf-ball__badge">PCF<strong>26</strong></span>
 						</div>
 
