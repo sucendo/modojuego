@@ -11,7 +11,7 @@
 	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
 	<link rel="stylesheet" href="css/matchPostVisual26.css?v=141" />
 	<link rel="stylesheet" href="css/mobileVisual26.css?v=1" />
-	<link rel="stylesheet" href="css/managementCycle26.css?v=1641" />
+	<link rel="stylesheet" href="css/managementCycle26.css?v=165" />
 </head>
 <body>
 	<header class="app-header">
@@ -506,6 +506,16 @@
 							<label for="pcf-player-training-focus">Objetivo</label>
 							<select id="pcf-player-training-focus"></select>
 							<p id="pcf-player-training-status" class="pcf-management__hint">El objetivo acompaña al calendario del equipo hasta que lo cambies.</p>
+							<section class="pcf-training-evolution" aria-label="Evolución del jugador seleccionado">
+								<h4>Evolución del jugador</h4>
+								<div id="pcf-training-player-summary" class="pcf-training-evolution__summary" aria-live="polite"></div>
+								<p id="pcf-training-player-progress" class="pcf-management__hint"></p>
+								<h4>Atributos trabajados</h4>
+								<div id="pcf-training-player-attributes" class="pcf-training-evolution__attributes"></div>
+								<h4>Últimas sesiones realizadas</h4>
+								<ol id="pcf-training-player-history" class="pcf-training-evolution__history"></ol>
+								<p class="pcf-management__hint">Las variaciones indicadas son las que producen los entrenamientos; los partidos también pueden cambiar la condición y la forma actuales.</p>
+							</section>
 						</div>
 					</div>
 				</div>
@@ -1851,7 +1861,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=1641"></script>
+	<script type="module" src="js/main.js?v=165"></script>
 	
 </body>
 </html>

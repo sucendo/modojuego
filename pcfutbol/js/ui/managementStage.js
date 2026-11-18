@@ -1,11 +1,11 @@
 import { GameState } from '../state.js';
 import {
-  MANAGEMENT_STAGES, TRAINING_TYPES, TICKET_SECTORS, PLAYER_TRAINING_FOCUS, ensureManagementState,
+  MANAGEMENT_STAGES, TRAINING_TYPES, TICKET_SECTORS, PLAYER_TRAINING_FOCUS, TRAINED_ATTRIBUTES, ensureManagementState,
   getManagementStage, getPendingUserFixtures, getTicketPrice, getStadiumSectors,
   getTicketSectorPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
-  getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus,
-} from '../game/managementCycle.js?v=1641';
+  getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus, getPlayerTrainingReport,
+} from '../game/managementCycle.js?v=165';
 
 let initialized = false;
 let currentMonth = '';
@@ -17,6 +17,8 @@ const get = id => document.getElementById(id);
 const text = (id, value) => { const el = get(id); if (el) el.textContent = value; };
 const euros = value => `${Math.round(Number(value || 0)).toLocaleString('es-ES')} €`;
 const number = value => Math.round(Number(value || 0)).toLocaleString('es-ES');
+const decimal = (value, digits = 2) => Number(value || 0).toLocaleString('es-ES', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+const signed = (value, digits = 2) => `${value > 0.00001 ? '+' : ''}${decimal(value, digits)}`;
 const formatDate = iso => new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const homeFixtures = () => getPendingUserFixtures(GameState).filter(fx => String(fx.homeClubId) === String(GameState.user?.clubId));
 const selectedFixture = () => homeFixtures().find(fx => String(fx.id) === String(get('pcf-ticket-fixture')?.value));
@@ -205,6 +207,68 @@ function updateTicketView(stage) {
   }
 }
 
+function renderPlayerTrainingReport() {
+  const report = getPlayerTrainingReport(GameState, selectedPlayer);
+  const summary = get('pcf-training-player-summary');
+  const attributes = get('pcf-training-player-attributes');
+  const history = get('pcf-training-player-history');
+  if (!summary || !attributes || !history) return;
+  summary.replaceChildren();
+  attributes.replaceChildren();
+  history.replaceChildren();
+  if (!report) { text('pcf-training-player-progress', 'Selecciona un jugador para consultar su evolución.'); return; }
+
+  const metric = (label, value, extra) => {
+    const card = document.createElement('div'); card.className = 'pcf-training-evolution__metric';
+    const name = document.createElement('span'); name.textContent = label;
+    const amount = document.createElement('strong'); amount.textContent = value;
+    const change = document.createElement('small'); change.textContent = extra;
+    card.append(name, amount, change);
+    summary.append(card);
+  };
+  const { current, totals } = report;
+  metric('Media global', number(current.overall), `${signed(totals.overall, 0)} por entrenamientos`);
+  metric('Condición física', `${number(current.fitness * 100)} %`, `${signed(totals.fitness * 100, 1)} puntos por entrenamientos`);
+  metric('Fatiga', `${number(current.fatigue)} / 100`, `${signed(totals.fatigue, 1)} puntos por entrenamientos`);
+  metric('Forma', signed(current.form), `${signed(totals.form)} por entrenamientos`);
+  const remaining = Math.max(0, 3.5 - Math.max(0, report.development.points));
+  text('pcf-training-player-progress', `${totals.sessions} sesiones registradas · ${decimal(report.development.points)} / 3,50 puntos de desarrollo hacia la próxima mejora de media global (${decimal(remaining)} restantes). Máximo de 3 puntos de media por temporada.${report.injured ? ' Jugador lesionado: se prioriza la recuperación.' : ''}`);
+
+  for (const attr of TRAINED_ATTRIBUTES) {
+    const row = document.createElement('div'); row.className = 'pcf-training-evolution__attribute';
+    const label = document.createElement('span'); label.textContent = attr.label;
+    const bar = document.createElement('div'); bar.className = 'pcf-training-evolution__bar';
+    const fill = document.createElement('span'); fill.className = 'pcf-training-evolution__fill';
+    const value = Number(current.attributes[attr.key] || 0);
+    fill.style.width = `${Math.max(0, Math.min(100, value / 99 * 100))}%`;
+    bar.append(fill);
+    const readout = document.createElement('strong');
+    readout.textContent = decimal(value);
+    const delta = document.createElement('small'); delta.className = 'pcf-training-evolution__gain';
+    delta.textContent = ` (${signed(totals.attributes[attr.key])})`;
+    readout.append(delta);
+    row.append(label, bar, readout);
+    attributes.append(row);
+  }
+  if (!report.recent.length) {
+    const empty = document.createElement('li');
+    empty.textContent = 'Aún no hay sesiones aplicadas. Verás los cambios al avanzar al próximo día de partido.';
+    history.append(empty);
+    return;
+  }
+  for (const entry of report.recent) {
+    const item = document.createElement('li');
+    const title = document.createElement('strong');
+    title.textContent = `${formatDate(`${entry.day}T12:00:00Z`)} · ${TRAINING_TYPES[entry.type] || entry.type}`;
+    const details = document.createElement('span');
+    const gains = TRAINED_ATTRIBUTES.filter(attr => (entry.gains?.[attr.key] || 0) > 0)
+      .map(attr => `${attr.label} +${decimal(entry.gains[attr.key])}`);
+    details.textContent = `${entry.injured ? 'Lesionado · recuperación prioritaria. ' : ''}Condición ${signed((entry.after.fitness - entry.before.fitness) * 100, 1)} pp · Fatiga ${signed(entry.after.fatigue - entry.before.fatigue, 1)}${gains.length ? ` · ${gains.join(' · ')}` : ''}${entry.after.overall > entry.before.overall ? ' · ¡Subió la media global!' : ''}`;
+    item.append(title, details);
+    history.append(item);
+  }
+}
+
 function updateTrainingView(stage) {
   const months = getSeasonTrainingMonths(GameState);
   const todayMonth = GameState.currentTimeISO?.slice(0, 7);
@@ -296,6 +360,7 @@ function updateTrainingView(stage) {
   }
   const individualCount = players.filter(p => GameState.management.playerTraining[String(p.id)]).length;
   text('pcf-player-training-status', `${individualCount} objetivo(s) individual(es) asignado(s). Se aplican de forma gradual con las sesiones futuras; los lesionados priorizan su recuperación.`);
+  renderPlayerTrainingReport();
 }
 
 export function updateManagementView() {
