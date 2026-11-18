@@ -2,8 +2,29 @@
 // Todas las decisiones se guardan dentro de GameState (exportación JSON normal).
 
 export const MANAGEMENT_STAGES = Object.freeze({ WEEK: 'week', MATCHDAY: 'matchday', POST: 'post' });
-export const TRAINING_TYPES = Object.freeze({ rest: 'Descanso', recovery: 'Recuperación', balanced: 'Equilibrado', intense: 'Intensivo' });
+export const TRAINING_TYPES = Object.freeze({
+  rest: 'Descanso', recovery: 'Recuperación', balanced: 'Equilibrado',
+  intense: 'Físico intensivo', technical: 'Técnica', tactical: 'Táctica',
+});
+export const PLAYER_TRAINING_FOCUS = Object.freeze({
+  general: 'Sin objetivo individual', passing: 'Pase', dribbling: 'Regate', shooting: 'Disparo',
+  tackling: 'Entrada', stamina: 'Resistencia', recovery: 'Recuperación específica',
+});
 export const DEFAULT_TICKET_PRICE = 35;
+export const TICKET_SECTORS = Object.freeze([
+  { id: 'vip', label: 'Palcos VIP', share: 0.03, factor: 2.4 },
+  { id: 'tribuna', label: 'Tribuna principal', share: 0.26, factor: 1.45 },
+  { id: 'preferencia', label: 'Preferencia', share: 0.32, factor: 1.05 },
+  { id: 'norte', label: 'Fondo norte', share: 0.20, factor: 0.70 },
+  { id: 'sur', label: 'Fondo sur', share: 0.19, factor: 0.70 },
+]);
+
+const DAY_MS = 86400000;
+const clamp = (v, low, high) => Math.max(low, Math.min(high, v));
+const startOfDay = (ms) => {
+  const d = new Date(ms);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+};
 
 const validDate = (iso) => {
   const ms = Date.parse(iso || '');
@@ -28,8 +49,12 @@ export function ensureManagementState(state) {
   const m = state.management;
   if (!Object.values(MANAGEMENT_STAGES).includes(m.stage)) m.stage = MANAGEMENT_STAGES.WEEK;
   if (!m.ticketPrices || typeof m.ticketPrices !== 'object') m.ticketPrices = {};
+  if (!m.ticketZonePrices || typeof m.ticketZonePrices !== 'object') m.ticketZonePrices = {};
+  if (m.ticketMode !== 'auto' && m.ticketMode !== 'manual') m.ticketMode = 'auto';
   if (!m.trainingDays || typeof m.trainingDays !== 'object') m.trainingDays = {};
   if (!m.trainingApplied || typeof m.trainingApplied !== 'object') m.trainingApplied = {};
+  if (m.trainingMode !== 'auto' && m.trainingMode !== 'manual') m.trainingMode = 'auto';
+  if (!m.playerTraining || typeof m.playerTraining !== 'object') m.playerTraining = {};
   return m;
 }
 
@@ -40,7 +65,10 @@ export function setTicketPrice(state, fx, price) {
   if (fx.meta?.ticketPriceLocked != null) return false;
   const numeric = Number(price);
   if (!Number.isFinite(numeric) || numeric < 5 || numeric > 250) return false;
-  ensureManagementState(state).ticketPrices[fixtureKey(fx)] = Math.round(numeric);
+  const management = ensureManagementState(state);
+  management.ticketPrices[fixtureKey(fx)] = Math.round(numeric);
+  // La API antigua sigue representando una tarifa plana de todas las localidades.
+  management.ticketZonePrices[fixtureKey(fx)] = Object.fromEntries(TICKET_SECTORS.map(s => [s.id, Math.round(numeric)]));
   return true;
 }
 
@@ -50,12 +78,179 @@ export function getTicketPrice(state, fx) {
   return planned >= 5 && planned <= 250 ? planned : DEFAULT_TICKET_PRICE;
 }
 
+export function setTicketMode(state, mode) {
+  if (mode !== 'auto' && mode !== 'manual') return false;
+  ensureManagementState(state).ticketMode = mode;
+  return true;
+}
+
+export function getStadiumSectors(state, fx) {
+  const home = (state.clubs || []).find(c => String(c.id) === String(fx?.homeClubId ?? state.user?.clubId));
+  const rawCapacity = Number(fx?.meta?.stadiumCapacity || fx?.meta?.capacity || home?.stadium?.capacity || 30000);
+  const capacity = Math.max(1, Math.round(Number.isFinite(rawCapacity) ? rawCapacity : 30000));
+  let assigned = 0;
+  return TICKET_SECTORS.map((s, i) => {
+    const seats = i === TICKET_SECTORS.length - 1 ? capacity - assigned : Math.floor(capacity * s.share);
+    assigned += seats;
+    return { ...s, capacity: seats };
+  });
+}
+
+export function getTicketSectorPrices(state, fx) {
+  const management = ensureManagementState(state);
+  if (fx?.meta?.ticketZonePricesLocked) return { ...fx.meta.ticketZonePricesLocked };
+  const key = fixtureKey(fx);
+  const fixed = management.ticketZonePrices[key] || {};
+  const base = getTicketPrice(state, fx);
+  // Las partidas de v16.1 solo tenían un precio plano; conservar esa intención.
+  if (management.ticketPrices[key] != null && management.ticketZonePrices[key] == null) {
+    return Object.fromEntries(TICKET_SECTORS.map(s => [s.id, base]));
+  }
+  const opponent = (state.clubs || []).find(c => String(c.id) === String(fx?.awayClubId));
+  const avg = (opponent?.players || []).slice(0, 18).reduce((sum, p) => sum + Number(p?.overall || 70), 0) / Math.max(1, Math.min(18, opponent?.players?.length || 0));
+  const opponentFactor = management.ticketMode === 'auto' ? clamp(1 + (avg - 76) * 0.009, 0.85, 1.18) : 1;
+  return Object.fromEntries(TICKET_SECTORS.map(s => [s.id,
+    Number.isFinite(Number(fixed[s.id])) && Number(fixed[s.id]) >= 5 && Number(fixed[s.id]) <= 250
+      ? Number(fixed[s.id]) : clamp(Math.round(base * s.factor * opponentFactor), 5, 250),
+  ]));
+}
+
+export function setTicketSectorPrice(state, fx, sectorId, price) {
+  if (!TICKET_SECTORS.some(s => s.id === sectorId) || !fx || fx.played ||
+      String(fx.homeClubId) !== String(state.user?.clubId) || fx.meta?.ticketPriceLocked != null) return false;
+  const value = Number(price);
+  if (!Number.isFinite(value) || value < 5 || value > 250) return false;
+  const management = ensureManagementState(state);
+  const key = fixtureKey(fx);
+  if (!management.ticketZonePrices[key]) management.ticketZonePrices[key] = {};
+  management.ticketZonePrices[key][sectorId] = Math.round(value);
+  return true;
+}
+
+export function adjustTicketSectorPrices(state, fixtures, { sectorId = 'all', operation = 'percent', amount = 0 } = {}) {
+  if (!['all', ...TICKET_SECTORS.map(s => s.id)].includes(sectorId) ||
+      !['percent', 'euros'].includes(operation) || !Number.isFinite(Number(amount))) return 0;
+  let changed = 0;
+  for (const fx of fixtures || []) {
+    const prices = getTicketSectorPrices(state, fx);
+    for (const sector of TICKET_SECTORS) {
+      if (sectorId !== 'all' && sector.id !== sectorId) continue;
+      const value = operation === 'percent' ? prices[sector.id] * (1 + Number(amount) / 100) : prices[sector.id] + Number(amount);
+      if (setTicketSectorPrice(state, fx, sector.id, clamp(Math.round(value), 5, 250))) changed++;
+    }
+  }
+  return changed;
+}
+
+export function getTicketSalesProjection(state, fx, baseAttendance = null) {
+  const sectors = getStadiumSectors(state, fx);
+  const capacity = sectors.reduce((sum, sector) => sum + sector.capacity, 0);
+  const attendance = clamp(Number(baseAttendance ?? fx?.meta?.attendance ?? capacity * 0.74), 0, capacity);
+  const prices = getTicketSectorPrices(state, fx);
+  const base = getTicketPrice(state, fx);
+  let totalAttendance = 0;
+  let totalRevenue = 0;
+  const breakdown = sectors.map(sector => {
+    const price = prices[sector.id];
+    const reference = clamp(Math.round(base * sector.factor), 5, 250);
+    const demand = clamp(1 - 0.30 * Math.log(price / reference), 0.35, 1.18);
+    const filled = clamp(Math.round(attendance * sector.share * demand), 0, sector.capacity);
+    const revenue = Math.round(filled * price);
+    totalAttendance += filled;
+    totalRevenue += revenue;
+    return { ...sector, price, attendance: filled, revenue };
+  });
+  return { capacity, attendance: totalAttendance, revenue: totalRevenue, breakdown };
+}
+
+export function setTrainingMode(state, mode) {
+  if (mode !== 'auto' && mode !== 'manual') return false;
+  ensureManagementState(state).trainingMode = mode;
+  return true;
+}
+
+export function setPlayerTrainingFocus(state, playerId, focus) {
+  if (!(focus in PLAYER_TRAINING_FOCUS)) return false;
+  const player = (state.clubs || []).find(c => String(c.id) === String(state.user?.clubId))?.players
+    ?.find(p => String(p.id) === String(playerId));
+  if (!player) return false;
+  const training = ensureManagementState(state).playerTraining;
+  if (focus === 'general') delete training[String(playerId)];
+  else training[String(playerId)] = focus;
+  return true;
+}
+
+export function getUserFixturesOnDay(state, isoDay) {
+  return (state.fixtures || []).filter(fx =>
+    (String(fx.homeClubId) === String(state.user?.clubId) || String(fx.awayClubId) === String(state.user?.clubId)) &&
+    fx.kickoffDate?.slice(0, 10) === isoDay);
+}
+
+export function getSeasonTrainingMonths(state) {
+  const all = (state.fixtures || []).filter(fx =>
+    (String(fx.homeClubId) === String(state.user?.clubId) || String(fx.awayClubId) === String(state.user?.clubId)) && validDate(fx.kickoffDate) != null)
+    .map(fx => startOfDay(validDate(fx.kickoffDate))).sort((a, b) => a - b);
+  const current = validDate(state.currentTimeISO) ?? Date.now();
+  const first = new Date(Math.min(all[0] ?? current, current));
+  const last = new Date(Math.max(all[all.length - 1] ?? current, current));
+  const months = [];
+  for (let tick = Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1);
+    tick <= Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), 1);
+    tick = Date.UTC(new Date(tick).getUTCFullYear(), new Date(tick).getUTCMonth() + 1, 1)) {
+    months.push(new Date(tick).toISOString().slice(0, 7));
+  }
+  return months;
+}
+
+export function getTrainingDayPlan(state, isoDay) {
+  const management = ensureManagementState(state);
+  const fixtures = (state.fixtures || []).filter(fx =>
+    String(fx.homeClubId) === String(state.user?.clubId) || String(fx.awayClubId) === String(state.user?.clubId));
+  const matches = fixtures.map(fx => fx.kickoffDate?.slice(0, 10)).filter(Boolean).sort();
+  const nowDay = state.currentTimeISO?.slice(0, 10) || '';
+  const played = Boolean(management.trainingApplied[isoDay]);
+  const locked = played || (nowDay && isoDay < nowDay) || management.stage === MANAGEMENT_STAGES.POST;
+  if (matches.includes(isoDay)) return { type: 'match', source: 'fixture', locked: true, played };
+  if (management.trainingDays[isoDay] in TRAINING_TYPES) {
+    return { type: management.trainingDays[isoDay], source: 'manual', locked, played };
+  }
+  if (management.trainingMode === 'manual') return { type: 'balanced', source: 'default', locked, played };
+  const previous = matches.filter(d => d < isoDay).at(-1);
+  const next = matches.find(d => d > isoDay);
+  const delta = (a, b) => Math.round((Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) / DAY_MS);
+  const weekday = new Date(`${isoDay}T12:00:00Z`).getUTCDay();
+  let type = weekday === 0 ? 'rest' : weekday === 1 ? 'intense' : weekday === 2 ? 'technical'
+    : weekday === 3 ? 'tactical' : weekday === 4 ? 'balanced' : weekday === 5 ? 'technical' : 'recovery';
+  if (previous && delta(isoDay, previous) === 1) type = 'recovery';
+  else if (next && delta(next, isoDay) === 1) type = 'tactical';
+  else if (next && delta(next, isoDay) === 2) type = 'balanced';
+  // Si la plantilla llega muy cargada, el modo automático cambia la sesión.
+  const players = (state.clubs || []).find(c => String(c.id) === String(state.user?.clubId))?.players || [];
+  if (players.length) {
+    const fatigue = players.reduce((sum, p) => sum + Number(p.fatigue || 0), 0) / players.length;
+    const fitness = players.reduce((sum, p) => sum + Number(p.fitness ?? 0.9), 0) / players.length;
+    if (fatigue >= 58 || fitness < 0.71) type = 'recovery';
+  }
+  return { type, source: 'auto', locked, played };
+}
+
 export function setTrainingDay(state, isoDay, type) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDay)) || !(type in TRAINING_TYPES)) return false;
   const selectedDay = validDate(`${isoDay}T00:00:00Z`);
   const today = validDate(state.currentTimeISO || '');
-  if (selectedDay == null || (today != null && selectedDay < Date.UTC(new Date(today).getUTCFullYear(), new Date(today).getUTCMonth(), new Date(today).getUTCDate()))) return false;
+  if (selectedDay == null || getUserFixturesOnDay(state, isoDay).length ||
+      ensureManagementState(state).trainingApplied[isoDay] ||
+      (today != null && selectedDay < startOfDay(today))) return false;
   ensureManagementState(state).trainingDays[isoDay] = type;
+  return true;
+}
+
+export function clearTrainingDay(state, isoDay) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDay))) return false;
+  const management = ensureManagementState(state);
+  if (management.trainingApplied[isoDay] || getUserFixturesOnDay(state, isoDay).length ||
+    (state.currentTimeISO && isoDay < state.currentTimeISO.slice(0, 10))) return false;
+  delete management.trainingDays[isoDay];
   return true;
 }
 
@@ -93,14 +288,32 @@ export function applyScheduledTraining(state, fromISO, throughISO) {
   for (; tick < endDay; tick += 86400000) {
     const day = dayKeyUTC(tick);
     if (m.trainingApplied[day]) continue;
-    const type = m.trainingDays[day] || 'balanced';
+    const type = getTrainingDayPlan(state, day).type;
+    if (type === 'match') { m.trainingApplied[day] = true; continue; }
     for (const p of players) {
       if (!p) continue;
       const injured = Number(p.injury?.matchesRemaining || 0) > 0;
-      const delta = type === 'rest' ? 0.065 : type === 'recovery' ? 0.070 : type === 'intense' ? 0.025 : 0.045;
-      const fatigue = type === 'rest' ? -10 : type === 'recovery' ? -8 : type === 'intense' ? 7 : -3;
-      p.fitness = Math.max(0.30, Math.min(0.99, Number(p.fitness ?? 0.9) + (injured ? Math.max(0, delta) : delta)));
-      p.fatigue = Math.max(0, Math.min(100, Number(p.fatigue || 0) + (injured ? Math.min(0, fatigue) : fatigue)));
+      const focus = m.playerTraining[String(p.id)] || 'general';
+      const delta = ({ rest: 0.065, recovery: 0.070, intense: 0.018, technical: 0.038, tactical: 0.040, balanced: 0.045 })[type];
+      const fatigue = ({ rest: -10, recovery: -8, intense: 9, technical: 1, tactical: -1, balanced: -3 })[type];
+      p.fitness = Math.max(0.30, Math.min(0.99, Number(p.fitness ?? 0.9) + (injured ? Math.max(0, delta) : delta) + (focus === 'recovery' ? 0.008 : 0)));
+      p.fatigue = Math.max(0, Math.min(100, Number(p.fatigue || 0) + (injured ? Math.min(0, fatigue) : fatigue) - (focus === 'recovery' ? 2 : 0)));
+      // Microprogresión: entrenar durante semanas tiene efecto, sin mejorar varios puntos de golpe.
+      if (!injured && type === 'technical' && p.attributes?.technical) {
+        for (const attr of ['passing', 'dribbling', 'shooting', 'tackling']) {
+          if (Number.isFinite(Number(p.attributes.technical[attr]))) {
+            p.attributes.technical[attr] = clamp(Number(p.attributes.technical[attr]) + 0.018, 1, 99);
+          }
+        }
+      }
+      if (!injured && type === 'intense' && p.attributes?.physical && Number.isFinite(Number(p.attributes.physical.stamina))) {
+        p.attributes.physical.stamina = clamp(Number(p.attributes.physical.stamina) + 0.018, 1, 99);
+      }
+      if (!injured && type === 'tactical') p.form = clamp(Number(p.form || 0) + 0.015, -3, 3);
+      if (!injured && !['rest', 'recovery'].includes(type) && focus !== 'general' && focus !== 'recovery') {
+        const group = focus === 'stamina' ? p.attributes?.physical : p.attributes?.technical;
+        if (group && Number.isFinite(Number(group[focus]))) group[focus] = clamp(Number(group[focus]) + 0.025, 1, 99);
+      }
     }
     m.trainingApplied[day] = true;
     applied++;
@@ -112,6 +325,7 @@ export function lockCurrentTicketPrice(state, fx) {
   if (!fx || fx.played || String(fx.homeClubId) !== String(state.user?.clubId)) return;
   if (!fx.meta || typeof fx.meta !== 'object') fx.meta = {};
   if (fx.meta.ticketPriceLocked == null) fx.meta.ticketPriceLocked = getTicketPrice(state, fx);
+  if (!fx.meta.ticketZonePricesLocked) fx.meta.ticketZonePricesLocked = getTicketSectorPrices(state, fx);
 }
 
 // Recaudación real a la caja del club, solo una vez y únicamente como local.
@@ -122,19 +336,20 @@ export function settleUserTicketSales(state, fx) {
   lockTicketPriceAfterMatch(state, fx);
   const home = (state.clubs || []).find((club) => String(club.id) === String(fx.homeClubId));
   if (!home) return 0;
-  const capacity = Math.max(1, Number(fx.meta.stadiumCapacity || home.stadium?.capacity || 30000));
-  const baseAttendance = Math.max(0, Number(fx.meta.attendance || 0));
-  const price = Number(fx.meta.ticketPriceLocked);
-  const demand = Math.max(0.65, Math.min(1.13, 1 - ((price - DEFAULT_TICKET_PRICE) / DEFAULT_TICKET_PRICE) * 0.18));
-  const attendance = Math.min(capacity, Math.round(baseAttendance * demand));
-  const revenue = attendance * price;
-  fx.meta.attendance = attendance;
-  fx.meta.ticketRevenue = revenue;
+  const result = getTicketSalesProjection(state, fx, Math.max(0, Number(fx.meta.attendance || 0)));
+  fx.meta.attendance = result.attendance;
+  fx.meta.ticketRevenue = result.revenue;
+  fx.meta.ticketRevenueBySector = result.breakdown.map(({ id, capacity, attendance, price, revenue }) => ({ id, capacity, attendance, price, revenue }));
   fx.meta.ticketRevenueApplied = true;
-  home.cash = Number(home.cash || 0) + revenue;
-  return revenue;
+  home.cash = Number(home.cash || 0) + result.revenue;
+  return result.revenue;
 }
 
 function lockTicketPriceAfterMatch(state, fx) {
+  lockCurrentTicketPriceAfterMatch(state, fx);
+}
+
+function lockCurrentTicketPriceAfterMatch(state, fx) {
   if (fx.meta.ticketPriceLocked == null) fx.meta.ticketPriceLocked = getTicketPrice(state, fx);
+  if (!fx.meta.ticketZonePricesLocked) fx.meta.ticketZonePricesLocked = getTicketSectorPrices(state, fx);
 }

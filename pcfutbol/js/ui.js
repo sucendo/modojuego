@@ -58,7 +58,7 @@ import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=11';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
 import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js';
-import { initManagementUI, updateManagementView } from './ui/managementStage.js?v=163';
+import { initManagementUI, updateManagementView } from './ui/managementStage.js?v=164';
 import { handleFileInput } from './ui/saveLoadUI.js';
 
 import { getPlayerById, handlePlayerAction as handlePlayerActionImpl } from './ui/playerActions.js';
