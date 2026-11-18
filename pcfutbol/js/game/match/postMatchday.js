@@ -76,6 +76,7 @@ export function applyPostMatchdayEffects(currentFixtures, ctx) {
       applyFitnessAndFormForClubBetweenMatches(club, fx, fx.homeClubId === club.id, daysUntilNext, {
         currentDate,
         computeMinutesForClubInFixture,
+        deferRecovery: String(club.id) === String(ctx?.userClubId || ''),
       });
     } else {
       // No jugó: descanso + fitness/form hacia “normal”

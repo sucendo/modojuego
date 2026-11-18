@@ -9,7 +9,7 @@ import { exportGameToFile } from './saveLoad.js';
 import { showDashboard, setActiveSubview } from './ui/nav.js';
 import { initNavigation } from './ui/navigation.js';
 
-import { updateDashboard } from './ui/dashboard.js?v=8.1';
+import { updateDashboard } from './ui/dashboard.js?v=16.1';
 
 import {
   initPlayerModal as initPlayerModalImpl,
@@ -43,7 +43,7 @@ import {
   initNextMatchUI,
   updateNextMatchView,
   setLastSimulatedMatchday as setNextMatchLastSimulatedMatchday,
-} from './ui/nextMatchView.js?v=142';
+} from './ui/nextMatchView.js?v=161';
 
 import { initStandingsUI, updateStandingsView, setStandingsSelectedMatchday } from './ui/standings.js';
 
@@ -57,7 +57,8 @@ import { getPlayerGameAge } from './ui/utils/calendar.js';
 import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=11';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
-import { simulateCurrentMatchday, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js';
+import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js';
+import { initManagementUI } from './ui/managementStage.js';
 import { handleFileInput } from './ui/saveLoadUI.js';
 
 import { getPlayerById, handlePlayerAction as handlePlayerActionImpl } from './ui/playerActions.js';
@@ -276,6 +277,18 @@ export function initUI() {
   initCalendarUI({ onOpenMatchDetail: openMatchDetailModal });
   initResultsUI({ onOpenMatchDetail: openMatchDetailModal });
   initNextMatchUI({ onOpenMatchDetail: openMatchDetailModal });
+  initManagementUI({ onContinue: () => {
+    try {
+      if (!advanceToNextUserMatchDay()) {
+        alert('No hay un próximo partido pendiente o ya estás en el día del encuentro.');
+        return;
+      }
+      refreshAllViews();
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || 'No se pudo avanzar al día del partido.');
+    }
+  }});
 
   // Estadísticas (vista nueva)
   initStatsUI?.();

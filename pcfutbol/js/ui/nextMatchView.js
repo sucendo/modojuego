@@ -5,7 +5,8 @@
 import { GameState } from '../state.js';
 import { getSeasonLabel } from '../gameSeason.js';
 import { getUserClub } from '../game/selectors.js';
-import { advanceToNextUserMatchPrep } from '../game/simulateMatchday.js';
+import { advanceToNextManagementDay } from '../game/simulateMatchday.js';
+import { MANAGEMENT_STAGES, getManagementStage } from '../game/managementCycle.js';
 import {
   getGameDateFor,
   formatGameDateLabel,
@@ -162,6 +163,10 @@ function ensureMatchScreenBindings() {
 
   if (btnSim) {
     btnSim.addEventListener('click', () => {
+      if (getManagementStage(GameState) !== MANAGEMENT_STAGES.MATCHDAY) {
+        window.alert('Primero completa la gestión semanal y pulsa «Continuar al día del partido» en el menú principal.');
+        return;
+      }
       const ok = trySimulateFromMatchScreen();
       if (!ok) {
         console.warn('[nextMatchView] No se encontró función/botón de simular jornada.');
@@ -175,13 +180,10 @@ function ensureMatchScreenBindings() {
 
   if (btnCont) {
     btnCont.addEventListener('click', () => {
-      // Tras ver el post, dejar la pantalla lista para la siguiente previa...
-      // para que al entrar de nuevo muestre el siguiente partido.
+      // La siguiente parada ahora es el día posterior al partido, antes de entrenar.
+      try { advanceToNextManagementDay(); } catch (e) { console.warn(e); }
       __lastSimulatedMatchday = null;
       setMatchScreen('pre');
-	  
-      // Avanzar el mundo hasta 1 día antes del próximo partido (y simular lo ocurrido entre medias)
-      try { advanceToNextUserMatchPrep(); } catch (e) { console.warn(e); }
 
        const btnDash = document.getElementById('btn-nav-dashboard');
        if (btnDash) {
@@ -1172,6 +1174,9 @@ export function updateNextMatchView() {
   const metaParts = [`Jornada ${lastFx.matchday}`, kLabel, kTime, stName];
   if (Number.isFinite(attendance) && attendance > 0) metaParts.push(`${attendance.toLocaleString('es-ES')} espectadores`);
   if (lastFx.meta?.weather) metaParts.push(lastFx.meta.weather);
+  if (lastFx.homeClubId === userId && lastFx.meta?.ticketRevenueApplied) {
+    metaParts.push(`Taquilla: ${Number(lastFx.meta.ticketRevenue).toLocaleString('es-ES')} €`);
+  }
   const metaEl = document.getElementById('nextmatch-last-meta');
   if (metaEl) metaEl.innerHTML = metaParts.filter(Boolean).map((label) => `<span class="pcf-scorebar__meta-item">${escapeHtml(label)}</span>`).join('');
 
@@ -1373,6 +1378,17 @@ export function updateNextMatchView() {
     sensEl.innerHTML = `<div class="pcf-sensations__text">${lines.map((t) => `• ${escapeHtml(t)}`).join('<br>')}</div>`;
   }
 
+  const physicalEl = document.getElementById('nextmatch-post-physical');
+  if (physicalEl) {
+    const rows = Array.isArray(lastFx.postPhysical) ? lastFx.postPhysical : [];
+    physicalEl.innerHTML = rows.length
+      ? `<h4 class="pcf-subtitle">Estado físico después del partido · Tu equipo</h4><div class="pcf-physical-table-wrap"><table class="pcf-physical-table"><thead><tr><th>Jugador</th><th>Min.</th><th>Energía</th><th>Fatiga</th><th>Estado</th></tr></thead><tbody>${rows.map(p => {
+          const label = p.injury > 0 ? `Lesión · ${p.injury} partido(s)` : p.suspension > 0 ? `Sanción · ${p.suspension}` : 'Disponible';
+          return `<tr><td>${escapeHtml(p.name || 'Jugador')}</td><td>${int(p.minutes)}</td><td>${Math.round(clamp(p.fitness,0,1)*100)}%</td><td>${Math.round(clamp(p.fatigue,0,100))}%</td><td>${escapeHtml(label)}</td></tr>`;
+        }).join('')}</tbody></table></div>`
+      : '<p class="muted">Esta partida no contiene una instantánea física de los futbolistas para ese encuentro.</p>';
+  }
+
   // Panel ÁRBITRO
   const refEl = document.getElementById('nextmatch-post-referee');
   if (refEl) {
@@ -1389,10 +1405,14 @@ export function updateNextMatchView() {
   }
   
   // Si venimos de simular una jornada, saltamos automáticamente al POST del último partido jugado.
-  if (__lastSimulatedMatchday != null) {
+  if (getManagementStage(GameState) === MANAGEMENT_STAGES.POST) {
+    __matchScreen = 'post';
+  } else if (__lastSimulatedMatchday != null) {
     const md = Number(__lastSimulatedMatchday);
     const maybeFx = getFixtureForUser(md, userId, fixtures);
     if (maybeFx && maybeFx.played) __matchScreen = 'post';
+  } else {
+    __matchScreen = 'pre';
   }
   setMatchScreen(__matchScreen);
 }
