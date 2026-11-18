@@ -101,10 +101,13 @@ test('partidas antiguas sin fase conservan entrada directa a la previa y datos h
 test('la interfaz conecta dos estados de gestión con el partido y conserva el postpartido', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../css/managementCycle26.css', import.meta.url), 'utf8');
+  const managementUI = readFileSync(new URL('../js/ui/managementStage.js', import.meta.url), 'utf8');
   assert.match(html, /id="pcf-management-panel"/);
   assert.match(html, /id="pcf-ticket-price"/);
   assert.match(html, /id="pcf-training-days"/);
   assert.match(html, /id="nextmatch-post-physical"/);
   assert.match(html, /id="nextmatch-continue"/);
+  assert.match(managementUI, /▶ DÍA DEL PARTIDO/);
+  assert.doesNotMatch(managementUI, /CONTINUAR AL DÍA DEL PARTIDO/);
   assert.match(css, /@media \(max-width: 780px\)/);
 });
