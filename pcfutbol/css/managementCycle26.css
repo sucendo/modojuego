@@ -1,0 +1,41 @@
+/* v16.1: controles de gestión que no invaden la composición del dashboard. */
+#screen-dashboard .pcf-management {
+  margin: 0 0 14px; padding: 13px 17px;
+  border: 1px solid rgba(102, 201, 237, .45); border-radius: 13px;
+  background: linear-gradient(110deg, rgba(10, 37, 60, .96), rgba(10, 56, 76, .90));
+  color: #eaf8ff; min-width: 0;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
+}
+#screen-dashboard .pcf-management__head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+#screen-dashboard .pcf-management__head h2 { margin:2px 0; font-size:clamp(16px,1.45vw,21px); color:#fff; }
+#screen-dashboard .pcf-management__eyebrow { font-size:10px; font-weight:800; letter-spacing:.14em; color:#7edaf6; }
+#screen-dashboard .pcf-management__status { display:inline-flex; padding:5px 9px; border-radius:20px; border:1px solid #65cce988; font-size:11px; font-weight:700; }
+#screen-dashboard .pcf-management__description { margin:4px 0 10px; color:#bbdbe7; font-size:12px; }
+#screen-dashboard .pcf-management__columns { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.6fr); gap:16px; }
+#screen-dashboard .pcf-management__column { min-width:0; }
+#screen-dashboard .pcf-management__column h3 { margin:0 0 8px; font-size:13px; font-weight:800; color:#b0eaff; }
+#screen-dashboard .pcf-management__column > label { display:block; margin:6px 0 3px; font-size:11px; color:#d4ecf7; }
+#screen-dashboard .pcf-management__column > select,
+#screen-dashboard .pcf-management__column > input { width:100%; max-width:100%; box-sizing:border-box; min-height:34px; background:#0e2439; border:1px solid #39768f; color:#fff; border-radius:7px; padding:4px 8px; }
+#screen-dashboard .pcf-management__column :disabled { opacity:.65; cursor:not-allowed; }
+#screen-dashboard .pcf-management__hint { margin:6px 0 0; font-size:11px; color:#acc9d6; line-height:1.45; }
+#screen-dashboard .pcf-management__training { display:grid; grid-template-columns:repeat(auto-fit,minmax(156px,1fr)); gap:6px; }
+#screen-dashboard .pcf-management__day { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:3px 6px; border:1px solid #38728a66; background:#081b2c8c; border-radius:6px; min-width:0; }
+#screen-dashboard .pcf-management__day span { color:#dcebf5; font-size:11px; white-space:nowrap; }
+#screen-dashboard .pcf-management__day select { min-width:0; max-width:115px; padding:4px 2px; border:1px solid #39768f; border-radius:4px; background:#0e2439; color:#fff; font-size:11px; }
+#screen-dashboard .pcf-management[data-stage="post"] .pcf-management__columns { opacity:.75; }
+.pcf-post-physical { margin-top:16px; }
+.pcf-physical-table-wrap { max-width:100%; overflow-x:auto; }
+.pcf-physical-table { width:100%; min-width:490px; border-collapse:collapse; font-size:12px; }
+.pcf-physical-table th,.pcf-physical-table td { padding:8px 9px; text-align:left; border-bottom:1px solid rgba(120,160,185,.3); }
+.pcf-physical-table th { font-size:11px; color:#7ad5ee; text-transform:uppercase; }
+@media (max-width: 780px) {
+  #screen-dashboard .pcf-management { padding:12px; margin:0 0 9px; }
+  #screen-dashboard .pcf-management__columns { grid-template-columns:minmax(0,1fr); gap:14px; }
+  #screen-dashboard .pcf-management__training { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #screen-dashboard .pcf-management__day { flex-wrap:wrap; }
+  #screen-dashboard .pcf-management__day select { width:100%; max-width:100%; }
+}
+@media (max-width: 380px) {
+  #screen-dashboard .pcf-management__training { grid-template-columns:minmax(0,1fr); }
+}

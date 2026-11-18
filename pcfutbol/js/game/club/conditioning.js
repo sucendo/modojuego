@@ -210,9 +210,12 @@ export function applyFitnessAndFormForClubBetweenMatches(club, fx, isHome, daysU
       const loss = clampN(0.32 * m + agePenalty, 0, 0.55);
       p.fitness = clamp01(clamp01(p.fitness) - loss);
 
-      // 2) Recuperación hasta objetivo
-      const target = getRecoveryTarget(restDays, age);
-      if (p.fitness < target) p.fitness = target;
+      // 2) Antes se adelantaba toda la recuperación al propio postpartido.
+      // Para el equipo humano se aplica durante los días de entrenamiento reales.
+      if (!deps.deferRecovery) {
+        const target = getRecoveryTarget(restDays, age);
+        if (p.fitness < target) p.fitness = target;
+      }
 
       // 3) Forma
       const deltaForm = 1.0 * m;

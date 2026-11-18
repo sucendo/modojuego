@@ -6,6 +6,7 @@ import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 import { fitPlayersToFormation } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
+import { ensureManagementState, MANAGEMENT_STAGES } from './game/managementCycle.js';
 
 export const GameState = {
   meta: {
@@ -41,6 +42,7 @@ export const GameState = {
   transferHistory: [],
   marketState: null,
   currentTimeISO: null,
+  management: null,
 };
 
 // Las fotos iniciales de cada temporada permiten conservar el bloque principal
@@ -103,6 +105,7 @@ export function newGame(options = {}) {
     matchday: 1,
   };
   GameState.currentTimeISO = null;
+  GameState.management = { stage: MANAGEMENT_STAGES.WEEK, ticketPrices: {}, trainingDays: {}, trainingApplied: {} };
 
   GameState.league = {
     id: league.id,
@@ -135,6 +138,15 @@ export function newGame(options = {}) {
 
   normalizeGameState();
   setupCompetition();
+  // Primer día de trabajo: antes de los entrenamientos del primer partido.
+  const firstMatch = (GameState.fixtures || []).filter(f => !f.played && (f.homeClubId === selectedClubId || f.awayClubId === selectedClubId))
+    .sort((a,b) => Date.parse(a.kickoffDate) - Date.parse(b.kickoffDate))[0];
+  if (firstMatch?.kickoffDate) {
+    const day = new Date(firstMatch.kickoffDate);
+    day.setUTCDate(day.getUTCDate() - 6);
+    day.setUTCHours(9, 0, 0, 0);
+    GameState.currentTimeISO = day.toISOString();
+  }
   setupWorldLeagues();
   ensureTransferMarketState();
 }
@@ -169,6 +181,8 @@ export function applyLoadedState(raw) {
   GameState.world = raw.world || GameState.world || { leagues: [] };
   GameState.transferHistory = Array.isArray(raw.transferHistory) ? raw.transferHistory : [];
   GameState.marketState = raw.marketState || null;
+  GameState.management = raw.management || null;
+  ensureManagementState(GameState);
 
   normalizeGameState();
   if (!GameState.fixtures || GameState.fixtures.length === 0) {
@@ -1200,6 +1214,7 @@ export function advanceToNextSeason() {
     matchday: 1,
   };
   GameState.currentTimeISO = new Date(Date.UTC(getSeasonStartYear(nextSeason), 7, 1, 9)).toISOString();
+  GameState.management = { stage: MANAGEMENT_STAGES.WEEK, ticketPrices: {}, trainingDays: {}, trainingApplied: {} };
 
   // Re-generar calendario principal
   setupCompetition();

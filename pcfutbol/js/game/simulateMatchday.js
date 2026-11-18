@@ -24,6 +24,10 @@ import {
 } from './world/sync.js';
 
 import { getTacticalAggression } from './tactics/strength.js';
+import {
+  MANAGEMENT_STAGES, ensureManagementState, getPendingUserFixtures,
+  applyScheduledTraining, lockCurrentTicketPrice, settleUserTicketSales,
+} from './managementCycle.js';
 
 // Mantener API pública desde este archivo (por compatibilidad con imports existentes)
 export { ensureGameTimeAndWorldSync, syncWorldLeaguesToNow, syncWorldLeaguesUpToTime };
@@ -130,6 +134,9 @@ function advanceUserMatchdayPointer(userClubId, currentMd) {
 }
 
 export function simulateCurrentMatchday() {
+  if (ensureManagementState(GameState).stage !== MANAGEMENT_STAGES.MATCHDAY) {
+    throw new Error('Antes de jugar, avanza desde la gestión semanal al día del partido.');
+  }
   // Asegurar que el juego tiene hora "real" para sincronización temporal de ligas
   if (!GameState.currentTimeISO) GameState.currentTimeISO = computeGameNowISO();
 
@@ -151,6 +158,9 @@ export function simulateCurrentMatchday() {
   // "Ahora" = hora de tu partido (si existe kickoffDate)
   if (userFx.kickoffDate) GameState.currentTimeISO = userFx.kickoffDate;
 
+  // El precio fijado en la previa queda definitivamente cerrado antes del saque inicial.
+  lockCurrentTicketPrice(GameState, userFx);
+
   // ✅ Si hay partidos (de esta u otras jornadas) jugados ANTES que el tuyo,
   // los simulamos ahora (sin tocar tu fixture).
   syncMainLeagueUpToBefore(userFx.kickoffDate, userFx.id);
@@ -165,12 +175,15 @@ export function simulateCurrentMatchday() {
     effectsCtx: buildEffectsCtx(),
   });
   userFx.played = true;
+  // La taquilla se abona una sola vez tras obtener la asistencia real.
+  settleUserTicketSales(GameState, userFx);
 
   // Efectos post-partido (solo tu partido por ahora)
   applyPostMatchdayEffects([userFx], {
     clubs: GameState.clubs,
     fixtures: GameState.fixtures,
     currentDate: GameState.currentDate,
+    userClubId: GameState.user?.clubId,
     applyMatchEffectsToClub: applyMatchEffectsToClubWithCtx,
     progressInjuriesForClub,
     progressSanctionsForClub,
@@ -187,6 +200,19 @@ export function simulateCurrentMatchday() {
     currentMatchday: GameState.currentDate?.matchday || 1,
   });
 
+  // Foto física histórica del jugador: no cambia al entrenar días después.
+  const own = getClubById(userClubId);
+  const minutes = userFx.playerStatsById || {};
+  userFx.postPhysical = (own?.players || []).filter(p => {
+    const id = String(p?.id ?? '');
+    return id && (minutes[id] || (userFx.homeClubId === userClubId ? userFx.homeLineupIds : userFx.awayLineupIds)?.some(x => String(x) === id));
+  }).map(p => ({
+    playerId: p.id, name: p.name, fitness: Number(p.fitness ?? 0.9),
+    fatigue: Number(p.fatigue || 0), injury: Number(p.injury?.matchesRemaining || 0),
+    suspension: Number(p.suspension?.matchesRemaining || 0),
+    minutes: Number(minutes[String(p.id)]?.minutes || 0),
+  }));
+
   // Tras tu partido: avanzamos SOLO 1 hora (así NO revelas partidos más tarde ese día)
   bumpNowHours(1);
 
@@ -197,6 +223,7 @@ export function simulateCurrentMatchday() {
 
   // ✅ Avanzar la "jornada actual" al siguiente partido pendiente del usuario
   advanceUserMatchdayPointer(userClubId, currentMd);
+  ensureManagementState(GameState).stage = MANAGEMENT_STAGES.POST;
 }
 
 export function syncMainLeagueUpTo(upToISO) {
@@ -242,35 +269,58 @@ function syncMainLeagueUpToBefore(upToISO, excludeFixtureId) {
   recomputeLeagueTable();
 }
 
-// Avanza el tiempo a 1 día antes del próximo partido del usuario y
-// simula TODO lo que haya ocurrido hasta esa fecha (incluidos partidos tardíos).
-export function advanceToNextUserMatchPrep() {
-  const fixtures = GameState.fixtures || [];
-  const userClubId = GameState.user?.clubId;
-  const now = GameState.currentTimeISO ? Date.parse(GameState.currentTimeISO) : -Infinity;
+// Desde el postpartido: parada al día siguiente, a las 09:00, antes de entrenar.
+export function advanceToNextManagementDay() {
+  const m = ensureManagementState(GameState);
+  if (m.stage !== MANAGEMENT_STAGES.POST) return false;
+  const lastPlayed = (GameState.fixtures || [])
+    .filter(fx => fx?.played && (fx.homeClubId === GameState.user?.clubId || fx.awayClubId === GameState.user?.clubId) && fx.kickoffDate)
+    .sort((a,b) => Date.parse(b.kickoffDate) - Date.parse(a.kickoffDate))[0];
+  if (!lastPlayed) return false;
+  const kickoff = new Date(lastPlayed.kickoffDate);
+  const target = new Date(Date.UTC(kickoff.getUTCFullYear(), kickoff.getUTCMonth(), kickoff.getUTCDate() + 1, 9));
+  const currentMs = Date.parse(GameState.currentTimeISO || '');
+  const upcoming = getPendingUserFixtures(GameState)[0];
+  const nextKickoff = upcoming ? Date.parse(upcoming.kickoffDate) : Infinity;
+  // Calendarios congestionados: no simular nunca el siguiente partido del usuario.
+  const safeTarget = Math.min(target.getTime(), nextKickoff - 60000);
+  const nextMs = Math.max(safeTarget, Number.isFinite(currentMs) ? currentMs : -Infinity);
+  if (nextMs >= nextKickoff) return false;
+  const nextISO = new Date(nextMs).toISOString();
+  syncMainLeagueUpTo(nextISO);
+  syncWorldLeaguesUpToTime(nextISO);
+  GameState.currentTimeISO = nextISO;
+  m.stage = MANAGEMENT_STAGES.WEEK;
+  return true;
+}
 
-  const nextFx = fixtures
-    .filter((fx) => {
-      if (!fx || fx.played) return false;
-      if (!(fx.homeClubId === userClubId || fx.awayClubId === userClubId)) return false;
-      if (!fx.kickoffDate) return false;
-      const t = Date.parse(fx.kickoffDate);
-      return Number.isFinite(t) && t > now;
-    })
-    .sort((a, b) => Date.parse(a.kickoffDate) - Date.parse(b.kickoffDate))[0];
-
-  if (!nextFx) return; // fin de temporada
-
-  // objetivo: 1 día antes a las 09:00 UTC
-  const k = new Date(nextFx.kickoffDate);
-  const target = new Date(Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate(), 9, 0, 0, 0));
-  target.setUTCDate(target.getUTCDate() - 1);
-
-  // Simula todo lo ocurrido hasta target
-  const targetISO = target.toISOString();
+// Desde gestión semanal: ejecutar los entrenamientos y el resto de ligas hasta
+// el día del partido. No se simula el encuentro del jugador antes de confirmarlo.
+export function advanceToNextUserMatchDay() {
+  const m = ensureManagementState(GameState);
+  if (m.stage !== MANAGEMENT_STAGES.WEEK) return false;
+  const nextFx = getPendingUserFixtures(GameState)[0];
+  if (!nextFx) return false;
+  const kickoffMs = Date.parse(nextFx.kickoffDate);
+  const kickoff = new Date(kickoffMs);
+  const sameDayNine = Date.UTC(kickoff.getUTCFullYear(), kickoff.getUTCMonth(), kickoff.getUTCDate(), 9);
+  const desired = Math.min(kickoffMs - 2 * 3600000, sameDayNine);
+  const currentMs = Date.parse(GameState.currentTimeISO || '');
+  // Si dos encuentros están muy próximos, nunca retrocedemos en el calendario.
+  const targetMs = Math.min(kickoffMs - 60000, Math.max(desired, Number.isFinite(currentMs) ? currentMs : -Infinity));
+  if (!Number.isFinite(targetMs)) return false;
+  const targetISO = new Date(targetMs).toISOString();
+  applyScheduledTraining(GameState, GameState.currentTimeISO || targetISO, targetISO);
   syncMainLeagueUpTo(targetISO);
   syncWorldLeaguesUpToTime(targetISO);
-
-  // Sitúa al juego en el contexto del próximo partido
   GameState.currentTimeISO = targetISO;
+  GameState.currentDate.matchday = Number(nextFx.matchday || GameState.currentDate.matchday);
+  lockCurrentTicketPrice(GameState, nextFx);
+  m.stage = MANAGEMENT_STAGES.MATCHDAY;
+  return true;
+}
+
+// Compatibilidad de nombre de API para cualquier import existente.
+export function advanceToNextUserMatchPrep() {
+  return advanceToNextUserMatchDay();
 }
