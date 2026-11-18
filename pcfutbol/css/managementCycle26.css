@@ -13,6 +13,10 @@
 #screen-dashboard .pcf-management__description { margin:4px 0 10px; color:#bbdbe7; font-size:12px; }
 #screen-dashboard .pcf-management__columns { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.6fr); gap:16px; }
 #screen-dashboard .pcf-management__column { min-width:0; }
+#screen-dashboard .pcf-management--page { margin:16px; min-height:220px; }
+#screen-dashboard .pcf-management--page .pcf-management__column--wide { max-width:580px; }
+#screen-dashboard .pcf-management--page .pcf-management__training { margin-top:10px; }
+#screen-dashboard .pcf-management__back { margin-top:20px; }
 #screen-dashboard .pcf-management__column h3 { margin:0 0 8px; font-size:13px; font-weight:800; color:#b0eaff; }
 #screen-dashboard .pcf-management__column > label { display:block; margin:6px 0 3px; font-size:11px; color:#d4ecf7; }
 #screen-dashboard .pcf-management__column > select,
@@ -31,6 +35,7 @@
 .pcf-physical-table th { font-size:11px; color:#7ad5ee; text-transform:uppercase; }
 @media (max-width: 780px) {
   #screen-dashboard .pcf-management { padding:12px; margin:0 0 9px; }
+  #screen-dashboard .pcf-management--page { margin:10px; }
   #screen-dashboard .pcf-management__columns { grid-template-columns:minmax(0,1fr); gap:14px; }
   #screen-dashboard .pcf-management__training { grid-template-columns:repeat(2,minmax(0,1fr)); }
   #screen-dashboard .pcf-management__day { flex-wrap:wrap; }

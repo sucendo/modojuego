@@ -7,7 +7,7 @@ export function showDashboard(startScreen, dashboardScreen) {
 }
 
 /**
- * view: 'dashboard' | 'squad' | 'alignment' | 'tactics' | 'calendar' | 'results' | 'nextmatch' | 'standings' | 'stats' | 'medical' | 'transfermarket'
+ * view: 'dashboard' | 'squad' | 'alignment' | 'tactics' | 'calendar' | 'results' | 'nextmatch' | 'standings' | 'stats' | 'medical' | 'transfermarket' | 'stadium' | 'training'
  */
 export function setActiveSubview(view, ctx) {
   const {
@@ -22,6 +22,8 @@ export function setActiveSubview(view, ctx) {
     viewStandings,
     viewStats,
     viewMedical,
+    viewStadium,
+    viewTraining,
     btnNavDashboard,
     btnNavSquad,
     btnNavTransferMarket,
@@ -33,6 +35,8 @@ export function setActiveSubview(view, ctx) {
     btnNavStandings,
     btnNavStats,
     btnNavMedical,
+    btnNavStadium,
+    btnNavTraining,
   } = ctx || {};
 
   // Ocultar todas
@@ -47,6 +51,8 @@ export function setActiveSubview(view, ctx) {
   viewStandings?.classList.add('hidden');
   viewStats?.classList.add('hidden');
   viewMedical?.classList.add('hidden');
+  viewStadium?.classList.add('hidden');
+  viewTraining?.classList.add('hidden');
 
   // Quitar activo en todos los botones (soporta .active y .is-active)
   [
@@ -61,6 +67,8 @@ export function setActiveSubview(view, ctx) {
     btnNavStandings,
     btnNavStats,
     btnNavMedical,
+    btnNavStadium,
+    btnNavTraining,
   ].forEach((b) => {
     b?.classList.remove('active');
     b?.classList.remove('is-active');
@@ -111,5 +119,13 @@ export function setActiveSubview(view, ctx) {
     viewMedical?.classList.remove('hidden');
     btnNavMedical?.classList.add('active');
     btnNavMedical?.classList.add('is-active');
+  } else if (view === 'stadium') {
+    viewStadium?.classList.remove('hidden');
+    btnNavStadium?.classList.add('active');
+    btnNavStadium?.classList.add('is-active');
+  } else if (view === 'training') {
+    viewTraining?.classList.remove('hidden');
+    btnNavTraining?.classList.add('active');
+    btnNavTraining?.classList.add('is-active');
   }
 }

@@ -39,12 +39,12 @@ test('postpartido conserva todos los paneles, datos y controles de navegación',
   assert.doesNotMatch(html, /class="pcf-match-card__title pcf-post-section-title"/, 'La cabecera general no debe duplicarse dentro del postpartido');
 });
 
-test('la cadena de módulos invalida el código cacheado al actualizar el botón de partido', () => {
+test('la cadena de módulos invalida el código cacheado al mover Estadio y Entrenamiento', () => {
   const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
-  assert.match(html, /main\.js\?v=162/);
+  assert.match(html, /main\.js\?v=163/);
   assert.match(html, /matchPostVisual26\.css\?v=141/);
-  assert.match(read('../js/main.js'), /ui\/index\.js\?v=162/);
-  assert.match(read('../js/ui/index.js'), /ui\.js\?v=162/);
+  assert.match(read('../js/main.js'), /ui\/index\.js\?v=163/);
+  assert.match(read('../js/ui/index.js'), /ui\.js\?v=163/);
   assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=161/);
   assert.match(read('../js/ui/nextMatchView.js'), /matchTimeline\.js\?v=141/);
   assert.match(read('../js/ui/nextMatchView.js'), /matchPostReport\.js\?v=141/);

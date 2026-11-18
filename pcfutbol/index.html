@@ -11,7 +11,7 @@
 	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
 	<link rel="stylesheet" href="css/matchPostVisual26.css?v=141" />
 	<link rel="stylesheet" href="css/mobileVisual26.css?v=1" />
-	<link rel="stylesheet" href="css/managementCycle26.css?v=1" />
+	<link rel="stylesheet" href="css/managementCycle26.css?v=2" />
 </head>
 <body>
 	<header class="app-header">
@@ -203,6 +203,8 @@
 					<button id="btn-nav-standings" class="btn btn-link">Clasificación</button>
 					<button id="btn-nav-stats" class="btn btn-link">Estadísticas</button>
 					<button id="btn-nav-medical" class="btn btn-link">Médicos</button>
+					<button id="btn-nav-stadium" class="btn btn-link">Estadio</button>
+					<button id="btn-nav-training" class="btn btn-link">Entrenamiento</button>
 					<button id="btn-nav-finances" class="btn btn-link" disabled>Economía</button>
 				</div>
 				<!-- top-bar-right eliminado (Guardar/Cargar van en app-header) -->
@@ -210,28 +212,6 @@
 
 			<!-- SUBVISTA: DASHBOARD (HUB) -->
 			<section id="view-dashboard" class="pcf-hub">
-				<section id="pcf-management-panel" class="pcf-management" aria-label="Gestión del club entre partidos">
-					<header class="pcf-management__head">
-						<div><span class="pcf-management__eyebrow">AGENDA DEL ENTRENADOR</span><h2 id="pcf-management-title">Gestión semanal</h2></div>
-						<span id="pcf-management-status" class="pcf-management__status">Preparación</span>
-					</header>
-					<p id="pcf-management-description" class="pcf-management__description"></p>
-					<div class="pcf-management__columns">
-						<div class="pcf-management__column">
-							<h3>Entradas y taquilla</h3>
-							<label for="pcf-ticket-fixture">Próximo partido como local</label>
-							<select id="pcf-ticket-fixture"></select>
-							<label for="pcf-ticket-price">Precio por entrada (€)</label>
-							<input id="pcf-ticket-price" type="number" min="5" max="250" step="1" inputmode="numeric" />
-							<p id="pcf-ticket-hint" class="pcf-management__hint" aria-live="polite"></p>
-						</div>
-						<div class="pcf-management__column">
-							<h3 id="pcf-training-title">Entrenamientos de la semana</h3>
-							<div id="pcf-training-days" class="pcf-management__training" aria-label="Plan diario de entrenamientos"></div>
-							<p class="pcf-management__hint">Se ejecutarán al pulsar «Continuar»; recuperación, forma física y fatiga se conservarán en la partida.</p>
-						</div>
-					</div>
-				</section>
 				<div class="pcf-hub__grid">
 					<aside class="pcf-panel pcf-inbox" aria-label="Gestiones pendientes del club">
 						<header class="pcf-panel__head"><h2>▣ Gestiones pendientes <span id="pcf-inbox-count" class="pcf-feed-count">0</span></h2></header>
@@ -308,7 +288,7 @@
 								<span class="pcf-hub-item__label">Marcajes</span>
 								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
 							</button>
-							<button class="pcf-hub-item pcf-linkbtn" disabled>
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="training">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
 									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-training"></use></svg>
 								</span>
@@ -369,7 +349,7 @@
 								<span class="pcf-hub-item__label">Cuerpo técnico</span>
 								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
 							</button>
-							<button class="pcf-hub-item pcf-linkbtn" disabled>
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="stadium">
 								<span class="pcf-hub-item__icon" aria-hidden="true">
 									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-stadium"></use></svg>
 								</span>
@@ -441,6 +421,35 @@
 						<p class="pcf-news__caption">Noticias generadas por los acontecimientos de tu partida.</p>
 					</aside>
 				</div>
+			</section>
+			<!-- Las decisiones semanales se organizan en sus secciones correspondientes. -->
+			<section id="view-stadium" class="pcf-management pcf-management--page hidden" aria-label="Estadio y taquilla">
+				<header class="pcf-management__head">
+					<div><span class="pcf-management__eyebrow">CLUB Y ESTADIO</span><h2>Estadio · Entradas y taquilla</h2></div>
+					<span id="pcf-ticket-status" class="pcf-management__status">Venta de entradas</span>
+				</header>
+				<p id="pcf-ticket-description" class="pcf-management__description">Configura los precios de tus próximos partidos en casa.</p>
+				<div class="pcf-management__column pcf-management__column--wide">
+					<label for="pcf-ticket-fixture">Próximo partido como local</label>
+					<select id="pcf-ticket-fixture"></select>
+					<label for="pcf-ticket-price">Precio por entrada (€)</label>
+					<input id="pcf-ticket-price" type="number" min="5" max="250" step="1" inputmode="numeric" />
+					<p id="pcf-ticket-hint" class="pcf-management__hint" aria-live="polite"></p>
+				</div>
+				<button class="pcf-management__back btn btn-secondary" type="button" data-nav-target="dashboard">← Menú principal</button>
+			</section>
+			<section id="view-training" class="pcf-management pcf-management--page hidden" aria-label="Entrenamientos del equipo">
+				<header class="pcf-management__head">
+					<div><span class="pcf-management__eyebrow">ESTILO DE JUEGO</span><h2>Entrenamiento</h2></div>
+					<span id="pcf-training-status" class="pcf-management__status">Planificación</span>
+				</header>
+				<p id="pcf-training-description" class="pcf-management__description">Planifica las sesiones que se aplicarán al avanzar al día del encuentro.</p>
+				<div class="pcf-management__column">
+					<h3 id="pcf-training-title">Entrenamientos de la semana</h3>
+					<div id="pcf-training-days" class="pcf-management__training" aria-label="Plan diario de entrenamientos"></div>
+					<p class="pcf-management__hint">La intensidad y el descanso afectan a la forma física y la fatiga de la plantilla al avanzar el calendario.</p>
+				</div>
+				<button class="pcf-management__back btn btn-secondary" type="button" data-nav-target="dashboard">← Menú principal</button>
 			</section>
 			<nav class="pcf-mobile-nav" aria-label="Navegación móvil">
 				<button type="button" data-nav-target="dashboard"><span aria-hidden="true">⌂</span>Inicio</button>
@@ -1782,7 +1791,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=162"></script>
+	<script type="module" src="js/main.js?v=163"></script>
 	
 </body>
 </html>

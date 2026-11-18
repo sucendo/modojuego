@@ -7,7 +7,7 @@
  *  - refrescar la vista correspondiente
  */
 
-import { setActiveSubview } from './nav.js';
+import { setActiveSubview } from './nav.js?v=163';
 
 let _bound = false;
 
@@ -33,6 +33,8 @@ export function initNavigation(ctx, updaters = {}) {
     btnNavStandings,
     btnNavStats,
     btnNavMedical,
+    btnNavStadium,
+    btnNavTraining,
   } = ctx || {};
 
   btnNavDashboard?.addEventListener('click', () => {
@@ -78,5 +80,13 @@ export function initNavigation(ctx, updaters = {}) {
   btnNavMedical?.addEventListener('click', () => {
     setActiveSubview('medical', ctx);
     updaters.updateMedicalView?.();
+  });
+  btnNavStadium?.addEventListener('click', () => {
+    setActiveSubview('stadium', ctx);
+    updaters.updateManagementView?.();
+  });
+  btnNavTraining?.addEventListener('click', () => {
+    setActiveSubview('training', ctx);
+    updaters.updateManagementView?.();
   });
 }
