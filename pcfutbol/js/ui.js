@@ -6,10 +6,10 @@ import { GameState, newGame } from './state.js';
 import { initialLeague, allLeagues } from './data.js';
 import { exportGameToFile } from './saveLoad.js';
 
-import { showDashboard, setActiveSubview } from './ui/nav.js';
-import { initNavigation } from './ui/navigation.js';
+import { showDashboard, setActiveSubview } from './ui/nav.js?v=163';
+import { initNavigation } from './ui/navigation.js?v=163';
 
-import { updateDashboard } from './ui/dashboard.js?v=16.2';
+import { updateDashboard } from './ui/dashboard.js?v=16.3';
 
 import {
   initPlayerModal as initPlayerModalImpl,
@@ -58,7 +58,7 @@ import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=11';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
 import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js';
-import { initManagementUI } from './ui/managementStage.js?v=162';
+import { initManagementUI, updateManagementView } from './ui/managementStage.js?v=163';
 import { handleFileInput } from './ui/saveLoadUI.js';
 
 import { getPlayerById, handlePlayerAction as handlePlayerActionImpl } from './ui/playerActions.js';
@@ -135,6 +135,8 @@ export function initUI() {
   const btnNavStandings = document.getElementById('btn-nav-standings');
   const btnNavStats = document.getElementById('btn-nav-stats');
   const btnNavMedical = document.getElementById('btn-nav-medical');
+  const btnNavStadium = document.getElementById('btn-nav-stadium');
+  const btnNavTraining = document.getElementById('btn-nav-training');
 
   const viewDashboard = document.getElementById('view-dashboard');
   const viewSquad = document.getElementById('view-squad');
@@ -147,6 +149,8 @@ export function initUI() {
   const viewStandings = document.getElementById('view-standings');
   const viewStats = document.getElementById('view-stats');
   const viewMedical = document.getElementById('view-medical');
+  const viewStadium = document.getElementById('view-stadium');
+  const viewTraining = document.getElementById('view-training');
 
   // Modal detalle de partido / modal jugador
   const matchDetailModal = document.getElementById('match-detail-modal');
@@ -191,6 +195,8 @@ export function initUI() {
     viewStandings,	
     viewStats,
     viewMedical,
+    viewStadium,
+    viewTraining,
     btnNavDashboard,
     btnNavSquad,
     btnNavTransferMarket,
@@ -202,6 +208,8 @@ export function initUI() {
     btnNavStandings,	
     btnNavStats,
     btnNavMedical,
+    btnNavStadium,
+    btnNavTraining,
   };
 
   const refreshAllViews = () => {
@@ -219,6 +227,7 @@ export function initUI() {
     updateStandingsView();	
     updateStatsView();
     updateMedicalView();
+    updateManagementView();
   };
 
   // ----------
@@ -314,6 +323,7 @@ export function initUI() {
     updateStandingsView,	
     updateStatsView,
     updateMedicalView,
+    updateManagementView,
   });
   
   // Al entrar en "Clasificación", por defecto siempre jornada actual
@@ -356,6 +366,8 @@ export function initUI() {
         clasificación: btnNavStandings,
         stats: btnNavStats,
         medical: btnNavMedical,
+        stadium: btnNavStadium,
+        training: btnNavTraining,
       };
 
       const navBtn = map[key];

@@ -98,13 +98,26 @@ test('partidas antiguas sin fase conservan entrada directa a la previa y datos h
   assert.ok(Array.isArray(GameState.fixtures));
 });
 
-test('la interfaz conecta dos estados de gestión con el partido y conserva el postpartido', () => {
+test('la taquilla pertenece a Estadio y los entrenamientos a Entrenamiento, fuera de la portada', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../css/managementCycle26.css', import.meta.url), 'utf8');
   const managementUI = readFileSync(new URL('../js/ui/managementStage.js', import.meta.url), 'utf8');
-  assert.match(html, /id="pcf-management-panel"/);
-  assert.match(html, /id="pcf-ticket-price"/);
-  assert.match(html, /id="pcf-training-days"/);
+  const dashboard = html.split('<section id="view-dashboard"')[1].split('<section id="view-stadium"')[0];
+  const stadium = html.split('<section id="view-stadium"')[1].split('<section id="view-training"')[0];
+  const training = html.split('<section id="view-training"')[1].split('<nav class="pcf-mobile-nav"')[0];
+  const nav = readFileSync(new URL('../js/ui/nav.js', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../js/ui/navigation.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(dashboard, /pcf-management-panel|pcf-ticket-price|pcf-training-days/);
+  assert.match(dashboard, /data-nav-target="stadium"/);
+  assert.match(dashboard, /data-nav-target="training"/);
+  assert.match(stadium, /id="pcf-ticket-price"/);
+  assert.doesNotMatch(stadium, /id="pcf-training-days"/);
+  assert.match(training, /id="pcf-training-days"/);
+  assert.doesNotMatch(training, /id="pcf-ticket-price"/);
+  assert.match(nav, /viewStadium\?\.classList\.remove\('hidden'\)/);
+  assert.match(nav, /viewTraining\?\.classList\.remove\('hidden'\)/);
+  assert.match(navigation, /setActiveSubview\('stadium', ctx\)/);
+  assert.match(navigation, /setActiveSubview\('training', ctx\)/);
   assert.match(html, /id="nextmatch-post-physical"/);
   assert.match(html, /id="nextmatch-continue"/);
   assert.match(managementUI, /▶ DÍA DEL PARTIDO/);

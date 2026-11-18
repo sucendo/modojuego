@@ -40,27 +40,29 @@ export function initManagementUI({ onContinue } = {}) {
 }
 
 export function updateManagementView() {
-  const panel = get('pcf-management-panel');
-  if (!panel) return;
+  const stadium = get('view-stadium');
+  const trainingPage = get('view-training');
+  if (!stadium && !trainingPage) return;
   ensureManagementState(GameState);
   const stage = getManagementStage(GameState);
   const upcoming = getPendingUserFixtures(GameState);
   const next = upcoming[0] || null;
   const action = get('btn-go-next-match');
 
-  panel.dataset.stage = stage;
-  const titles = {
-    [MANAGEMENT_STAGES.WEEK]: 'Gestión semanal · Día después del partido',
-    [MANAGEMENT_STAGES.MATCHDAY]: 'Día del partido · Últimos preparativos',
-    [MANAGEMENT_STAGES.POST]: 'Partido finalizado · Informe pendiente',
-  };
-  text('pcf-management-title', titles[stage]);
-  text('pcf-management-status', stage === MANAGEMENT_STAGES.WEEK ? 'Antes de entrenar' : stage === MANAGEMENT_STAGES.MATCHDAY ? 'Entradas cerradas hoy' : 'Finalizado');
-  text('pcf-management-description', stage === MANAGEMENT_STAGES.WEEK
-    ? 'Organiza el club y los entrenamientos hasta el próximo encuentro. El tiempo avanzará cuando pulses Continuar.'
-    : stage === MANAGEMENT_STAGES.MATCHDAY
-      ? 'Revisa la alineación y la táctica. Ya no puedes cambiar las entradas de hoy; sí las de futuros partidos y sus entrenamientos.'
-      : 'Consulta el resultado, la cronología y el estado físico antes de continuar al día siguiente.');
+  if (stadium) stadium.dataset.stage = stage;
+  if (trainingPage) trainingPage.dataset.stage = stage;
+  text('pcf-ticket-status', stage === MANAGEMENT_STAGES.POST ? 'Postpartido' : 'Taquilla');
+  text('pcf-ticket-description', stage === MANAGEMENT_STAGES.MATCHDAY
+    ? 'Las entradas de hoy están cerradas. Puedes modificar las tarifas de próximos partidos en casa.'
+    : stage === MANAGEMENT_STAGES.POST
+      ? 'Consulta el postpartido antes de planificar la siguiente jornada.'
+      : 'Fija el precio de las entradas del próximo partido en casa; quedará cerrado al llegar su día.');
+  text('pcf-training-status', stage === MANAGEMENT_STAGES.POST ? 'Postpartido' : stage === MANAGEMENT_STAGES.MATCHDAY ? 'Próxima semana' : 'Antes de entrenar');
+  text('pcf-training-description', stage === MANAGEMENT_STAGES.MATCHDAY
+    ? 'El encuentro de hoy ya está preparado. Puedes dejar programadas las sesiones de la semana siguiente.'
+    : stage === MANAGEMENT_STAGES.POST
+      ? 'Continúa desde el postpartido para planificar una nueva semana.'
+      : 'Elige cada sesión antes de avanzar al día del partido. Se aplicará al progresar el calendario.');
 
   if (action) {
     action.textContent = !next && stage !== MANAGEMENT_STAGES.POST ? 'TEMPORADA FINALIZADA'
