@@ -41,11 +41,11 @@ test('postpartido conserva todos los paneles, datos y controles de navegación',
 
 test('la cadena de módulos invalida el código cacheado al incorporar el calendario y las tarifas', () => {
   const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
-  assert.match(html, /main\.js\?v=164/);
+  assert.match(html, /main\.js\?v=1641/);
   assert.match(html, /matchPostVisual26\.css\?v=141/);
-  assert.match(read('../js/main.js'), /ui\/index\.js\?v=164/);
-  assert.match(read('../js/ui/index.js'), /ui\.js\?v=164/);
-  assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=161/);
+  assert.match(read('../js/main.js'), /ui\/index\.js\?v=1641/);
+  assert.match(read('../js/ui/index.js'), /ui\.js\?v=1641/);
+  assert.match(read('../js/ui.js'), /nextMatchView\.js\?v=1641/);
   assert.match(read('../js/ui/nextMatchView.js'), /matchTimeline\.js\?v=141/);
   assert.match(read('../js/ui/nextMatchView.js'), /matchPostReport\.js\?v=141/);
 });

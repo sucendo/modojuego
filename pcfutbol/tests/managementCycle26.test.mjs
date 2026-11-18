@@ -245,7 +245,7 @@ test('v16.4 presenta calendario y plano en sus menús, sin añadir gestión al d
   }
   assert.match(css, /pcf-training-calendar__day/);
   assert.match(css, /pcf-stadium-pitch/);
-  assert.match(html, /js\/main\.js\?v=164/);
+  assert.match(html, /js\/main\.js\?v=1641/);
 });
 
 test('entrenamiento individual permite objetivos específicos persistentes y medibles', () => {

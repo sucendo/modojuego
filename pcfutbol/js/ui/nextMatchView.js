@@ -5,8 +5,8 @@
 import { GameState } from '../state.js';
 import { getSeasonLabel } from '../gameSeason.js';
 import { getUserClub } from '../game/selectors.js';
-import { advanceToNextManagementDay } from '../game/simulateMatchday.js';
-import { MANAGEMENT_STAGES, getManagementStage } from '../game/managementCycle.js';
+import { advanceToNextManagementDay } from '../game/simulateMatchday.js?v=1641';
+import { MANAGEMENT_STAGES, getManagementStage } from '../game/managementCycle.js?v=1641';
 import {
   getGameDateFor,
   formatGameDateLabel,
