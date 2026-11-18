@@ -27,7 +27,7 @@ import { getTacticalAggression } from './tactics/strength.js';
 import {
   MANAGEMENT_STAGES, ensureManagementState, getPendingUserFixtures,
   applyScheduledTraining, lockCurrentTicketPrice, settleUserTicketSales,
-} from './managementCycle.js?v=1641';
+} from './managementCycle.js?v=165';
 
 // Mantener API pública desde este archivo (por compatibilidad con imports existentes)
 export { ensureGameTimeAndWorldSync, syncWorldLeaguesToNow, syncWorldLeaguesUpToTime };

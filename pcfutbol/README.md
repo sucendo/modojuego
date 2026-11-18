@@ -11,13 +11,15 @@ El juego funciona **sin conexión a Internet**: datos, código, hojas de estilo 
 
 El juego es una aplicación HTML/CSS/JavaScript; no necesita PHP ni base de datos. Apache solo sirve los archivos locales.
 
-## Entrenamientos y taquilla (v16.4)
+## Entrenamientos y taquilla (v16.5)
 
 - **Entrenamiento:** entra desde el menú principal y consulta el calendario de toda la temporada mes a mes. El modo automático adapta la propuesta a los días de partido y la fatiga. Cualquier sesión futura se puede personalizar; los partidos y sesiones ya ejecutadas quedan bloqueados.
 - **Trabajo individual:** selecciona un futbolista y un objetivo de pase, regate, disparo, entradas, resistencia o recuperación. Las mejoras son graduales y los lesionados no acumulan desarrollo técnico.
+- **Evolución visible:** en Entrenamiento, la ficha del jugador enseña su media global, condición, fatiga, forma y cinco atributos entrenables con decimales y mejoras acumuladas. Incluye las últimas ocho sesiones realizadas y sus efectos. El informe separa las variaciones provocadas por entrenamientos de las que introduce un encuentro.
+- **Desarrollo gradual:** la mejora de media global necesita acumular progreso técnico real (3,5 puntos de atributos por mejora), con un máximo de tres puntos por temporada. La fatiga elevada reduce el rendimiento de los entrenamientos; una lesión detiene el progreso técnico hasta la recuperación.
 - **Estadio:** selecciona un partido en casa y uno de los cinco sectores del plano orientativo. Puedes editar el precio sector a sector, aplicar una tarifa plana o subir/bajar precios en porcentaje o euros, solo para el partido o para todos los futuros.
 - **Efectos reales:** avanzar con «▶ DÍA DEL PARTIDO» aplica los entrenamientos una vez; la recaudación de cada partido se calcula por sector según aforo, asistencia y precio, y se abona una sola vez.
-- **Guardados:** se conservan las tarifas antiguas de precio único y las sesiones ya registradas. Los campos nuevos se añaden automáticamente a las partidas existentes.
+- **Guardados:** se conservan las tarifas antiguas de precio único, la evolución técnica, el historial de entrenamientos y las sesiones ya registradas. Los campos nuevos se añaden automáticamente a las partidas existentes, sin atribuirles sesiones antiguas que no hayan sido registradas.
 
 > No recomendamos abrir `index.html` mediante `file://`: los navegadores modernos restringen las importaciones de módulos JavaScript desde archivos locales. Servir el juego por `localhost` sigue siendo totalmente local, sin conexión a ningún servicio externo.
 

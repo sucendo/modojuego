@@ -1,6 +1,6 @@
 // js/ui.js
 
-import './game/bootstrap.js?v=1641';
+import './game/bootstrap.js?v=165';
 
 import { GameState, newGame } from './state.js';
 import { initialLeague, allLeagues } from './data.js';
@@ -43,7 +43,7 @@ import {
   initNextMatchUI,
   updateNextMatchView,
   setLastSimulatedMatchday as setNextMatchLastSimulatedMatchday,
-} from './ui/nextMatchView.js?v=1641';
+} from './ui/nextMatchView.js?v=165';
 
 import { initStandingsUI, updateStandingsView, setStandingsSelectedMatchday } from './ui/standings.js';
 
@@ -57,8 +57,8 @@ import { getPlayerGameAge } from './ui/utils/calendar.js';
 import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=11';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
-import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js?v=1641';
-import { initManagementUI, updateManagementView } from './ui/managementStage.js?v=1641';
+import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js?v=165';
+import { initManagementUI, updateManagementView } from './ui/managementStage.js?v=165';
 import { handleFileInput } from './ui/saveLoadUI.js';
 
 import { getPlayerById, handlePlayerAction as handlePlayerActionImpl } from './ui/playerActions.js';

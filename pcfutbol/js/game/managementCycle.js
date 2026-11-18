@@ -10,6 +10,13 @@ export const PLAYER_TRAINING_FOCUS = Object.freeze({
   general: 'Sin objetivo individual', passing: 'Pase', dribbling: 'Regate', shooting: 'Disparo',
   tackling: 'Entrada', stamina: 'Resistencia', recovery: 'Recuperación específica',
 });
+export const TRAINED_ATTRIBUTES = Object.freeze([
+  { key: 'passing', group: 'technical', label: 'Pase' },
+  { key: 'dribbling', group: 'technical', label: 'Regate' },
+  { key: 'shooting', group: 'technical', label: 'Disparo' },
+  { key: 'tackling', group: 'technical', label: 'Entrada' },
+  { key: 'stamina', group: 'physical', label: 'Resistencia' },
+]);
 export const DEFAULT_TICKET_PRICE = 35;
 export const TICKET_SECTORS = Object.freeze([
   { id: 'vip', label: 'Palcos VIP', share: 0.03, factor: 2.4 },
@@ -55,6 +62,9 @@ export function ensureManagementState(state) {
   if (!m.trainingApplied || typeof m.trainingApplied !== 'object') m.trainingApplied = {};
   if (m.trainingMode !== 'auto' && m.trainingMode !== 'manual') m.trainingMode = 'auto';
   if (!m.playerTraining || typeof m.playerTraining !== 'object') m.playerTraining = {};
+  if (!Array.isArray(m.trainingLog)) m.trainingLog = [];
+  if (!m.trainingInitial || typeof m.trainingInitial !== 'object') m.trainingInitial = {};
+  if (!m.trainingDevelopment || typeof m.trainingDevelopment !== 'object') m.trainingDevelopment = {};
   return m;
 }
 
@@ -180,6 +190,46 @@ export function setPlayerTrainingFocus(state, playerId, focus) {
   return true;
 }
 
+function playerTrainingSnapshot(player) {
+  return {
+    overall: Number(player?.overall || 0),
+    fitness: Number(player?.fitness ?? 0.9),
+    fatigue: Number(player?.fatigue || 0),
+    form: Number(player?.form || 0),
+    attributes: Object.fromEntries(TRAINED_ATTRIBUTES.map(({ key, group }) =>
+      [key, Number(player?.attributes?.[group]?.[key] || 0)])),
+  };
+}
+
+/** Registro de efectos reales de las sesiones, separado de los cambios por partidos. */
+export function getPlayerTrainingReport(state, playerId, recentCount = 8) {
+  const club = (state.clubs || []).find(c => String(c.id) === String(state.user?.clubId));
+  const player = club?.players?.find(p => String(p.id) === String(playerId));
+  if (!player) return null;
+  const m = ensureManagementState(state);
+  const id = String(player.id);
+  const current = playerTrainingSnapshot(player);
+  const entries = m.trainingLog.filter(day => day?.players && day.players[id])
+    .map(day => ({ day: day.day, type: day.type, ...day.players[id] }));
+  const initial = m.trainingInitial[id] || entries[0]?.before || current;
+  const sum = (value) => entries.reduce((total, entry) => total + (Number(value(entry)) || 0), 0);
+  const totals = {
+    sessions: entries.length,
+    fitness: sum(e => e.after.fitness - e.before.fitness),
+    fatigue: sum(e => e.after.fatigue - e.before.fatigue),
+    form: sum(e => e.after.form - e.before.form),
+    overall: sum(e => e.after.overall - e.before.overall),
+    attributes: Object.fromEntries(TRAINED_ATTRIBUTES.map(({ key }) => [key, sum(e => e.gains?.[key])])),
+  };
+  return {
+    playerId: id, name: player.name, focus: m.playerTraining[id] || 'general',
+    injured: Number(player.injury?.matchesRemaining || 0) > 0,
+    current, initial, totals,
+    development: { points: Number(m.trainingDevelopment[id]?.points || 0), overallEarned: Number(m.trainingDevelopment[id]?.overallEarned || 0) },
+    recent: Math.floor(recentCount) > 0 ? entries.slice(-Math.floor(recentCount)).reverse() : [],
+  };
+}
+
 export function getUserFixturesOnDay(state, isoDay) {
   return (state.fixtures || []).filter(fx =>
     (String(fx.homeClubId) === String(state.user?.clubId) || String(fx.awayClubId) === String(state.user?.clubId)) &&
@@ -290,31 +340,53 @@ export function applyScheduledTraining(state, fromISO, throughISO) {
     if (m.trainingApplied[day]) continue;
     const type = getTrainingDayPlan(state, day).type;
     if (type === 'match') { m.trainingApplied[day] = true; continue; }
+    const dayRecord = { day, type, players: {} };
     for (const p of players) {
       if (!p) continue;
+      const id = String(p.id);
+      const before = playerTrainingSnapshot(p);
+      if (!m.trainingInitial[id]) m.trainingInitial[id] = before;
       const injured = Number(p.injury?.matchesRemaining || 0) > 0;
-      const focus = m.playerTraining[String(p.id)] || 'general';
+      const focus = m.playerTraining[id] || 'general';
       const delta = ({ rest: 0.065, recovery: 0.070, intense: 0.018, technical: 0.038, tactical: 0.040, balanced: 0.045 })[type];
       const fatigue = ({ rest: -10, recovery: -8, intense: 9, technical: 1, tactical: -1, balanced: -3 })[type];
       p.fitness = Math.max(0.30, Math.min(0.99, Number(p.fitness ?? 0.9) + (injured ? Math.max(0, delta) : delta) + (focus === 'recovery' ? 0.008 : 0)));
       p.fatigue = Math.max(0, Math.min(100, Number(p.fatigue || 0) + (injured ? Math.min(0, fatigue) : fatigue) - (focus === 'recovery' ? 2 : 0)));
+      const gains = {};
+      const exhausted = Number(before.fatigue) >= 70 || Number(before.fitness) < 0.55;
+      const trainingEfficiency = exhausted ? 0.55 : 1;
+      const improve = (group, attr, amount) => {
+        const previous = Number(p.attributes?.[group]?.[attr]);
+        if (!Number.isFinite(previous)) return;
+        const next = clamp(previous + amount * trainingEfficiency, 1, 99);
+        const gained = Math.max(0, next - previous);
+        if (gained > 0) {
+          p.attributes[group][attr] = next;
+          gains[attr] = (gains[attr] || 0) + gained;
+        }
+      };
       // Microprogresión: entrenar durante semanas tiene efecto, sin mejorar varios puntos de golpe.
       if (!injured && type === 'technical' && p.attributes?.technical) {
-        for (const attr of ['passing', 'dribbling', 'shooting', 'tackling']) {
-          if (Number.isFinite(Number(p.attributes.technical[attr]))) {
-            p.attributes.technical[attr] = clamp(Number(p.attributes.technical[attr]) + 0.018, 1, 99);
-          }
-        }
+        for (const attr of ['passing', 'dribbling', 'shooting', 'tackling']) improve('technical', attr, 0.018);
       }
-      if (!injured && type === 'intense' && p.attributes?.physical && Number.isFinite(Number(p.attributes.physical.stamina))) {
-        p.attributes.physical.stamina = clamp(Number(p.attributes.physical.stamina) + 0.018, 1, 99);
-      }
+      if (!injured && type === 'intense') improve('physical', 'stamina', 0.018);
       if (!injured && type === 'tactical') p.form = clamp(Number(p.form || 0) + 0.015, -3, 3);
       if (!injured && !['rest', 'recovery'].includes(type) && focus !== 'general' && focus !== 'recovery') {
-        const group = focus === 'stamina' ? p.attributes?.physical : p.attributes?.technical;
-        if (group && Number.isFinite(Number(group[focus]))) group[focus] = clamp(Number(group[focus]) + 0.025, 1, 99);
+        improve(focus === 'stamina' ? 'physical' : 'technical', focus, 0.025);
       }
+      // Una mejora global exige progreso sostenido en atributos, con máximo 3 puntos por temporada.
+      // Este acumulador se guarda para evitar cambios arbitrarios de media en cada sesión.
+      const progress = m.trainingDevelopment[id] ||= { points: 0, overallEarned: 0 };
+      progress.points = Math.max(0, Number(progress.points || 0)) + Object.values(gains).reduce((sum, gain) => sum + gain, 0);
+      progress.overallEarned = Math.max(0, Number(progress.overallEarned || 0));
+      if (progress.points >= 3.5 && progress.overallEarned < 3 && Number(p.overall) < 99) {
+        p.overall = Math.min(99, Math.round(Number(p.overall || 60)) + 1);
+        progress.points -= 3.5;
+        progress.overallEarned++;
+      }
+      dayRecord.players[id] = { focus, injured, before, after: playerTrainingSnapshot(p), gains };
     }
+    m.trainingLog.push(dayRecord);
     m.trainingApplied[day] = true;
     applied++;
   }

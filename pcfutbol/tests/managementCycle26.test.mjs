@@ -8,7 +8,7 @@ import {
   getTrainingDaysToPlan, setTrainingDay, setTicketPrice, getTicketPrice,
   settleUserTicketSales, ensureManagementState,
   getSeasonTrainingMonths, getTrainingDayPlan, setTrainingMode, clearTrainingDay,
-  setPlayerTrainingFocus,
+  setPlayerTrainingFocus, getPlayerTrainingReport, applyScheduledTraining, TRAINED_ATTRIBUTES,
   getStadiumSectors, TICKET_SECTORS, getTicketSectorPrices,
   setTicketSectorPrice, getTicketSalesProjection, adjustTicketSectorPrices, setTicketMode,
 } from '../js/game/managementCycle.js';
@@ -174,6 +174,94 @@ test('técnica y física afectan a los atributos con progresión moderada y sin 
   assert.equal(GameState.management.trainingApplied[days[0]], true);
 });
 
+test('el informe individual diferencia cambios del entrenamiento, registra sesiones y sobrevive al guardado', () => {
+  begin('realmadrid');
+  const player = GameState.clubs.find(c => c.id === GameState.user.clubId).players.find(p => p.attributes?.technical?.passing < 95);
+  const days = getTrainingDaysToPlan(GameState);
+  assert.ok(player && days.length >= 2);
+  assert.equal(setPlayerTrainingFocus(GameState, player.id, 'passing'), true);
+  assert.equal(setTrainingDay(GameState, days[0], 'technical'), true);
+  assert.equal(setTrainingDay(GameState, days[1], 'recovery'), true);
+  const original = getPlayerTrainingReport(GameState, player.id);
+  assert.equal(original.totals.sessions, 0);
+  const oldPassing = original.current.attributes.passing;
+  advanceToNextUserMatchDay();
+  const report = getPlayerTrainingReport(GameState, player.id);
+  assert.ok(report.totals.sessions >= 2);
+  assert.ok(report.totals.attributes.passing > 0);
+  assert.ok(report.current.attributes.passing > oldPassing);
+  assert.equal(report.focus, 'passing');
+  assert.equal(report.recent[0].day, days.at(-1));
+  assert.ok(report.recent.some(e => e.type === 'recovery'));
+  assert.ok(TRAINED_ATTRIBUTES.every(attr => attr.key in report.totals.attributes));
+  const snapshot = structuredClone(GameState);
+  applyLoadedState(snapshot);
+  const restored = getPlayerTrainingReport(GameState, player.id);
+  assert.equal(restored.totals.sessions, report.totals.sessions);
+  assert.equal(restored.totals.attributes.passing, report.totals.attributes.passing);
+  assert.deepEqual(restored.recent, report.recent);
+  assert.equal(applyScheduledTraining(GameState, days[0], `${days.at(-1)}T23:00:00Z`), 0);
+  assert.equal(getPlayerTrainingReport(GameState, player.id).totals.sessions, report.totals.sessions);
+});
+
+test('el desarrollo global exige semanas de mejora, queda limitado y no se adjudica a un lesionado', () => {
+  begin('atletico');
+  const player = GameState.clubs.find(c => c.id === GameState.user.clubId).players.find(p => p.attributes?.technical?.passing < 92);
+  const injured = GameState.clubs.find(c => c.id === GameState.user.clubId).players.find(p => p.id !== player.id);
+  injured.injury = { type: 'molestias', matchesRemaining: 2 };
+  const initialOverall = player.overall;
+  const injuredOverall = injured.overall;
+  assert.equal(setPlayerTrainingFocus(GameState, player.id, 'passing'), true);
+  const start = Date.parse(GameState.currentTimeISO);
+  const end = new Date(start + 95 * 86400000).toISOString();
+  for (let tick = start; tick < Date.parse(end); tick += 86400000) {
+    const day = new Date(tick).toISOString().slice(0, 10);
+    if (!GameState.fixtures.some(f => f.kickoffDate?.slice(0, 10) === day &&
+        (f.homeClubId === GameState.user.clubId || f.awayClubId === GameState.user.clubId))) {
+      setTrainingDay(GameState, day, 'technical');
+    }
+  }
+  const count = applyScheduledTraining(GameState, GameState.currentTimeISO, end);
+  assert.ok(count > 70);
+  const report = getPlayerTrainingReport(GameState, player.id);
+  const disabled = getPlayerTrainingReport(GameState, injured.id);
+  assert.ok(player.overall > initialOverall, 'una progresión larga mejora la media global');
+  assert.ok(player.overall <= initialOverall + 3);
+  assert.equal(report.totals.overall, player.overall - initialOverall);
+  assert.equal(injured.overall, injuredOverall);
+  assert.equal(disabled.totals.attributes.passing, 0);
+  assert.equal(applyScheduledTraining(GameState, GameState.currentTimeISO, end), 0);
+  assert.equal(getPlayerTrainingReport(GameState, player.id).totals.sessions, count);
+});
+
+test('los guardados v16.4 sin registros se migran sin inventar evolución pasada', () => {
+  begin('realmadrid');
+  const older = structuredClone(GameState);
+  delete older.management.trainingLog;
+  delete older.management.trainingInitial;
+  delete older.management.trainingDevelopment;
+  applyLoadedState(older);
+  const player = GameState.clubs.find(c => c.id === GameState.user.clubId).players[0];
+  const report = getPlayerTrainingReport(GameState, player.id);
+  assert.equal(report.totals.sessions, 0);
+  assert.equal(report.recent.length, 0);
+  assert.equal(report.development.points, 0);
+});
+
+test('la ficha de evolución está dentro de Entrenamiento, con resumen, atributos y sesiones', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../css/managementCycle26.css', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('../js/ui/managementStage.js', import.meta.url), 'utf8');
+  const training = html.split('<section id="view-training"')[1].split('<nav class="pcf-mobile-nav"')[0];
+  assert.match(training, /id="pcf-training-player-summary"/);
+  assert.match(training, /id="pcf-training-player-attributes"/);
+  assert.match(training, /id="pcf-training-player-history"/);
+  assert.match(training, /Evolución del jugador/);
+  assert.match(ui, /getPlayerTrainingReport\(GameState, selectedPlayer\)/);
+  assert.match(css, /pcf-training-evolution__history/);
+  assert.match(html, /managementCycle26\.css\?v=165/);
+});
+
 test('sectorización: aforo exacto, reajuste por zona/partido y cierre irreversible', () => {
   begin('atletico');
   const homes = getPendingUserFixtures(GameState).filter(f => f.homeClubId === GameState.user.clubId);
@@ -245,7 +333,7 @@ test('v16.4 presenta calendario y plano en sus menús, sin añadir gestión al d
   }
   assert.match(css, /pcf-training-calendar__day/);
   assert.match(css, /pcf-stadium-pitch/);
-  assert.match(html, /js\/main\.js\?v=1641/);
+  assert.match(html, /js\/main\.js\?v=165/);
 });
 
 test('entrenamiento individual permite objetivos específicos persistentes y medibles', () => {
