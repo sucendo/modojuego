@@ -5,7 +5,7 @@ import {
   getTicketSectorPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
   getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus, getPlayerTrainingReport,
-} from '../game/managementCycle.js?v=165';
+} from '../game/managementCycle.js?v=1651';
 
 let initialized = false;
 let currentMonth = '';
@@ -263,7 +263,7 @@ function renderPlayerTrainingReport() {
     const details = document.createElement('span');
     const gains = TRAINED_ATTRIBUTES.filter(attr => (entry.gains?.[attr.key] || 0) > 0)
       .map(attr => `${attr.label} +${decimal(entry.gains[attr.key])}`);
-    details.textContent = `${entry.injured ? 'Lesionado · recuperación prioritaria. ' : ''}Condición ${signed((entry.after.fitness - entry.before.fitness) * 100, 1)} pp · Fatiga ${signed(entry.after.fatigue - entry.before.fatigue, 1)}${gains.length ? ` · ${gains.join(' · ')}` : ''}${entry.after.overall > entry.before.overall ? ' · ¡Subió la media global!' : ''}`;
+    details.textContent = `${entry.injured ? 'Lesionado · recuperación prioritaria. ' : ''}Condición ${signed(entry.changes.fitness * 100, 1)} pp · Fatiga ${signed(entry.changes.fatigue, 1)}${gains.length ? ` · ${gains.join(' · ')}` : ''}${entry.changes.overall > 0 ? ' · ¡Subió la media global!' : ''}`;
     item.append(title, details);
     history.append(item);
   }
