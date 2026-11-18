@@ -6,7 +6,7 @@ import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 import { fitPlayersToFormation } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
-import { ensureManagementState, MANAGEMENT_STAGES } from './game/managementCycle.js';
+import { ensureManagementState, MANAGEMENT_STAGES } from './game/managementCycle.js?v=1641';
 
 export const GameState = {
   meta: {

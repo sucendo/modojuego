@@ -5,7 +5,7 @@ import {
   getTicketSectorPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
   getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus,
-} from '../game/managementCycle.js';
+} from '../game/managementCycle.js?v=1641';
 
 let initialized = false;
 let currentMonth = '';
