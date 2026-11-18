@@ -210,15 +210,26 @@ export function getPlayerTrainingReport(state, playerId, recentCount = 8) {
   const id = String(player.id);
   const current = playerTrainingSnapshot(player);
   const entries = m.trainingLog.filter(day => day?.players && day.players[id])
-    .map(day => ({ day: day.day, type: day.type, ...day.players[id] }));
-  const initial = m.trainingInitial[id] || entries[0]?.before || current;
+    .map(day => {
+      const record = day.players[id];
+      // Compatibilidad con una sesión guardada antes de compactar el diario.
+      const old = record.before && record.after ? {
+        fitness: record.after.fitness - record.before.fitness,
+        fatigue: record.after.fatigue - record.before.fatigue,
+        form: record.after.form - record.before.form,
+        overall: record.after.overall - record.before.overall,
+      } : {};
+      return { day: day.day, type: day.type, focus: record.focus, injured: record.injured,
+        gains: record.gains || {}, changes: record.changes || old };
+    });
+  const initial = m.trainingInitial[id] || current;
   const sum = (value) => entries.reduce((total, entry) => total + (Number(value(entry)) || 0), 0);
   const totals = {
     sessions: entries.length,
-    fitness: sum(e => e.after.fitness - e.before.fitness),
-    fatigue: sum(e => e.after.fatigue - e.before.fatigue),
-    form: sum(e => e.after.form - e.before.form),
-    overall: sum(e => e.after.overall - e.before.overall),
+    fitness: sum(e => e.changes.fitness),
+    fatigue: sum(e => e.changes.fatigue),
+    form: sum(e => e.changes.form),
+    overall: sum(e => e.changes.overall),
     attributes: Object.fromEntries(TRAINED_ATTRIBUTES.map(({ key }) => [key, sum(e => e.gains?.[key])])),
   };
   return {
@@ -384,7 +395,10 @@ export function applyScheduledTraining(state, fromISO, throughISO) {
         progress.points -= 3.5;
         progress.overallEarned++;
       }
-      dayRecord.players[id] = { focus, injured, before, after: playerTrainingSnapshot(p), gains };
+      const after = playerTrainingSnapshot(p);
+      dayRecord.players[id] = { focus, injured,
+        changes: { fitness: after.fitness - before.fitness, fatigue: after.fatigue - before.fatigue,
+          form: after.form - before.form, overall: after.overall - before.overall }, gains };
     }
     m.trainingLog.push(dayRecord);
     m.trainingApplied[day] = true;

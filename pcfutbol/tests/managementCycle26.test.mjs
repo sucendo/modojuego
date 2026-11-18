@@ -190,6 +190,9 @@ test('el informe individual diferencia cambios del entrenamiento, registra sesio
   assert.ok(report.totals.sessions >= 2);
   assert.ok(report.totals.attributes.passing > 0);
   assert.ok(report.current.attributes.passing > oldPassing);
+  const stored = GameState.management.trainingLog.find(entry => entry.players[String(player.id)]);
+  assert.ok(stored.players[String(player.id)].changes, 'el diario conserva cambios exactos');
+  assert.equal(stored.players[String(player.id)].before, undefined, 'sin duplicar el estado completo del jugador en cada sesión');
   assert.equal(report.focus, 'passing');
   assert.equal(report.recent[0].day, days.at(-1));
   assert.ok(report.recent.some(e => e.type === 'recovery'));
@@ -259,7 +262,7 @@ test('la ficha de evolución está dentro de Entrenamiento, con resumen, atribut
   assert.match(training, /Evolución del jugador/);
   assert.match(ui, /getPlayerTrainingReport\(GameState, selectedPlayer\)/);
   assert.match(css, /pcf-training-evolution__history/);
-  assert.match(html, /managementCycle26\.css\?v=165/);
+  assert.match(html, /managementCycle26\.css\?v=1651/);
 });
 
 test('sectorización: aforo exacto, reajuste por zona/partido y cierre irreversible', () => {
@@ -333,7 +336,7 @@ test('v16.4 presenta calendario y plano en sus menús, sin añadir gestión al d
   }
   assert.match(css, /pcf-training-calendar__day/);
   assert.match(css, /pcf-stadium-pitch/);
-  assert.match(html, /js\/main\.js\?v=165/);
+  assert.match(html, /js\/main\.js\?v=1651/);
 });
 
 test('entrenamiento individual permite objetivos específicos persistentes y medibles', () => {
