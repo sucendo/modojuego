@@ -9,7 +9,7 @@ import { exportGameToFile } from './saveLoad.js';
 import { showDashboard, setActiveSubview } from './ui/nav.js';
 import { initNavigation } from './ui/navigation.js';
 
-import { updateDashboard } from './ui/dashboard.js?v=16.1';
+import { updateDashboard } from './ui/dashboard.js?v=16.2';
 
 import {
   initPlayerModal as initPlayerModalImpl,
@@ -58,7 +58,7 @@ import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=11';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
 import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js';
-import { initManagementUI } from './ui/managementStage.js';
+import { initManagementUI } from './ui/managementStage.js?v=162';
 import { handleFileInput } from './ui/saveLoadUI.js';
 
 import { getPlayerById, handlePlayerAction as handlePlayerActionImpl } from './ui/playerActions.js';

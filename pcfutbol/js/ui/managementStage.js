@@ -64,7 +64,7 @@ export function updateManagementView() {
 
   if (action) {
     action.textContent = !next && stage !== MANAGEMENT_STAGES.POST ? 'TEMPORADA FINALIZADA'
-      : stage === MANAGEMENT_STAGES.WEEK ? '▶ CONTINUAR AL DÍA DEL PARTIDO'
+      : stage === MANAGEMENT_STAGES.WEEK ? '▶ DÍA DEL PARTIDO'
         : stage === MANAGEMENT_STAGES.MATCHDAY ? '▶ JUGAR PARTIDO' : '▶ VER POSTPARTIDO';
     action.disabled = !next && stage !== MANAGEMENT_STAGES.POST;
     action.dataset.stage = stage;
