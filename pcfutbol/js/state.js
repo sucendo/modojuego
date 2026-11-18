@@ -105,7 +105,7 @@ export function newGame(options = {}) {
     matchday: 1,
   };
   GameState.currentTimeISO = null;
-  GameState.management = { stage: MANAGEMENT_STAGES.WEEK, ticketPrices: {}, trainingDays: {}, trainingApplied: {} };
+  GameState.management = { stage: MANAGEMENT_STAGES.WEEK, ticketPrices: {}, ticketZonePrices: {}, ticketMode: 'auto', trainingDays: {}, trainingApplied: {}, trainingMode: 'auto', playerTraining: {} };
 
   GameState.league = {
     id: league.id,
@@ -1214,7 +1214,7 @@ export function advanceToNextSeason() {
     matchday: 1,
   };
   GameState.currentTimeISO = new Date(Date.UTC(getSeasonStartYear(nextSeason), 7, 1, 9)).toISOString();
-  GameState.management = { stage: MANAGEMENT_STAGES.WEEK, ticketPrices: {}, trainingDays: {}, trainingApplied: {} };
+  GameState.management = { stage: MANAGEMENT_STAGES.WEEK, ticketPrices: {}, ticketZonePrices: {}, ticketMode: 'auto', trainingDays: {}, trainingApplied: {}, trainingMode: 'auto', playerTraining: {} };
 
   // Re-generar calendario principal
   setupCompetition();

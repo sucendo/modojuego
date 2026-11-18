@@ -11,7 +11,7 @@
 	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
 	<link rel="stylesheet" href="css/matchPostVisual26.css?v=141" />
 	<link rel="stylesheet" href="css/mobileVisual26.css?v=1" />
-	<link rel="stylesheet" href="css/managementCycle26.css?v=2" />
+	<link rel="stylesheet" href="css/managementCycle26.css?v=164" />
 </head>
 <body>
 	<header class="app-header">
@@ -432,9 +432,46 @@
 				<div class="pcf-management__column pcf-management__column--wide">
 					<label for="pcf-ticket-fixture">Próximo partido como local</label>
 					<select id="pcf-ticket-fixture"></select>
-					<label for="pcf-ticket-price">Precio por entrada (€)</label>
-					<input id="pcf-ticket-price" type="number" min="5" max="250" step="1" inputmode="numeric" />
+					<label for="pcf-ticket-mode">Gestión de tarifas</label>
+					<select id="pcf-ticket-mode"><option value="auto">Automática (con ajustes propios)</option><option value="manual">Manual</option></select>
+					<div class="pcf-management__flat">
+						<label for="pcf-ticket-price">Aplicar precio único a todas las zonas (€)</label>
+						<input id="pcf-ticket-price" type="number" min="5" max="250" step="1" inputmode="numeric" />
+						<button id="pcf-ticket-flat-apply" type="button" class="btn btn-secondary">Aplicar precio único</button>
+					</div>
 					<p id="pcf-ticket-hint" class="pcf-management__hint" aria-live="polite"></p>
+				</div>
+				<div class="pcf-stadium-layout">
+					<div class="pcf-stadium-board">
+						<h3>Plano orientativo del estadio</h3>
+						<p id="pcf-stadium-capacity" class="pcf-management__hint"></p>
+						<div id="pcf-stadium-map" class="pcf-stadium-map" aria-label="Seleccionar sector del estadio">
+							<button type="button" class="pcf-sector-stand pcf-sector-stand--vip" data-sector="vip">PALCOS VIP</button>
+							<button type="button" class="pcf-sector-stand pcf-sector-stand--tribuna" data-sector="tribuna">TRIBUNA</button>
+							<button type="button" class="pcf-sector-stand pcf-sector-stand--norte" data-sector="norte">FONDO NORTE</button>
+							<div class="pcf-stadium-pitch" aria-hidden="true"><div class="pcf-stadium-pitch__center"></div></div>
+							<button type="button" class="pcf-sector-stand pcf-sector-stand--sur" data-sector="sur">FONDO SUR</button>
+							<button type="button" class="pcf-sector-stand pcf-sector-stand--preferencia" data-sector="preferencia">PREFERENCIA</button>
+						</div>
+						<p class="pcf-management__hint">Distribución proporcional al aforo; no reproduce la arquitectura real del estadio.</p>
+					</div>
+					<div class="pcf-stadium-controls">
+						<h3>Tarifas y previsión por sector</h3>
+						<div id="pcf-ticket-sector-list" class="pcf-sector-list" aria-label="Zonas y precios"></div>
+						<label for="pcf-ticket-sector-price">Precio del sector seleccionado (€)</label>
+						<div class="pcf-sector-edit"><input id="pcf-ticket-sector-price" type="number" min="5" max="250" step="1" inputmode="numeric" /><button id="pcf-ticket-sector-apply" type="button" class="btn btn-secondary">Guardar sector</button></div>
+						<div id="pcf-ticket-forecast" class="pcf-ticket-forecast" aria-live="polite"></div>
+					</div>
+				</div>
+				<div class="pcf-ticket-bulk">
+					<h3>Subir o bajar tarifas</h3>
+					<div class="pcf-ticket-bulk__fields">
+						<label>Zona <select id="pcf-ticket-adjust-zone"><option value="all">Todas las zonas</option><option value="selected">Zona seleccionada</option></select></label>
+						<label>Cambio <select id="pcf-ticket-adjust-operation"><option value="percent">Porcentaje (%)</option><option value="euros">Importe (€)</option></select></label>
+						<label>Cantidad (+ o −) <input id="pcf-ticket-adjust-amount" type="number" value="10" min="-100" max="250" step="1" /></label>
+						<label>Aplicar a <select id="pcf-ticket-adjust-scope"><option value="selected">Este partido</option><option value="future">Todos los próximos en casa</option></select></label>
+						<button id="pcf-ticket-adjust-apply" type="button" class="btn btn-secondary">Aplicar cambio</button>
+					</div>
 				</div>
 				<button class="pcf-management__back btn btn-secondary" type="button" data-nav-target="dashboard">← Menú principal</button>
 			</section>
@@ -444,10 +481,33 @@
 					<span id="pcf-training-status" class="pcf-management__status">Planificación</span>
 				</header>
 				<p id="pcf-training-description" class="pcf-management__description">Planifica las sesiones que se aplicarán al avanzar al día del encuentro.</p>
-				<div class="pcf-management__column">
-					<h3 id="pcf-training-title">Entrenamientos de la semana</h3>
-					<div id="pcf-training-days" class="pcf-management__training" aria-label="Plan diario de entrenamientos"></div>
-					<p class="pcf-management__hint">La intensidad y el descanso afectan a la forma física y la fatiga de la plantilla al avanzar el calendario.</p>
+				<div class="pcf-training-planner">
+					<div class="pcf-training-planner__calendar">
+						<div class="pcf-training-toolbar">
+							<div class="pcf-training-toolbar__months"><button id="pcf-training-prev" type="button" aria-label="Mes anterior">‹</button><h3 id="pcf-training-month">Calendario de temporada</h3><button id="pcf-training-next" type="button" aria-label="Mes siguiente">›</button></div>
+							<label>Planificación <select id="pcf-training-mode"><option value="auto">Automática + cambios manuales</option><option value="manual">Manual</option></select></label>
+						</div>
+						<div id="pcf-training-days" class="pcf-training-calendar" aria-label="Calendario de entrenamientos de toda la temporada"></div>
+						<div class="pcf-training-legend"><span><i data-type="match"></i>Partido</span><span><i data-type="recovery"></i>Recuperación</span><span><i data-type="intense"></i>Físico</span><span><i data-type="technical"></i>Técnica</span><span><i data-type="tactical"></i>Táctica</span><span><i data-type="rest"></i>Descanso</span></div>
+						<p class="pcf-management__hint">Puedes recorrer todos los meses de la temporada. Los partidos bloquean el entrenamiento de ese día.</p>
+						</div>
+					<div class="pcf-training-planner__details">
+						<h3 id="pcf-training-title">Plan del día seleccionado</h3>
+						<p id="pcf-training-day-info" class="pcf-management__description"></p>
+						<label for="pcf-training-day-type">Tipo de sesión</label>
+						<select id="pcf-training-day-type"></select>
+						<button id="pcf-training-day-auto" type="button" class="btn btn-secondary">Usar planificación automática</button>
+						<p id="pcf-training-effect" class="pcf-management__hint" aria-live="polite"></p>
+						<div id="pcf-training-squad-status" class="pcf-training-squad-status"></div>
+						<div class="pcf-player-training">
+							<h3>Entrenamiento individual</h3>
+							<label for="pcf-player-training-player">Jugador</label>
+							<select id="pcf-player-training-player"></select>
+							<label for="pcf-player-training-focus">Objetivo</label>
+							<select id="pcf-player-training-focus"></select>
+							<p id="pcf-player-training-status" class="pcf-management__hint">El objetivo acompaña al calendario del equipo hasta que lo cambies.</p>
+						</div>
+					</div>
 				</div>
 				<button class="pcf-management__back btn btn-secondary" type="button" data-nav-target="dashboard">← Menú principal</button>
 			</section>
@@ -1791,7 +1851,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=163"></script>
+	<script type="module" src="js/main.js?v=164"></script>
 	
 </body>
 </html>
