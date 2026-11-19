@@ -16,7 +16,11 @@
   };
   const SCENES = {
     terrace:{
-      image:'./assets/terrace-pixel.webp',name:'PLAZA DE ORIENTE · CAFÉ DE ORIENTE · 18:47',spawn:[290,590],
+      image:'./assets/terrace-clean.webp',name:'PLAZA DE ORIENTE · CAFÉ DE ORIENTE · 18:47',spawn:[290,590],
+      foregroundObjects:[
+        {id:'foreground-table',src:'./assets/foreground/terrace-table.webp',collectedSrc:'./assets/foreground/terrace-table-collected.webp',bounds:[538,458,1065,675]},
+        {id:'foreground-chair',src:'./assets/foreground/terrace-chair.webp',bounds:[832,396,1150,675]}
+      ],
       perspective:{farY:405,nearY:655,farScale:.64,nearScale:2.02,doorway:{x:1095,y:476,rangeX:280,rangeY:180,boost:.26}},
       actors:[{role:'stranger',x:380,y:477}],
       // Floor routes are narrow, connected walkways. The rear route goes BEHIND
@@ -66,15 +70,21 @@
           ]},
       ],
       hotspots:[
-        {id:'receipt',x:840,y:545,w:86,h:60,walk:[557,595],label:'Folded receipt'},
-        {id:'cup',x:825,y:498,w:66,h:57,walk:[592,511],label:'Coffee cup'},
+        {id:'receipt',x:894,y:535,w:74,h:67,walk:[557,595],label:'Folded receipt'},
+        {id:'cup',x:879,y:487,w:68,h:64,walk:[592,511],label:'Coffee cup'},
         {id:'stranger',x:380,y:410,w:72,h:122,walk:[320,486],label:'Man in grey'},
         {id:'palace',x:466,y:277,w:490,h:148,walk:[330,550],label:'Royal Palace'},
         {id:'door',x:1111,y:327,w:105,h:205,walk:[1100,447],label:'Enter the café'},
       ],
     },
     interior:{
-      image:'./assets/interior-pixel.webp',name:'CAFÉ DE ORIENTE · SALÓN · 18:52',spawn:[1010,575],
+      image:'./assets/interior-clean.webp',name:'CAFÉ DE ORIENTE · SALÓN · 18:52',spawn:[1010,575],
+      foregroundObjects:[
+        {id:'main-chair-rear',src:'./assets/foreground/interior-chair-rear.webp',bounds:[452,365,531,460]},
+        {id:'main-table',src:'./assets/foreground/interior-table.webp',bounds:[517,338,812,651]},
+        {id:'main-chair-near',src:'./assets/foreground/interior-chair-front.webp',bounds:[426,412,653,675]},
+        {id:'main-chair-right',src:'./assets/foreground/interior-chair-right.webp',bounds:[746,362,854,671]}
+      ],
       perspective:{farY:390,nearY:660,farScale:.65,nearScale:1.94,doorway:{x:1022,y:469,rangeX:172,rangeY:185,boost:.08}},
       actors:[{role:'carmen',x:418,y:582}],
       corridors:[
@@ -139,19 +149,20 @@
   let path=[], pending=null, time=0, lastFrame=performance.now();
   let customizationDraft=null, gabrielHeldUntil=0, gabrielHeldPosition=null;
   let patrolPausedAt=null, patrolPausedDuration=0;
-  const scenes={},surfacePatches={};
-  const spriteImages={}, coatSprites=new Map(), foregrounds={};
+  const scenes={};
+  const spriteImages={}, coatSprites=new Map(), foregrounds={},individualObjects={};
   const spriteNames=['agent-m','agent-f','gabriel','carmen','stranger'];
   for(const role of spriteNames){
     const img=new Image();img.src='./assets/characters/'+role+'.webp';
     img.onload=()=>{if(role===state.avatar.style)drawAvatarPreview();};
     spriteImages[role]=img;
   }
-  // Each table, chair, counter and planter has its own object and cutouts.
-  // The original background is only the paint source: narrow, transparent
-  // cutouts are rendered again at the individual piece's actual ground depth.
+  // Small props use cutouts from the clean plate. Close furniture is different:
+  // it is truly removed from that plate and loaded as its own transparent
+  // sprite, ALWAYS rendered above the actors (see drawIndividualObjects).
   function prepareForegrounds(id){
-    const bg=scenes[id],layers=SCENES[id].props.flatMap(prop=>
+    const bg=scenes[id],independent=new Set(SCENES[id].foregroundObjects.map(o=>o.id));
+    const layers=SCENES[id].props.filter(prop=>!independent.has(prop.id)).flatMap(prop=>
       (prop.masks||[]).map(mask=>({...mask,owner:prop.id,depth:mask.footY})));
     if(!bg?.naturalWidth)return;
     foregrounds[id]=layers.map(layer=>{
@@ -166,27 +177,22 @@
       return {owner:layer.owner,part:layer.part||'body',depth:layer.depth,x:left,y:top,canvas:mask};
     });
   }
-  // The original illustration already contains the receipt. The restoration
-  // patch copies a nearby marble area once and feathers its edges so picking
-  // the receipt actually removes it, without repainting the whole café.
-  function makeSurfacePatch(bg,{x,y,w,h,sampleX,sampleY}){
-    const patch=document.createElement('canvas');patch.width=w;patch.height=h;
-    const p=patch.getContext('2d',{willReadFrequently:true});
-    p.imageSmoothingEnabled=true;p.drawImage(bg,-sampleX,-sampleY,W,H);
-    const pixels=p.getImageData(0,0,w,h),a=pixels.data,feather=8;
-    for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){
-      const edge=Math.min(xx,yy,w-1-xx,h-1-yy);
-      a[(yy*w+xx)*4+3]*=Math.min(1,Math.max(0,edge/feather));
-    }
-    p.putImageData(pixels,0,0);
-    return {x,y,canvas:patch};
-  }
   for(const [id,scene] of Object.entries(SCENES)){
-    scenes[id]=new Image();scenes[id].onload=()=>{
-      prepareForegrounds(id);
-      if(id==='terrace')surfacePatches.receipt=makeSurfacePatch(scenes[id],
-        {x:805,y:520,w:77,h:56,sampleX:870,sampleY:520});
-    };scenes[id].src=scene.image;
+    scenes[id]=new Image();scenes[id].onload=()=>prepareForegrounds(id);scenes[id].src=scene.image;
+    individualObjects[id]=scene.foregroundObjects.map(part=>{
+      const img=new Image();img.src=part.src;
+      const collectedImg=part.collectedSrc?new Image():null;
+      if(collectedImg)collectedImg.src=part.collectedSrc;
+      return {...part,img,collectedImg};
+    });
+  }
+  function drawIndividualObjects(){
+    for(const obj of individualObjects[state.scene]){
+      const img=obj.collectedImg&&has('receipt')?obj.collectedImg:obj.img;
+      if(!img.complete||!img.naturalWidth)continue;
+      const [left,top,right,bottom]=obj.bounds;
+      ctx.drawImage(img,left,top,right-left,bottom-top);
+    }
   }
   const mix=(a,b,t)=>a+(b-a)*Math.min(1,Math.max(0,t));
   const clamp01=value=>Math.max(0,Math.min(1,value));
@@ -384,7 +390,7 @@
     if(!el)return;
     const visible=g.scene===state.scene&&g.alpha>.34;el.hidden=!visible;
     if(visible){
-      const height=123*g.scale,width=Math.max(55,height*.58);
+      const height=158*g.scale,width=Math.max(65,height*.58);
       el.style.left=g.x/W*100+'%';el.style.top=(g.y-height*.52)/H*100+'%';
       el.style.setProperty('--hit-width',width/W*100+'%');
       el.style.setProperty('--hit-height',height/H*100+'%');
@@ -674,16 +680,12 @@
       ctx.restore();
     }
   }
-  function drawCollectedPatches(){
-    if(state.scene==='terrace'&&has('receipt')&&surfacePatches.receipt){
-      const p=surfacePatches.receipt;ctx.drawImage(p.canvas,p.x,p.y);
-    }
-  }
   function drawPerson({role,x,y,walking=false,facing=1,step=0,scale=null,alpha=1}, now){
     const img=role==='agent'?coatImage(state.avatar.style,state.avatar.coat):spriteImages[role];
     if(!img?.naturalWidth && !img?.width)return;
     const depth=scale??perspectiveScale(state.scene,y,x);
-    const height=(role==='carmen'?116:123)*depth,width=height*img.width/img.height;
+    // Larger foreground figures, without exaggerating the far end of the room.
+    const height=(role==='carmen'?151:158)*depth,width=height*img.width/img.height;
     const stride=walking?Math.sin(step)*3.2*depth:0;
     const bob=walking?Math.abs(Math.sin(step))*1.7*depth:Math.sin(now*.0021+x)*.35;
     ctx.save();ctx.translate(Math.round(x),Math.round(y));
@@ -726,7 +728,9 @@
       if(item.person)drawPerson(item.person,now);
       else ctx.drawImage(item.layer.canvas,item.layer.x,item.layer.y);
     }
-    drawCollectedPatches();
+    // The round table and each chair are real independent foreground assets,
+    // not a redraw of an area of the same scenery image.
+    drawIndividualObjects();
     trackGabriel(gabriel);
     requestAnimationFrame(frame);
   }
