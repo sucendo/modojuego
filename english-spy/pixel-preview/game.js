@@ -18,11 +18,20 @@
     terrace:{
       image:'./assets/terrace-clean.webp',name:'PLAZA DE ORIENTE · CAFÉ DE ORIENTE · 18:47',spawn:[290,590],
       foregroundObjects:[
-        {id:'foreground-table',src:'./assets/foreground/terrace-table.webp',collectedSrc:'./assets/foreground/terrace-table-collected.webp',bounds:[538,458,1065,675]},
-        {id:'foreground-chair',src:'./assets/foreground/terrace-chair.webp',bounds:[832,396,1150,675]}
+        {id:'foreground-table',src:'./assets/foreground/terrace-table.webp',collectedSrc:'./assets/foreground/terrace-table-collected.webp',sourceCrop:[766,644,1353,941]},
+        {id:'foreground-chair',src:'./assets/foreground/terrace-chair.webp',sourceCrop:[1165,559,1594,941]}
       ],
       perspective:{farY:405,nearY:655,farScale:.64,nearScale:2.02,doorway:{x:1095,y:476,rangeX:280,rangeY:180,boost:.26}},
       actors:[{role:'stranger',x:380,y:477}],
+      // Feet must remain on the walkable floor areas traced from the green
+      // reference. Furniture footprints are deducted separately below.
+      // The slim rear link connects the plaza to the actual café threshold.
+      walkZones:[
+        [[78,452],[184,420],[346,382],[403,405],[421,480],[367,558],[308,629],[172,633],[138,548]],
+        [[300,518],[381,450],[546,414],[625,421],[648,476],[569,536],[469,624],[289,631]],
+        [[520,369],[1129,369],[1153,421],[1127,478],[1083,459],[1080,416],[529,417]],
+        [[1073,417],[1159,420],[1200,454],[1200,555],[1080,521]]
+      ],
       // Floor routes are narrow, connected walkways. The rear route goes BEHIND
       // the terrace furniture; it no longer cuts through the middle of it.
       corridors:[
@@ -48,12 +57,12 @@
           masks:[{footY:540,poly:[[900,405],[941,364],[1038,374],[1064,417],[1064,526],[912,534]]}]},
         // Each foreground object is a separate cutout. A table is not the
         // chair beside it, and its thin pedestal is not a huge opaque box.
-        {id:'foreground-table',foot:[[550,551],[614,526],[995,513],[1059,566],[1026,675],[622,675]],
+        {id:'foreground-table',foot:[[553,557],[627,527],[903,521],[977,546],[978,674],[550,675]],
           masks:[
             {part:'marble-top',footY:627,poly:[[551,542],[569,515],[647,485],[905,477],[957,481],[1031,519],[1052,555],[1044,582],[1012,599],[969,606],[911,607],[643,602],[580,586],[549,567]]},
             {part:'pedestal',footY:677,poly:[[730,587],[778,595],[819,590],[842,675],[713,675]]}
           ]},
-        {id:'foreground-chair',foot:[[1012,511],[1087,458],[1200,478],[1200,675],[1026,675]],
+        {id:'foreground-chair',foot:[[837,589],[894,579],[1034,578],[1104,602],[1109,675],[840,675]],
           masks:[
             {part:'back-top-rail',footY:671,poly:[[966,418],[978,407],[1008,399],[1097,399],[1128,407],[1142,426],[1132,443],[989,436],[971,448]]},
             {part:'back-left-rail',footY:672,poly:[[964,425],[991,421],[998,547],[982,585],[965,585]]},
@@ -70,8 +79,8 @@
           ]},
       ],
       hotspots:[
-        {id:'receipt',x:894,y:535,w:74,h:67,walk:[557,595],label:'Folded receipt'},
-        {id:'cup',x:879,y:487,w:68,h:64,walk:[592,511],label:'Coffee cup'},
+        {id:'receipt',x:811,y:522,w:62,h:56,walk:[544,552],label:'Folded receipt'},
+        {id:'cup',x:779,y:461,w:100,h:60,walk:[564,489],label:'Coffee cup'},
         {id:'stranger',x:380,y:410,w:72,h:122,walk:[320,486],label:'Man in grey'},
         {id:'palace',x:466,y:277,w:490,h:148,walk:[330,550],label:'Royal Palace'},
         {id:'door',x:1111,y:327,w:105,h:205,walk:[1100,447],label:'Enter the café'},
@@ -80,10 +89,11 @@
     interior:{
       image:'./assets/interior-clean.webp',name:'CAFÉ DE ORIENTE · SALÓN · 18:52',spawn:[1010,575],
       foregroundObjects:[
-        {id:'main-chair-rear',src:'./assets/foreground/interior-chair-rear.webp',bounds:[452,365,531,460]},
-        {id:'main-table',src:'./assets/foreground/interior-table.webp',bounds:[517,338,812,651]},
-        {id:'main-chair-near',src:'./assets/foreground/interior-chair-front.webp',bounds:[426,412,653,675]},
-        {id:'main-chair-right',src:'./assets/foreground/interior-chair-right.webp',bounds:[746,362,854,671]}
+        {id:'main-chair-rear',src:'./assets/foreground/interior-chair-rear.webp',sourceCrop:[625,506,746,658]},
+        {id:'main-chair-middle',src:'./assets/foreground/interior-chair-middle.webp',sourceCrop:[765,475,896,638]},
+        {id:'main-chair-right',src:'./assets/foreground/interior-chair-right.webp',sourceCrop:[1051,512,1169,868]},
+        {id:'main-table',src:'./assets/foreground/interior-table.webp',sourceCrop:[724,479,1144,907]},
+        {id:'main-chair-near',src:'./assets/foreground/interior-chair-front.webp',sourceCrop:[596,577,898,941]}
       ],
       perspective:{farY:390,nearY:660,farScale:.65,nearScale:1.94,doorway:{x:1022,y:469,rangeX:172,rangeY:185,boost:.08}},
       actors:[{role:'carmen',x:418,y:582}],
@@ -190,8 +200,12 @@
     for(const obj of individualObjects[state.scene]){
       const img=obj.collectedImg&&has('receipt')?obj.collectedImg:obj.img;
       if(!img.complete||!img.naturalWidth)continue;
-      const [left,top,right,bottom]=obj.bounds;
-      ctx.drawImage(img,left,top,right-left,bottom-top);
+      // The sourceCrop is the precise rectangle cut from the original
+      // 1672×941 painting. This is the SAME scale as the whole background;
+      // furniture must never be stretched to independently chosen bounds.
+      const [left,top,right,bottom]=obj.sourceCrop;
+      if(img.naturalWidth!==right-left||img.naturalHeight!==bottom-top)continue;
+      ctx.drawImage(img,left*W/1672,top*H/941,(right-left)*W/1672,(bottom-top)*H/941);
     }
   }
   const mix=(a,b,t)=>a+(b-a)*Math.min(1,Math.max(0,t));
@@ -418,7 +432,10 @@
   }
   function pointOnFloor(scene,x,y){
     const data=SCENES[scene];
-    return data.corridors.some(([l,t,r,b])=>x>=l&&x<=r&&y>=t&&y<=b)
+    const inFloor=data.walkZones
+      ?data.walkZones.some(poly=>polygonContains(x,y,poly))
+      :data.corridors.some(([l,t,r,b])=>x>=l&&x<=r&&y>=t&&y<=b);
+    return inFloor
       && !data.props.some(prop=>prop.foot&&polygonContains(x,y,prop.foot));
   }
   // Collision is measured around a small elliptical footprint, not at one
