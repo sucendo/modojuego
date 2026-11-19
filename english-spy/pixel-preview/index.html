@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101827">
   <meta name="description" content="Demo de aventura gráfica pixel art de Where Is Evelyn Blackwood? en el Café de Oriente, Madrid.">
-  <title>English Spy · Pixel Adventure Preview</title>
-  <link rel="stylesheet" href="./game.css">
+  <title>English Spy · Pixel Adventure v0.4</title>
+  <link rel="stylesheet" href="./game.css?v=04">
 </head>
 <body>
   <div class="game-shell">
     <header class="mission-header">
-      <div class="mission-brand"><span class="brand-diamond">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>OPERACIÓN MADRID · DEMO PIXEL ART</small></div></div>
+      <div class="mission-brand"><span class="brand-diamond">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>OPERACIÓN MADRID · PIXEL ADVENTURE v0.4</small></div></div>
       <div class="header-tools">
+        <button class="header-button agent-button" data-ui="customize" title="Aspecto y nombre de tu agente">✦ Mi agente</button>
         <label class="level-picker">INGLÉS <select id="english-level" aria-label="Nivel de inglés"><option value="starter">Pre-A1</option><option value="basic">A1–A2</option><option value="intermediate">B1</option><option value="advanced">B2+</option></select></label>
         <button class="header-button" id="help-button" data-ui="help" aria-pressed="true">ES ✓</button>
         <button class="header-button" id="audio-button" data-ui="audio" aria-pressed="true" title="Audio en inglés">🔊</button>
@@ -33,8 +34,25 @@
               <div class="intro-seal">EXPEDIENTE EB–001</div>
               <h1>La cita que<br><em>nunca ocurrió</em></h1>
               <p>18:47. El Café de Oriente. Evelyn Blackwood, tu contacto del MI6, lleva siete minutos de retraso. Su último mensaje decía: <span class="quoted">“If I don't show up, follow the clues.”</span></p>
-              <p class="intro-small">Una aventura gráfica de espionaje y aprendizaje de inglés. Camina, investiga, interroga y combina objetos. Sin cronómetro.</p>
+              <p class="intro-small">Personaliza tu agente con «Mi agente», pasa el cursor sobre personajes y objetos para descubrirlos, camina, interroga y combina pruebas. Sin cronómetro.</p>
               <button class="primary-button" data-ui="start">Comenzar investigación</button>
+            </div>
+          </div>
+          <div id="customize-overlay" class="customize-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="customize-title">
+            <div class="customize-panel">
+              <div class="customize-heading"><div><small>AGENCIA DE INTELIGENCIA · PERFIL</small><h2 id="customize-title">Crea tu agente</h2></div><button class="customize-close" data-ui="close-customize" aria-label="Cerrar personalización">×</button></div>
+              <div class="customize-body">
+                <div class="agent-preview-wrap"><canvas id="agent-preview" width="180" height="242" aria-label="Vista previa del personaje"></canvas><p>Tu agente aparecerá así en Madrid.</p></div>
+                <div class="customize-fields">
+                  <label class="customize-label">Personaje</label>
+                  <div class="avatar-choices"><button data-avatar="agent-m" aria-pressed="true">Agente</button><button data-avatar="agent-f" aria-pressed="false">Agente femenina</button></div>
+                  <label class="customize-label" for="coat-choice">Color del abrigo</label>
+                  <select id="coat-choice"><option value="classic">Camel clásico</option><option value="navy">Azul marino</option><option value="olive">Verde oliva</option><option value="charcoal">Gris carbón</option></select>
+                  <label class="customize-label" for="codename-choice">Nombre en clave</label>
+                  <input id="codename-choice" maxlength="22" placeholder="Agente Madrid" autocomplete="off">
+                  <button class="primary-button" data-ui="save-avatar">Guardar mi agente</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -45,8 +63,8 @@
         <div class="case-section"><div class="deck-heading">EXPEDIENTE <button class="case-link" data-ui="notebook">Ver notas</button></div><p id="objective">Investiga la terraza.</p><div class="case-progress"><div id="progress-bar"></div></div><small id="case-progress-text">0 / 4 pruebas</small></div>
       </section>
     </main>
-    <div class="game-footer"><span>PISTA: clic en el suelo para caminar · clic en personajes y objetos para interactuar</span><span id="status-text">SISTEMA PREPARADO</span></div>
+    <div class="game-footer"><span>PISTA: clic en el suelo para caminar · pasa el cursor sobre los objetos y personajes</span><span id="status-text">SISTEMA PREPARADO</span></div>
   </div>
-  <script src="./game.js" defer></script>
+  <script src="./game.js?v=04" defer></script>
 </body>
 </html>
