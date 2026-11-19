@@ -1,6 +1,6 @@
 const MESSAGES = {
   es: {
-    touchJump:'Saltar',touchAction:'Acción',touchUse:'Usar / colocar',touchTool:'Pico',touchInventory:'Inventario',touchMenu:'Menú',touchMove:'Mover personaje',touchLook:'Arrastra para mirar',
+    touchFullscreen:'Pantalla completa',touchJump:'Saltar',touchAction:'Acción',touchUse:'Usar / colocar',touchTool:'Pico',touchInventory:'Inventario',touchMenu:'Menú',touchMove:'Mover personaje',touchLook:'Arrastra para mirar',
     menuQuickActions: 'Partida y herramientas',
 
     perfHaze:'Bruma del horizonte',perfHazeOff:'Desactivada',perfHazeLow:'Suave',perfHazeMedium:'Natural',perfHazeHigh:'Intensa',perfHazeAuto:'Automática',    perfHorizonLod:'Horizonte LOD',perfLodSectors:'Sectores LOD',perfLodTriangles:'Triángulos LOD',perfLodBuild:'Generación LOD',perfTitle:'Rendimiento · F3',perfQuality:'Calidad gráfica',perfLow:'Baja',perfMedium:'Media',perfHigh:'Alta',
@@ -198,7 +198,7 @@ const MESSAGES = {
     craftRequiresTable:'La cuadrícula 3×3 requiere una mesa de trabajo; úsala con clic derecho.',
   },
   en: {
-    touchJump:'Jump',touchAction:'Action',touchUse:'Use / place',touchTool:'Pickaxe',touchInventory:'Inventory',touchMenu:'Menu',touchMove:'Move player',touchLook:'Drag to look',
+    touchFullscreen:'Fullscreen',touchJump:'Jump',touchAction:'Action',touchUse:'Use / place',touchTool:'Pickaxe',touchInventory:'Inventory',touchMenu:'Menu',touchMove:'Move player',touchLook:'Drag to look',
     menuQuickActions: 'Game and tools',
 
     perfHaze:'Horizon haze',perfHazeOff:'Off',perfHazeLow:'Low',perfHazeMedium:'Natural',perfHazeHigh:'Strong',perfHazeAuto:'Automatic',    perfHorizonLod:'LOD horizon',perfLodSectors:'LOD sectors',perfLodTriangles:'LOD triangles',perfLodBuild:'LOD build',perfTitle:'Performance · F3',perfQuality:'Graphics quality',perfLow:'Low',perfMedium:'Medium',perfHigh:'High',
@@ -383,7 +383,7 @@ const MESSAGES = {
     craftRequiresTable:'3×3 crafting requires a workbench; right click an existing one.',
   },
   fr: {
-    touchJump:'Sauter',touchAction:'Action',touchUse:'Utiliser / poser',touchTool:'Pioche',touchInventory:'Inventaire',touchMenu:'Menu',touchMove:'Déplacer le personnage',touchLook:'Glisser pour regarder',
+    touchFullscreen:'Plein écran',touchJump:'Sauter',touchAction:'Action',touchUse:'Utiliser / poser',touchTool:'Pioche',touchInventory:'Inventaire',touchMenu:'Menu',touchMove:'Déplacer le personnage',touchLook:'Glisser pour regarder',
     menuQuickActions: 'Partie et outils',
 
     perfHaze:'Brume de l’horizon',perfHazeOff:'Désactivée',perfHazeLow:'Légère',perfHazeMedium:'Naturelle',perfHazeHigh:'Intense',perfHazeAuto:'Automatique',    perfHorizonLod:'Horizon LOD',perfLodSectors:'Secteurs LOD',perfLodTriangles:'Triangles LOD',perfLodBuild:'Calcul LOD',perfTitle:'Performances · F3',perfQuality:'Qualité graphique',perfLow:'Basse',perfMedium:'Moyenne',perfHigh:'Haute',

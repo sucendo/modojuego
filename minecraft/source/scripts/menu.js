@@ -1,3 +1,4 @@
+import { toggleFullscreen, fullscreenSupported, isFullscreen } from './fullscreen.js';
 import { getLanguage, setLanguage, t, onLanguageChange } from './i18n.js';
 
 export function setupMenu(player, saves) {
@@ -77,6 +78,14 @@ export function setupMenu(player, saves) {
       typeSelect.value='classic';modeSelect.value='creative';starterSelect.checked=true;starterSelect.disabled=true;updateTypeHelp();
     }
   });
+
+  const fullscreenButton=document.getElementById('fullscreen-game');
+  fullscreenButton.hidden=!fullscreenSupported();
+  fullscreenButton.addEventListener('click',()=>{void toggleFullscreen();});
+  const reflectFullscreen=()=>fullscreenButton.setAttribute('aria-pressed',String(isFullscreen()));
+  document.addEventListener('fullscreenchange',reflectFullscreen);
+  document.addEventListener('webkitfullscreenchange',reflectFullscreen);
+  reflectFullscreen();
 
   const start = () => { player.debugCamera = false; player.controls.lock(); };
   document.getElementById('start-game').addEventListener('click',start);

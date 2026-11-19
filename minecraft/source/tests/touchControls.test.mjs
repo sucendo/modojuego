@@ -12,7 +12,7 @@ class Element {
   setPointerCapture(){}
   getBoundingClientRect(){return {left:0,top:0,width:120,height:120};}
   set innerHTML(value){
-    for(const action of ['jump','action','use','tool','inventory','menu']){
+    for(const action of ['jump','action','use','tool','inventory','menu','fullscreen']){
       const button=new Element();button.dataset.touch=action;
       this.children.set(`[data-touch="${action}"]`,button);
     }
