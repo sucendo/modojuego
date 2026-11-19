@@ -19,7 +19,9 @@
   })();
   const $ = id => document.getElementById(id);
   const canvas = $('world'), ctx = canvas.getContext('2d');
-  const WITNESS_SEAT={x:915,y:456},WITNESS_FOOT={x:962,y:510};
+  // The witness sits at the SMALL TABLE AT THE BACK of the salon, adjacent
+  // to the window, not in the foreground aisle by the entrance.
+  const WITNESS_SEAT={x:824,y:382},WITNESS_FOOT={x:825,y:410};
   const sceneShell = $('scene-shell'), hotspotsNode = $('hotspots');
   const dialogNode = $('dialog-layer'), noticeNode = $('scene-message');
   const inventoryNode = $('inventory');
@@ -94,7 +96,7 @@
         {id:'main-table',src:'./assets/foreground/interior-table.webp',sourceCrop:[724,479,1144,907]},
         {id:'main-chair-near',src:'./assets/foreground/interior-chair-front.webp',sourceCrop:[596,577,898,941]}
       ],
-      perspective:{farY:390,nearY:660,farScale:.65,nearScale:1.94,doorway:{x:1022,y:469,rangeX:172,rangeY:185,boost:.08}},
+      perspective:{farY:390,nearY:660,farScale:.72,nearScale:1.78,doorway:{x:1022,y:469,rangeX:172,rangeY:185,boost:.055}},
       // Carmen serves the dining room FROM BEHIND the host's counter.
       actors:[{role:'carmen',x:272,y:488}],
       corridors:[
@@ -136,7 +138,7 @@
       ],
       hotspots:[
         {id:'carmen',x:272,y:387,w:96,h:134,walk:[372,574],label:'Speak with Carmen'},
-        {id:'stranger',x:916,y:406,w:103,h:128,walk:[885,540],label:'Guest beside the window'},
+        {id:'stranger',x:824,y:307,w:76,h:110,walk:[872,454],label:'Guest at the back table'},
         {id:'painting',x:704,y:230,w:140,h:118,walk:[935,500],label:'Framed painting'},
         {id:'table',x:637,y:532,w:230,h:145,walk:[866,574],label:'Look under the table'},
         {id:'window',x:1005,y:306,w:150,h:145,walk:[970,510],label:'Window by the plaza'},
@@ -156,6 +158,9 @@
     } catch{return init();}
   }
   let state=readSave();
+  // Standing is a temporary scene animation, NEVER a persistent state.
+  // Returning or loading a save always presents the guest seated at first.
+  state.flags.strangerStood=false;
   let verb='smart', selectedItem=null, dialog=null, noticeTimer=null;
   let actor={x:SCENES[state.scene].spawn[0],y:SCENES[state.scene].spawn[1],facing:1,step:0};
   let path=[], pending=null, time=0, lastFrame=performance.now(),lastReroute=0;
@@ -329,11 +334,11 @@
     patrolPausedAt=null;gabrielHeldPosition=null;
   }
   const patrolOrigin=performance.now();
-  let strangerStoodAt=state.flags.strangerStood?performance.now()-1000:null;
+  let strangerStoodAt=null;
   function strangerAt(now=performance.now()){
     if(state.scene!=='interior')return null;
     const standing=Boolean(state.flags.strangerStood);
-    const rising=standing?Math.min(1,Math.max(0,(now-strangerStoodAt)/680)):0;
+    const rising=standing?Math.min(1,Math.max(0,(now-strangerStoodAt)/1200)):0;
     return {role:'stranger',scene:'interior',
       x:mix(WITNESS_SEAT.x,WITNESS_FOOT.x,rising),
       y:mix(WITNESS_SEAT.y,WITNESS_FOOT.y,rising),
@@ -479,6 +484,7 @@
   function switchScene(id,arrival=null,walkOut=null){
     if(!SCENES[id])return;
     approachingStranger=false;
+    if(id==='interior'){state.flags.strangerStood=false;strangerStoodAt=null;}
     state.scene=id;state.flags.visitedInterior ||= id==='interior';
     actor={x:(arrival||SCENES[id].spawn)[0],y:(arrival||SCENES[id].spawn)[1],facing:id==='interior'?-1:1,step:0};
     path=[];pending=null;selectedItem=null;dialog=null;dialogNode.innerHTML='';
