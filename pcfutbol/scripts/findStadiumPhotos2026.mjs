@@ -80,6 +80,9 @@ for (const club of (process.argv.includes('--review-only') ? [] : clubs.filter(c
 // Verificación manual: mismo nombre no significa mismo estadio. En particular,
 // hay dos recintos "Romeo Menti" y un campo urbano llamado Marie Marvingt.
 const reviewed = {
+  // Freiburg dejó el Dreisamstadion: nunca reutilizar su antigua foto P18.
+  freiburg: { filename: 'Europa Park Stadion in Freiburg, Gebäudeseite.jpg', license: 'CC BY-SA 4.0',
+    url: 'https://commons.wikimedia.org/wiki/File:Europa_Park_Stadion_in_Freiburg,_Geb%C3%A4udeseite.jpg' },
   juvestabia: { filename: 'Curva Sud Juve Stabia.jpg', license: 'Public domain',
     url: 'https://commons.wikimedia.org/wiki/File:Curva_Sud_Juve_Stabia.jpg' },
   lemans: { filename: 'Le mans fc laval.jpg', license: 'CC BY-SA 3.0',

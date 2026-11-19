@@ -963,15 +963,17 @@ export const STADIUM_CATALOG = Object.freeze({
     }
   },
   "freiburg": {
-    "name": "Dreisamstadion",
-    "venueId": "Q311458",
-    "source": "https://www.wikidata.org/wiki/Q311458",
-    "capacity": 24000,
+    "name": "Europa-Park Stadion",
+    "venueId": null,
+    "source": "https://www.scfreiburg.com/stadion/europa-park-stadion/rund-ums-neue-stadion",
+    "capacity": 34700,
     "photo": {
-      "filename": "Badenova-Stadion 2011.jpg",
-      "license": "CC BY 2.0",
-      "url": "https://commons.wikimedia.org/wiki/File:Badenova-Stadion_2011.jpg"
-    }
+      "filename": "Europa Park Stadion in Freiburg, Gebäudeseite.jpg",
+      "license": "CC BY-SA 4.0",
+      "url": "https://commons.wikimedia.org/wiki/File:Europa_Park_Stadion_in_Freiburg,_Geb%C3%A4udeseite.jpg"
+    },
+    "sourceType": "official",
+    "homeVenueVerified": true
   },
   "frankfurt": {
     "name": "Deutsche Bank Park",

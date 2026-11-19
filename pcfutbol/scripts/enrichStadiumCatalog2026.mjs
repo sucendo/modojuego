@@ -45,6 +45,16 @@ const catalog = { ...STADIUM_CATALOG };
 // La competición y los propios clubes confirman estos recintos para 2026/27.
 // Se aplican incluso cuando Wikidata no tiene una ficha enlazada.
 const officialOverrides = {
+  freiburg: {
+    name: 'Europa-Park Stadion', capacity: 34700, venueId: null,
+    homeVenueVerified: true,
+    source: 'https://www.scfreiburg.com/stadion/europa-park-stadion/rund-ums-neue-stadion',
+    photo: {
+      filename: 'Europa Park Stadion in Freiburg, Gebäudeseite.jpg',
+      license: 'CC BY-SA 4.0',
+      url: 'https://commons.wikimedia.org/wiki/File:Europa_Park_Stadion_in_Freiburg,_Geb%C3%A4udeseite.jpg',
+    },
+  },
   bologna: { name: 'Stadio Renato Dall’Ara', capacity: 36532, venueId: 'Q757182',
     source: 'https://en.legaseriea.it/team/bologna/stadium' },
   alverca: { name: 'Estádio do FC Alverca', capacity: 6932,

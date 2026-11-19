@@ -16,6 +16,7 @@ import {
   setTicketSectorPrice, getTicketLevelPrices, setTicketLevelPrice, getTicketSalesProjection, adjustTicketSectorPrices, setTicketMode,
 } from '../js/game/managementCycle.js';
 import { renderStadiumPlan, stadiumPlanAvailable, stadiumRingPath, stadiumTierBands } from '../js/ui/stadiumSvgPlan.js';
+import { attachFixtureMeta } from '../js/game/match/events.js';
 import { wikipediaStadiumTitles, isOpenPhotoLicense } from '../js/ui/stadiumPhoto.js';
 import {
   simulateCurrentMatchday, advanceToNextManagementDay, advanceToNextUserMatchDay,
@@ -476,6 +477,29 @@ test('los filiales usan sus recintos y no los grandes estadios del primer equipo
   assert.equal(byId.realsociedad_b.stadium.structure.photo, null, 'foto antigua Z1, no nuevo estadio');
   assert.equal(byId.juvestabia.stadium.structure.photo.filename, 'Curva Sud Juve Stabia.jpg');
   assert.equal(byId.lemans.stadium.structure.photo.filename, 'Le mans fc laval.jpg');
+});
+
+test('Friburgo muestra la fotografía del Europa-Park Stadion y el aforo del club', () => {
+  const freiburg = allLeagues.flatMap(l => l.clubs).find(c => c.id === 'freiburg');
+  assert.equal(freiburg.stadium.name, 'Europa-Park Stadion');
+  assert.equal(freiburg.stadium.capacity, 34700);
+  assert.equal(freiburg.stadium.capacityStatus, 'official');
+  assert.match(freiburg.stadium.structure.photo.filename, /^Europa Park Stadion/);
+  assert.notEqual(freiburg.stadium.structure.venueId, 'Q311458', 'no identificar el estadio antiguo');
+});
+
+test('la asistencia de estadios pequeños nunca supera las localidades', () => {
+  const byId = Object.fromEntries(allLeagues.flatMap(l => l.clubs).map(club => [club.id, club]));
+  for (const id of ['sporting_b', 'jong_az', 'jong_utrecht', 'benfica_b']) {
+    const home = byId[id];
+    const fixture = { meta: {} };
+    attachFixtureMeta(fixture, home, byId.freiburg);
+    assert.ok(fixture.meta.attendance <= home.stadium.capacity, id);
+    assert.ok(fixture.meta.attendance >= 0, id);
+    const previous = { meta: { attendance: 2000 } };
+    attachFixtureMeta(previous, home, byId.freiburg);
+    assert.equal(previous.meta.attendance, Math.min(home.stadium.capacity, 2000), id);
+  }
 });
 
 test('una partida antigua traslada Benfica B al Campus y actualiza sus partidos futuros', () => {
