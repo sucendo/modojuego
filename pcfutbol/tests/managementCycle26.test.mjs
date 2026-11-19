@@ -265,7 +265,7 @@ test('la ficha de evolución está dentro de Entrenamiento, con resumen, atribut
   assert.match(training, /Evolución del jugador/);
   assert.match(ui, /getPlayerTrainingReport\(GameState, selectedPlayer\)/);
   assert.match(css, /pcf-training-evolution__history/);
-  assert.match(html, /managementCycle26\.css\?v=1670/);
+  assert.match(html, /managementCycle26\.css\?v=1671/);
 });
 
 test('sectorización: aforo exacto, reajuste por zona/partido y cierre irreversible', () => {
@@ -484,7 +484,7 @@ test('v16.4 presenta calendario y plano en sus menús, sin añadir gestión al d
   }
   assert.match(css, /pcf-training-calendar__day/);
   assert.match(css, /pcf-stadium-pitch/);
-  assert.match(html, /js\/main\.js\?v=1670/);
+  assert.match(html, /js\/main\.js\?v=1671/);
 });
 
 test('entrenamiento individual permite objetivos específicos persistentes y medibles', () => {

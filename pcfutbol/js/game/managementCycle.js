@@ -1,7 +1,7 @@
 // Fase 16.1: dos pausas de gestión por encuentro, sin reloj en tiempo real.
 // Todas las decisiones se guardan dentro de GameState (exportación JSON normal).
 
-import { getStadiumStructure } from '../stadiums_2026_27.js';
+import { getStadiumStructure } from '../stadiums_2026_27.js?v=1671';
 
 export const MANAGEMENT_STAGES = Object.freeze({ WEEK: 'week', MATCHDAY: 'matchday', POST: 'post' });
 export const TRAINING_TYPES = Object.freeze({
