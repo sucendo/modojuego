@@ -48,7 +48,7 @@ test('datos enriquecidos conectados a la partida y diseño aislado del postparti
     'nextmatch-pre-referee', 'nextmatch-pre-weather',
     'nextmatch-pre-head-to-head', 'nextmatch-pre-comparison',
   ]) assert.equal((preview.match(new RegExp(`id="${id}"`, 'g')) || []).length, 1, id);
-  assert.match(html, /matchPreviewVisual26\.css\?v=1/);
+  assert.match(html, /matchPreviewVisual26\.css\?v=2/);
   assert.match(css, /#view-nextmatch/);
   assert.match(js, /nextFx\.refereeName/);
   assert.match(js, /nextFx\.meta\?\.weather/);

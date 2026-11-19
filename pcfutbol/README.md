@@ -1,6 +1,6 @@
 # PC Fútbol 2026/27 — versión local
 
-El juego funciona **sin conexión a Internet**: datos, código, hojas de estilo y **272 escudos** están dentro de `pcfutbol/`. Las imágenes de los equipos se encuentran en `img/coats/2026-27/`, todas como PNG de 96 × 96 píxeles.
+El juego funciona **sin conexión a Internet**: datos, código, hojas de estilo y **272 escudos** están dentro de `pcfutbol/`. Las imágenes de los equipos se encuentran en `img/coats/2026-27/`, todas como PNG de 96 × 96 píxeles. **Opcionalmente**, con conexión, carga fotografías de estadios con licencia abierta desde Wikimedia Commons; sin conexión muestra su plano SVG.
 
 ## Jugar con WAMP o XAMPP
 
@@ -37,6 +37,34 @@ El juego es una aplicación HTML/CSS/JavaScript; no necesita PHP ni base de dato
   El juego **nunca consulta** las URLs de Google Sports, ESPN o Transfermarkt. Esas fuentes solo se utilizan durante la preparación de los activos.
 
 Los escudos pertenecen a sus respectivos clubes y pueden estar sujetos a derechos de marca y autor. Su inclusión técnica para jugar sin Internet no concede derechos adicionales de distribución comercial.
+
+## Estadios 2026/27: aforos, fotos y gradas
+
+- `js/stadiumCatalog_2026_27.js`: base de datos de **272 recintos**, con nombre, aforo, enlace a la fuente y, cuando existe, fotografía contrastada en Wikimedia Commons (264 fichas actualmente). **Ocho** disponen de ilustración SVG, pero aún no de fotografía libre verificable.
+- `js/stadiums_2026_27.js`: aforos operativos contrastados, estructura conocida y estimaciones explícitas. No confundir tres *franjas visuales estimadas* con tres anfiteatros realmente construidos.
+- `js/ui/stadiumSvgPlan.js` y `js/game/managementCycle.js`: el plano y la taquilla se generan automáticamente; cada grada ocupa un ancho proporcional a sus plazas y se colorea según su propia previsión de asistencia. Los asientos de todos los sectores suman exactamente el aforo.
+- `js/ui/stadiumPhoto.js`: fotografía con crédito y licencia en **Estadio** y **Previa**; nunca usa fotos de licencias desconocidas. Sin imagen o sin Internet queda visible el plano ilustrativo.
+
+**Añadir datos físicos de un estadio sin dibujar un SVG propio:** en `scripts/enrichStadiumCatalog2026.mjs`, incorpora su `structure` en `officialOverrides` junto al enlace oficial. Después ejecuta `node pcfutbol/scripts/enrichStadiumCatalog2026.mjs --official-only` para trasladarlo a la base. Por ejemplo:
+
+```js
+structure: {
+  structureStatus: 'partial',
+  structureSource: 'https://web-oficial-del-club/estadio',
+  stands: {
+    norte: { present: true, levels: [
+      { name: 'Grada norte baja', weight: 0.65 },
+      { name: 'Anfiteatro norte', weight: 0.35 },
+    ] },
+    sur: { present: false }, // Si existe fuente que confirme el cierre.
+  },
+  sectorConstraints: { norte: 4100 }, // Solo si hay aforo real desglosado.
+}
+```
+
+Las zonas aceptadas son `tribuna`, `preferencia`, `norte`, `sur` y `vip`. `weight` reparte **proporcionalmente** las plazas conocidas de esa zona; sin fuente se marca como estimación. `sectorConstraints` fija el aforo conocido de una zona y reparte automáticamente el resto. `stands[sector].coverage` permite un graderío parcialmente construido o abierto (de 0 a 1). Para la estructura completa se puede usar `sectorCapacities` si sus cinco cifras suman el aforo oficial.
+
+Para reconstruir toda la base desde Wikidata/Wikipedia, ejecutar en orden `buildStadiumCatalog2026.mjs`, `enrichStadiumCatalog2026.mjs` y `findStadiumPhotos2026.mjs` (requiere Internet y respeta las pausas de Wikimedia). Las correcciones humanas de imágenes ambiguas están en el último script; `--review-only` las aplica sin consultas nuevas. **No atribuir un número de anfiteatros no comprobado a un estadio.**
 
 ## Partidas guardadas
 

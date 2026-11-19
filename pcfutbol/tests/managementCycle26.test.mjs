@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { GameState, newGame, applyLoadedState } from '../js/state.js';
 import { allLeagues } from '../js/data.js';
+import { STADIUM_CATALOG } from '../js/stadiumCatalog_2026_27.js';
 import '../js/game/bootstrap.js';
 import {
   MANAGEMENT_STAGES, getManagementStage, getPendingUserFixtures,
@@ -15,6 +16,7 @@ import {
   setTicketSectorPrice, getTicketLevelPrices, setTicketLevelPrice, getTicketSalesProjection, adjustTicketSectorPrices, setTicketMode,
 } from '../js/game/managementCycle.js';
 import { renderStadiumPlan, stadiumPlanAvailable, stadiumRingPath, stadiumTierBands } from '../js/ui/stadiumSvgPlan.js';
+import { wikipediaStadiumTitles, isOpenPhotoLicense } from '../js/ui/stadiumPhoto.js';
 import {
   simulateCurrentMatchday, advanceToNextManagementDay, advanceToNextUserMatchDay,
 } from '../js/game/simulateMatchday.js';
@@ -265,7 +267,7 @@ test('la ficha de evolución está dentro de Entrenamiento, con resumen, atribut
   assert.match(training, /Evolución del jugador/);
   assert.match(ui, /getPlayerTrainingReport\(GameState, selectedPlayer\)/);
   assert.match(css, /pcf-training-evolution__history/);
-  assert.match(html, /managementCycle26\.css\?v=1672/);
+  assert.match(html, /managementCycle26\.css\?v=1673/);
 });
 
 test('sectorización: aforo exacto, reajuste por zona/partido y cierre irreversible', () => {
@@ -340,7 +342,7 @@ test('el plano del Metropolitano representa cada nivel seleccionable y los VIP d
   }
 });
 
-test('todos los clubes reciben plano SVG: Bernabéu con cuatro anfiteatros y genérico sin inventar niveles', () => {
+test('todos los clubes reciben plano SVG: niveles documentados o franjas marcadas como estimación', () => {
   assert.equal(stadiumPlanAvailable('bernabeu'), true);
   assert.equal(stadiumPlanAvailable('campnou'), true);
   assert.equal(stadiumPlanAvailable('sanmames'), true);
@@ -358,7 +360,7 @@ test('todos los clubes reciben plano SVG: Bernabéu con cuatro anfiteatros y gen
       ['realmadrid', 'bernabeu', 21, 5],
       ['barcelona', 'campnou', 9, 2],
       ['athletic', 'sanmames', 9, 2],
-      ['alaves', 'generic', 5, 0],
+      ['alaves', 'generic', 9, 2],
     ]) {
       begin(club);
       const home = GameState.clubs.find(c => c.id === club);
@@ -372,7 +374,7 @@ test('todos los clubes reciben plano SVG: Bernabéu con cuatro anfiteatros y gen
         sectors, prices: getTicketSectorPrices(GameState, fx), selectedSector: 'tribuna' }), true);
       const clickable = map.children[0].children.filter(item => item.attrs['data-sector']);
       assert.equal(clickable.length, expectedCount, club);
-      if (!expectedLevels) assert.ok(clickable.every(item => item.attrs['data-level-index'] == null), club);
+      if (club === 'alaves') assert.equal(home.stadium.structure.status, 'modelled');
     }
   } finally {
     if (oldDocument === undefined) delete globalThis.document;
@@ -432,17 +434,68 @@ test('el precio de cada grada modifica realmente la taquilla, se conserva y se b
   assert.ok(getTicketLevelPrices(GameState, other, 'tribuna').every(l => l.price === 44));
 });
 
-test('todas las fichas de los clubes conservan aforo y ficha estructural, sin inventar graderíos', () => {
+test('los 272 clubes disponen de ficha, bandas proporcionales y procedencia comprobable', () => {
   const unique = new Map(allLeagues.flatMap(league => league.clubs.map(club => [club.id, club])));
   assert.ok(unique.size >= 250, 'la ficha de estadio existe para todos los clubes de la temporada');
+  assert.equal(Object.keys(STADIUM_CATALOG).length, unique.size, 'todos tienen recinto en el catálogo externo');
   for (const club of unique.values()) {
+    assert.ok(STADIUM_CATALOG[club.id]?.capacity > 0, `aforo externo del ${club.id}`);
+    assert.ok(STADIUM_CATALOG[club.id]?.source, `fuente del ${club.id}`);
     assert.ok(club.stadium.name && Number.isInteger(club.stadium.capacity) && club.stadium.capacity > 0, club.id);
-    assert.ok(['official', 'catalog', 'provisional'].includes(club.stadium.capacityStatus), club.id);
-    assert.ok(['documented', 'pending'].includes(club.stadium.structure.status), club.id);
+    assert.ok(['official', 'wikidata', 'reference', 'catalog', 'provisional'].includes(club.stadium.capacityStatus), club.id);
+    assert.ok(['documented', 'partial', 'modelled'].includes(club.stadium.structure.status), club.id);
     assert.ok(Array.isArray(club.stadium.structure.levels), club.id);
-    if (club.stadium.structure.status === 'pending') assert.equal(club.stadium.structure.levels.length, 0, club.id);
+    assert.ok(club.stadium.structure.levels.length > 0, club.id);
     assert.equal(Object.keys(club.stadium.structure.sectorShares).length, TICKET_SECTORS.length, club.id);
+    const sectors = getStadiumSectors({ clubs: [club], user: { clubId: club.id } }, { homeClubId: club.id });
+    assert.equal(sectors.reduce((sum, sector) => sum + sector.capacity, 0), club.stadium.capacity, club.id);
+    for (const sector of sectors.filter(sector => sector.id !== 'vip')) {
+      assert.equal(sector.levels.reduce((sum, tier) => sum + tier.capacity, 0), sector.capacity, club.id);
+      assert.ok(sector.levels.every(tier => tier.capacity >= 0), club.id);
+    }
+    if (club.stadium.structure.photo) assert.equal(isOpenPhotoLicense(club.stadium.structure.photo.license), true, club.id);
   }
+});
+
+test('los filiales usan sus recintos y no los grandes estadios del primer equipo', () => {
+  const byId = Object.fromEntries(allLeagues.flatMap(l => l.clubs).map(c => [c.id, c]));
+  assert.equal(byId.benfica_b.stadium.name, 'Benfica Campus (campo principal)');
+  assert.equal(byId.benfica_b.stadium.capacity, 2720);
+  assert.match(byId.benfica_b.stadium.structure.photo.filename, /^Benfica Campus/);
+  assert.equal(byId.sporting_b.stadium.name, 'Estádio Aurélio Pereira');
+  assert.equal(byId.sporting_b.stadium.capacity, 1125);
+  const stands = getStadiumSectors({ clubs: [byId.sporting_b] }, { homeClubId: 'sporting_b' });
+  assert.equal(stands.find(s => s.id === 'tribuna').capacity, 1125);
+  assert.ok(stands.filter(s => s.id !== 'tribuna').every(s => s.capacity === 0));
+  assert.equal(byId.rioave.stadium.capacity, 5244);
+  assert.equal(byId.rioave.stadium.name, 'Estádio do Rio Ave Futebol Clube');
+  assert.equal(byId.rioave.stadium.structure.photo, null, 'no usar la foto del partido en Chaves');
+  const rioAve = getStadiumSectors({ clubs: [byId.rioave] }, { homeClubId: 'rioave' });
+  assert.equal(rioAve.find(s => s.id === 'preferencia').capacity, 0, 'bancada nascente demolida');
+  assert.equal(rioAve.reduce((sum, sector) => sum + sector.capacity, 0), 5244);
+  assert.equal(byId.realsociedad_b.stadium.structure.photo, null, 'foto antigua Z1, no nuevo estadio');
+  assert.equal(byId.juvestabia.stadium.structure.photo.filename, 'Curva Sud Juve Stabia.jpg');
+  assert.equal(byId.lemans.stadium.structure.photo.filename, 'Le mans fc laval.jpg');
+});
+
+test('una partida antigua traslada Benfica B al Campus y actualiza sus partidos futuros', () => {
+  newGame({ leagueId: 'league_pt_segunda', clubId: 'benfica_b' });
+  const saved = structuredClone(GameState);
+  const club = saved.clubs.find(c => c.id === 'benfica_b');
+  club.stadium.name = 'Estádio da Luz';
+  club.stadium.capacity = 68100;
+  club.stadium.capacityStatus = 'catalog';
+  const future = saved.fixtures.find(f => !f.played && f.homeClubId === 'benfica_b');
+  assert.ok(future);
+  future.meta.stadiumName = 'Estádio da Luz';
+  future.meta.stadiumCapacity = 68100;
+  future.meta.capacity = 68100;
+  applyLoadedState(saved);
+  assert.equal(GameState.clubs.find(c => c.id === 'benfica_b').stadium.capacity, 2720);
+  const migrated = GameState.fixtures.find(f => f.id === future.id);
+  assert.equal(migrated.meta.stadiumName, 'Benfica Campus (campo principal)');
+  assert.equal(migrated.meta.stadiumCapacity, 2720);
+  assert.equal(migrated.meta.capacity, 2720);
 });
 
 test('estadios documentados: aforo operativo, niveles y cuatro anfiteatros del Bernabéu', () => {
@@ -471,6 +524,119 @@ test('estadios documentados: aforo operativo, niveles y cuatro anfiteatros del B
   const bernabeu = GameState.clubs.find(c => c.id === 'realmadrid').stadium;
   assert.equal(bernabeu.structure.amphitheaters, 4);
   assert.equal(bernabeu.structure.levels.length, 5, 'grada/tribuna y cuatro anfiteatros');
+});
+
+test('la Premier 2026/27 usa aforos actuales, cierres documentados y tribunas con capacidad propia', () => {
+  const prem = allLeagues.find(league => league.id === 'league_en_premier');
+  const byId = Object.fromEntries(prem.clubs.map(club => [club.id, club]));
+  assert.equal(byId.everton.stadium.capacity, 52769);
+  assert.equal(byId.mancity.stadium.capacity, 61038);
+  assert.equal(byId.liverpool.stadium.capacity, 61276);
+  assert.equal(byId.astonvilla.stadium.capacity, 36887);
+  const villa = getStadiumSectors({ clubs: [byId.astonvilla] }, { homeClubId: 'astonvilla' });
+  assert.equal(villa.find(s => s.id === 'norte').capacity, 0, 'tribuna norte cerrada por obras');
+  assert.equal(villa.reduce((sum, sector) => sum + sector.capacity, 0), 36887);
+  const spurs = getStadiumSectors({ clubs: [byId.tottenham] }, { homeClubId: 'tottenham' });
+  assert.equal(spurs.find(s => s.id === 'sur').capacity, 17500);
+  assert.equal(spurs.find(s => s.id === 'sur').levels.length, 1);
+  assert.equal(spurs.find(s => s.id === 'sur').allocationStatus, 'documented');
+  assert.equal(spurs.reduce((sum, sector) => sum + sector.capacity, 0), 62850);
+});
+
+test('las seis fichas residuales dejan de usar aforos genéricos, con palcos reales cuando constan', () => {
+  const byId = Object.fromEntries(allLeagues.flatMap(l => l.clubs).map(club => [club.id, club]));
+  for (const [id, capacity] of Object.entries({
+    racing_santander: 22514, eldense: 5800, realsociedad_b: 4000,
+    pau: 4120, jong_az: 1000, jong_utrecht: 1000,
+  })) {
+    assert.equal(byId[id].stadium.capacity, capacity, id);
+    assert.notEqual(byId[id].stadium.capacityStatus, 'provisional', id);
+  }
+  for (const [id, vipSeats] of [['eldense', 165], ['pau', 600]]) {
+    const stands = getStadiumSectors({ clubs: [byId[id]] }, { homeClubId: id });
+    assert.equal(stands.find(s => s.id === 'vip').capacity, vipSeats);
+    assert.equal(stands.reduce((sum, sector) => sum + sector.capacity, 0), byId[id].stadium.capacity);
+  }
+});
+
+test('los estadios compartidos y las obras italianas conservan el aforo de Lega Serie A', () => {
+  const byId = Object.fromEntries(allLeagues.flatMap(l => l.clubs).map(club => [club.id, club]));
+  assert.equal(byId.acmilan.stadium.capacity, 75725);
+  assert.equal(byId.inter.stadium.capacity, 75725);
+  assert.equal(byId.roma.stadium.capacity, 69689);
+  assert.equal(byId.lazio.stadium.capacity, 69689);
+  assert.equal(byId.fiorentina.stadium.capacity, 24786);
+  assert.equal(byId.napoli.stadium.capacity, 54732);
+  for (const id of ['inter', 'lazio', 'napoli', 'fiorentina'])
+    assert.equal(byId[id].stadium.capacityStatus, 'official');
+});
+
+test('la proporción de plazas por altura sigue el peso físico de cada grada', () => {
+  begin('atletico');
+  const stadium = GameState.clubs.find(c => c.id === 'atletico').stadium;
+  stadium.structure.sectorLevelWeights.norte = [1, 2, 4];
+  const fx = getPendingUserFixtures(GameState).find(f => f.homeClubId === 'atletico');
+  const sectors = getStadiumSectors(GameState, fx);
+  const north = sectors.find(sector => sector.id === 'norte');
+  assert.equal(north.levels.reduce((sum, level) => sum + level.capacity, 0), north.capacity);
+  assert.ok(north.levels[2].capacity > north.levels[1].capacity);
+  assert.ok(north.levels[1].capacity > north.levels[0].capacity);
+  const bands = stadiumTierBands(3, north.levels.map(level => level.capacity));
+  assert.ok(bands[2][1] - bands[2][0] > bands[0][1] - bands[0][0]);
+  const forecast = getTicketSalesProjection(GameState, fx, 38000);
+  assert.ok(forecast.breakdown.every(sector => sector.occupancy >= 0 && sector.occupancy <= 1));
+  assert.ok(forecast.breakdown.flatMap(sector => sector.levels).every(level => level.attendance <= level.capacity));
+});
+
+test('la ocupación se dibuja como una fracción de cada banda, y no como un tinte genérico', () => {
+  const oldDocument = globalThis.document;
+  const node = tag => ({ tag, attrs: {}, children: [], setAttribute(k, v) { this.attrs[k] = v; }, append(...items) { this.children.push(...items); } });
+  globalThis.document = { createElementNS(_ns, tag) { return node(tag); } };
+  try {
+    const map = { children: [], classList: { add() {} }, replaceChildren(...items) { this.children = items; } };
+    renderStadiumPlan(map, { sectors: [{ id: 'tribuna', label: 'Tribuna', capacity: 4000,
+      levels: [{ name: 'Baja', capacity: 4000, attendance: 2000, occupancy: .5 }] }],
+    });
+    const tribuna = map.children[0].children.find(item => item.attrs['data-sector'] === 'tribuna');
+    const base = tribuna.children.find(item => item.attrs.class?.includes('pcf-stadium-svg__tier-shape'));
+    const people = tribuna.children.find(item => item.attrs.class === 'pcf-stadium-svg__attendance');
+    assert.ok(base && people, 'la base de la grada y el segmento ocupado son distintos');
+    assert.notEqual(base.attrs.d, people.attrs.d, 'el público no ocupa toda la grada');
+    assert.match(tribuna.children.find(item => item.tag === 'title').textContent || '', /50 %/);
+  } finally {
+    if (oldDocument === undefined) delete globalThis.document;
+    else globalThis.document = oldDocument;
+  }
+});
+
+test('graderíos incompletos: un lateral cerrado y un fondo abierto no inventan localidades', () => {
+  begin('atletico');
+  const stadium = GameState.clubs.find(c => c.id === 'atletico').stadium;
+  stadium.structure.stands = { sur: { present: false }, norte: { coverage: 0.5 } };
+  const fx = getPendingUserFixtures(GameState).find(f => f.homeClubId === 'atletico');
+  const sectors = getStadiumSectors(GameState, fx);
+  assert.equal(sectors.find(s => s.id === 'sur').capacity, 0);
+  assert.equal(sectors.reduce((sum, sector) => sum + sector.capacity, 0), stadium.capacity);
+  const oldDocument = globalThis.document;
+  const node = tag => ({ tag, attrs: {}, children: [], setAttribute(k, v) { this.attrs[k] = v; }, append(...items) { this.children.push(...items); } });
+  globalThis.document = { createElementNS(_ns, tag) { return node(tag); } };
+  try {
+    const map = { children: [], classList: { add() {} }, replaceChildren(...items) { this.children = items; } };
+    renderStadiumPlan(map, { plan: 'metropolitano', structure: stadium.structure, sectors, prices: {} });
+    assert.equal(map.children[0].children.filter(item => item.attrs['data-sector'] === 'sur').length, 0);
+    assert.ok(map.children[0].children.filter(item => item.attrs['data-sector'] === 'norte').length > 0);
+  } finally {
+    if (oldDocument === undefined) delete globalThis.document;
+    else globalThis.document = oldDocument;
+  }
+});
+
+test('las fotos no se confunden con imágenes genéricas o licencias cerradas', () => {
+  assert.deepEqual(wikipediaStadiumTitles('Estadio de Club Inventado'), []);
+  assert.deepEqual(wikipediaStadiumTitles('Metropolitano', 'Estadio Metropolitano (Madrid)'), ['Estadio Metropolitano (Madrid)']);
+  assert.equal(isOpenPhotoLicense('CC BY-SA 4.0'), true);
+  assert.equal(isOpenPhotoLicense('CC BY 4.0'), true);
+  assert.equal(isOpenPhotoLicense('All rights reserved'), false);
 });
 
 test('aforo oficial desglosado se respeta si es válido y se ignora si no coincide con el total', () => {
@@ -544,7 +710,7 @@ test('v16.4 presenta calendario y plano en sus menús, sin añadir gestión al d
   }
   assert.match(css, /pcf-training-calendar__day/);
   assert.match(css, /pcf-stadium-pitch/);
-  assert.match(html, /js\/main\.js\?v=1672/);
+  assert.match(html, /js\/main\.js\?v=1673/);
 });
 
 test('entrenamiento individual permite objetivos específicos persistentes y medibles', () => {

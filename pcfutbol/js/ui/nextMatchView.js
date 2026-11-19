@@ -5,8 +5,9 @@
 import { GameState } from '../state.js';
 import { getSeasonLabel } from '../gameSeason.js';
 import { getUserClub } from '../game/selectors.js';
-import { advanceToNextManagementDay } from '../game/simulateMatchday.js?v=1672';
-import { MANAGEMENT_STAGES, getManagementStage } from '../game/managementCycle.js?v=1672';
+import { advanceToNextManagementDay } from '../game/simulateMatchday.js?v=1673';
+import { MANAGEMENT_STAGES, getManagementStage, getStadiumSectors } from '../game/managementCycle.js?v=1673';
+import { renderStadiumPhoto } from './stadiumPhoto.js?v=1673';
 import {
   getGameDateFor,
   formatGameDateLabel,
@@ -1002,6 +1003,9 @@ export function updateNextMatchView() {
     setText('nextmatch-next-meta', '');
     setText('nextmatch-next-stadium', '');
     setText('nextmatch-next-attendance', '');
+    const stadiumPhoto = document.getElementById('nextmatch-stadium-photo');
+    if (stadiumPhoto) { stadiumPhoto.replaceChildren(); stadiumPhoto.dataset.stadiumPhotoKey = ''; }
+    setText('nextmatch-stadium-photo-credit', '');
     renderPlayersList(document.getElementById('nextmatch-pre-home-xi'), []);
     renderPlayersList(document.getElementById('nextmatch-pre-home-bench'), []);
     renderPlayersList(document.getElementById('nextmatch-pre-home-out'), []);
@@ -1041,9 +1045,11 @@ export function updateNextMatchView() {
     // Ajustar fecha cabecera a la del partido del usuario
     const headDate = getFixtureKickoffDate(nextFx, season, nextFx.matchday || currentMd);
     setText('nextmatch-date-label', formatGameDateLabel(headDate));
-    const stadium = home?.stadiumName || home?.stadium?.name || 'Estadio';
+    const stadium = home?.stadium?.name || home?.stadiumName || 'Estadio';
     setText('nextmatch-next-meta', `Jornada ${nextFx.matchday || currentMd} • ${kickoffLabel}`);
     setText('nextmatch-next-stadium', stadium);
+    renderStadiumPhoto(document.getElementById('nextmatch-stadium-photo'),
+      document.getElementById('nextmatch-stadium-photo-credit'), home, getStadiumSectors(GameState, nextFx));
 
     const { capacity, attendance } = nextFx?.meta?.attendance != null
       ? {

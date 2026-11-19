@@ -3,7 +3,7 @@ import { getUserClub } from '../game/selectors.js';
 import { updateDashboardExtras } from './dashboardExtras.js?v=8.1';
 import { getFixtureKickoffDate, formatGameDateLabel } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
-import { updateManagementView } from './managementStage.js?v=1672';
+import { updateManagementView } from './managementStage.js?v=1673';
 
 function formatCurrency(value) {
   const v = Number(value);

@@ -1,9 +1,9 @@
 // js/ui.js
 
-import './game/bootstrap.js?v=1672';
+import './game/bootstrap.js?v=1673';
 
 import { GameState, newGame } from './state.js';
-import { initialLeague, allLeagues } from './data.js?v=1672';
+import { initialLeague, allLeagues } from './data.js?v=1673';
 import { exportGameToFile } from './saveLoad.js';
 
 import { showDashboard, setActiveSubview } from './ui/nav.js?v=163';
@@ -43,7 +43,7 @@ import {
   initNextMatchUI,
   updateNextMatchView,
   setLastSimulatedMatchday as setNextMatchLastSimulatedMatchday,
-} from './ui/nextMatchView.js?v=1672';
+} from './ui/nextMatchView.js?v=1673';
 
 import { initStandingsUI, updateStandingsView, setStandingsSelectedMatchday } from './ui/standings.js';
 
@@ -57,8 +57,8 @@ import { getPlayerGameAge } from './ui/utils/calendar.js';
 import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js?v=11';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
-import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js?v=1672';
-import { initManagementUI, updateManagementView } from './ui/managementStage.js?v=1672';
+import { simulateCurrentMatchday, advanceToNextUserMatchDay, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js?v=1673';
+import { initManagementUI, updateManagementView } from './ui/managementStage.js?v=1673';
 import { handleFileInput } from './ui/saveLoadUI.js';
 
 import { getPlayerById, handlePlayerAction as handlePlayerActionImpl } from './ui/playerActions.js';

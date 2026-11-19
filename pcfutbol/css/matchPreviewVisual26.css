@@ -256,12 +256,16 @@
   height: 103px;
   border: 0;
   border-radius: 0;
-  background: linear-gradient(0deg, #051d34bb, #051d3411), url('../img/resources/stadium-night-2026.webp') center 52% / cover no-repeat;
+  background: linear-gradient(150deg, #0c3452, #051b2d);
+  overflow: hidden;
 }
+#view-nextmatch .pcf-stadium__img .pcf-stadium-svg { width: 100%; height: 100%; }
+#view-nextmatch .pcf-stadium__img .pcf-stadium-photo__img { width: 100%; height: 100%; display: block; object-fit: cover; }
 #view-nextmatch .pcf-stadium__info { padding: 7px; }
 #view-nextmatch .pcf-stadium__name { font-size: 12px; line-height: 1.3; }
 #view-nextmatch .pcf-stadium__att { margin-top: 3px; font-size: 10px; color: #bed3e4; }
 #view-nextmatch .pcf-stadium__illustration-note { padding: 0 7px 6px; color: #7ea5bc; font-size: 9px; }
+#view-nextmatch .pcf-stadium__illustration-note a { color: #9edaf2; text-decoration: underline; }
 #view-nextmatch .pcf-match-facts { display: flex; flex-direction: column; gap: 4px; }
 #view-nextmatch .pcf-match-fact {
   display: flex;

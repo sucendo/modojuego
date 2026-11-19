@@ -8,7 +8,7 @@
  * Más adelante: aquí coordinaremos initNavigation/initTactics/initSquad...
  */
 
-import { initUI as legacyInitUI } from '../ui.js?v=1672';
+import { initUI as legacyInitUI } from '../ui.js?v=1673';
 import { initFullscreenButton, initSettingsModal } from './modals/settingsModal.js';
  
 export function initUI() {
