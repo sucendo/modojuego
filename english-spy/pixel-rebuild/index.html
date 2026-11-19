@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1425">
+  <title>English Spy · Reconstrucción de escenarios · Alpha 0.1</title>
+  <link rel="stylesheet" href="./rebuild.css?v=1">
+</head>
+<body>
+  <main class="adventure">
+    <header class="topbar">
+      <div class="brand"><span class="emblem">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>MADRID · OPERACIÓN BLACKWOOD · ESCENARIOS RECONSTRUIDOS α1</small></div></div>
+      <div class="settings">
+        <button id="avatar" class="flat">✦ Mi agente</button>
+        <label for="level">INGLÉS</label>
+        <select id="level" aria-label="Nivel de inglés"><option value="starter">Pre-A1</option><option value="a1">A1–A2</option><option value="b1">B1</option><option value="b2">B2+</option></select>
+        <button id="language" class="flat" aria-pressed="true">ES ✓</button>
+        <button id="sound" class="flat" aria-label="Activar o desactivar voz">🔊</button>
+        <button id="reset" class="flat">Reiniciar</button>
+      </div>
+    </header>
+    <section class="scene-wrap" aria-label="Aventura gráfica interactiva">
+      <div id="stage" class="stage">
+        <canvas id="game" width="1200" height="675" aria-label="Escenario del Café de Oriente. Pulsa en el suelo para caminar y en los objetos para investigar."></canvas>
+        <div class="scene-tag" id="scene-name">PLAZA DE ORIENTE · 18:47</div>
+        <div id="hover-label" class="hover-label" hidden></div>
+        <div id="dialogue" class="dialogue" hidden></div>
+        <div id="toast" class="toast" hidden></div>
+      </div>
+    </section>
+    <footer class="hud">
+      <div class="verbs"><span class="hud-label">ACCIONES</span><div class="verb-grid"><button data-verb="smart" class="chosen">INTERACT</button><button data-verb="look">LOOK AT</button><button data-verb="talk">TALK TO</button><button data-verb="take">PICK UP</button></div></div>
+      <div class="items"><span class="hud-label">INVENTARIO</span><div id="inventory" class="inventory" aria-label="Inventario de pruebas"></div></div>
+      <div class="casefile"><span class="hud-label">EXPEDIENTE <span id="case-count">0 / 3</span></span><p id="objective">Examina la mesa de la terraza.</p><div class="progress"><span id="progress"></span></div></div>
+    </footer>
+    <div class="help-strip">Clic en el suelo: caminar · Pasa el ratón sobre objetos o personas · La lupa y los cuadros de selección no aparecen · <span id="status">SISTEMA PREPARADO</span></div>
+  </main>
+  <script src="./rebuild.js?v=1" defer></script>
+</body>
+</html>
