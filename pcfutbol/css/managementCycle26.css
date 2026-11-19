@@ -53,6 +53,20 @@
   min-width:0; border:1px solid rgba(101,188,225,.33); border-radius:12px; background:rgba(2,20,40,.46); padding:16px; box-sizing:border-box;
 }
 #screen-dashboard .pcf-stadium-map { display:grid; grid-template-columns:minmax(54px,.35fr) minmax(0,1fr) minmax(54px,.35fr); grid-template-rows:30px 37px minmax(155px,200px) 42px; gap:5px; max-width:520px; margin:15px auto 8px; }
+#screen-dashboard .pcf-stadium-map--svg { display:block; width:100%; max-width:700px; margin:8px auto; }
+#screen-dashboard .pcf-stadium-svg { display:block; width:100%; height:auto; overflow:visible; }
+#screen-dashboard .pcf-stadium-svg__tier,#screen-dashboard .pcf-stadium-svg__vip { cursor:pointer; outline:none; }
+#screen-dashboard .pcf-stadium-svg__tier-shape { stroke:#0b283e; stroke-width:2.5; transition:fill .12s ease,stroke .12s ease; }
+#screen-dashboard .pcf-stadium-svg__tier-shape--0 { fill:#23647d; }
+#screen-dashboard .pcf-stadium-svg__tier-shape--1 { fill:#2e809d; }
+#screen-dashboard .pcf-stadium-svg__tier-shape--2 { fill:#367fa9; }
+#screen-dashboard .pcf-stadium-svg__tier.is-zone-selected .pcf-stadium-svg__tier-shape { stroke:#6bd3e9; }
+#screen-dashboard .pcf-stadium-svg__tier:hover .pcf-stadium-svg__tier-shape,#screen-dashboard .pcf-stadium-svg__tier:focus-visible .pcf-stadium-svg__tier-shape { fill:#65c6dd; stroke:#e6fcff; stroke-width:4; }
+#screen-dashboard .pcf-stadium-svg__tier.is-selected .pcf-stadium-svg__tier-shape { fill:#89d9f1; stroke:#fff2a4; stroke-width:5; }
+#screen-dashboard .pcf-stadium-svg__vip-shape { fill:#e0aa4a; stroke:#fff3d2; stroke-width:3; }
+#screen-dashboard .pcf-stadium-svg__vip:hover .pcf-stadium-svg__vip-shape,#screen-dashboard .pcf-stadium-svg__vip.is-selected .pcf-stadium-svg__vip-shape { fill:#ffe1a1; stroke:#fff; stroke-width:5; }
+#screen-dashboard .pcf-stadium-svg__caption { font-size:17px; font-weight:800; fill:#eef8ff; letter-spacing:.8px; pointer-events:none; paint-order:stroke; stroke:#123348; stroke-width:3px; }
+#screen-dashboard .pcf-stadium-svg__vip-label { font-size:13px; font-weight:800; fill:#ffdf9b; pointer-events:none; }
 #screen-dashboard .pcf-sector-stand { min-width:0; min-height:0; background:linear-gradient(115deg,#144b73,#206d91); color:#e6f8ff; font-size:clamp(9px,.85vw,12px); font-weight:800; border:1px solid #67b7d1; border-radius:7px; padding:4px; white-space:normal; overflow-wrap:anywhere; }
 #screen-dashboard .pcf-sector-stand:hover,#screen-dashboard .pcf-sector-stand.is-selected { background:linear-gradient(115deg,#2679b4,#409dcc); outline:2px solid #c3f3ff; outline-offset:-2px; }
 #screen-dashboard .pcf-sector-stand--vip { grid-area:1/2; background:#805f2a; border-color:#ffcf80; }
@@ -64,9 +78,11 @@
 #screen-dashboard .pcf-stadium-levels > strong { display:block; font-size:12px; color:#f2fbff; margin-bottom:6px; }
 #screen-dashboard .pcf-stadium-levels p { font-size:11px; color:#bcd9e6; margin:6px 0 0; line-height:1.4; }
 #screen-dashboard .pcf-stadium-levels__grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(115px,1fr)); gap:6px; }
-#screen-dashboard .pcf-stadium-levels__item { min-width:0; padding:7px; border-radius:6px; background:#07243a; border:1px solid #30677f; }
+#screen-dashboard .pcf-stadium-levels__item { min-width:0; padding:7px; border-radius:6px; background:#07243a; border:1px solid #30677f; color:#fff; text-align:left; cursor:pointer; }
+#screen-dashboard .pcf-stadium-levels__item:hover,#screen-dashboard .pcf-stadium-levels__item.is-selected { background:#1d5876; border-color:#95e0f4; }
 #screen-dashboard .pcf-stadium-levels__item span { display:block; font-size:10px; color:#b7d8e5; }
 #screen-dashboard .pcf-stadium-levels__item strong { display:block; margin-top:4px; font-size:12px; color:#e9f9ff; }
+#screen-dashboard .pcf-stadium-levels__item em { display:block; margin-top:5px; color:#f5d48c; font-size:11px; font-style:normal; }
 #screen-dashboard #pcf-stadium-source a { color:#91e4ff; text-decoration:underline; }
 #screen-dashboard .pcf-stadium-pitch { grid-area:3/2; position:relative; border:3px solid #edf9ec; border-radius:4px; box-shadow:0 0 0 5px #174a57; background:repeating-linear-gradient(90deg,#266c40 0%,#266c40 14.28%,#2c7d49 14.28%,#2c7d49 28.56%); }
 #screen-dashboard .pcf-stadium-pitch::before { content:""; position:absolute; inset:0 49.5%; width:1px; background:#eef9f1; }
@@ -77,6 +93,7 @@
 #screen-dashboard .pcf-sector-item strong { white-space:nowrap; color:#f9d484; }
 #screen-dashboard .pcf-sector-item.is-selected { border-color:#7ee2fc; background:#164866; }
 #screen-dashboard .pcf-stadium-controls > label,#screen-dashboard .pcf-training-planner__details > label { display:block; font-size:12px; color:#d1ecf8; margin:10px 0 5px; }
+#screen-dashboard .pcf-ticket-level-select { display:block; width:100%; min-height:36px; box-sizing:border-box; padding:6px 9px; border:1px solid #38758f; border-radius:7px; background:#0b273e; color:#fff; }
 #screen-dashboard .pcf-sector-edit { display:flex; gap:8px; }
 #screen-dashboard .pcf-sector-edit input,#screen-dashboard .pcf-training-planner select,#screen-dashboard .pcf-ticket-bulk select,#screen-dashboard .pcf-ticket-bulk input { min-height:36px; min-width:0; box-sizing:border-box; padding:6px 9px; border:1px solid #38758f; border-radius:7px; background:#0b273e; color:#fff; }
 #screen-dashboard .pcf-sector-edit input { flex:1; width:100px; }

@@ -7,6 +7,7 @@
 const STADIUM_PROFILES = Object.freeze({
   atletico: {
     capacity: 70813,
+    plan: 'metropolitano',
     levels: ['Grada baja', 'Grada media', 'Grada alta'],
     sectorLevels: {
       tribuna: ['Grada baja', 'Grada media', 'Grada alta'],
@@ -70,6 +71,7 @@ export function createStadiumRecord(clubBase) {
       sectorShares: { ...STADIUM_SECTOR_DISTRIBUTION },
       sectorCapacities: null, // Futuro: { vip: plazas, tribuna: plazas, ... } con fuente contrastada.
       allocationStatus: 'estimated',
+      plan: profile.plan || null,
       source: profile.source || null,
       structureSource: profile.structureSource || null,
     },
@@ -78,6 +80,10 @@ export function createStadiumRecord(clubBase) {
 
 /** En partidas antiguas puede faltar structure; completar sin alterar el aforo guardado. */
 export function getStadiumStructure(club) {
-  if (club?.stadium?.structure) return club.stadium.structure;
+  if (club?.stadium?.structure) {
+    // Las partidas previas a los planos SVG mantienen su ficha, pero reciben
+    // la geometría del estadio sin modificar las entradas o el aforo guardados.
+    return { ...club.stadium.structure, plan: club.stadium.structure.plan || STADIUM_PROFILES[club.id]?.plan || null };
+  }
   return createStadiumRecord({ id: club?.id, stadiumName: club?.stadium?.name, capacity: club?.stadium?.capacity }).structure;
 }

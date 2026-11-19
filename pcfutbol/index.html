@@ -11,7 +11,7 @@
 	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
 	<link rel="stylesheet" href="css/matchPostVisual26.css?v=141" />
 	<link rel="stylesheet" href="css/mobileVisual26.css?v=1" />
-	<link rel="stylesheet" href="css/managementCycle26.css?v=1660" />
+	<link rel="stylesheet" href="css/managementCycle26.css?v=1670" />
 </head>
 <body>
 	<header class="app-header">
@@ -466,15 +466,17 @@
 					<div class="pcf-stadium-controls">
 						<h3>4. Tarifas y previsión por zona</h3>
 						<div id="pcf-ticket-sector-list" class="pcf-sector-list" aria-label="Zonas y precios"></div>
-						<label for="pcf-ticket-sector-price">Precio del sector seleccionado (€)</label>
-						<div class="pcf-sector-edit"><input id="pcf-ticket-sector-price" type="number" min="5" max="250" step="1" inputmode="numeric" /><button id="pcf-ticket-sector-apply" type="button" class="btn btn-secondary">Guardar sector</button></div>
+						<label for="pcf-ticket-level-select">Aplicar tarifa a</label>
+						<select id="pcf-ticket-level-select" class="pcf-ticket-level-select"><option value="all">Zona completa</option></select>
+						<label for="pcf-ticket-sector-price">Precio de la zona o grada seleccionada (€)</label>
+						<div class="pcf-sector-edit"><input id="pcf-ticket-sector-price" type="number" min="5" max="250" step="1" inputmode="numeric" /><button id="pcf-ticket-sector-apply" type="button" class="btn btn-secondary">Guardar tarifa</button></div>
 						<div id="pcf-ticket-forecast" class="pcf-ticket-forecast" aria-live="polite"></div>
 					</div>
 				</div>
 				<div class="pcf-ticket-bulk">
 					<h3>5. Subir o bajar tarifas</h3>
 					<div class="pcf-ticket-bulk__fields">
-						<label>Zona <select id="pcf-ticket-adjust-zone"><option value="all">Todas las zonas</option><option value="selected">Zona seleccionada</option></select></label>
+						<label>Zona <select id="pcf-ticket-adjust-zone"><option value="all">Todas las zonas</option><option value="selected">Zona seleccionada</option><option value="level">Grada seleccionada</option></select></label>
 						<label>Cambio <select id="pcf-ticket-adjust-operation"><option value="percent">Porcentaje (%)</option><option value="euros">Importe (€)</option></select></label>
 						<label>Cantidad (+ o −) <input id="pcf-ticket-adjust-amount" type="number" value="10" min="-100" max="250" step="1" /></label>
 						<label>Aplicar a <select id="pcf-ticket-adjust-scope"><option value="selected">Este partido</option><option value="future">Todos los próximos en casa</option></select></label>
@@ -1869,7 +1871,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=1660"></script>
+	<script type="module" src="js/main.js?v=1670"></script>
 	
 </body>
 </html>
