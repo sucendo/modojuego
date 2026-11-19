@@ -49,6 +49,21 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #ffd
 #world{cursor:default}
 .agent-button{border-color:#b78b58;color:#ffe2ae}
 
+/* Keep both people visible while they talk. The old full-width panel hid
+   their legs and made an otherwise correct face-to-face position unreadable. */
+.dialog-layer[data-mode="conversation"] .dialog-panel{
+  left:14px;right:auto;bottom:13px;width:min(52%,660px);max-height:85%;overflow-y:auto;
+  min-height:0;border:2px solid #d4a15c;padding:12px 15px 15px;
+  box-shadow:0 8px 25px #000b;
+}
+.dialog-layer[data-mode="conversation"][data-side="right"] .dialog-panel{left:auto;right:14px}
+.dialog-layer[data-mode="conversation"] .dialog-text{font-size:clamp(.9rem,1.2vw,1.16rem);min-height:0;margin:8px 0 5px}
+.dialog-layer[data-mode="conversation"] .dialog-choice{font-size:.76rem;padding:7px 9px}
+@media(max-width:750px){
+  .dialog-layer[data-mode="conversation"] .dialog-panel{left:4px;right:4px;width:auto;bottom:4px;max-height:58%;padding:9px}
+  .dialog-layer[data-mode="conversation"][data-side="right"] .dialog-panel{left:4px;right:4px}
+}
+
 /* Customizable field-agent wardrobe. */
 .customize-overlay{position:absolute;inset:0;background:#06101edb;display:flex;align-items:center;justify-content:center;z-index:11;padding:18px}
 .customize-overlay.hidden{display:none}
