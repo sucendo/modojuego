@@ -1,3 +1,4 @@
+import { setupTouchControls } from './touchControls.js';
 import * as THREE from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -62,6 +63,7 @@ orbitCamera.layers.enable(1);
 
 const controls = new OrbitControls(orbitCamera, renderer.domElement);
 controls.update();
+setupTouchControls(player, renderer.domElement, controls);
 
 const modelLoader = new ModelLoader((models) => {
   player.setTool(models.pickaxe);

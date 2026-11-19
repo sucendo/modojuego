@@ -1,17 +1,14 @@
-# Minecraft.js 11.5.1
+# Minecraft.js 11.5.2
 
-Versión publicada para GitHub Pages. Abre `index.html` desde un servidor HTTP.
+Publicado en GitHub Pages con controles táctiles para móviles.
 
-El código editable está en `source/`. Para actualizar la publicación:
+- Joystick izquierdo: desplazarse.
+- Arrastrar sobre el mundo: mirar alrededor.
+- Saltar: salto. Acción: usar herramienta o colocar el bloque de la barra.
+- Pico: volver a minar. Usar / colocar: interactuar o colocar el objeto elegido en el inventario.
+- Inventario y Menú: abren sus paneles y detienen el movimiento.
+- La barra inferior permite seleccionar objetos con un toque.
 
-```sh
-cd source
-npm ci
-npm test
-npm run build
-cp -R dist/. ../
-```
+Código editable en `source/`: `npm ci`, `npm test`, `npm run build`; copiar `source/dist/` a esta carpeta para actualizar la publicación.
 
-La compilación usa rutas relativas para funcionar en `/modojuego/minecraft/`.
-
-Validación: 328 pruebas superadas y compilación de producción correcta. La revisión visual de la partida del usuario sigue pendiente.
+Los controles táctiles usan la misma física y formato de guardado que el escritorio.
