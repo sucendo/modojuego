@@ -242,7 +242,7 @@
       initial:['Hello! Can I help you?','¡Hola! ¿Puedo ayudarte?'],
       options:[
         {id:'gabriel-name',q:['What is your name?','¿Cómo te llamas?'],a:['My name is Gabriel.','Me llamo Gabriel.']},
-        {id:'gabriel-time',q:['What time is it?','¿Qué hora es?'],a:['It is six forty-eight.','Son las seis y cuarenta y ocho.']},
+        {id:'gabriel-time',q:['What time is it?','¿Qué hora es?'],a:['It is six forty-seven.','Son las seis y cuarenta y siete.']},
         {id:'gabriel-weather',q:['How is the weather?','¿Qué tiempo hace?'],a:['It is cool and sunny.','Hace fresco y hay sol.']},
         {id:'gabriel-who',q:['Who was sitting here?','¿Quién estaba sentado aquí?'],a:['A woman. She had sunglasses.','Una mujer. Llevaba gafas de sol.']},
         {id:'gabriel-colour',q:['What colour was her coat?','¿De qué color era su abrigo?'],a:['Green. Her coat was green.','Verde. Su abrigo era verde.']},
@@ -289,7 +289,7 @@
       b1:'Can I help you? I was attending to the tables when the woman arrived.',
       b2:'How may I assist you? I was on duty during the incident you appear to be investigating.'},
     'gabriel-name':{starter:'My name is Gabriel.',b1:'My name is Gabriel. I work here as a waiter.',b2:'My name is Gabriel, and I was working the evening shift when she arrived.'},
-    'gabriel-time':{starter:'It is six forty-eight.',b1:'It is just after quarter to seven, about six forty-eight.',b2:'According to the clock, it is precisely eighteen forty-eight.'},
+    'gabriel-time':{starter:'It is six forty-seven.',b1:'It is just after quarter to seven, about six forty-seven.',b2:'According to the clock, it is precisely eighteen forty-seven.'},
     'gabriel-weather':{starter:'It is cool and sunny.',b1:'It has been a lovely, clear evening, but the air is getting cooler.',b2:'Although the evening began pleasantly warm, the temperature has dropped as the sun has started to set.'},
     'gabriel-who':{starter:'A woman. She had sunglasses.',b1:'A woman wearing dark sunglasses was sitting there a moment ago.',b2:'A rather anxious-looking woman, wearing sunglasses despite the fading light, occupied that table.'},
     'gabriel-colour':{starter:'Green. Her coat was green.',b1:'She was wearing a long, dark green coat and a red scarf.',b2:'She had on an olive-green overcoat, which made her quite distinctive.'},
@@ -368,7 +368,11 @@
       {...t,x:waiter.x,y:waiter.y-70,walk:{x:waiter.x+86,y:waiter.y}};
     if(t.id==='stranger')return {...t,x:guestX,y:guestY-60};return t;
   });}
-  function findTarget(point){const candidates=activeTargets().filter(t=>sqr((point.x-t.x)/t.rx)+sqr((point.y-t.y)/t.ry)<1);
+  function findTarget(point,touch=false){
+    // A 40px minimum finger target, but no visible hit boxes or magnifier icons.
+    const bounds=canvas.getBoundingClientRect();
+    const minRx=touch?20*W/bounds.width:0,minRy=touch?20*H/bounds.height:0;
+    const candidates=activeTargets().filter(t=>sqr((point.x-t.x)/Math.max(t.rx,minRx))+sqr((point.y-t.y)/Math.max(t.ry,minRy))<1);
     const priority={napkin:130,gabriel:110,receipt:100,key:100,note:100,door:90,cup:80,newspaper:80,chair:60,table:20};
     candidates.sort((a,b)=>(priority[b.id]||10)-(priority[a.id]||10));return candidates[0]||null;}
   const mousePosition=event=>{const bounds=canvas.getBoundingClientRect();return {x:(event.clientX-bounds.left)*W/bounds.width,y:(event.clientY-bounds.top)*H/bounds.height};};
@@ -381,7 +385,7 @@
       label.style.left=clamp(ev.clientX-s.left+12,8,s.width-205)+'px';label.style.top=clamp(ev.clientY-s.top-38,8,s.height-40)+'px';}
   });
   canvas.addEventListener('pointerleave',()=>{$('hover-label').hidden=true;hovered=null;});
-  canvas.addEventListener('click',ev=>{if(intro.active)return;const p=mousePosition(ev),target=findTarget(p);if(dialogue){$('dialogue').hidden=true;dialogue=null;}
+  canvas.addEventListener('click',ev=>{if(intro.active)return;const p=mousePosition(ev),target=findTarget(p,ev.pointerType==='touch'||(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches));if(dialogue){$('dialogue').hidden=true;dialogue=null;}
     if(target){act(target);return;}moveTo(p);});
   $('dialogue').addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;
     if(button.hasAttribute('data-close')){dialogue=null;$('dialogue').hidden=true;return;}
