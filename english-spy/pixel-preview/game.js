@@ -285,7 +285,9 @@
     if(id!=='gabriel')return SCENES[state.scene].hotspots.find(h=>h.id===id);
     const g=gabrielForInteraction();if(!g)return null;
     const height=123*g.scale,width=Math.max(55,height*.58);
-    return {id:'gabriel',x:g.x-width/2,y:g.y-height,w:width,h:height,
+    // CSS centres every hotspot with translate(-50%, -50%). Keep the hit area
+    // centred over the actual sprite, including while perspective changes.
+    return {id:'gabriel',x:g.x,y:g.y-height*.52,w:width,h:height,
       walk:g.scene==='terrace'?(g.x>970?[1067,492]:[607,491]):[919,565],
       label:'Talk to Gabriel'};
   }
@@ -308,7 +310,7 @@
     const visible=g.scene===state.scene&&g.alpha>.34;el.hidden=!visible;
     if(visible){
       const height=123*g.scale,width=Math.max(55,height*.58);
-      el.style.left=(g.x-width/2)/W*100+'%';el.style.top=(g.y-height)/H*100+'%';
+      el.style.left=g.x/W*100+'%';el.style.top=(g.y-height*.52)/H*100+'%';
       el.style.setProperty('--hit-width',width/W*100+'%');
       el.style.setProperty('--hit-height',height/H*100+'%');
     }
