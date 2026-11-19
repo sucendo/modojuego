@@ -58,6 +58,33 @@
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const lerp=(a,b,t)=>a+(b-a)*t;
   const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const facings=['front','right','back','left'];
+  // These are real quarter-turn illustrations from the original atlas. Moving
+  // between adjacent directions plays a short sequence instead of changing
+  // the character's facing flag before the turn is visibly finished.
+  const idleFacing={front:{index:0,flip:false},right:{index:2,flip:false},
+    back:{index:3,flip:false},left:{index:2,flip:true}};
+  const turnQuarter={
+    'front:right':[0,14,2], 'right:back':[2,14,3],
+    'back:left':[3,13,-2], 'left:front':[-2,13,0],
+    'right:front':[2,14,0], 'back:right':[3,14,2],
+    'left:back':[-2,13,3], 'front:left':[0,13,-2]
+  };
+  const poseId=n=>({index:Math.abs(n),flip:n<0});
+  const idlePose=facing=>idleFacing[facing]||idleFacing.front;
+  function turnFrames(from,to){
+    if(from===to)return [idlePose(from)];
+    const start=facings.indexOf(from),goal=facings.indexOf(to);
+    const clockwise=(goal-start+4)%4<=2?1:-1,steps=clockwise===1?(goal-start+4)%4:(start-goal+4)%4;
+    const result=[];let prev=from;
+    for(let i=0;i<steps;i++){
+      const next=facings[(facings.indexOf(prev)+clockwise+4)%4],pair=turnQuarter[prev+':'+next];
+      if(!pair)break;
+      for(const frame of (result.length?pair.slice(1):pair))result.push(poseId(frame));
+      prev=next;
+    }
+    return result.length?result:[idlePose(to)];
+  }
   const objects=[
     {id:'sofa',name:'Sillón',x:226,y:479,radius:128,go:{x:398,y:526},action:'look'},
     {id:'desk',name:'Mesa de trabajo',x:629,y:476,radius:120,go:{x:602,y:600},action:'look'},
@@ -95,12 +122,23 @@
   function closeConversation(){stopSpeech(true);dialogue.open=false;dialoguePanel.hidden=true;
     document.querySelector('[data-action="talk"]').classList.remove('active');
     if(!agent.moving)setStatus(agent.seated?'Sentado':'En reposo');}
-  function openConversation(){stopWalking();showcase=null;
-    if(agent.action&&!['sit','rise'].includes(agent.action.kind))agent.action=null;
-    agent.facing='right';dialogue.open=true;dialoguePanel.hidden=false;
+  function showConversation(){dialogue.open=true;dialoguePanel.hidden=false;
     document.querySelector('[data-action="talk"]').classList.add('active');
     syncDialogue();setStatus('Conversando · '+(agent.seated?'sentado':'de pie'));
     notify('Selecciona una emoción y un gesto, después escucha la frase en inglés.');
+  }
+  function openConversation(){
+    if(agent.action&&['sit','rise'].includes(agent.action.kind)){
+      notify('Espera a terminar de sentarte o levantarte antes de conversar.');return;
+    }
+    stopWalking();showcase=null;
+    // Dialogue sprites face sideways. From front or back, first visibly turn;
+    // the left-facing version reuses the mirrored conversational art.
+    if(!agent.seated&&!['right','left'].includes(agent.facing)){
+      turnTo('right',showConversation);notify('El agente se gira para iniciar la conversación...');return;
+    }
+    if(agent.action)agent.action=null;
+    showConversation();
   }
   function selectExample(){const selected=sampleLines[Number(phraseSelect.value)]||sampleLines[0];
     stopSpeech(true);dialogue.text=selected.text;customDialogue.value=selected.text;
@@ -258,13 +296,35 @@
     else return false;
     face(vx,vy);agent.stride+=speed/(running()?18:25);return true;
   }
-  function startAction(kind){
+  function turnTo(target,after=null){
+    if(agent.seated){notify('Para girarte por completo, primero levántate.');return false;}
+    if(agent.facing===target){if(after)after();return true;}
+    const preceding=agent.moving?walkingPose():null;
     stopWalking();showcase=null;
+    const steps=turnFrames(agent.facing,target);
+    if(preceding&&steps[0]?.index!==preceding.index)steps.unshift(preceding);
+    agent.action={kind:'turn',since:now(),duration:Math.max(360,steps.length*145),
+      frames:steps,toFacing:target,after,done:true};
+    setStatus('Girando · '+agent.facing+' → '+target);return true;
+  }
+  function startAction(kind){
     if(kind==='turn'){
-      const order=['front','right','back','left'];agent.facing=order[(order.indexOf(agent.facing)+1)%4];
+      const next=facings[(facings.indexOf(agent.facing)+1)%4];
+      turnTo(next);return;
     }
+    // The inspection and manipulation sprites are profile illustrations.
+    // Enter their viewing angle through a turn, including from the front.
+    if(!agent.seated&&!['right','left'].includes(agent.facing)&&['look','point','pick','open'].includes(kind)){
+      turnTo('right',()=>startAction(kind));return;
+    }
+    if(!agent.seated&&agent.facing==='back'&&kind==='listen'){
+      turnTo('right',()=>startAction(kind));return;
+    }
+    const preceding=agent.moving?walkingPose():null;
+    stopWalking();showcase=null;
     agent.action={kind,since:now(),duration:kind==='sit'||kind==='rise'?1720:kind==='pick'?1250:kind==='open'?1350:kind==='talk'?1700:1050,done:false,
-      from:{x:agent.x,y:agent.y},to:kind==='sit'?{x:834,y:608}:kind==='rise'?{x:915,y:620}:null};
+      from:{x:agent.x,y:agent.y},to:kind==='sit'?{x:834,y:608}:kind==='rise'?{x:915,y:620}:null,
+      fromFacing:agent.facing,preceding};
     const names={talk:'Hablando',look:'Examinando',pick:'Recogiendo',point:'Señalando',listen:'Escuchando',turn:'Girando',open:'Abriendo puerta',sit:'Sentándose',rise:'Levantándose'};
     setStatus(names[kind]||'Acción');
   }
@@ -273,7 +333,9 @@
     if(agent.seated){agent.facing='right';startAction('rise');notify('El agente se levanta y se aparta de la silla.');return;}
     const chair=objects.find(o=>o.id==='chair');
     if(distance(agent,chair.go)>19){if(moveTo(chair.go,sitOrRise))notify('Acercándose a la silla para sentarse...');return;}
-    agent.facing='right';startAction('sit');notify('El agente se sienta en la silla.');
+    const begin=()=>{startAction('sit');notify('El agente se sienta en la silla.');};
+    if(agent.facing!=='right'){turnTo('right',begin);notify('Se orienta hacia la silla antes de sentarse...');}
+    else begin();
   }
   function interact(obj){if(obj.id==='chair'){sitOrRise();return;}
     if(obj.id==='note'&&noteTaken){notify('Ya has recogido el documento.');return;}
@@ -284,7 +346,10 @@
       if(!agent.moving)setStatus(agent.runMode?'Listo para correr':'En reposo');return;}
     if(name==='sit'){sitOrRise();return;}
     if(name==='talk'){if(dialogue.open)closeConversation();else openConversation();return;}
-    if(agent.seated||agent.action&&['sit','rise'].includes(agent.action.kind)){notify('Primero levántate para realizar esa acción.');return;}
+    if(agent.action&&['sit','rise'].includes(agent.action.kind)){notify('Espera a que termine el movimiento.');return;}
+    if(agent.seated&&!['look','point','listen'].includes(name)){
+      notify('Para esta acción necesitas levantarte de la silla.');return;
+    }
     if(dialogue.open)closeConversation();
     if(name==='pick'){
       if(noteTaken){startAction('pick');notify('El documento ya está guardado en el inventario.');}
@@ -304,6 +369,7 @@
   canvas.addEventListener('pointerdown',e=>{
     e.preventDefault();if(!atlas.hidden)return;updateCamera();const p=pointerWorld(e),hit=chooseHover(p);
     if(agent.seated){if(hit?.id==='chair')sitOrRise();else notify('Pulsa «Levantarse» para volver a caminar.');return;}
+    if(dialogue.open)closeConversation();
     if(hit)interact(hit);else moveTo(p);
   });
   canvas.addEventListener('pointermove',e=>{
@@ -315,6 +381,7 @@
     const dir=button.dataset.dir;
     button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);
       if(agent.seated){notify('Pulsa «Levantarse» antes de caminar.');return;}
+      if(dialogue.open)closeConversation();
       heldPad.add(dir);button.classList.add('pressed');stopWalking();cancelAnimation();});
     const release=()=>{heldPad.delete(dir);button.classList.remove('pressed');};
     button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);
@@ -329,7 +396,9 @@
     if(['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))return;
     const k=e.key.toLowerCase(),dir=keyDirections[k];
     if(k==='shift'){shiftHeld=true;return;}
-    if(dir){e.preventDefault();if(agent.seated){notify('Primero levántate de la silla.');return;}if(!heldKeys.has(dir)){stopWalking();cancelAnimation();}heldKeys.add(dir);}
+    if(dir){e.preventDefault();if(agent.seated){notify('Primero levántate de la silla.');return;}
+      if(dialogue.open)closeConversation();
+      if(!heldKeys.has(dir)){stopWalking();cancelAnimation();}heldKeys.add(dir);}
     else if(k==='e'){e.preventDefault();sitOrRise();}
     else if(k===' '){e.preventDefault();doAction('talk');}
   });
@@ -417,6 +486,31 @@
     sheet.img.addEventListener('error',()=>{setStatus('Error de sprites');notify('No se ha podido cargar '+sheet.src+'.');});
     sheet.img.src=sheet.src;}
   if(sheets.every(sheet=>sheet.img.complete&&sheet.img.naturalWidth))makeFrames();
+  const actionSequence={
+    talk:[0,15,15,0],
+    look:[0,17,17,0],
+    pick:[0,17,18,18,17,0],
+    point:[0,15,16,16,15,0],
+    listen:[0,4,4,0],
+    open:[2,14,19,19,14,2]
+  };
+  const seatedActions={talk:0,look:4,point:1,listen:5};
+  function pickSequenceFrame(sequence,progress){
+    return sequence[Math.min(sequence.length-1,Math.floor(clamp(progress,0,.999)*sequence.length))];
+  }
+  function walkingPose(){
+    const frame=Math.floor(agent.stride)%8,run=running();
+    if(agent.facing==='front')return {index:(run?[5,0,6,0,6,0,5,0]:[5,0,6,0,5,0,6,0])[frame],flip:false,run};
+    if(agent.facing==='back')return {index:(run?[11,3,12,3,12,3,11,3]:[11,3,12,3,11,3,12,3])[frame],flip:false,run};
+    return {index:(run?[24,25,26,27,28,29,30,31]:[7,8,9,10,20,21,22,23])[frame],
+      flip:agent.facing==='left',run};
+  }
+  function finishStride(){
+    if(agent.moving&&!agent.seated&&!agent.action){
+      agent.action={kind:'settle',since:now(),duration:220,lastPose:walkingPose(),done:true};
+    }
+    agent.moving=false;
+  }
   function currentPose(t){
     if(showcase){const elapsed=t-showcase.start;
       if(elapsed>showcase.duration){showcase=null;setStatus(agent.seated?'Sentado':'En reposo');}
@@ -424,24 +518,25 @@
       else {const i=Math.min(poses.length-1,Math.floor(elapsed/760));if(i!==lastFrame){lastFrame=i;setStatus('Pose '+(i+1)+'/'+poses.length+' · '+poses[i]);}return {index:i,flip:false};}
     }
     if(agent.action){const a=agent.action,phase=(t-a.since)/a.duration;
-      if(a.kind==='sit')return {index:[7,8,32,33,34,35][Math.min(5,Math.floor(clamp(phase,0,.999)*6))],flip:false};
-      if(a.kind==='rise')return {index:[35,36,37,7,8,9][Math.min(5,Math.floor(clamp(phase,0,.999)*6))],flip:false};
-      if(phase>=1){agent.action=null;setStatus('En reposo');}
-      else {const actions={talk:15,look:17,pick:18,point:16,listen:4,turn:agent.facing==='left'?13:14,open:19};
-        if(phase>.09&&phase<.91)return {index:actions[a.kind]??0,flip:false};
+      if(a.kind==='turn')return pickSequenceFrame(a.frames,phase);
+      if(a.preceding&&phase<.1)return a.preceding;
+      // The sitting sequence uses only actual sitting illustrations. The rise
+      // sequence stands fully upright before taking two steps away.
+      if(a.kind==='sit')return {index:pickSequenceFrame([32,33,34,34,35,35],phase),flip:false};
+      if(a.kind==='rise')return {index:pickSequenceFrame([35,36,37,32,7,8],phase),flip:false};
+      if(a.kind==='settle')return phase<.5?a.lastPose:idlePose(agent.facing);
+      if(agent.seated&&seatedActions[a.kind]!==undefined){
+        return {index:phase<.14||phase>.87?35:46+seatedActions[a.kind],flip:false};
+      }
+      const sequence=actionSequence[a.kind];
+      if(sequence){const index=pickSequenceFrame(sequence,phase);
+        return {index,flip:agent.facing==='left'};
       }
     }
-    if(agent.moving){const frame=Math.floor(agent.stride)%8;
-      if(agent.facing==='front')return {index:[5,0,6,0,5,0,6,0][frame],flip:false};
-      if(agent.facing==='back')return {index:[11,3,12,3,11,3,12,3][frame],flip:false};
-      return {index:(running()?[24,25,26,27,28,29,30,31]:[7,8,9,10,20,21,22,23])[frame],flip:agent.facing==='left',run:running()};
-    }
-    if(dialogue.open)return {index:(agent.seated?46:38)+dialogue.gesture,flip:false,conversing:true};
+    if(agent.moving)return walkingPose();
+    if(dialogue.open)return {index:(agent.seated?46:38)+dialogue.gesture,flip:!agent.seated&&agent.facing==='left',conversing:true};
     if(agent.seated)return {index:35,flip:false};
-    if(agent.facing==='back')return {index:3,flip:false};
-    if(agent.facing==='left')return {index:2,flip:true};
-    if(agent.facing==='right')return {index:2,flip:false};
-    return {index:0,flip:false};
+    return idlePose(agent.facing);
   }
   function update(t,dt){
     if(dialogue.pending&&t-dialogue.start>1600){dialogue.pending=false;dialogue.speaking=true;
@@ -459,22 +554,32 @@
         notify(agent.seated?'Ya está sentado. Pulsa «Levantarse» o toca la silla.':'Ya puede volver a caminar o correr.');}
       return;
     }
+    if(agent.action&&agent.action.kind==='turn'&&t-agent.action.since>=agent.action.duration){
+      const done=agent.action;agent.facing=done.toFacing;agent.action=null;
+      if(done.after)done.after();else setStatus(agent.seated?'Sentado':'En reposo');
+    }else if(agent.action&&agent.action.kind!=='turn'&&t-agent.action.since>=agent.action.duration){
+      agent.action=null;setStatus(dialogue.open?'Conversando':agent.seated?'Sentado':'En reposo');
+    }
     let dx=0,dy=0;
     if(heldKeys.has('up')||heldPad.has('up'))dy--;
     if(heldKeys.has('down')||heldPad.has('down'))dy++;
     if(heldKeys.has('left')||heldPad.has('left'))dx--;
     if(heldKeys.has('right')||heldPad.has('right'))dx++;
-    if(dx||dy){stopWalking();if(!agent.seated)agent.action=null;showcase=null;agent.moving=tryMove(dx,dy,dt);
-      if(agent.moving)setStatus((running()?'Corriendo':'Caminando')+' · '+agent.facing);}
+    if(dx||dy){const wasMoving=agent.moving;stopWalking();if(!agent.seated)agent.action=null;
+      showcase=null;agent.moving=tryMove(dx,dy,dt);
+      if(agent.moving)setStatus((running()?'Corriendo':'Caminando')+' · '+agent.facing);
+      else if(wasMoving){agent.moving=true;finishStride();}}
     else if(agent.path.length){
       const next=agent.path[0],d=distance(agent,next),step=Math.min(d,(running()?300:172)*dt);
       if(d<=step+1){agent.x=next.x;agent.y=next.y;agent.path.shift();
-        if(!agent.path.length){agent.moving=false;const callback=agent.onArrival;agent.onArrival=null;if(callback)callback();else setStatus('En reposo');}}
+        if(!agent.path.length){const callback=agent.onArrival;agent.onArrival=null;
+          if(callback){agent.moving=false;callback();}
+          else{finishStride();setStatus('En reposo');}}}
       else if(canStand(agent.x+(next.x-agent.x)*step/d,agent.y+(next.y-agent.y)*step/d)){
         face(next.x-agent.x,next.y-agent.y);agent.x+=(next.x-agent.x)*step/d;agent.y+=(next.y-agent.y)*step/d;
         agent.stride+=step/(running()?18:25);agent.moving=true;setStatus((running()?'Corriendo':'Caminando')+' · '+agent.facing);
-      }else{stopWalking();setStatus('Camino bloqueado');}
-    }else agent.moving=false;
+      }else{finishStride();stopWalking();setStatus('Camino bloqueado');}
+    }else if(agent.moving)finishStride();
     if(agent.action&&!agent.action.done){const progress=(t-agent.action.since)/agent.action.duration;
       if(progress>.57){agent.action.done=true;
         if(agent.action.kind==='pick'&&!noteTaken){noteTaken=true;refreshInventory();notify('Documento recogido · Ahora está en el inventario.');}
