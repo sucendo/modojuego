@@ -7,13 +7,19 @@
   const statusNode=document.getElementById('status'),inventoryNode=document.getElementById('inventory');
   const atlas=document.getElementById('atlas-backdrop'),poseGrid=document.getElementById('pose-grid');
   const asset=new Image(),walkAsset=new Image(),runAsset=new Image(),sitAsset=new Image();
-  const standingGesturesAsset=new Image(),seatedGesturesAsset=new Image(),portraitAsset=new Image();
-  const sheets=[{img:asset,src:'./assets/agent-sheet.webp',cols:5,rows:4},
+  const standingGesturesAsset=new Image(),seatedGesturesAsset=new Image();
+  const portraits={agent:new Image(),evelyn:new Image()};
+  let portraitAsset=portraits.agent;
+  const agentSheets=[{img:asset,src:'./assets/agent-sheet.webp',cols:5,rows:4},
     {img:walkAsset,src:'./assets/agent-walk-side.webp',cols:4,rows:2},
     {img:runAsset,src:'./assets/agent-run-side.webp',cols:4,rows:2},
     {img:sitAsset,src:'./assets/agent-sit.webp',cols:3,rows:2},
     {img:standingGesturesAsset,src:'./assets/agent-gestures-standing.webp',cols:4,rows:2},
     {img:seatedGesturesAsset,src:'./assets/agent-gestures-seated.webp',cols:4,rows:2}];
+  const evelynSheets=agentSheets.map(sheet=>({img:new Image(),src:sheet.src.replace('agent-','evelyn-'),cols:sheet.cols,rows:sheet.rows}));
+  const spriteBanks={agent:agentSheets,evelyn:evelynSheets};
+  let selectedCharacter='agent',sheets=agentSheets;
+  const characterSelect=document.getElementById('character-select');
   const gestures=['explain','point','shrug','cross','think','shush','angry','startled'];
   const gestureLabels=['Explicar','Señalar','Encogerse de hombros','Cruzar brazos','Pensar','Pedir silencio','Mostrar enfado','Sorprenderse'];
   const poses=['Quieto · tres cuartos','Quieto · perfil','Quieto · derecha','Quieto · espaldas','Escuchando',
@@ -38,6 +44,16 @@
     {text:'I do not trust that man!',mood:3,gesture:6},
     {text:'If I had known about the meeting, I would have warned her.',mood:7,gesture:3}
   ];
+  const evelynLines=[
+    {text:'If I do not show up, follow the clues.',mood:5,gesture:5},
+    {text:'My name is Evelyn Blackwood. I work in London.',mood:1,gesture:0},
+    {text:'I have got important documents for you.',mood:4,gesture:4},
+    {text:'Can you keep a secret?',mood:5,gesture:5},
+    {text:'I left the café before they arrived.',mood:6,gesture:4},
+    {text:'Someone has been following me!',mood:2,gesture:7},
+    {text:'If I had trusted the wrong person, you would never have heard from me.',mood:7,gesture:3}
+  ];
+  let activeSampleLines=sampleLines;
   const dialogue={open:false,mood:0,gesture:0,speaking:false,pending:false,text:sampleLines[0].text,
     start:0,wordAt:0,charAt:0,token:0,simulationEnd:0};
   const dialoguePanel=document.getElementById('dialogue-panel'),portraitCanvas=document.getElementById('dialogue-portrait');
@@ -145,7 +161,7 @@
     if(agent.action)agent.action=null;
     showConversation();
   }
-  function selectExample(){const selected=sampleLines[Number(phraseSelect.value)]||sampleLines[0];
+  function selectExample(){const selected=activeSampleLines[Number(phraseSelect.value)]||activeSampleLines[0];
     stopSpeech(true);dialogue.text=selected.text;customDialogue.value=selected.text;
     dialogue.mood=selected.mood;dialogue.gesture=selected.gesture;
     syncDialogue();voiceStatus.textContent='Frase seleccionada. Pulsa «Escuchar y hablar».';}
@@ -155,7 +171,7 @@
     dialogue.charAt=0;dialogue.pending=true;syncDialogue();
     const token=dialogue.token;
     if('speechSynthesis' in window&&'SpeechSynthesisUtterance' in window){
-      const u=new SpeechSynthesisUtterance(spoken);u.lang='en-GB';u.rate=.84;u.pitch=1;u.volume=1;
+      const u=new SpeechSynthesisUtterance(spoken);u.lang='en-GB';u.rate=.84;u.pitch=selectedCharacter==='evelyn'?1.12:1;u.volume=1;
       const available=window.speechSynthesis.getVoices();
       const preferred=available.find(v=>v.lang.toLowerCase().startsWith('en-gb'))||available.find(v=>v.lang.toLowerCase().startsWith('en'));
       if(preferred)u.voice=preferred;
@@ -212,8 +228,10 @@
   document.getElementById('speak-dialogue').addEventListener('click',playDialogue);
   document.getElementById('stop-dialogue').addEventListener('click',()=>stopSpeech());
   document.getElementById('dialogue-close').addEventListener('click',closeConversation);
-  portraitAsset.addEventListener('error',()=>{voiceStatus.textContent='No se ha cargado la imagen de las expresiones.';});
-  portraitAsset.src='./assets/agent-expressions.webp';
+  for(const [id,img] of Object.entries(portraits)){
+    img.addEventListener('error',()=>{if(id===selectedCharacter)voiceStatus.textContent='No se ha cargado la imagen de las expresiones.';});
+    img.src='./assets/'+id+'-expressions.webp';
+  }
   function resize(){
     const rect=stage.getBoundingClientRect();if(!rect.width||!rect.height)return;
     const dpr=Math.min(window.devicePixelRatio||1,2);screen={w:rect.width,h:rect.height,dpr};
@@ -366,6 +384,18 @@
     noteTaken=false;doorOpen=false;showcase=null;targetMark=null;heldPad.clear();heldKeys.clear();shiftHeld=false;
     document.querySelectorAll('.dir').forEach(b=>b.classList.remove('pressed'));
     refreshInventory();syncButtons();setStatus('En reposo');notify('Toca el suelo para caminar o correr · Pulsa la silla para sentarte.');}
+  function selectCharacter(id){
+    if(!spriteBanks[id]||id===selectedCharacter)return;
+    reset();selectedCharacter=id;sheets=spriteBanks[id];portraitAsset=portraits[id];
+    activeSampleLines=id==='evelyn'?evelynLines:sampleLines;
+    frames.length=0;phraseSelect.options[0].textContent=id==='evelyn'?'La cita secreta':'Buscando a Evelyn';
+    phraseSelect.value='0';selectExample();
+    document.getElementById('atlas-title').textContent='54 poses · '+(id==='evelyn'?'Evelyn Blackwood':'Agente');
+    portraitCanvas.setAttribute('aria-label','Retrato expresivo de '+(id==='evelyn'?'Evelyn Blackwood':'nuestro agente'));
+    makeFrames();
+    notify(id==='evelyn'?'Evelyn Blackwood · Prueba sus movimientos y expresiones.':'Nuestro agente · Prueba sus movimientos y expresiones.');
+  }
+  characterSelect.addEventListener('change',()=>selectCharacter(characterSelect.value));
   function chooseHover(p){let best=null,d=Infinity;for(const obj of objects){
     if(obj.id==='note'&&noteTaken)continue;
     const dd=Math.hypot((p.x-obj.x), (p.y-obj.y)*1.1);
@@ -495,8 +525,8 @@
       showcase={start:now(),duration:2300,single:i};setStatus(poses[i]);notify('Pose '+(i+1)+'/'+poses.length+' · '+poses[i]);});
     poseGrid.append(button);
   }}
-  for(const sheet of sheets){sheet.img.addEventListener('load',makeFrames);
-    sheet.img.addEventListener('error',()=>{setStatus('Error de sprites');notify('No se ha podido cargar '+sheet.src+'.');});
+  for(const sheet of [...agentSheets,...evelynSheets]){sheet.img.addEventListener('load',()=>{if(sheets.includes(sheet))makeFrames();});
+    sheet.img.addEventListener('error',()=>{if(sheets.includes(sheet)){setStatus('Error de sprites');notify('No se ha podido cargar '+sheet.src+'.');}});
     sheet.img.src=sheet.src;}
   if(sheets.every(sheet=>sheet.img.complete&&sheet.img.naturalWidth))makeFrames();
   const actionSequence={
@@ -728,5 +758,5 @@
   // A small read-only probe for automated geometry QA; never changes game state.
   window.ENGLISH_SPY_ANIMATION_QA={canStand,planRoute,objects:objects.map(({id,go})=>({id,go})),start:{...initial},
     getDialogueState:()=>({open:dialogue.open,mood:emotions[dialogue.mood].key,gesture:gestures[dialogue.gesture],speaking:dialogue.speaking,
-      seated:agent.seated,pose:currentPose(now()).index})};
+      character:selectedCharacter,frames:frames.length,seated:agent.seated,pose:currentPose(now()).index})};
 })();
