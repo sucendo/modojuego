@@ -1,12 +1,12 @@
 // js/state.js
 
-import { initialLeague, allLeagues } from './data.js?v=1671';
+import { initialLeague, allLeagues } from './data.js?v=1672';
 import { getSeasonStartYear } from './gameSeason.js';
 import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 import { fitPlayersToFormation } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
-import { ensureManagementState, MANAGEMENT_STAGES } from './game/managementCycle.js?v=1671';
+import { ensureManagementState, MANAGEMENT_STAGES } from './game/managementCycle.js?v=1672';
 
 export const GameState = {
   meta: {

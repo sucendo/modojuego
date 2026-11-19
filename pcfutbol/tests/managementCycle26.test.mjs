@@ -14,7 +14,7 @@ import {
   getStadiumSectors, TICKET_SECTORS, getTicketSectorPrices,
   setTicketSectorPrice, getTicketLevelPrices, setTicketLevelPrice, getTicketSalesProjection, adjustTicketSectorPrices, setTicketMode,
 } from '../js/game/managementCycle.js';
-import { renderStadiumPlan, stadiumPlanAvailable, stadiumRingPath } from '../js/ui/stadiumSvgPlan.js';
+import { renderStadiumPlan, stadiumPlanAvailable, stadiumRingPath, stadiumTierBands } from '../js/ui/stadiumSvgPlan.js';
 import {
   simulateCurrentMatchday, advanceToNextManagementDay, advanceToNextUserMatchDay,
 } from '../js/game/simulateMatchday.js';
@@ -265,7 +265,7 @@ test('la ficha de evolución está dentro de Entrenamiento, con resumen, atribut
   assert.match(training, /Evolución del jugador/);
   assert.match(ui, /getPlayerTrainingReport\(GameState, selectedPlayer\)/);
   assert.match(css, /pcf-training-evolution__history/);
-  assert.match(html, /managementCycle26\.css\?v=1671/);
+  assert.match(html, /managementCycle26\.css\?v=1672/);
 });
 
 test('sectorización: aforo exacto, reajuste por zona/partido y cierre irreversible', () => {
@@ -338,6 +338,66 @@ test('el plano del Metropolitano representa cada nivel seleccionable y los VIP d
     if (oldDocument === undefined) delete globalThis.document;
     else globalThis.document = oldDocument;
   }
+});
+
+test('todos los clubes reciben plano SVG: Bernabéu con cuatro anfiteatros y genérico sin inventar niveles', () => {
+  assert.equal(stadiumPlanAvailable('bernabeu'), true);
+  assert.equal(stadiumPlanAvailable('campnou'), true);
+  assert.equal(stadiumPlanAvailable('sanmames'), true);
+  assert.equal(stadiumPlanAvailable('generic'), true);
+  assert.equal(stadiumPlanAvailable('inventado'), false);
+  assert.equal(stadiumTierBands(5).length, 5);
+  assert.equal(stadiumTierBands(0).length, 1, 'solo una franja gráfica cuando no hay graderíos documentados');
+  assert.notEqual(stadiumRingPath(-143, -37, 0, 1), stadiumRingPath(-143, -37, 0, 1, 3.35),
+    'el Bernabéu tendrá silueta distinta al Metropolitano');
+  const oldDocument = globalThis.document;
+  const node = tag => ({ tag, attrs: {}, children: [], setAttribute(k, v) { this.attrs[k] = v; }, append(...items) { this.children.push(...items); } });
+  globalThis.document = { createElementNS(_ns, tag) { return node(tag); } };
+  try {
+    for (const [club, expectedPlan, expectedCount, expectedLevels] of [
+      ['realmadrid', 'bernabeu', 21, 5],
+      ['barcelona', 'campnou', 9, 2],
+      ['athletic', 'sanmames', 9, 2],
+      ['alaves', 'generic', 5, 0],
+    ]) {
+      begin(club);
+      const home = GameState.clubs.find(c => c.id === club);
+      const fx = getPendingUserFixtures(GameState).find(f => f.homeClubId === club);
+      const map = { children: [], classList: { add() {} }, replaceChildren(...items) { this.children = items; } };
+      const plan = home.stadium.structure.plan || 'generic';
+      const sectors = getStadiumSectors(GameState, fx);
+      assert.equal(plan, expectedPlan, club);
+      assert.equal(sectors.find(s => s.id === 'tribuna').levels.length, expectedLevels, club);
+      assert.equal(renderStadiumPlan(map, { plan, stadiumName: home.stadium.name,
+        sectors, prices: getTicketSectorPrices(GameState, fx), selectedSector: 'tribuna' }), true);
+      const clickable = map.children[0].children.filter(item => item.attrs['data-sector']);
+      assert.equal(clickable.length, expectedCount, club);
+      if (!expectedLevels) assert.ok(clickable.every(item => item.attrs['data-level-index'] == null), club);
+    }
+  } finally {
+    if (oldDocument === undefined) delete globalThis.document;
+    else globalThis.document = oldDocument;
+  }
+});
+
+test('Bernabéu: cada zona y cada anfiteatro tiene su propia tarifa y repercute en taquilla', () => {
+  begin('realmadrid');
+  const fx = getPendingUserFixtures(GameState).find(f => f.homeClubId === 'realmadrid');
+  const original = getTicketSalesProjection(GameState, fx, 50000);
+  assert.equal(setTicketSectorPrice(GameState, fx, 'norte', 19), true);
+  assert.equal(setTicketSectorPrice(GameState, fx, 'sur', 62), true);
+  assert.equal(setTicketLevelPrice(GameState, fx, 'tribuna', 4, 115), true);
+  const prices = getTicketSectorPrices(GameState, fx);
+  assert.equal(prices.norte, 19);
+  assert.equal(prices.sur, 62);
+  assert.equal(getTicketLevelPrices(GameState, fx, 'tribuna')[4].price, 115);
+  assert.notEqual(getTicketLevelPrices(GameState, fx, 'tribuna')[3].price, 115);
+  const projection = getTicketSalesProjection(GameState, fx, 50000);
+  assert.equal(projection.breakdown.find(s => s.id === 'norte').price, 19);
+  assert.equal(projection.breakdown.find(s => s.id === 'sur').price, 62);
+  assert.equal(projection.breakdown.find(s => s.id === 'tribuna').levels[4].price, 115);
+  assert.notEqual(projection.revenue, original.revenue);
+  assert.equal(projection.revenue, projection.breakdown.reduce((sum, s) => sum + s.revenue, 0));
 });
 
 test('el precio de cada grada modifica realmente la taquilla, se conserva y se bloquea', () => {
@@ -484,7 +544,7 @@ test('v16.4 presenta calendario y plano en sus menús, sin añadir gestión al d
   }
   assert.match(css, /pcf-training-calendar__day/);
   assert.match(css, /pcf-stadium-pitch/);
-  assert.match(html, /js\/main\.js\?v=1671/);
+  assert.match(html, /js\/main\.js\?v=1672/);
 });
 
 test('entrenamiento individual permite objetivos específicos persistentes y medibles', () => {

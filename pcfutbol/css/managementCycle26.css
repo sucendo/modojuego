@@ -60,6 +60,8 @@
 #screen-dashboard .pcf-stadium-svg__tier-shape--0 { fill:#23647d; }
 #screen-dashboard .pcf-stadium-svg__tier-shape--1 { fill:#2e809d; }
 #screen-dashboard .pcf-stadium-svg__tier-shape--2 { fill:#367fa9; }
+#screen-dashboard .pcf-stadium-svg__tier-shape--3 { fill:#2d7296; }
+#screen-dashboard .pcf-stadium-svg__tier-shape--4 { fill:#4493b3; }
 #screen-dashboard .pcf-stadium-svg__tier.is-zone-selected .pcf-stadium-svg__tier-shape { stroke:#6bd3e9; }
 #screen-dashboard .pcf-stadium-svg__tier:hover .pcf-stadium-svg__tier-shape,#screen-dashboard .pcf-stadium-svg__tier:focus-visible .pcf-stadium-svg__tier-shape { fill:#65c6dd; stroke:#e6fcff; stroke-width:4; }
 #screen-dashboard .pcf-stadium-svg__tier.is-selected .pcf-stadium-svg__tier-shape { fill:#89d9f1; stroke:#fff2a4; stroke-width:5; }
