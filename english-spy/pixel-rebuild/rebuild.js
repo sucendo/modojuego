@@ -1,10 +1,10 @@
 /* English Spy — rebuilt scenery prototype. Clean, independent scene geometry. */
 (() => {
   'use strict';
-  const W=1200,H=675,STORAGE='english-spy-rebuild-alpha-01';
+  const W=1200,H=675,STORAGE='english-spy-rebuild-alpha-02';
   const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
   const $=id=>document.getElementById(id);
-  const sprites={},backdrops={},evidenceSprites={};
+  const sprites={},backdrops={},evidenceSprites={},furnitureSprites={};
   const asset=(file)=>`./assets/${file}.webp`;
   for(const [id,file] of Object.entries({terrace:'terrace',bistro:'bistro'})){
     backdrops[id]=new Image();backdrops[id].src=asset(file);
@@ -13,6 +13,19 @@
     sprites[id]=new Image();sprites[id].src=asset('characters/'+id);
   }
   for(const id of ['receipt','note','key']){evidenceSprites[id]=new Image();evidenceSprites[id].src='./assets/'+id+'.svg';}
+  for(const [id,file] of Object.entries({table:'marble-table',chair:'wrought-chair',planter:'flower-planter'})){
+    furnitureSprites[id]=new Image();furnitureSprites[id].src=`./assets/props/${file}.webp`;
+  }
+
+  // Furniture is a world object, not part of the background painting. Its foot
+  // collider and screen-depth are independent of its tall visual silhouette.
+  // The right-hand chair is drawn in two passes around the marble table so its
+  // far back is behind the tabletop while its near seat is in front.
+  const terraceFurniture=[
+    {id:'planter',image:'planter',x:4,y:402,w:220,h:290,footY:680},
+    {id:'chair',image:'chair',x:969,y:401,w:218,h:281,footY:674},
+    {id:'table',image:'table',x:559,y:411,w:460,h:306,footY:712}
+  ];
 
   // Every scene has one authoritative floor mesh, measured at the ACTOR'S FEET.
   // Furniture is placed OUTSIDE these polygons. This is not a painting with
@@ -20,19 +33,31 @@
   const world={
     terrace:{
       title:'PLAZA DE ORIENTE · CAFÉ DE ORIENTE · 18:47',
-      scale:{farY:370,nearY:675,far:.61,near:1.46},
-      spawn:{x:295,y:600},door:{x:1056,y:531},
-      floors:[[[130,535],[318,464],[496,427],[700,413],[806,442],[957,483],[1100,504],[1161,675],[120,675]],
-        [[940,468],[1090,458],[1150,600],[1025,656]]],
-      blocks:[[[0,411],[115,427],[145,510],[145,675],[0,675]],
-        [[726,378],[802,375],[821,460],[732,465]],
-        [[991,371],[1070,362],[1101,477],[1015,479]]],
+      scale:{farY:375,nearY:675,far:.72,near:1.35},
+      spawn:{x:325,y:615},door:{x:1085,y:494},
+      floors:[[[124,532],[315,467],[485,426],[700,416],[850,440],[1000,470],[1129,485],[1198,675],[150,675]],
+        [[945,460],[1129,454],[1198,620],[1031,655]]],
+      blocks:[
+        [[0,412],[115,422],[148,503],[148,675],[0,675]],
+        [[726,377],[801,375],[823,454],[734,460]],
+        [[986,371],[1070,363],[1100,470],[1009,476]],
+        // Closer foliage occupies the floor even where some leaves float above it.
+        [[0,534],[205,555],[243,628],[247,675],[0,675]],
+        // Table, chair and pedestal form an actual no-walk furniture island.
+        [[614,561],[932,555],[1017,594],[1036,675],[593,675],[563,610]],
+        [[1024,557],[1151,535],[1194,675],[1027,675]]
+      ],
       targets:[
-        {id:'palace',name:'Royal Palace',es:'Palacio Real',x:390,y:255,rx:285,ry:142,walk:[420,545],verb:'look'},
-        {id:'table',name:'Outdoor table',es:'Mesa de la terraza',x:761,y:391,rx:64,ry:60,walk:[690,502],verb:'look'},
-        {id:'receipt',name:'Folded receipt',es:'Recibo doblado',x:769,y:410,rx:36,ry:25,walk:[689,501],verb:'take',item:'receipt'},
-        {id:'garden',name:'Ornamental garden',es:'Jardín',x:150,y:430,rx:84,ry:85,walk:[269,548],verb:'look'},
-        {id:'door',name:'Café de Oriente entrance',es:'Entrar al café',x:1074,y:429,rx:89,ry:132,walk:[1056,531],verb:'enter'}
+        {id:'palace',name:'Royal Palace',es:'Palacio Real',x:390,y:255,rx:285,ry:142,walk:[437,540],verb:'look'},
+        {id:'table',name:'Outdoor table',es:'Mesa de mármol',x:790,y:477,rx:229,ry:82,walk:[548,532],verb:'look'},
+        {id:'chair',name:'Wrought-iron chair',es:'Silla de forja',x:1093,y:481,rx:80,ry:113,walk:[987,500],verb:'look'},
+        {id:'cup',name:'Coffee cup',es:'Taza de café',x:835,y:465,rx:42,ry:30,walk:[548,533],verb:'look'},
+        {id:'newspaper',name:'Folded newspaper',es:'Periódico doblado',x:739,y:513,rx:64,ry:28,walk:[548,533],verb:'look'},
+        {id:'receipt',name:'Folded receipt',es:'Recibo doblado',x:860,y:513,rx:30,ry:25,walk:[548,533],verb:'take',item:'receipt'},
+        {id:'planter',name:'Flower planter',es:'Jardinera',x:112,y:535,rx:113,ry:132,walk:[284,585],verb:'look'},
+        {id:'tree',name:'Old plane tree',es:'Plátano de sombra',x:113,y:156,rx:125,ry:147,walk:[277,544],verb:'look'},
+        {id:'garden',name:'Ornamental garden',es:'Jardín',x:260,y:413,rx:92,ry:53,walk:[291,538],verb:'look'},
+        {id:'door',name:'Café de Oriente entrance',es:'Entrar al café',x:1074,y:417,rx:74,ry:115,walk:[1085,494],verb:'enter'}
       ]
     },
     bistro:{
@@ -124,16 +149,21 @@
     nodes=path;onArrival=callback;return true;
   }
   function transition(scene){save.scene=scene;guestMode='seated';guestX=guestSeat.x;guestY=guestSeat.y;guestChangeAt=0;approachingGuest=false;
-    const spawn=scene==='bistro'?{x:1090,y:572}:{x:1055,y:542};Object.assign(agent,spawn,{moving:false,stride:0});nodes=[];onArrival=null;
+    const spawn=scene==='bistro'?{x:1090,y:572}:{x:1085,y:494};Object.assign(agent,spawn,{moving:false,stride:0});nodes=[];onArrival=null;
     dialogue=null;$('dialogue').hidden=true;$('hover-label').hidden=true;hovered=null;$('scene-name').textContent=world[scene].title;
     persist();refresh();
-    if(scene==='bistro')moveTo({x:1007,y:590});else moveTo({x:943,y:593});
+    if(scene==='bistro')moveTo({x:1007,y:590});else moveTo({x:942,y:515});
   }
   const includes=id=>save.inventory.includes(id);
   const languageWords={
     palace:['That is the Royal Palace of Madrid.','Evelyn chose a busy public place for the meeting.'],
     garden:['The garden is full of flowers.','No signs of Evelyn behind the railing.'],
-    table:['A round table, two chairs and a view of the palace.','Someone left this table in a hurry.'],
+    table:['A round marble table overlooking the Royal Palace. Someone left in a hurry.','Una mesa de mármol frente al Palacio Real. Alguien se marchó precipitadamente.'],
+    cup:['A cup of coffee. It is still warm.','La taza de café todavía está caliente.'],
+    newspaper:['The folded newspaper is dated today. It may hide a message.','El periódico está fechado hoy. Quizá esconda una pista.'],
+    chair:['A wrought-iron chair. It was pushed back in a hurry.','Una silla de forja apartada con prisa.'],
+    planter:['White and pink hydrangeas. The flowerbed hides no footprints.','Hortensias blancas y rosas. No ves huellas.'],
+    tree:['An old plane tree shades the terrace.','Un plátano de sombra cubre parte de la terraza.'],
     painting:['An ornate framed mirror reflects the bistro.','You see the room from another angle.']
   };
   const itemTitles={receipt:'Receipt',note:'Folded note',key:'Brass key'};
@@ -253,12 +283,16 @@
     if(target.id==='stranger'&&chosen!=='look'){chosen='talk';approachingGuest=true;}
     if(chosen==='look'){
       const known=languageWords[target.id];
-      if(target.id==='stranger')tell('A man sits alone by the window.','Un hombre está sentado junto a la ventana.');
-      else if(target.id==='carmen')tell('The hostess stands behind the marble bar.','La encargada está detrás de la barra.');
-      else if(target.id==='gabriel')tell('The waiter carries an empty tray.','El camarero lleva una bandeja vacía.');
-      else if(target.item)tell('It may be a useful clue.','Podría ser una pista útil.');
-      else tell(known?.[0]||'Something worth examining.',known?.[1]||'Quizá tenga importancia.');
-      return;
+      const explain=()=>{
+        if(target.id==='stranger')tell('A man sits alone by the window.','Un hombre está sentado junto a la ventana.');
+        else if(target.id==='carmen')tell('The hostess stands behind the marble bar.','La encargada está detrás de la barra.');
+        else if(target.id==='gabriel')tell('The waiter carries an empty tray.','El camarero lleva una bandeja vacía.');
+        else if(target.item)tell('It may be a useful clue.','Podría ser una pista útil.');
+        else tell(known?.[0]||'Something worth examining.',known?.[1]||'Quizá tenga importancia.');
+        if(known)speech(known[0]);
+      };
+      // An observation has a physical position. The character must get there first.
+      moveTo(target.walk,explain);return;
     }
     if(chosen==='take'&&target.item){moveTo(target.walk,()=>take(target.item));return;}
     if(chosen==='talk'&&dialogs[target.id]){moveTo(target.walk,()=>talk(target.id));return;}
@@ -274,7 +308,8 @@
     if(t.id==='stranger')return {...t,x:guestX,y:guestY-60};return t;
   });}
   function findTarget(point){const candidates=activeTargets().filter(t=>sqr((point.x-t.x)/t.rx)+sqr((point.y-t.y)/t.ry)<1);
-    candidates.sort((a,b)=>(a.item?-1:1)-(b.item?-1:1));return candidates[0]||null;}
+    const priority={receipt:100,key:100,note:100,door:90,cup:80,newspaper:80,chair:60,table:20};
+    candidates.sort((a,b)=>(priority[b.id]||10)-(priority[a.id]||10));return candidates[0]||null;}
   const mousePosition=event=>{const bounds=canvas.getBoundingClientRect();return {x:(event.clientX-bounds.left)*W/bounds.width,y:(event.clientY-bounds.top)*H/bounds.height};};
   canvas.addEventListener('pointermove',ev=>{
     const p=mousePosition(ev),target=findTarget(p);hovered=target;
@@ -324,8 +359,12 @@
     const id=b.dataset.item;tell(`${itemTitles[id]} added to the case file.`,`${itemTitles[id]} en el expediente.`);});
   function drawEvidence(){
     ctx.save();ctx.imageSmoothingEnabled=false;
-    if(save.scene==='terrace'&&!includes('receipt')&&evidenceSprites.receipt.naturalWidth)
-      ctx.drawImage(evidenceSprites.receipt,756,389,28,28);
+    if(save.scene==='terrace'&&!includes('receipt')&&evidenceSprites.receipt.naturalWidth){
+      // On top of the separate clean-table sprite. Never baked into the backdrop.
+      ctx.translate(857,508);ctx.rotate(.22);ctx.scale(1,.56);
+      ctx.drawImage(evidenceSprites.receipt,-17,-22,34,44);
+      ctx.setTransform(1,0,0,1,0,0);
+    }
     if(save.scene==='bistro'){
       if(!includes('note')&&evidenceSprites.note.naturalWidth)ctx.drawImage(evidenceSprites.note,499,550,30,30);
       if(save.flags.keyRevealed&&!includes('key')&&evidenceSprites.key.naturalWidth)ctx.drawImage(evidenceSprites.key,840,472,28,28);
@@ -334,16 +373,19 @@
   }
   function drawPerson(role,x,y,{facing=1,walking=false,stride=0,seated=false,heightFactor=1,rise=1,shadow=true}={}){
     const sprite=sprites[seated?'stranger-seated':role];if(!sprite?.naturalWidth)return;
-    const h=150*scale(save.scene,y)*heightFactor*(seated?.78:1),w=h*sprite.naturalWidth/sprite.naturalHeight;
+    const h=(save.scene==='terrace'?184:164)*scale(save.scene,y)*heightFactor*(seated?.78:1),w=h*sprite.naturalWidth/sprite.naturalHeight;
     ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.imageSmoothingEnabled=false;
-    if(shadow&&!seated){ctx.fillStyle='#060a1270';ctx.beginPath();ctx.ellipse(0,1,Math.max(11,w*.39),Math.max(3,4.4*scale(save.scene,y)),0,0,Math.PI*2);ctx.fill();}
+    if(shadow&&!seated){
+      ctx.fillStyle='#08101b73';ctx.beginPath();ctx.ellipse(0,1,Math.max(10,w*.34),Math.max(3,3.3*scale(save.scene,y)),0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#02040b80';ctx.beginPath();ctx.ellipse(0,1,Math.max(6,w*.16),2.3,0,0,Math.PI*2);ctx.fill();
+    }
     ctx.scale(facing<0?-1:1,1);
     if(!walking||seated){
       if(rise<1){const exposed=Math.floor(sprite.height*(.66+.34*rise));ctx.drawImage(sprite,0,0,sprite.width,exposed,-w/2,-h*(.72+.28*rise),w,h*(.72+.28*rise));}
       else ctx.drawImage(sprite,-w/2,-h,w,h);
     }else{
       // Leg swing is anchored to the hip. Torso stays fixed; no levitation.
-      const split=Math.floor(sprite.height*.77),legH=sprite.height-split,half=Math.floor(sprite.width/2),angle=Math.sin(stride)*.095;
+      const split=Math.floor(sprite.height*.74),legH=sprite.height-split,half=Math.floor(sprite.width/2),angle=Math.sin(stride)*.16;
       const hip=-h+h*split/sprite.height;
       for(let i=0;i<2;i++){const srcX=i?half:0,srcW=i?sprite.width-half:half,pivot=i?w*.065:-w*.065;
         ctx.save();ctx.translate(pivot,hip+1);ctx.rotate(i?-angle:angle);
@@ -356,6 +398,25 @@
     const img=backdrops.bistro;if(!img.naturalWidth)return;
     ctx.save();ctx.beginPath();[[0,372],[153,369],[304,335],[332,358],[332,675],[0,675]].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
     ctx.closePath();ctx.clip();ctx.imageSmoothingEnabled=true;ctx.drawImage(img,0,0,W,H);ctx.restore();
+  }
+  function furnitureShadow(x,y,rx,ry){
+    ctx.save();ctx.fillStyle='#08122350';ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,2*Math.PI);ctx.fill();ctx.restore();
+  }
+  function drawFurniture(prop){
+    const img=furnitureSprites[prop.image];if(!img?.naturalWidth)return;
+    ctx.save();ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(img,prop.x,prop.y,prop.w,prop.h);
+    ctx.restore();
+  }
+  function drawTreeOcclusion(){
+    // Tree and foreground urn remain from the real scene painting. A precise
+    // screen-space occluder draws ONLY the matching pixels when an actor passes
+    // under the branches; the character is never artificially transparent.
+    const img=backdrops.terrace;if(!img.naturalWidth)return;
+    ctx.save();ctx.beginPath();
+    const outline=[[0,0],[540,0],[455,42],[369,77],[292,84],[224,135],[147,235],[94,309],[68,359],[0,370]];
+    outline.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.clip();
+    ctx.imageSmoothingEnabled=true;ctx.drawImage(img,0,0,W,H);ctx.restore();
   }
   let last=performance.now();
   function tick(now){const dt=Math.min(.045,Math.max(.001,(now-last)/1000));last=now;
@@ -392,7 +453,7 @@
   }
   function draw(now){ctx.clearRect(0,0,W,H);const bg=backdrops[save.scene];
     if(bg.naturalWidth){ctx.imageSmoothingEnabled=true;ctx.drawImage(bg,0,0,W,H);}else{ctx.fillStyle='#101c2d';ctx.fillRect(0,0,W,H);}
-    drawEvidence();
+    if(save.scene==='bistro')drawEvidence();
     if(save.scene==='bistro'){
       drawPerson('carmen',174,425,{facing:1,heightFactor:1.03,shadow:false});coverBar();
     }
@@ -403,6 +464,17 @@
       actors.push({role:'gabriel',x:waiter.x,y:waiter.y,options:{facing:waiter.facing,walking:waiter.held<now,stride:waiter.stride,heightFactor:.97}});
     }
     actors.sort((a,b)=>a.y-b.y).forEach(a=>drawPerson(a.role,a.x,a.y,a.options));
+    if(save.scene==='terrace'){
+      // Separate opaque pixels determine what is in front. Nothing fades.
+      furnitureShadow(1048,674,67,8);
+      furnitureShadow(773,672,138,10);
+      furnitureShadow(113,668,103,11);
+      drawFurniture(terraceFurniture[1]); // chair behind the tabletop
+      drawFurniture(terraceFurniture[2]); // marble table and pedestal
+      drawEvidence();                      // collectible receipt on the tabletop
+      drawFurniture(terraceFurniture[0]); // flowers in nearest foreground
+      drawTreeOcclusion();
+    }
     if(new URLSearchParams(location.search).has('debug')){
       ctx.save();ctx.lineWidth=2;ctx.strokeStyle='#54e697';for(const p of world[save.scene].floors){ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.stroke();}
       ctx.strokeStyle='#f7779a';for(const p of world[save.scene].blocks){ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.stroke();}ctx.restore();
