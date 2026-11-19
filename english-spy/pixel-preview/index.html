@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="Demo de aventura gráfica pixel art de Where Is Evelyn Blackwood? en el Café de Oriente, Madrid.">
+  <title>English Spy · Pixel Adventure Preview</title>
+  <link rel="stylesheet" href="./game.css">
+</head>
+<body>
+  <div class="game-shell">
+    <header class="mission-header">
+      <div class="mission-brand"><span class="brand-diamond">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>OPERACIÓN MADRID · DEMO PIXEL ART</small></div></div>
+      <div class="header-tools">
+        <label class="level-picker">INGLÉS <select id="english-level" aria-label="Nivel de inglés"><option value="starter">Pre-A1</option><option value="basic">A1–A2</option><option value="intermediate">B1</option><option value="advanced">B2+</option></select></label>
+        <button class="header-button" id="help-button" data-ui="help" aria-pressed="true">ES ✓</button>
+        <button class="header-button" id="audio-button" data-ui="audio" aria-pressed="true" title="Audio en inglés">🔊</button>
+        <button class="header-button" data-ui="reset" title="Reiniciar solo esta demostración">Reiniciar</button>
+        <a class="return-link" href="../">Versión anterior</a>
+      </div>
+    </header>
+    <main class="game-main">
+      <section class="play-area" aria-label="Escenario interactivo del Café de Oriente">
+        <div class="scene-shell" id="scene-shell">
+          <canvas id="world" width="1200" height="675" aria-label="Agente caminando por la Plaza de Oriente y el Café de Oriente; pulsa en el escenario para moverte"></canvas>
+          <div id="hotspots" class="hotspots"></div>
+          <div id="scene-caption" class="scene-caption">MADRID · PLAZA DE ORIENTE · 18:47</div>
+          <div id="scene-message" class="scene-message" aria-live="polite"></div>
+          <div id="dialog-layer" class="dialog-layer" aria-live="polite"></div>
+          <div id="intro-overlay" class="intro-overlay">
+            <div class="intro-panel">
+              <div class="intro-seal">EXPEDIENTE EB–001</div>
+              <h1>La cita que<br><em>nunca ocurrió</em></h1>
+              <p>18:47. El Café de Oriente. Evelyn Blackwood, tu contacto del MI6, lleva siete minutos de retraso. Su último mensaje decía: <span class="quoted">“If I don't show up, follow the clues.”</span></p>
+              <p class="intro-small">Una aventura gráfica de espionaje y aprendizaje de inglés. Camina, investiga, interroga y combina objetos. Sin cronómetro.</p>
+              <button class="primary-button" data-ui="start">Comenzar investigación</button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="control-deck" aria-label="Controles de aventura gráfica">
+        <div class="verb-section"><div class="deck-heading">ACCIONES</div><div class="verb-grid" id="verbs"><button class="verb active" data-verb="smart">INTERACT</button><button class="verb" data-verb="look">LOOK AT</button><button class="verb" data-verb="talk">TALK TO</button><button class="verb" data-verb="take">PICK UP</button></div></div>
+        <div class="inventory-section"><div class="deck-heading">INVENTORY <span>Selecciona dos objetos para combinarlos</span></div><div class="inventory-slots" id="inventory"></div></div>
+        <div class="case-section"><div class="deck-heading">EXPEDIENTE <button class="case-link" data-ui="notebook">Ver notas</button></div><p id="objective">Investiga la terraza.</p><div class="case-progress"><div id="progress-bar"></div></div><small id="case-progress-text">0 / 4 pruebas</small></div>
+      </section>
+    </main>
+    <div class="game-footer"><span>PISTA: clic en el suelo para caminar · clic en personajes y objetos para interactuar</span><span id="status-text">SISTEMA PREPARADO</span></div>
+  </div>
+  <script src="./game.js" defer></script>
+</body>
+</html>
