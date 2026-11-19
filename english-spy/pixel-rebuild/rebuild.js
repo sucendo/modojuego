@@ -1,4 +1,4 @@
-/* English Spy — rebuilt scenery prototype. Clean, independent scene geometry. */
+/* English Spy — Chapter 1. Cutscene, real foreground layers and beginner dialogue. */
 (() => {
   'use strict';
   const W=1200,H=675,STORAGE='english-spy-rebuild-alpha-03';
@@ -13,7 +13,9 @@
   for(const id of ['agent-m','agent-f','carmen','gabriel','stranger','stranger-seated']){
     sprites[id]=new Image();sprites[id].src=asset('characters/'+id);
   }
-  for(const id of ['receipt','note','key']){evidenceSprites[id]=new Image();evidenceSprites[id].src='./assets/'+id+'.svg';}
+  const atlases={evelyn:new Image(),gabriel:new Image()};
+  atlases.evelyn.src=asset('evelyn-intro');atlases.gabriel.src=asset('gabriel-walk');
+  for(const id of ['receipt','note','key','napkin']){evidenceSprites[id]=new Image();evidenceSprites[id].src='./assets/'+id+'.svg';}
   // Recover the original, densely furnished terrace. Each object is traced
   // from the SAME illustration, so perspective, lighting and pixels match.
   // Its floor collision is separate from its foreground paint mask.
@@ -58,14 +60,16 @@
       targets:[
         {id:'palace',name:'Royal Palace',es:'Palacio Real',x:425,y:269,rx:316,ry:141,walk:[320,539],verb:'look'},
         {id:'table',name:'Outdoor table',es:'Mesa de mármol de la terraza',x:785,y:541,rx:221,ry:82,walk:[540,592],verb:'look'},
-        {id:'chair',name:'Wrought-iron chair',es:'Silla de forja',x:1096,y:506,rx:88,ry:111,walk:[1066,477],verb:'look'},
-        {id:'cup',name:'Coffee cup',es:'Taza de café',x:824,y:495,rx:40,ry:35,walk:[585,553],verb:'look'},
+        {id:'chair',name:'Wrought-iron chair',es:'Silla de forja',x:1096,y:506,rx:88,ry:111,walk:[1084,413],verb:'look'},
+        {id:'cup',name:'Coffee cup',es:'Taza de café',x:824,y:495,rx:40,ry:35,walk:[587,511],verb:'look'},
         {id:'newspaper',name:'Folded newspaper',es:'Periódico doblado',x:716,y:540,rx:66,ry:27,walk:[540,592],verb:'look'},
+        {id:'napkin',name:'White napkin',es:'Servilleta de Evelyn',x:930,y:532,rx:40,ry:29,walk:[540,592],verb:'take',item:'napkin'},
         {id:'receipt',name:'Folded receipt',es:'Recibo doblado',x:839,y:548,rx:31,ry:30,walk:[540,592],verb:'take',item:'receipt'},
         {id:'planter',name:'Flower planter',es:'Jardinera de hortensias',x:105,y:545,rx:107,ry:122,walk:[273,587],verb:'look'},
         {id:'planter-middle',name:'Terrace planter',es:'Jardinera central',x:485,y:458,rx:71,ry:94,walk:[416,574],verb:'look'},
-        {id:'table-middle',name:'Terrace tables',es:'Mesas del café',x:673,y:430,rx:90,ry:68,walk:[594,551],verb:'look'},
+        {id:'table-middle',name:'Terrace tables',es:'Mesas del café',x:673,y:430,rx:90,ry:68,walk:[590,519],verb:'look'},
         {id:'table-back',name:'Tables by the arcade',es:'Mesas bajo la marquesina',x:863,y:417,rx:99,ry:49,walk:[1027,395],verb:'look'},
+        {id:'gabriel',name:'Gabriel · Waiter',es:'Gabriel · Camarero',x:1079,y:401,rx:46,ry:92,walk:[1086,401],verb:'talk',dynamic:true},
         {id:'tree',name:'Old plane tree',es:'Plátano de sombra',x:94,y:153,rx:122,ry:145,walk:[281,529],verb:'look'},
         {id:'garden',name:'Ornamental garden',es:'Jardín de la plaza',x:193,y:430,rx:91,ry:55,walk:[284,525],verb:'look'},
         {id:'door',name:'Café de Oriente entrance',es:'Entrar al café',x:1110,y:355,rx:86,ry:126,walk:[1095,448],verb:'enter'}
@@ -93,7 +97,7 @@
       ]
     }
   };
-  const initial=()=>({scene:'terrace',language:'starter',help:true,sound:false,inventory:[],flags:{},avatar:'agent-m'});
+  const initial=()=>({scene:'terrace',language:'starter',help:true,sound:true,inventory:[],flags:{},avatar:'agent-m'});
   function restore(){try{const s=JSON.parse(localStorage.getItem(STORAGE));return s&&world[s.scene]&&Array.isArray(s.inventory)?{...initial(),...s,flags:{...s.flags}}:initial();}catch{return initial();}}
   let save=restore();
   const persist=()=>localStorage.setItem(STORAGE,JSON.stringify(save));
@@ -103,6 +107,25 @@
   const guestSeat={x:957,y:469},guestStand={x:896,y:496};
   const waiter={x:676,y:561,stride:0,facing:1,goal:0,held:0};
   const waiterStops=[{x:676,y:561},{x:579,y:548},{x:722,y:565}];
+  const terraceWaiter={x:1112,y:390,stride:0,facing:-1,path:[],held:false};
+  const intro={active:save.scene==='terrace'&&!save.flags.introSeen,start:performance.now(),time:0};
+  function startIntro(){
+    save.scene='terrace';nodes=[];onArrival=null;dialogue=null;$('dialogue').hidden=true;$('hover-label').hidden=true;
+    $('scene-name').textContent=world.terrace.title;
+    Object.assign(agent,{x:242,y:585,facing:1,moving:false,stride:0});
+    Object.assign(terraceWaiter,{x:1112,y:390,stride:0,facing:-1,path:[],held:false});
+    intro.active=true;intro.start=performance.now();intro.time=0;
+    $('cinematic').hidden=false;refresh();
+  }
+  function endIntro(){
+    intro.active=false;intro.time=10;
+    save.flags.introSeen=true;persist();
+    Object.assign(agent,{x:305,y:594,facing:1,moving:false,stride:0});
+    Object.assign(terraceWaiter,{x:1090,y:403,stride:0,facing:-1,held:false});
+    terraceWaiter.path=route('terrace',terraceWaiter,{x:390,y:575},false);
+    $('cinematic').hidden=true;refresh();
+    tell('Find a clue. Talk to Gabriel.','Busca una pista. Habla con Gabriel.');
+  }
   const lerp=(a,b,t)=>a+(b-a)*Math.max(0,Math.min(1,t));
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
   const scale=(scene,y)=>{const p=world[scene].scale;return lerp(p.far,p.near,(y-p.farY)/(p.nearY-p.farY));};
@@ -119,6 +142,8 @@
   function actorCollision(x,y){if(save.scene==='bistro'){
     if((sqr((x-guestX)/35)+sqr((y-guestY)/22))<1)return true;
     if((sqr((x-waiter.x)/33)+sqr((y-waiter.y)/19))<1)return true;
+  }else if(save.scene==='terrace'&&!intro.active){
+    if((sqr((x-terraceWaiter.x)/28)+sqr((y-terraceWaiter.y)/18))<1)return true;
   }return false;}
   function canStand(scene,x,y,avoid=true){return walkable(scene,x,y)&&(!avoid||scene!==save.scene||!actorCollision(x,y));}
   const CELL=15,COLS=W/CELL,ROWS=H/CELL;
@@ -173,7 +198,8 @@
     palace:['That is the Royal Palace of Madrid.','Evelyn chose a busy public place for the meeting.'],
     garden:['The garden is full of flowers.','No signs of Evelyn behind the railing.'],
     table:['A round marble table overlooking the Royal Palace. Someone left in a hurry.','Una mesa de mármol frente al Palacio Real. Alguien se marchó precipitadamente.'],
-    cup:['A cup of coffee. It is still warm.','La taza de café todavía está caliente.'],
+    cup:['The coffee is hot. Hot!','El café está caliente. ¡Caliente!'],
+    napkin:['A white napkin. Someone wrote on it.','Una servilleta blanca. Alguien escribió en ella.'],
     newspaper:['The folded newspaper is dated today. It may hide a message.','El periódico está fechado hoy. Quizá esconda una pista.'],
     chair:['A wrought-iron chair. It was pushed back in a hurry.','Una silla de forja apartada con prisa.'],
     planter:['White and pink hydrangeas. The flowerbed hides no footprints.','Hortensias blancas y rosas. No ves huellas.'],
@@ -183,7 +209,7 @@
     tree:['An old plane tree shades the terrace.','Un plátano de sombra cubre parte de la terraza.'],
     painting:['An ornate framed mirror reflects the bistro.','You see the room from another angle.']
   };
-  const itemTitles={receipt:'Receipt',note:'Folded note',key:'Brass key'};
+  const itemTitles={napkin:'Napkin',receipt:'Receipt',note:'Folded note',key:'Brass key'};
   function tell(text,es=''){announcement=save.help&&es?text+' · '+es:text;announcementUntil=performance.now()+3800;
     $('toast').textContent=announcement;$('toast').hidden=false;}
   function speech(text){if(!save.sound||!('speechSynthesis' in window))return;try{
@@ -192,7 +218,7 @@
   function take(id){if(includes(id))return;
     if(id==='key'&&!save.flags.keyRevealed){tell('Nothing obvious is under the chair.','Primero consigue una pista del testigo.');return;}
     save.inventory.push(id);persist();refresh();
-    const messages={receipt:['A receipt: 18:36. Someone paid before Evelyn arrived.','Un recibo de las 18:36.'],note:['A folded message: “Lealtad. 19:10.”','Una nota doblada con una dirección.'],key:['A brass key engraved with a small number.','Una llave marcada con un número.']};
+    const messages={napkin:['A note! It says: “LOOK LEFT”.','¡Una nota! Dice «MIRA A LA IZQUIERDA».'],receipt:['A receipt: 18:36. Someone paid before Evelyn arrived.','Un recibo de las 18:36.'],note:['A folded message: “Lealtad. 19:10.”','Una nota doblada con una dirección.'],key:['A brass key engraved with a small number.','Una llave marcada con un número.']};
     tell(...messages[id]);speech(messages[id][0]);
   }
   const dialogs={
@@ -211,10 +237,15 @@
         {id:'guest-key',q:['Did she leave anything?','¿Dejó algo?'],a:['I saw something fall by the chair. Look underneath it.','Vi caer algo junto a la silla. Mire debajo.'],flag:'keyRevealed'}
       ]},
     gabriel:{name:'GABRIEL · CAMARERO',
-      initial:['Can I help you? I was serving the tables.','¿Puedo ayudarle? Estaba atendiendo las mesas.'],
+      initial:['Hello! Can I help you?','¡Hola! ¿Puedo ayudarte?'],
       options:[
-        {id:'gabriel-drink',q:['What did she order?','¿Qué pidió?'],a:['Just a glass of water. She did not drink it.','Solo un vaso de agua. No llegó a beberlo.']},
-        {id:'gabriel-exit',q:['Which way did she go?','¿Por dónde salió?'],a:['Through the terrace, then towards the palace.','Por la terraza, hacia el palacio.']}
+        {id:'gabriel-name',q:['What is your name?','¿Cómo te llamas?'],a:['My name is Gabriel.','Me llamo Gabriel.']},
+        {id:'gabriel-time',q:['What time is it?','¿Qué hora es?'],a:['It is six forty-eight.','Son las seis y cuarenta y ocho.']},
+        {id:'gabriel-weather',q:['How is the weather?','¿Qué tiempo hace?'],a:['It is cool and sunny.','Hace fresco y hay sol.']},
+        {id:'gabriel-who',q:['Who was sitting here?','¿Quién estaba sentado aquí?'],a:['A woman. She had sunglasses.','Una mujer. Llevaba gafas de sol.']},
+        {id:'gabriel-colour',q:['What colour was her coat?','¿De qué color era su abrigo?'],a:['Green. Her coat was green.','Verde. Su abrigo era verde.']},
+        {id:'gabriel-drink',q:['Coffee or tea?','¿Café o té?'],a:['Coffee. Her coffee is still hot.','Café. Todavía está caliente.']},
+        {id:'gabriel-exit',q:['Did she go left or right?','¿Fue a la izquierda o derecha?'],a:['She ran left. Very fast!','Corrió hacia la izquierda. ¡Muy rápido!']}
       ]}
   };
   // Real graded dialogue: the selected CEFR band changes grammar, not just a label.
@@ -252,17 +283,22 @@
       b1:'Something metallic slipped from her pocket. You might find it beneath that chair.',
       b2:'I am almost certain I saw a small metallic object fall beside the chair; it may still be concealed underneath.'},
     'gabriel-initial':{
-      starter:'Hello. Can I help?',
+      starter:'Hello! Can I help you?',
       b1:'Can I help you? I was attending to the tables when the woman arrived.',
       b2:'How may I assist you? I was on duty during the incident you appear to be investigating.'},
+    'gabriel-name':{starter:'My name is Gabriel.',b1:'My name is Gabriel. I work here as a waiter.',b2:'My name is Gabriel, and I was working the evening shift when she arrived.'},
+    'gabriel-time':{starter:'It is six forty-eight.',b1:'It is just after quarter to seven, about six forty-eight.',b2:'According to the clock, it is precisely eighteen forty-eight.'},
+    'gabriel-weather':{starter:'It is cool and sunny.',b1:'It has been a lovely, clear evening, but the air is getting cooler.',b2:'Although the evening began pleasantly warm, the temperature has dropped as the sun has started to set.'},
+    'gabriel-who':{starter:'A woman. She had sunglasses.',b1:'A woman wearing dark sunglasses was sitting there a moment ago.',b2:'A rather anxious-looking woman, wearing sunglasses despite the fading light, occupied that table.'},
+    'gabriel-colour':{starter:'Green. Her coat was green.',b1:'She was wearing a long, dark green coat and a red scarf.',b2:'She had on an olive-green overcoat, which made her quite distinctive.'},
     'gabriel-drink':{
-      starter:'Water. She did not drink it.',
-      b1:'She ordered a glass of water but left before she had even taken a sip.',
-      b2:'She requested nothing more than a glass of water, which remained untouched when she hurriedly departed.'},
+      starter:'Coffee. It is still hot.',
+      b1:'She ordered a coffee, but rushed away while it was still hot.',
+      b2:'She had ordered a coffee, which was left untouched and steaming when she abruptly departed.'},
     'gabriel-exit':{
-      starter:'She went outside. Turn left.',
-      b1:'She left through the terrace and headed towards the Royal Palace.',
-      b2:'She exited onto the terrace and appeared to make her way in the direction of the palace, although I soon lost sight of her.'}
+      starter:'She ran left. Very fast!',
+      b1:'She suddenly ran towards the left side of the plaza.',
+      b2:'Without the slightest warning, she bolted towards the left-hand side of the square, apparently fleeing from something.'}
   };
   const gradedQuestions={
     'carmen-intro':{starter:'Woman?',b2:'Did anyone matching her description come in earlier?'},
@@ -271,7 +307,7 @@
     'guest-name':{starter:'Your name?',b2:'Would you mind telling me who you are?'},
     'guest-saw':{starter:'What did you see?',b2:'Could you describe precisely what you witnessed?'},
     'guest-key':{starter:'A clue?',b2:'Did you happen to notice whether she dropped anything?'},
-    'gabriel-drink':{starter:'Water or coffee?',b2:'Do you recall what she ordered while she was here?'},
+    'gabriel-drink':{starter:'Coffee or tea?',b2:'Do you recall what she ordered while she was here?'},
     'gabriel-exit':{starter:'Left or right?',b2:'Can you confirm which direction she took when leaving?'}
   };
   const gradedText=(id,defaultText)=>speechLevels[id]?.[save.language]||defaultText;
@@ -283,7 +319,7 @@
     persist();refresh();dialogue={id};
     const english=gradedText(response?.id||id+'-initial',(response?response.a:data.initial)[0]);
     const spanish=(response?response.a:data.initial)[1];
-    const choices=data.options.map(c=>`<button data-choice="${c.id}">${save.flags[c.id]?'✓ ':''}${gradedQuestion(c)}</button>`).join('');
+    const choices=data.options.map(c=>`<button data-choice="${c.id}"><span>${save.flags[c.id]?'✓ ':''}${gradedQuestion(c)}</span>${save.help?`<small>${c.q[1]}</small>`:''}</button>`).join('');
     $('dialogue').innerHTML=`<button class="close" data-close aria-label="Cerrar conversación">×</button><h2>${data.name}</h2>
       <p class="english">“${english}”</p>${save.help?`<p class="spanish">${spanish}</p>`:''}
       <div class="choices">${choices}<button data-close>Goodbye.</button></div>`;
@@ -291,7 +327,7 @@
   }
   function act(target){
     if(!target)return;
-    if((target.id==='receipt'||target.id==='note')&&includes(target.id))return;
+    if((target.id==='receipt'||target.id==='note'||target.id==='napkin')&&includes(target.id))return;
     if(target.id==='key'&&!save.flags.keyRevealed)return;
     if(target.id==='door'){
       const next=save.scene==='terrace'?'bistro':'terrace';moveTo(target.walk,()=>transition(next));return;
@@ -312,7 +348,11 @@
       moveTo(target.walk,explain);return;
     }
     if(chosen==='take'&&target.item){moveTo(target.walk,()=>take(target.item));return;}
-    if(chosen==='talk'&&dialogs[target.id]){moveTo(target.walk,()=>talk(target.id));return;}
+    if(chosen==='talk'&&dialogs[target.id]){
+      if(target.id==='gabriel'&&save.scene==='terrace')terraceWaiter.held=true;
+      if(!moveTo(target.walk,()=>talk(target.id))&&target.id==='gabriel')terraceWaiter.held=false;
+      return;
+    }
     if(target.id==='table'&&save.scene==='bistro'&&save.flags.keyRevealed){
       moveTo(target.walk,()=>tell('Something metallic gleams by the chair.','Hay un brillo metálico junto a la silla.'));return;
     }
@@ -321,14 +361,17 @@
     const known=languageWords[target.id];moveTo(target.walk,()=>tell(known?.[0]||'You notice nothing unusual.',known?.[1]||'No ves nada extraño.'));
   }
   function activeTargets(){return world[save.scene].targets.filter(t=>!((t.item&&includes(t.item))||(t.id==='key'&&!save.flags.keyRevealed))).map(t=>{
-    if(t.id==='gabriel')return {...t,x:waiter.x,y:waiter.y-70,walk:{x:waiter.x+86,y:waiter.y}};
+    if(t.id==='gabriel')return save.scene==='terrace'?
+      {...t,x:terraceWaiter.x,y:terraceWaiter.y-90,walk:{x:terraceWaiter.x-58,y:terraceWaiter.y+19}}:
+      {...t,x:waiter.x,y:waiter.y-70,walk:{x:waiter.x+86,y:waiter.y}};
     if(t.id==='stranger')return {...t,x:guestX,y:guestY-60};return t;
   });}
   function findTarget(point){const candidates=activeTargets().filter(t=>sqr((point.x-t.x)/t.rx)+sqr((point.y-t.y)/t.ry)<1);
-    const priority={receipt:100,key:100,note:100,door:90,cup:80,newspaper:80,chair:60,table:20};
+    const priority={napkin:130,gabriel:110,receipt:100,key:100,note:100,door:90,cup:80,newspaper:80,chair:60,table:20};
     candidates.sort((a,b)=>(priority[b.id]||10)-(priority[a.id]||10));return candidates[0]||null;}
   const mousePosition=event=>{const bounds=canvas.getBoundingClientRect();return {x:(event.clientX-bounds.left)*W/bounds.width,y:(event.clientY-bounds.top)*H/bounds.height};};
   canvas.addEventListener('pointermove',ev=>{
+    if(intro.active)return;
     const p=mousePosition(ev),target=findTarget(p);hovered=target;
     canvas.style.cursor=target?'pointer':floor(save.scene,p.x,p.y)?'crosshair':'default';
     const label=$('hover-label');label.hidden=!target;
@@ -336,7 +379,7 @@
       label.style.left=clamp(ev.clientX-s.left+12,8,s.width-205)+'px';label.style.top=clamp(ev.clientY-s.top-38,8,s.height-40)+'px';}
   });
   canvas.addEventListener('pointerleave',()=>{$('hover-label').hidden=true;hovered=null;});
-  canvas.addEventListener('click',ev=>{const p=mousePosition(ev),target=findTarget(p);if(dialogue){$('dialogue').hidden=true;dialogue=null;}
+  canvas.addEventListener('click',ev=>{if(intro.active)return;const p=mousePosition(ev),target=findTarget(p);if(dialogue){$('dialogue').hidden=true;dialogue=null;}
     if(target){act(target);return;}moveTo(p);});
   $('dialogue').addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;
     if(button.hasAttribute('data-close')){dialogue=null;$('dialogue').hidden=true;return;}
@@ -347,11 +390,13 @@
     if(button.dataset.choice&&dialogue)talk(dialogue.id,button.dataset.choice);
   });
   $('avatar').addEventListener('click',()=>{
+    if(intro.active)return;
     dialogue={id:'avatar'};
     $('dialogue').innerHTML='<button class="close" data-close aria-label="Cerrar">×</button><h2>EXPEDIENTE DEL AGENTE</h2><p class="english">Elige la apariencia de tu protagonista.</p><div class="choices"><button data-choice="agent-m">Agente masculino</button><button data-choice="agent-f">Agente femenino</button><button data-close>Cancelar</button></div>';
     $('dialogue').hidden=false;
   });
   document.querySelectorAll('[data-verb]').forEach(button=>button.addEventListener('click',()=>{
+    if(intro.active)return;
     verb=button.dataset.verb;document.querySelectorAll('[data-verb]').forEach(b=>b.classList.toggle('chosen',b===button));
   }));
   $('level').value=save.language;$('level').addEventListener('change',event=>{save.language=event.target.value;persist();tell('English level updated.','Nivel de inglés actualizado.');});
@@ -361,16 +406,20 @@
   $('reset').addEventListener('click',()=>{if(!confirm('¿Reiniciar únicamente la nueva versión de prueba?'))return;
     save=initial();Object.assign(agent,world.terrace.spawn,{moving:false});guestMode='seated';guestX=guestSeat.x;guestY=guestSeat.y;approachingGuest=false;
     nodes=[];onArrival=null;dialogue=null;$('dialogue').hidden=true;$('scene-name').textContent=world.terrace.title;
-    persist();refresh();});
+    persist();startIntro();});
+  $('replay').addEventListener('click',()=>startIntro());
+  $('skip-intro').addEventListener('click',()=>endIntro());
   function refresh(){
     const icon=(id)=>`<img src="./assets/${id}.svg" alt="" aria-hidden="true">`;
     $('inventory').innerHTML=save.inventory.map(id=>`<button data-item="${id}" title="${itemTitles[id]}">${icon(id)}<span>${itemTitles[id]}</span></button>`).join('')+
       Array.from({length:Math.max(0,4-save.inventory.length)},()=>'<span class="empty-slot">?</span>').join('');
-    $('case-count').textContent=`${save.inventory.length} / 3`;$('progress').style.width=(save.inventory.length/3*100)+'%';
-    $('objective').textContent=!includes('receipt')?'Investiga la mesa exterior y busca el recibo.':
+    $('case-count').textContent=`${save.inventory.length} / 4`;$('progress').style.width=(save.inventory.length/4*100)+'%';
+    $('objective').textContent=intro.active?'Observa a Evelyn. La investigación está a punto de comenzar.':
+      !includes('napkin')?'La mujer dejó una servilleta en la mesa. Examínala y habla con Gabriel.':
+      !includes('receipt')?'Busca el recibo que hay en la mesa exterior.':
       !save.flags['guest-saw']?'Habla con el testigo sentado junto a la ventana.':
       !includes('key')?'Recoge la llave y encuentra la nota.':
-      !includes('note')?'Busca el mensaje que dejó Evelyn.':'Tres pruebas reunidas. Próximo destino: plaza de la Lealtad.';
+      !includes('note')?'Busca el mensaje que dejó Evelyn.':'Cuatro pruebas reunidas. Próximo destino: plaza de la Lealtad.';
   }
   $('inventory').addEventListener('click',e=>{const b=e.target.closest('[data-item]');if(!b)return;
     const id=b.dataset.item;tell(`${itemTitles[id]} added to the case file.`,`${itemTitles[id]} en el expediente.`);});
@@ -383,6 +432,25 @@
       if(save.flags.keyRevealed&&!includes('key')&&evidenceSprites.key.naturalWidth)ctx.drawImage(evidenceSprites.key,840,472,28,28);
     }
     ctx.restore();
+  }
+  function drawAtlas(id,x,y,frame,{heightFactor=1,shadow=true,flip=false}={}){
+    const img=atlases[id];if(!img?.naturalWidth)return;
+    const sw=img.naturalWidth/4,sh=img.naturalHeight/2;
+    const h=(save.scene==='terrace'?270:210)*scale(save.scene,y)*heightFactor,w=h*sw/sh;
+    ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.imageSmoothingEnabled=false;
+    if(shadow){ctx.fillStyle='#0b12216e';ctx.beginPath();ctx.ellipse(0,0,Math.max(13,w*.24),Math.max(3,4*scale(save.scene,y)),0,0,Math.PI*2);ctx.fill();}
+    if(flip)ctx.scale(-1,1);
+    ctx.drawImage(img,(frame%4)*sw,Math.floor(frame/4)*sh,sw,sh,-w/2,-h,w,h);
+    ctx.restore();
+  }
+  function drawSteamingCoffee(now){
+    if(save.scene!=='terrace')return;
+    ctx.save();ctx.strokeStyle='#fff5dc91';ctx.lineWidth=1.6;ctx.lineCap='round';
+    for(let i=0;i<3;i++){
+      const x=812+i*7,y=475-((now*.025+i*15)%17);
+      ctx.globalAlpha=.24+.26*Math.sin(now*.0015+i)**2;
+      ctx.beginPath();ctx.moveTo(x,y+7);ctx.bezierCurveTo(x-4,y+2,x+5,y-3,x+1,y-8);ctx.stroke();
+    }ctx.restore();
   }
   function drawPerson(role,x,y,{facing=1,walking=false,stride=0,seated=false,heightFactor=1,rise=1,shadow=true}={}){
     const sprite=sprites[seated?'stranger-seated':role];if(!sprite?.naturalWidth)return;
@@ -445,6 +513,33 @@
   if(backdrops.terrace.complete&&backdrops.terrace.naturalWidth)prepareTerraceLayers();
   let last=performance.now();
   function tick(now){const dt=Math.min(.045,Math.max(.001,(now-last)/1000));last=now;
+    if(intro.active){
+      intro.time=(now-intro.start)/1000;
+      const t=intro.time;
+      const caption=t<2.6?['18:47 · CAFÉ DE ORIENTE','Evelyn lee una servilleta. · A woman. A note.']:
+        t<4.1?['ALGO NO ENCAJA','Mira a su alrededor. · Look!']:
+        t<7.0?['EVELYN HUYE','Se levanta y echa a correr. · She runs away!']:
+        ['UN SEGUNDO DESPUÉS','Llega nuestro agente. · Find the clues!'];
+      $('cinematic-title').textContent=caption[0];$('cinematic-caption').textContent=caption[1];
+      if(t>=7.2){
+        const p=clamp((t-7.2)/2.55,0,1);
+        agent.x=lerp(242,305,p);agent.y=lerp(585,594,p);agent.stride+=dt*8;agent.facing=1;agent.moving=p<1;
+        terraceWaiter.x=lerp(1112,1090,clamp((t-7.2)/2.55,0,1));
+        terraceWaiter.y=lerp(390,403,clamp((t-7.2)/2.55,0,1));
+        terraceWaiter.stride+=dt*7.5;
+      }
+      if(t>=9.85)endIntro();
+      draw(now);requestAnimationFrame(tick);return;
+    }
+    if(save.scene==='terrace'&&terraceWaiter.path.length&&!terraceWaiter.held){
+      const dest=terraceWaiter.path[0],dx=dest.x-terraceWaiter.x,dy=dest.y-terraceWaiter.y,d=Math.hypot(dx,dy);
+      const step=Math.min(d,109*scale('terrace',terraceWaiter.y)*dt);
+      if(!((sqr((terraceWaiter.x+dx/(d||1)*step-agent.x)/36)+sqr((terraceWaiter.y+dy/(d||1)*step-agent.y)/23))<1)){
+        if(d){terraceWaiter.x+=dx/d*step;terraceWaiter.y+=dy/d*step;terraceWaiter.stride+=step*.13;
+          if(Math.abs(dx)>1)terraceWaiter.facing=dx<0?-1:1;}
+        if(d<=step+1.5)terraceWaiter.path.shift();
+      }
+    }
     if(save.scene==='bistro'){
       if(approachingGuest&&guestMode==='seated'&&dist(agent,guestSeat)<177){
         guestMode='rising';guestChangeAt=now;approachingGuest=false;
@@ -482,22 +577,43 @@
     if(save.scene==='bistro'){
       drawPerson('carmen',174,425,{facing:1,heightFactor:1.03,shadow:false});coverBar();
     }
-    const actors=[{role:save.avatar,x:agent.x,y:agent.y,options:{facing:agent.facing,walking:agent.moving,stride:agent.stride}}];
+    const actors=[];
+    if(!intro.active||intro.time>=7.2)actors.push({role:save.avatar,x:agent.x,y:agent.y,options:{facing:agent.facing,walking:agent.moving,stride:agent.stride}});
+    if(save.scene==='terrace'){
+      if(intro.active&&intro.time<7.0){
+        const t=intro.time;
+        const frame=t<2.3?0:t<3.1?1:t<3.8?2:t<4.35?3:4+(Math.floor((t-4.35)*10)%4);
+        const running=t>=4.35;
+        const p=clamp((t-4.35)/2.45,0,1);
+        actors.push({atlas:'evelyn',x:running?lerp(767,215,p):767,y:running?lerp(476,557,p):476,
+          frame,options:{heightFactor:running?1.0:.98,shadow:running,flip:running}});
+      }
+      if(!intro.active||intro.time>=7.2)actors.push({atlas:'gabriel',x:terraceWaiter.x,y:terraceWaiter.y,
+        frame:(intro.active||terraceWaiter.path.length&&!terraceWaiter.held)?1+(Math.floor(terraceWaiter.stride*2)%7):0,
+        options:{heightFactor:.90,flip:terraceWaiter.facing<0}});
+    }
     if(save.scene==='bistro'){
       const standing=guestMode!=='seated';
       actors.push({role:'stranger',x:guestX,y:guestY,options:{facing:-1,seated:!standing,rise:standing?clamp((now-guestChangeAt)/870,0,1):1}});
-      actors.push({role:'gabriel',x:waiter.x,y:waiter.y,options:{facing:waiter.facing,walking:waiter.held<now,stride:waiter.stride,heightFactor:.97}});
+      actors.push({atlas:'gabriel',x:waiter.x,y:waiter.y,frame:waiter.held<now?1+(Math.floor(waiter.stride*2)%7):0,
+        options:{heightFactor:.76,flip:waiter.facing<0}});
     }
-    actors.sort((a,b)=>a.y-b.y).forEach(a=>drawPerson(a.role,a.x,a.y,a.options));
     if(save.scene==='terrace'){
       // Original pixels re-render above actors only where the corresponding
-      // furniture sits closer to the camera than the actor's feet. No fading,
-      // no AI replacement, and no enlarged/distorted prop sprites.
-      for(const layer of terraceLayers)if(agent.y<layer.depth)
-        ctx.drawImage(layer.canvas,layer.x,layer.y);
+      // furniture sits closer to the camera than EACH actor's feet. Actors
+      // do not fade, never pass through chairs, and keep their true scale.
+      const depthOrder=[...actors.map(a=>({...a,depth:a.y})),...terraceLayers.map(a=>({...a,isLayer:true}))];
+      depthOrder.sort((a,b)=>a.depth-b.depth).forEach(a=>{
+        if(a.isLayer)ctx.drawImage(a.canvas,a.x,a.y);
+        else if(a.atlas)drawAtlas(a.atlas,a.x,a.y,a.frame,a.options);
+        else drawPerson(a.role,a.x,a.y,a.options);
+      });
       if(includes('receipt')&&receiptPatch)
         ctx.drawImage(receiptPatch.canvas,receiptPatch.x,receiptPatch.y);
-    }
+      if((!intro.active||intro.time>=3.75)&&!includes('napkin')&&evidenceSprites.napkin.naturalWidth)
+        ctx.drawImage(evidenceSprites.napkin,900,511,62,43);
+      drawSteamingCoffee(now);
+    }else actors.sort((a,b)=>a.y-b.y).forEach(a=>a.atlas?drawAtlas(a.atlas,a.x,a.y,a.frame,a.options):drawPerson(a.role,a.x,a.y,a.options));
     if(new URLSearchParams(location.search).has('debug')){
       ctx.save();ctx.lineWidth=2;ctx.strokeStyle='#54e697';for(const p of world[save.scene].floors){ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.stroke();}
       ctx.strokeStyle='#f7779a';for(const p of world[save.scene].blocks){ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.stroke();}ctx.restore();
@@ -516,5 +632,8 @@
       ]))
     });
   }
-  $('scene-name').textContent=world[save.scene].title;refresh();requestAnimationFrame(tick);
+  $('scene-name').textContent=world[save.scene].title;
+  if(intro.active)startIntro();
+  else refresh();
+  requestAnimationFrame(tick);
 })();

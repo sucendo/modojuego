@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1425">
-  <title>English Spy · Terraza clásica restaurada · Alpha 0.3</title>
-  <link rel="stylesheet" href="./rebuild.css?v=2">
+  <title>English Spy · El rastro de Evelyn · Capítulo 1</title>
+  <link rel="stylesheet" href="./rebuild.css?v=5">
 </head>
 <body>
   <main class="adventure">
     <header class="topbar">
-        <div class="brand"><span class="emblem">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>MADRID · OPERACIÓN BLACKWOOD · CAFÉ DE ORIENTE α3</small></div></div>
+        <div class="brand"><span class="emblem">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>MADRID · OPERACIÓN BLACKWOOD · CAPÍTULO 1</small></div></div>
       <div class="settings">
         <button id="avatar" class="flat">✦ Mi agente</button>
+        <button id="replay" class="flat" title="Volver a ver la huida de Evelyn">▶ Intro</button>
         <label for="level">INGLÉS</label>
         <select id="level" aria-label="Nivel de inglés"><option value="starter">Pre-A1</option><option value="a1">A1–A2</option><option value="b1">B1</option><option value="b2">B2+</option></select>
         <button id="language" class="flat" aria-pressed="true">ES ✓</button>
@@ -27,6 +28,7 @@
         <div id="hover-label" class="hover-label" hidden></div>
         <div id="dialogue" class="dialogue" hidden></div>
         <div id="toast" class="toast" hidden></div>
+        <div id="cinematic" class="cinematic" hidden><div><strong id="cinematic-title">18:47 · CAFÉ DE ORIENTE</strong><p id="cinematic-caption">Evelyn espera en la terraza...</p></div><button id="skip-intro" type="button">SALTAR ▸</button></div>
       </div>
     </section>
     <footer class="hud">
@@ -36,6 +38,6 @@
     </footer>
     <div class="help-strip">Clic en el suelo: caminar · Pasa el ratón sobre objetos o personas · La lupa y los cuadros de selección no aparecen · <span id="status">SISTEMA PREPARADO</span></div>
   </main>
-  <script src="./rebuild.js?v=4" defer></script>
+  <script src="./rebuild.js?v=5" defer></script>
 </body>
 </html>
