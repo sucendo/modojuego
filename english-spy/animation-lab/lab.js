@@ -340,13 +340,18 @@
     atlas.hidden=true;stopWalking();agent.action=null;showcase={start:now(),duration:poses.length*760};lastFrame=-1;
     setStatus('Reproduciendo las '+poses.length+' poses');notify('Secuencia de '+poses.length+' poses · Una cada 0,76 segundos');
   });
-  function extractFrames(img,cols,rows){
+  function extractFrames(img,cols,rows,topOverlaps={}){
     const extracted=[],cw=img.naturalWidth/cols,ch=img.naturalHeight/rows;
     const off=document.createElement('canvas');off.width=img.naturalWidth;off.height=img.naturalHeight;
     const c=off.getContext('2d',{willReadFrequently:true});c.drawImage(img,0,0);
     const data=c.getImageData(0,0,off.width,off.height).data;
     for(let i=0;i<cols*rows;i++){
-      const col=i%cols,row=Math.floor(i/cols),left=Math.floor(col*cw),right=Math.floor((col+1)*cw),top=Math.floor(row*ch),bottom=Math.floor((row+1)*ch);
+      const col=i%cols,row=Math.floor(i/cols),left=Math.floor(col*cw),right=Math.floor((col+1)*cw);
+      // A few poses in the original 5×4 atlas extend their hair above the
+      // nominal row boundary. Include those pixels when extracting the pose;
+      // otherwise talking, pointing and opening cut off the top of the head.
+      const top=Math.max(0,Math.floor(row*ch)-(topOverlaps[i]||0));
+      const bottom=Math.floor((row+1)*ch);
       let minX=right,minY=bottom,maxX=left,maxY=top;
       for(let y=top;y<bottom;y++)for(let x=left;x<right;x++){
         if(data[(y*off.width+x)*4+3]<24)continue;
@@ -372,7 +377,11 @@
   }
   function makeFrames(){
     if(sheets.some(sheet=>!sheet.img.complete||!sheet.img.naturalWidth))return;
-    const [base,walk,run,sit,standingGestures,seatedGestures]=sheets.map(s=>extractFrames(s.img,s.cols,s.rows));
+    // Source poses 16, 17 and 20 (zero-based 15, 16, 19) cross into the
+    // preceding row by ~15 px. A 24 px overlap retains their complete hair
+    // without picking up the preceding row's shoes.
+    const [base,walk,run,sit,standingGestures,seatedGestures]=sheets.map((s,index)=>
+      extractFrames(s.img,s.cols,s.rows,index===0?{15:24,16:24,19:24}:{}));
     const reference=base[0].h;
     for(const group of [walk,run,sit,standingGestures]){
       const heights=group.map(f=>f.h).sort((a,b)=>a-b);
