@@ -454,17 +454,25 @@
     // without picking up the preceding row's shoes.
     const [base,walk,run,sit,standingGestures,seatedGestures]=sheets.map((s,index)=>
       extractFrames(s.img,s.cols,s.rows,index===0?{15:24,16:24,19:24}:{}));
+    // Every upright pose must occupy the same on-screen *body height* at a
+    // given floor position. The old group-median scaling made the whole actor
+    // grow/shrink when switching from a gesture or running frame to idle.
     const reference=base[0].h;
-    for(const group of [walk,run,sit,standingGestures]){
-      const heights=group.map(f=>f.h).sort((a,b)=>a-b);
-      const middle=(heights[Math.floor((heights.length-1)/2)]+heights[Math.floor(heights.length/2)])/2;
-      const factor=reference/middle;
-      for(const f of group)f.factor=factor;
+    for(const [index,f] of base.entries()){
+      // Inspection and picking are genuinely bent/kneeling postures: preserve
+      // their shorter silhouette instead of enlarging it to standing height.
+      if(index!==17&&index!==18)f.factor=reference/f.h;
     }
-    const seatedHeights=seatedGestures.map(f=>f.h).sort((a,b)=>a-b);
-    const seatedMiddle=(seatedHeights[3]+seatedHeights[4])/2;
-    const seatedFactor=sit[3].h*sit[3].factor/seatedMiddle;
-    for(const f of seatedGestures)f.factor=seatedFactor;
+    for(const f of [...walk,...run,...standingGestures])f.factor=reference/f.h;
+    // Sit/rise sprites come from one coherent sheet: keep a single physical
+    // scale so the knees and head move naturally, calibrating its *standing*
+    // frame against the same upright reference as every other animation.
+    const sitFactor=reference/sit[0].h;
+    for(const f of sit)f.factor=sitFactor;
+    // Seated gestures must match the seated rest pose exactly. Normalizing
+    // each silhouette also prevents changing facial expression from zooming.
+    const seatedHeight=sit[3].h*sitFactor;
+    for(const f of seatedGestures)f.factor=seatedHeight/f.h;
     frames.splice(0,frames.length,...base);
     for(let i=0;i<4;i++)frames[7+i]=walk[i];
     frames.push(...walk.slice(4),...run,...sit,...standingGestures,...seatedGestures);
