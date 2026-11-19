@@ -58,6 +58,9 @@ function getFixtureKickoffTime(fx, idxInMatchday = 0) {
   const t = fx?.kickoffTime;
   if (typeof t === 'string' && t.includes(':')) return t;
 
+  // Los cruces oficiales sin hora publicada no deben mostrar un horario inventado.
+  if (fx?.meta?.official) return 'Pendiente';
+
   // 2) Si no, derivamos una hora estable (no aleatoria) por orden en la jornada
   const slots = ['16:00', '18:15', '20:30', '22:00'];
   const i = Number.isFinite(idxInMatchday) ? idxInMatchday : 0;

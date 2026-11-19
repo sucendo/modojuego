@@ -120,10 +120,10 @@ function advanceUserMatchdayPointer(userClubId, currentMd) {
     .filter((fx) => {
       if (!fx || fx.played) return false;
       if (!(fx.homeClubId === userClubId || fx.awayClubId === userClubId)) return false;
-      const md = Number(fx.matchday || 0);
-      return Number.isFinite(md) && md > Number(currentMd || 0);
+      return Number.isFinite(Date.parse(fx.kickoffDate));
     })
-    .sort((a, b) => Number(a.matchday) - Number(b.matchday))[0];
+    .sort((a, b) => Date.parse(a.kickoffDate) - Date.parse(b.kickoffDate) ||
+      Number(a.matchday) - Number(b.matchday))[0];
 
   if (nextFx && nextFx.matchday != null) {
     GameState.currentDate.matchday = Number(nextFx.matchday);
@@ -234,6 +234,10 @@ export function syncMainLeagueUpTo(upToISO) {
   const fixtures = GameState.fixtures || [];
   const pending = fixtures.filter((fx) => {
     if (!fx || fx.played) return false;
+    // En calendarios reales se aplazan encuentros: el club del usuario
+    // siempre debe jugar todos sus partidos manualmente, incluso si son
+    // de una jornada anterior a la siguiente por fecha.
+    if (fx.homeClubId === GameState.user?.clubId || fx.awayClubId === GameState.user?.clubId) return false;
     if (!fx.kickoffDate) return false;
     const t = Date.parse(fx.kickoffDate);
     return Number.isFinite(t) && t <= upTo;
@@ -255,6 +259,7 @@ function syncMainLeagueUpToBefore(upToISO, excludeFixtureId) {
 
   const pending = fixtures.filter((fx) => {
     if (!fx || fx.played) return false;
+    if (fx.homeClubId === GameState.user?.clubId || fx.awayClubId === GameState.user?.clubId) return false;
 
     // Excluir fixture objetivo SOLO si hay id y coincide (ultra-defensivo).
     if (excludeKey != null && fx.id != null && String(fx.id) === excludeKey) return false;

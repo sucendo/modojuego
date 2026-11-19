@@ -36,6 +36,7 @@ function deriveKickoffTime(fx, idx = 0) {
   if (typeof fx?.kickoffTime === 'string' && fx.kickoffTime.includes(':')) {
     return fx.kickoffTime;
   }
+  if (fx?.meta?.official) return 'Pendiente';
   const slots = ['16:00', '18:15', '20:30', '22:00'];
   return slots[(idx || 0) % slots.length];
 }
@@ -50,17 +51,15 @@ function getNextFixtureForClub(clubId) {
   const candidates = fixtures
     .filter((fx) => {
       if (!fx) return false;
-      const md = Number(fx.matchday || 0);
-      if (!Number.isFinite(md)) return false;
-      if (md < currentMd) return false;
       if (fx.played) return false;
       return fx.homeClubId === clubId || fx.awayClubId === clubId;
     })
     .slice()
     .sort((a, b) => {
-      const am = Number(a.matchday || 0);
-      const bm = Number(b.matchday || 0);
-      if (am !== bm) return am - bm;
+      const diff = Date.parse(a.kickoffDate) - Date.parse(b.kickoffDate);
+      if (Number.isFinite(diff) && diff !== 0) return diff;
+      const mdDiff = Number(a.matchday || 0) - Number(b.matchday || 0);
+      if (mdDiff !== 0) return mdDiff;
       return String(a.id).localeCompare(String(b.id));
     });
 

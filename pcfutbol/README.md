@@ -11,6 +11,16 @@ El juego funciona **sin conexión a Internet**: datos, código, hojas de estilo 
 
 El juego es una aplicación HTML/CSS/JavaScript; no necesita PHP ni base de datos. Apache solo sirve los archivos locales.
 
+## Calendarios de liga: 2026/27 y temporadas siguientes
+
+- **Temporada 2026/27:** incorpora **5.056 partidos de las 14 ligas** con los cruces y localías de sus calendarios publicados. Los datos se guardan localmente en `js/game/officialFixtures2026.js`; cada partido conserva el enlace de la fuente y el grado de precisión de su fecha.
+- **Horarios aún no anunciados:** no se inventa un saque inicial. En las ligas cuya fuente solo fija la *jornada* (Segunda española, Serie B y Liga Portugal 2), la fecha indicada es la **fecha de referencia de la jornada**, no la confirmación del día individual. Las pantallas indican «Pendiente» en lugar de una hora ficticia.
+- **Desde 2027/28:** se genera un nuevo calendario equilibrado de ida y vuelta, con como máximo dos partidos consecutivos en casa o fuera por equipo.
+- **Aplazamientos:** el partido siguiente se selecciona por fecha real, aunque una jornada posterior se juegue antes que otra. Los encuentros del mánager nunca son simulados automáticamente en segundo plano.
+- **Partidas guardadas anteriores:** conservan sus cruces y resultados para no borrar el progreso. Para comenzar 2026/27 directamente con estos calendarios, inicia una **nueva partida**.
+
+Para actualizar la instantánea de calendarios (requiere Internet, Python, `pdfplumber`, Node.js, `curl` y `pdftotext`), ejecuta `python pcfutbol/scripts/import_official_calendars_2627.py`. El importador comprueba que cada equipo juega una vez en casa y otra fuera contra cada rival, y que todas las jornadas están completas antes de exportar.
+
 ## Entrenamientos y taquilla (v16.5)
 
 - **Entrenamiento:** entra desde el menú principal y consulta el calendario de toda la temporada mes a mes. El modo automático adapta la propuesta a los días de partido y la fatiga. Cualquier sesión futura se puede personalizar; los partidos y sesiones ya ejecutadas quedan bloqueados.
