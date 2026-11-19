@@ -324,7 +324,13 @@ export function attachFixtureMeta(fx, homeClub, awayClub) {
   const baseFill = 0.55 + Math.random() * 0.35;
   const derbyBoost = homeClub?.rivals?.includes?.(awayClub?.id) ? 0.08 : 0;
   const fill = Math.min(0.98, baseFill + derbyBoost);
-  const attendance = fx.meta.attendance || Math.max(2000, Math.floor(stadiumCapacity * fill));
+  // Los recintos de filiales pueden tener menos de 2.000 plazas. Ningún
+  // encuentro debe registrar más espectadores que localidades disponibles,
+  // tampoco si llega con un dato anterior desde una partida guardada.
+  const recorded = Number(fx.meta.attendance);
+  const hasRecorded = fx.meta.attendance != null && Number.isFinite(recorded);
+  const attendance = Math.max(0, Math.min(stadiumCapacity,
+    hasRecorded ? Math.round(recorded) : Math.floor(stadiumCapacity * fill)));
 
   fx.meta.stadiumName = stadiumName;
   fx.meta.stadiumCapacity = stadiumCapacity;

@@ -49,18 +49,27 @@ export function stadiumRingPath(start, end, inner, outer, shape = 2) {
 export function stadiumPlanAvailable(plan) { return !!PLANS[plan]; }
 
 // Las bandas son niveles comerciales distintos, no medidas físicas del graderío.
-export function stadiumTierBands(count) {
+export function stadiumTierBands(count, weights = null) {
   if (count === 0) return [[0, 1]]; // grada única sin atribuir alturas no documentadas
   if (count === 1) return [[0, 1]];
-  if (count === 2) return [[0, .58], [.67, 1]];
-  if (count === 3) return [[0, .37], [.43, .63], [.69, 1]];
-  const gap = .025;
-  const width = (1 - (count - 1) * gap) / count;
-  return Array.from({ length: count }, (_, index) => [index * (width + gap), index * (width + gap) + width]);
+  const gap = count > 4 ? .025 : .045;
+  const proportions = Array.isArray(weights) && weights.length === count
+    ? weights.map(weight => Math.max(0, Number(weight) || 0)) : Array(count).fill(1);
+  const total = proportions.reduce((sum, weight) => sum + weight, 0);
+  const safe = total ? proportions : Array(count).fill(1);
+  const divisor = safe.reduce((sum, weight) => sum + weight, 0);
+  let cursor = 0;
+  return safe.map(weight => {
+    const width = (1 - (count - 1) * gap) * weight / divisor;
+    const band = [cursor, cursor + width];
+    cursor += width + gap;
+    return band;
+  });
 }
 
 /** Renderiza sectores interactivos. Devuelve false si aún no hay plano específico. */
-export function renderStadiumPlan(container, { plan = 'generic', stadiumName = '', sectors, prices, levelPrices = {}, selectedSector, selectedLevel = null }) {
+export function renderStadiumPlan(container, { plan = 'generic', stadiumName = '', sectors, prices = {}, levelPrices = {},
+  structure = {}, selectedSector, selectedLevel = null, interactive = true, showLabels = true }) {
   if (!stadiumPlanAvailable(plan)) return false;
   const stadium = PLANS[plan];
   const svg = element('svg', {
@@ -79,26 +88,45 @@ export function renderStadiumPlan(container, { plan = 'generic', stadiumName = '
   for (const arc of ARCS) {
     const sector = sectors.find(item => item.id === arc.sector);
     if (!sector) continue;
+    const stand = structure.stands?.[arc.sector];
+    if (stand?.present === false || stand?.coverage === 0 || sector.capacity === 0) continue;
+    const coverage = Math.max(0, Math.min(1, Number(stand?.coverage ?? 1)));
+    const arcCenter = (arc.start + arc.end) / 2;
+    const arcHalf = (arc.end - arc.start) * coverage / 2;
     const tierCount = sector.levels.length;
-    const bands = stadiumTierBands(tierCount);
+    const bands = stadiumTierBands(tierCount, sector.levels.map(tier => tier.capacity));
     bands.forEach(([inner, outer], index) => {
       const tier = sector.levels[index] || null;
+      const occupancy = tier?.occupancy ?? sector.occupancy;
       const active = selectedSector === arc.sector && (tier ? selectedLevel === index : selectedLevel == null);
       const attrs = {
-        'data-sector': arc.sector,
-        role: 'button', tabindex: 0, 'aria-pressed': String(active),
         'aria-label': tier
           ? `${sector.label}, ${tier.name}, ${tier.capacity.toLocaleString('es-ES')} plazas aproximadas`
           : `${sector.label}, ${sector.capacity.toLocaleString('es-ES')} plazas aproximadas; alturas sin documentar`,
         class: `pcf-stadium-svg__tier${active ? ' is-selected' : ''}${selectedSector === arc.sector ? ' is-zone-selected' : ''}`,
       };
-      if (tier) attrs['data-level-index'] = index;
+      if (interactive) Object.assign(attrs, { 'data-sector': arc.sector, role: 'button', tabindex: 0,
+        'aria-pressed': String(active) });
+      if (tier && interactive) attrs['data-level-index'] = index;
       const group = element('g', attrs);
+      const start = arcCenter - arcHalf + 1.5;
+      const end = arcCenter + arcHalf - 1.5;
       const shape = element('path', {
-        d: stadiumRingPath(arc.start + 1.5, arc.end - 1.5, inner, outer, stadium.shape),
+        d: stadiumRingPath(start, end, inner, outer, stadium.shape),
         class: `pcf-stadium-svg__tier-shape pcf-stadium-svg__tier-shape--${Math.min(index, 4)}`,
+        ...(Number.isFinite(occupancy) ? { 'fill-opacity': 0.30 } : {}),
       });
-      group.append(shape, element('title', {}, `${sector.label}${tier ? ` · ${tier.name}` : ''} · ${levelPrices[sector.id]?.[index]?.price ?? prices[sector.id] ?? '—'} €`));
+      const expected = tier?.attendance ?? sector.attendance;
+      group.append(shape);
+      // El segmento coloreado representa la fracción realmente ocupada de
+      // ESTA grada: 2.000 personas en 4.000 plazas => exactamente media banda.
+      if (Number.isFinite(occupancy) && occupancy > 0 && end > start) {
+        group.append(element('path', {
+          d: stadiumRingPath(start, start + (end - start) * Math.min(1, occupancy), inner, outer, stadium.shape),
+          class: 'pcf-stadium-svg__attendance', 'pointer-events': 'none',
+        }));
+      }
+      group.append(element('title', {}, `${sector.label}${tier ? ` · ${tier.name}` : ''} · ${tier?.capacity ?? sector.capacity} plazas${Number.isFinite(expected) ? ` · ${expected} espectadores previstos (${Math.round(Math.max(0, Math.min(1, occupancy)) * 100)} %)` : ''} · ${levelPrices[sector.id]?.[index]?.price ?? prices[sector.id] ?? '—'} €`));
       svg.append(group);
     });
   }
@@ -108,8 +136,8 @@ export function renderStadiumPlan(container, { plan = 'generic', stadiumName = '
   const vip = sectors.find(sector => sector.id === 'vip');
   if (vip) {
     const group = element('g', {
-      'data-sector': 'vip', role: 'button', tabindex: 0,
-      'aria-pressed': String(selectedSector === 'vip'),
+      ...(interactive ? { 'data-sector': 'vip', role: 'button', tabindex: 0,
+        'aria-pressed': String(selectedSector === 'vip') } : {}),
       'aria-label': `Palcos VIP, ${vip.capacity.toLocaleString('es-ES')} plazas estimadas`,
       class: `pcf-stadium-svg__vip${selectedSector === 'vip' ? ' is-selected' : ''}`,
     });
@@ -134,12 +162,14 @@ export function renderStadiumPlan(container, { plan = 'generic', stadiumName = '
     ['TRIBUNA PRINCIPAL', 400, 75, 0], ['PREFERENCIA', 400, 468, 0],
     ['FONDO NORTE', 86, 270, -90], ['FONDO SUR', 714, 270, 90],
   ];
-  for (const [index, [label, x, y, angle]] of captions.entries()) {
-    const sectorId = ['tribuna', 'preferencia', 'norte', 'sur'][index];
-    svg.append(element('text', { x, y, transform: `rotate(${angle} ${x} ${y})`,
-      class: 'pcf-stadium-svg__caption', 'text-anchor': 'middle' }, tariffLabel(sectorId, label)));
+  if (showLabels) {
+    for (const [index, [label, x, y, angle]] of captions.entries()) {
+      const sectorId = ['tribuna', 'preferencia', 'norte', 'sur'][index];
+      svg.append(element('text', { x, y, transform: `rotate(${angle} ${x} ${y})`,
+        class: 'pcf-stadium-svg__caption', 'text-anchor': 'middle' }, tariffLabel(sectorId, label)));
+    }
+    svg.append(element('text', { x: 400, y: 137, class: 'pcf-stadium-svg__vip-label', 'text-anchor': 'middle' }, tariffLabel('vip', 'PALCOS VIP')));
   }
-  svg.append(element('text', { x: 400, y: 137, class: 'pcf-stadium-svg__vip-label', 'text-anchor': 'middle' }, tariffLabel('vip', 'PALCOS VIP')));
   container.replaceChildren(svg);
   container.classList.add('pcf-stadium-map--svg');
   return true;

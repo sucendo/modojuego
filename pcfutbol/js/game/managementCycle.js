@@ -1,7 +1,7 @@
 // Fase 16.1: dos pausas de gestión por encuentro, sin reloj en tiempo real.
 // Todas las decisiones se guardan dentro de GameState (exportación JSON normal).
 
-import { getStadiumStructure } from '../stadiums_2026_27.js?v=1672';
+import { getStadiumStructure } from '../stadiums_2026_27.js?v=1673';
 
 export const MANAGEMENT_STAGES = Object.freeze({ WEEK: 'week', MATCHDAY: 'matchday', POST: 'post' });
 export const TRAINING_TYPES = Object.freeze({
@@ -122,18 +122,44 @@ export function getStadiumSectors(state, fx) {
   const fixed = structure.sectorCapacities;
   const hasOfficialBreakdown = fixed && TICKET_SECTORS.every(s => Number.isInteger(fixed[s.id]) && fixed[s.id] >= 0)
     && TICKET_SECTORS.reduce((sum, s) => sum + fixed[s.id], 0) === capacity;
-  const weights = TICKET_SECTORS.map(s => structure.sectorShares?.[s.id] ?? s.share);
-  const capacities = hasOfficialBreakdown ? TICKET_SECTORS.map(s => fixed[s.id]) : allocateSeats(capacity, weights);
+  const weights = TICKET_SECTORS.map(s => {
+    const stand = structure.stands?.[s.id];
+    if (stand?.present === false || stand?.coverage === 0) return 0;
+    const coverage = Math.max(0, Math.min(1, Number(stand?.coverage ?? 1)));
+    // Un plano documentado puede abrir/cerrar parcialmente un fondo. La
+    // superficie de graderío influye en el reparto salvo que haya aforos reales.
+    const depth = Array.isArray(stand?.levels) && stand.levels.length
+      ? stand.levels.reduce((sum, level) => sum + Math.max(0, Number(level?.weight ?? 1)), 0) : 1;
+    return (structure.sectorShares?.[s.id] ?? s.share) * coverage * depth;
+  });
+  // A veces la fuente solo proporciona el aforo de UNA tribuna (p. ej. el
+  // fondo sur de Tottenham). Se fija ese dato y se reparte solo el resto.
+  const constraints = structure.sectorConstraints || {};
+  const fixedSeats = TICKET_SECTORS.reduce((sum, s) => sum +
+    (Number.isInteger(constraints[s.id]) && constraints[s.id] >= 0 ? constraints[s.id] : 0), 0);
+  const hasPartialBreakdown = !hasOfficialBreakdown && fixedSeats > 0 && fixedSeats <= capacity
+    && TICKET_SECTORS.some(s => Number.isInteger(constraints[s.id]) && constraints[s.id] >= 0)
+    && TICKET_SECTORS.some((s, index) => !Number.isInteger(constraints[s.id]) && weights[index] > 0);
+  const remaining = hasPartialBreakdown ? allocateSeats(capacity - fixedSeats,
+    weights.map((weight, index) => Number.isInteger(constraints[TICKET_SECTORS[index].id]) ? 0 : weight)) : null;
+  const capacities = hasOfficialBreakdown ? TICKET_SECTORS.map(s => fixed[s.id])
+    : hasPartialBreakdown ? TICKET_SECTORS.map((s, i) => Number.isInteger(constraints[s.id])
+      ? constraints[s.id] : remaining[i]) : allocateSeats(capacity, weights);
   const levelNames = Array.isArray(structure.levels) ? structure.levels : [];
   return TICKET_SECTORS.map((s, i) => {
     const seats = capacities[i];
-    const sectorLevels = structure.sectorLevels?.[s.id] || levelNames;
-    const tierCounts = s.id === 'vip' || !sectorLevels.length ? [] : allocateSeats(seats, sectorLevels.map(() => 1));
+    const stand = structure.stands?.[s.id];
+    const sectorLevels = stand?.present === false ? [] : structure.sectorLevels?.[s.id] || levelNames;
+    const providedWeights = structure.sectorLevelWeights?.[s.id];
+    const levelWeights = Array.isArray(providedWeights) && providedWeights.length === sectorLevels.length
+      ? providedWeights : sectorLevels.map(() => 1);
+    const tierCounts = s.id === 'vip' || !sectorLevels.length ? [] : allocateSeats(seats, levelWeights);
     return {
       ...s,
       capacity: seats,
       share: seats / capacity,
-      allocationStatus: hasOfficialBreakdown ? 'documented' : 'estimated',
+      allocationStatus: hasOfficialBreakdown || (hasPartialBreakdown && Number.isInteger(constraints[s.id]))
+        ? 'documented' : 'estimated',
       levels: tierCounts.map((count, index) => ({ name: sectorLevels[index], capacity: count, estimated: true })),
     };
   });
@@ -249,11 +275,13 @@ export function getTicketSalesProjection(state, fx, baseAttendance = null) {
       const ticketRevenue = Math.round(attendanceAtLevel * tier.price);
       filled += attendanceAtLevel;
       revenue += ticketRevenue;
-      return { ...tier, attendance: attendanceAtLevel, revenue: ticketRevenue };
+      return { ...tier, attendance: attendanceAtLevel, occupancy: tier.capacity ? attendanceAtLevel / tier.capacity : 0,
+        revenue: ticketRevenue };
     });
     totalAttendance += filled;
     totalRevenue += revenue;
-    return { ...sector, price, attendance: filled, revenue, levels };
+    return { ...sector, price, attendance: filled, occupancy: sector.capacity ? filled / sector.capacity : 0,
+      revenue, levels };
   });
   return { capacity, attendance: totalAttendance, revenue: totalRevenue, breakdown };
 }

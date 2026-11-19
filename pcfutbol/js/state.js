@@ -1,12 +1,13 @@
 // js/state.js
 
-import { initialLeague, allLeagues } from './data.js?v=1672';
+import { initialLeague, allLeagues } from './data.js?v=1673';
 import { getSeasonStartYear } from './gameSeason.js';
 import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 import { fitPlayersToFormation } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
-import { ensureManagementState, MANAGEMENT_STAGES } from './game/managementCycle.js?v=1672';
+import { ensureManagementState, MANAGEMENT_STAGES } from './game/managementCycle.js?v=1673';
+import { createStadiumRecord } from './stadiums_2026_27.js?v=1673';
 
 export const GameState = {
   meta: {
@@ -211,11 +212,27 @@ function normalizeGameState() {
   
   const season = GameState.currentDate?.season || 1;
 
+  const updatedStadiums = new Map();
+
   GameState.clubs.forEach((club) => {
+    const previous = { name: club?.stadium?.name, capacity: club?.stadium?.capacity };
      ensureClubDefaults(club);
+    if (previous.name !== club?.stadium?.name || previous.capacity !== club?.stadium?.capacity) {
+      updatedStadiums.set(String(club.id), { previous, current: club.stadium });
+    }
     if (!Array.isArray(club.players)) club.players = [];
     club.players.forEach((p) => ensurePlayerDefaults(p, season));
   });
+  // Los guardados que aún usan el recinto provisional deben aplicar su nueva
+  // capacidad también a los partidos futuros, sin alterar los ya disputados.
+  for (const fx of GameState.fixtures || []) {
+    if (fx.played) continue;
+    const change = updatedStadiums.get(String(fx.homeClubId));
+    if (!change || !fx.meta) continue;
+    if (fx.meta.capacity === change.previous.capacity) fx.meta.capacity = change.current.capacity;
+    if (fx.meta.stadiumCapacity === change.previous.capacity) fx.meta.stadiumCapacity = change.current.capacity;
+    if (fx.meta.stadiumName === change.previous.name) fx.meta.stadiumName = change.current.name;
+  }
   
   normalizeWorldLeagues();
 }
@@ -231,6 +248,32 @@ function isPlayerUnavailable(player) {
 
 function ensureClubDefaults(club) {
   if (!club) return;
+
+  // Una partida guardada podía colocar filiales en el estadio del primer
+  // equipo (y Rio Ave con la antigua grada demolida). Migrar solo si todavía
+  // conserva exactamente el nombre y aforo inicial, nunca si se personalizó.
+  const legacyHome = {
+    benfica_b: ['Estádio da Luz', 68100],
+    sporting_b: ['Estádio José Alvalade', 52095],
+    rioave: ['Estádio dos Arcos', 12815],
+  }[club.id];
+  if (legacyHome && club.stadium?.name === legacyHome[0] && club.stadium.capacity === legacyHome[1]) {
+    const updated = createStadiumRecord({ id: club.id, stadiumName: club.stadium.name, capacity: club.stadium.capacity });
+    club.stadium.name = updated.name;
+    club.stadium.capacity = updated.capacity;
+    club.stadium.capacityStatus = updated.capacityStatus;
+  }
+
+  if (club.stadium?.capacityStatus === 'provisional' && /^Estadio de /.test(club.stadium.name || '')) {
+    const updated = createStadiumRecord({ id: club.id, stadiumName: club.stadium.name, capacity: club.stadium.capacity });
+    if (updated.name !== club.stadium.name) {
+      club.stadium.name = updated.name;
+      club.stadium.capacity = updated.capacity;
+      club.stadium.capacityStatus = updated.capacityStatus;
+      // Los datos estructurales nuevos se completan por getStadiumStructure;
+      // se conservan las modificaciones históricas del usuario.
+    }
+  }
 
   // Identidad de 2026/27 para partidas nuevas; las tácticas de partidas
   // guardadas nunca se sobrescriben al normalizar el estado.

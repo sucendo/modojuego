@@ -8,10 +8,10 @@
 	<link rel="stylesheet" href="css/transferMarket.css" />
 	<link rel="stylesheet" href="css/dashboardVisual26.css?v=9" />
 	<link rel="stylesheet" href="css/alignmentVisual26.css?v=3" />
-	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
+	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=2" />
 	<link rel="stylesheet" href="css/matchPostVisual26.css?v=141" />
 	<link rel="stylesheet" href="css/mobileVisual26.css?v=1" />
-	<link rel="stylesheet" href="css/managementCycle26.css?v=1672" />
+	<link rel="stylesheet" href="css/managementCycle26.css?v=1673" />
 </head>
 <body>
 	<header class="app-header">
@@ -448,6 +448,10 @@
 					</div>
 				</div>
 				<div id="pcf-stadium-facts" class="pcf-stadium-facts" aria-label="Ficha del estadio"></div>
+				<figure class="pcf-stadium-photo">
+					<div id="pcf-stadium-photo" class="pcf-stadium-photo__visual" role="img" aria-label="Imagen del estadio"></div>
+					<figcaption id="pcf-stadium-photo-credit">Plano ilustrativo del estadio</figcaption>
+				</figure>
 				<div class="pcf-stadium-layout">
 					<div class="pcf-stadium-board">
 						<h3>3. Zonas del estadio</h3>
@@ -1172,12 +1176,12 @@
 								</div>
 
 								<div class="pcf-stadium">
-									<div class="pcf-stadium__img" aria-hidden="true"></div>
+									<div id="nextmatch-stadium-photo" class="pcf-stadium__img" role="img" aria-label="Imagen del estadio"></div>
 									<div class="pcf-stadium__info">
 										<div id="nextmatch-next-stadium" class="pcf-stadium__name">—</div>
 										<div id="nextmatch-next-attendance" class="pcf-stadium__att">—</div>
 									</div>
-									<div class="pcf-stadium__illustration-note">Imagen ilustrativa del estadio</div>
+									<div id="nextmatch-stadium-photo-credit" class="pcf-stadium__illustration-note">Plano ilustrativo del estadio</div>
 								</div>
 								<div class="pcf-match-facts">
 									<div class="pcf-match-fact"><span>Árbitro</span><strong id="nextmatch-pre-referee">—</strong></div>
@@ -1871,7 +1875,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=1672"></script>
+	<script type="module" src="js/main.js?v=1673"></script>
 	
 </body>
 </html>

@@ -1,13 +1,14 @@
 import { GameState } from '../state.js';
-import { getStadiumStructure } from '../stadiums_2026_27.js?v=1672';
-import { renderStadiumPlan, stadiumPlanAvailable } from './stadiumSvgPlan.js?v=1672';
+import { getStadiumStructure } from '../stadiums_2026_27.js?v=1673';
+import { renderStadiumPlan, stadiumPlanAvailable } from './stadiumSvgPlan.js?v=1673';
+import { renderStadiumPhoto } from './stadiumPhoto.js?v=1673';
 import {
   MANAGEMENT_STAGES, TRAINING_TYPES, TICKET_SECTORS, PLAYER_TRAINING_FOCUS, TRAINED_ATTRIBUTES, ensureManagementState,
   getManagementStage, getPendingUserFixtures, getTicketPrice, getStadiumSectors,
   getTicketSectorPrices, getTicketLevelPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice, setTicketLevelPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
   getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus, getPlayerTrainingReport,
-} from '../game/managementCycle.js?v=1672';
+} from '../game/managementCycle.js?v=1673';
 
 let initialized = false;
 let currentMonth = '';
@@ -192,6 +193,7 @@ function updateTicketView(stage) {
   if (selectedLevel != null && !activeSector?.levels[selectedLevel]) selectedLevel = null;
   const activeLevels = getTicketLevelPrices(GameState, fx, selectedSector);
   const tierCount = structure.levels?.length || 0;
+  renderStadiumPhoto(get('pcf-stadium-photo'), get('pcf-stadium-photo-credit'), home, sectors);
   const facts = get('pcf-stadium-facts');
   if (facts) {
     facts.replaceChildren();
@@ -199,8 +201,13 @@ function updateTicketView(stage) {
       ['Estadio', home?.stadium?.name || 'Por determinar'],
       ['Aforo disponible', `${number(stadiumCapacity)} localidades`],
       ['Origen del aforo', home?.stadium?.capacityStatus === 'official' ? 'Fuente oficial' :
-        home?.stadium?.capacityStatus === 'provisional' ? 'Provisional' : 'Catálogo del juego'],
-      ['Graderíos / niveles', tierCount ? `${tierCount} niveles${structure.amphitheaters ? ` · ${structure.amphitheaters} anfiteatros` : ''}` : 'Pendiente de verificar'],
+        home?.stadium?.capacityStatus === 'wikidata' ? 'Wikidata · por contrastar' :
+          home?.stadium?.capacityStatus === 'reference' ? 'Fuente externa · por contrastar' :
+          home?.stadium?.capacityStatus === 'provisional' ? 'Provisional' : 'Catálogo del juego'],
+      ['Graderíos / niveles', structure.status === 'documented'
+        ? `${tierCount} niveles${structure.amphitheaters ? ` · ${structure.amphitheaters} anfiteatros` : ''}`
+        : structure.status === 'partial' ? `Datos parciales verificados · resto orientativo`
+        : `${tierCount} franjas orientativas · niveles reales pendientes`],
       ['Distribución por zonas', structure.sectorCapacities ? 'Desglose del estadio' : 'Estimación proporcional'],
     ];
     if (structure.plannedCapacity && structure.plannedCapacity > stadiumCapacity) {
@@ -212,6 +219,21 @@ function updateTicketView(stage) {
       const count = document.createElement('strong'); count.textContent = value;
       item.append(name, count); facts.append(item);
     }
+    if (structure.source?.startsWith('https://')) {
+      const item = document.createElement('div'); item.className = 'pcf-stadium-facts__item';
+      const label = document.createElement('span'); label.textContent = 'Documentación';
+      const link = document.createElement('a'); link.href = structure.source;
+      link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.textContent = 'Consultar fuente del aforo';
+      item.append(label, link);
+      if (structure.structureSource?.startsWith('https://') && structure.structureSource !== structure.source) {
+        const levelsLink = document.createElement('a'); levelsLink.href = structure.structureSource;
+        levelsLink.target = '_blank'; levelsLink.rel = 'noopener noreferrer';
+        levelsLink.textContent = 'Consultar fuente de las gradas';
+        item.append(levelsLink);
+      }
+      facts.append(item);
+    }
   }
   text('pcf-stadium-capacity', `${number(stadiumCapacity)} localidades · Selecciona una zona y su tarifa${tierCount ? '; también puedes elegir cada altura.' : '. Los niveles están pendientes de documentar.'}`);
 
@@ -219,7 +241,8 @@ function updateTicketView(stage) {
   const plan = stadiumPlanAvailable(structure.plan) ? structure.plan : 'generic';
   if (map && stadiumPlanAvailable(plan)) {
     const levelPrices = Object.fromEntries(sectors.map(sector => [sector.id, getTicketLevelPrices(GameState, fx, sector.id)]));
-    renderStadiumPlan(map, { plan, stadiumName: home?.stadium?.name, sectors, prices, levelPrices, selectedSector, selectedLevel });
+    renderStadiumPlan(map, { plan, stadiumName: home?.stadium?.name,
+      sectors: projection?.breakdown || sectors, structure, prices, levelPrices, selectedSector, selectedLevel });
   }
   const list = get('pcf-ticket-sector-list');
   if (list) {
