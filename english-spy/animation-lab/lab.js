@@ -87,18 +87,23 @@
   }
   const objects=[
     {id:'sofa',name:'Sillón',x:226,y:479,radius:128,go:{x:398,y:526},action:'look'},
-    {id:'desk',name:'Mesa de trabajo',x:629,y:476,radius:120,go:{x:602,y:600},action:'look'},
+    {id:'desk',name:'Mesa de trabajo',x:629,y:476,radius:120,go:{x:602,y:635},action:'look'},
     {id:'note',name:'Documento',x:730,y:616,radius:36,go:{x:748,y:630},action:'pick'},
     {id:'chair',name:'Silla',x:830,y:551,radius:70,go:{x:915,y:620},action:'sit'},
     {id:'plant',name:'Planta',x:1015,y:500,radius:70,go:{x:926,y:581},action:'look'},
     {id:'painting',name:'Cuadro',x:376,y:177,radius:98,go:{x:410,y:383},action:'point'},
     {id:'door',name:'Puerta',x:1090,y:282,radius:94,go:{x:1101,y:388},action:'open'}
   ];
+  // Floor-space reservations, not just the visible centres of the props.
+  // The former small rectangles left a walkable strip aligned exactly with
+  // the desk's tabletop; on mobile, the agent's boots seemed to run ON it.
+  // Route along the foreground aisle and around the sides of each piece.
+  // No boxes are rendered; these coordinates are only collision geometry.
   const obstacles=[
-    {x1:95,y1:450,x2:353,y2:562},
-    {x1:499,y1:478,x2:762,y2:557},
-    {x1:768,y1:517,x2:892,y2:608},
-    {x1:960,y1:519,x2:1082,y2:652}
+    {id:'sofa',x1:80,y1:378,x2:371,y2:610},
+    {id:'desk',x1:465,y1:378,x2:798,y2:613},
+    {id:'chair',x1:762,y1:489,x2:901,y2:614},
+    {id:'plant',x1:954,y1:476,x2:1123,y2:655}
   ];
   const now=()=>performance.now();
   function notify(message){tip.textContent=message;}
@@ -689,7 +694,9 @@
     const depthScale=lerp(.50,.87,clamp((agent.y-350)/305,0,1));
     const size=depthScale*frame.factor;
     const phase=Math.floor(agent.stride)%8;
-    const bob=agent.moving?(f.run?[0,3,-8,-5,0,3,-8,-5][phase]:Math.sin(agent.stride*Math.PI)*1.1):0;
+    // The running atlas already draws the alternating lifted leg. An extra
+    // -8px shift lifted BOTH boots off the ground and made the actor hover.
+    const bob=agent.moving&&!f.run?Math.sin(agent.stride*Math.PI)*.8:0;
     shadow(agent.x,agent.y,42*depthScale,8*depthScale);
     ctx.save();ctx.translate(agent.x,agent.y+bob);
     if(f.conversing&&dialogue.speaking)ctx.rotate(Math.sin(t/170)*.008);
@@ -704,7 +711,10 @@
     ctx.clearRect(0,0,screen.w,screen.h);fill(0,0,screen.w,screen.h,'#0d1621');
     ctx.save();ctx.translate(camera.left,camera.top);ctx.scale(camera.scale,camera.scale);ctx.translate(-camera.x,-camera.y);
     room();note();
-    const items=[{y:558,fn:sofa},{y:555,fn:desk},{y:607,fn:chair},{y:651,fn:plant},{y:agent.y,fn:()=>drawAgent(t)}];
+    // Prop sorting uses the actual bottom of each sprite (floor contact),
+    // rather than its tabletop/seat centre. A character behind a prop is
+    // properly covered; in front, the character is drawn on top of it.
+    const items=[{y:582,fn:sofa},{y:591,fn:desk},{y:633,fn:chair},{y:675,fn:plant},{y:agent.y,fn:()=>drawAgent(t)}];
     items.sort((a,b)=>a.y-b.y);for(const item of items)item.fn();
     if(targetMark&&targetMark.until>t){ctx.globalAlpha=(targetMark.until-t)/1100*.6;
       const {x,y}=targetMark;line(x-8,y,x+8,y,'#f4c476',2);line(x,y-6,x,y+6,'#f4c476',2);ctx.globalAlpha=1;}
