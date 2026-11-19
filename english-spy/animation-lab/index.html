@@ -25,7 +25,7 @@
     .dpad-wrap{display:flex;align-items:center;gap:12px;min-width:220px}.dpad{width:132px;display:grid;grid-template:repeat(3,39px)/repeat(3,39px);gap:3px;touch-action:none;user-select:none}
     .dir{border:1px solid #65758a;background:linear-gradient(#30455f,#23364a);border-radius:5px;font-size:23px;font-weight:800;display:flex;align-items:center;justify-content:center;user-select:none;touch-action:none}.dir:active,.dir.pressed{background:#ca9050;color:#102033;border-color:#f2c17e}.dir[data-dir="up"]{grid-column:2;grid-row:1}.dir[data-dir="left"]{grid-column:1;grid-row:2}.dir[data-dir="right"]{grid-column:3;grid-row:2}.dir[data-dir="down"]{grid-column:2;grid-row:3}.dpad-center{grid-column:2;grid-row:2;background:#152335;border:1px solid #465770;border-radius:50%;margin:9px}
     .dpad-note{max-width:145px;font-size:12px;line-height:1.45;color:#bac5d2}
-    .actions{min-width:0;flex:1}.action-list{display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:6px}.action-list button{min-height:43px;padding:5px 5px;border-radius:5px;background:#21344b;border:1px solid #657287;font-size:12px;font-weight:750}.action-list button:hover{background:#344b63}.action-list button:active,.action-list button.active{background:#a77640;color:#101824;border-color:#efc181}
+    .actions{min-width:0;flex:1}.action-list{display:grid;grid-template-columns:repeat(9,minmax(60px,1fr));gap:6px}.action-list button{min-height:43px;padding:5px 5px;border-radius:5px;background:#21344b;border:1px solid #657287;font-size:12px;font-weight:750}.action-list button:hover{background:#344b63}.action-list button:active,.action-list button.active{background:#a77640;color:#101824;border-color:#efc181}
     .action-info{margin-top:10px;min-height:25px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:#c6d1dd}.action-info strong{color:#f1c27a}.inventory{border:1px solid #66758a;color:#e2e7f0;border-radius:4px;background:#182c43;padding:5px 8px;font-size:12px}
     .footnote{flex:none;font-size:11px;padding:5px 16px;background:#0b1421;color:#98a7b8;text-align:center;border-top:1px solid #293e51}
     .atlas-backdrop[hidden]{display:none}.atlas-backdrop{position:absolute;inset:0;z-index:20;background:#07101bdc;display:grid;place-items:center;padding:18px;overflow:auto}
@@ -35,7 +35,7 @@
     @media(max-width:980px){.hud{gap:10px}.action-list{grid-template-columns:repeat(4,minmax(65px,1fr))}.action-list button{min-height:38px}.dpad-wrap{min-width:160px}.dpad-note{display:none}}
     @media(max-width:680px){.top{min-height:59px;padding:8px 10px}.brand h1{font-size:12px;letter-spacing:.08em}.brand p{font-size:10px;letter-spacing:0}.diamond{font-size:18px}.top-actions{gap:5px}.top button,.top a{padding:9px 7px;font-size:11px}.top a{display:none}.hud{padding:8px;min-height:193px;gap:8px}.hud-title{margin-bottom:5px;font-size:10px}.dpad-wrap{min-width:142px;align-items:flex-start}.dpad{width:138px;grid-template:repeat(3,44px)/repeat(3,44px);gap:3px}.dir{font-size:22px}.actions{flex:1}.action-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.action-list button{padding:3px 2px;min-height:42px;font-size:11px}.action-info{font-size:11px;margin-top:5px;gap:6px}.inventory{font-size:10px;padding:4px 5px}.footnote{padding:5px 8px;font-size:10px}.scene-tip{font-size:11px;bottom:7px}.stage-caption{font-size:10px;top:8px;left:8px}.atlas-backdrop{padding:8px}.atlas-head{padding:10px}.atlas-head h2{font-size:14px}.atlas-head-actions{gap:5px}.atlas-head button{padding:7px;font-size:10px}.pose-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px}.pose-card{min-height:116px}.pose-card canvas{height:84px}.pose-card span{font-size:10px}}
     @media(max-width:420px){.brand p{max-width:180px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.top button{max-width:94px}.action-info{line-height:1.2}}
-    @media(orientation:landscape) and (max-height:560px){.top{min-height:42px;padding:5px 9px}.brand h1{font-size:12px}.brand p{display:none}.hud{min-height:134px;padding:5px 10px;align-items:center}.hud-title{display:none}.dpad-wrap{min-width:145px}.dpad{width:124px;grid-template:repeat(3,40px)/repeat(3,40px);gap:2px}.dir{font-size:19px}.action-list{grid-template-columns:repeat(7,minmax(50px,1fr))}.action-list button{min-height:43px}.action-info{margin-top:5px}.footnote{display:none}}
+    @media(orientation:landscape) and (max-height:560px){.top{min-height:42px;padding:5px 9px}.brand h1{font-size:12px}.brand p{display:none}.hud{min-height:134px;padding:5px 10px;align-items:center}.hud-title{display:none}.dpad-wrap{min-width:145px}.dpad{width:124px;grid-template:repeat(3,40px)/repeat(3,40px);gap:2px}.dir{font-size:19px}.action-list{grid-template-columns:repeat(9,minmax(50px,1fr))}.action-list button{min-height:43px}.action-info{margin-top:5px}.footnote{display:none}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
   </style>
 </head>
@@ -44,7 +44,7 @@
   <header class="top">
     <div class="brand"><span class="diamond" aria-hidden="true">◆</span><div><h1>ENGLISH SPY · ANIMATION LAB</h1><p>OPERACIÓN BLACKWOOD · SALA DE MOVIMIENTOS</p></div></div>
     <div class="top-actions">
-      <button id="atlas-toggle" class="primary" type="button">Ver 20 poses</button>
+      <button id="atlas-toggle" class="primary" type="button">Ver 38 poses</button>
       <button id="reset" type="button">Reiniciar</button>
       <a href="../pixel-rebuild/">Volver al juego</a>
     </div>
@@ -61,18 +61,18 @@
       </div></div><div class="dpad-note">Mantenlo pulsado para caminar. También puedes tocar un punto del suelo.</div>
     </div>
     <div class="actions"><span class="hud-title">PROBAR ANIMACIONES</span><div class="action-list">
-      <button data-action="talk" type="button">Hablar</button><button data-action="look" type="button">Examinar</button><button data-action="pick" type="button">Recoger</button><button data-action="point" type="button">Señalar</button><button data-action="listen" type="button">Escuchar</button><button data-action="turn" type="button">Girar</button><button data-action="open" type="button">Abrir</button>
+      <button data-action="run" id="run-toggle" type="button" aria-pressed="false">Correr: No</button><button data-action="sit" id="sit-toggle" type="button">Sentarse</button><button data-action="talk" type="button">Hablar</button><button data-action="look" type="button">Examinar</button><button data-action="pick" type="button">Recoger</button><button data-action="point" type="button">Señalar</button><button data-action="listen" type="button">Escuchar</button><button data-action="turn" type="button">Girar</button><button data-action="open" type="button">Abrir</button>
     </div><div class="action-info"><span id="status">Estado: <strong>En reposo</strong></span><span class="inventory" id="inventory">Inventario: vacío</span></div></div>
   </section>
-  <footer class="footnote">Prototipo táctil independiente · Sprites de referencia del protagonista · Sin cambios en la aventura principal</footer>
+  <footer class="footnote">Caminar, correr y sentarse · Shift para correr en ordenador · Controles táctiles para móvil · Aventura principal intacta</footer>
 </main>
 <div class="atlas-backdrop" id="atlas-backdrop" hidden role="presentation">
   <section class="atlas" role="dialog" aria-modal="true" aria-labelledby="atlas-title">
-    <header class="atlas-head"><div><h2 id="atlas-title">20 poses del protagonista</h2><p>Toca una pose para verla a tamaño real en la habitación.</p></div>
+    <header class="atlas-head"><div><h2 id="atlas-title">38 poses del protagonista</h2><p>Incluye ocho fases laterales, ocho de carrera y seis para sentarse y levantarse.</p></div>
       <div class="atlas-head-actions"><button id="play-all" type="button">Reproducir todas</button><button id="atlas-close" type="button">Cerrar</button></div></header>
     <div class="pose-grid" id="pose-grid"></div>
   </section>
 </div>
-<script src="./lab.js?v=1" defer></script>
+<script src="./lab.js?v=2" defer></script>
 </body>
 </html>
