@@ -73,12 +73,12 @@ test('ninguna plantilla deja dorsales vacíos; se señalan las asignaciones prov
   assert.ok(provisional > 0, 'Hay ligas que no publican todos los dorsales');
 });
 
-test('los 14 campeonatos tienen su propia temporada y sus jornadas se distribuyen en varias fechas', () => {
+test('los 14 campeonatos respetan los cruces oficiales de 2026/27 y pueden generar fechas futuras', () => {
   assert.equal(Object.keys(LEAGUE_CALENDARS).length, allLeagues.length);
   const firstDates = new Set();
   for (const league of allLeagues) {
     const rounds = (league.clubs.length - 1) * 2;
-    const dates = getLeagueRoundDates(league.id, 1, rounds);
+    const dates = getLeagueRoundDates(league.id, 2, rounds);
     assert.equal(dates.length, rounds, league.id);
     dates.forEach((date, i) => {
       assert.ok(Number.isFinite(date.getTime()), league.id);
@@ -88,10 +88,10 @@ test('los 14 campeonatos tienen su propia temporada y sus jornadas se distribuye
     newGame({ leagueId: league.id, clubId: league.clubs[0].id });
     const fixtures = GameState.fixtures.filter(f => f.matchday === 1);
     assert.equal(fixtures.length, league.clubs.length / 2);
-    assert.ok(fixtures.every(f => f.kickoffDate && f.meta?.official === false));
-    assert.ok(new Set(fixtures.map(f => f.kickoffDate.slice(0, 10))).size > 1,
-      `${league.id} tiene todos los partidos el mismo día`);
-    assert.equal(fixtures.map(f => f.kickoffDate).sort()[0].slice(0, 10), dates[0].toISOString().slice(0, 10));
+    assert.ok(fixtures.every(f => f.kickoffDate && f.meta?.official === true),
+      `${league.id} debe tener su calendario oficial`);
+    assert.ok(fixtures.every(f => f.kickoffDate.startsWith('2026-')),
+      `${league.id} debe comenzar en agosto de 2026`);
   }
   assert.ok(firstDates.size >= 5, 'Los países no deben comenzar todas las ligas el mismo día');
 });

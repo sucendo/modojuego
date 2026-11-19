@@ -3,6 +3,7 @@
 import { initialLeague, allLeagues } from './data.js?v=1673';
 import { getSeasonStartYear } from './gameSeason.js';
 import { assignLeagueFixtureDates } from './game/seasonCalendar.js';
+import { buildOfficialSeason2026 } from './game/officialSeason2026.js';
 import { isGoalkeeper, selectValidStartingXI } from './game/utils/lineupSelection.js';
 import { fitPlayersToFormation } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
@@ -143,6 +144,8 @@ export function newGame(options = {}) {
   const firstMatch = (GameState.fixtures || []).filter(f => !f.played && (f.homeClubId === selectedClubId || f.awayClubId === selectedClubId))
     .sort((a,b) => Date.parse(a.kickoffDate) - Date.parse(b.kickoffDate))[0];
   if (firstMatch?.kickoffDate) {
+    // Un aplazamiento real puede hacer que la jornada 2 se dispute antes de la 1.
+    GameState.currentDate.matchday = Number(firstMatch.matchday || 1);
     const day = new Date(firstMatch.kickoffDate);
     day.setUTCDate(day.getUTCDate() - 6);
     day.setUTCHours(9, 0, 0, 0);
@@ -947,14 +950,15 @@ function clampAttr(v) {
 /**
  * Prepara el calendario y la clasificación inicial.
  *
- * Regla:
- *  - Todas las competiciones 2026/27 generan round-robin hasta incorporar
- *    sus calendarios oficiales respectivos. Nunca reutilizar el de 2025/26.
+ * 2026/27: los calendarios publicados (cruces, localía y fechas conocidas).
+ * 2027/28 en adelante: calendario nuevo de ida y vuelta equilibrado.
  */
 function setupCompetition() {
   const season = Number(GameState.currentDate?.season || 1);
   const clubIds = (GameState.clubs || []).map((c) => c?.id).filter(Boolean);
-  const built = generateRoundRobinFixtures(clubIds);
+  const built = season === 1
+    ? buildOfficialSeason2026(GameState.league?.id, clubIds, getRandomReferee)
+    : generateRoundRobinFixtures(clubIds);
   decorateGeneratedFixturesWithSchedule(built.fixtures, season);
 
   GameState.fixtures = built.fixtures || [];
@@ -1035,7 +1039,9 @@ function setupWorldLeagues() {
     });
 
     const clubIds = clubs.map((c) => c.id).filter(Boolean);
-    const { fixtures, maxMatchday } = generateRoundRobinFixtures(clubIds);
+    const { fixtures, maxMatchday } = season === 1
+      ? buildOfficialSeason2026(l.id, clubIds, getRandomReferee)
+      : generateRoundRobinFixtures(clubIds);
     fixtures.forEach((fx) => {
       fx.season = season;
       fx.statsApplied = false;
@@ -1112,8 +1118,11 @@ function generateRoundRobinFixtures(clubIds) {
   // ---------------------------
   for (let round = 1; round <= numRounds; round++) {
     for (let i = 0; i < n / 2; i++) {
-      const home = currentOrder[i];
-      const away = currentOrder[n - 1 - i];
+      // Patrón Berger: alterna las localías en cada jornada, incluso para
+      // el equipo fijo del círculo. Evita 19 partidos seguidos en casa.
+      const swapHome = i === 0 ? round % 2 === 1 : round % 2 === 0;
+      const home = currentOrder[swapHome ? n - 1 - i : i];
+      const away = currentOrder[swapHome ? i : n - 1 - i];
       if (home === BYE || away === BYE) continue;
 
       const referee = getRandomReferee();

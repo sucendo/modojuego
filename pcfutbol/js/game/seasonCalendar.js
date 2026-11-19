@@ -1,6 +1,5 @@
-// Fechas de arranque y cierre 2026/27 por competición.
-// Las fechas principales documentadas son reales; los EMPAREJAMIENTOS y
-// horarios son una simulación generada, NO el calendario oficial partido a partido.
+// Ventanas orientativas para el generador de temporadas posteriores a 2026/27.
+// Los cruces y fechas oficiales de 2026/27 se importan en officialSeason2026.js.
 import { getSeasonStartYear } from '../gameSeason.js';
 
 export const LEAGUE_CALENDARS = Object.freeze({

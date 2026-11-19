@@ -44,6 +44,7 @@ function setSelectValueSafe(selectEl, value) {
 function getFixtureKickoffTime(fx, idxInList = 0) {
   const t = fx?.kickoffTime;
   if (typeof t === 'string' && t.includes(':')) return t;
+  if (fx?.meta?.official) return 'Pendiente';
   const slots = ['16:00', '18:15', '20:30', '22:00'];
   return slots[Math.max(0, idxInList) % slots.length];
 }

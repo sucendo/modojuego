@@ -6,7 +6,7 @@ import { GameState } from '../state.js';
 import { getSeasonLabel } from '../gameSeason.js';
 import { getUserClub } from '../game/selectors.js';
 import { advanceToNextManagementDay } from '../game/simulateMatchday.js?v=1673';
-import { MANAGEMENT_STAGES, getManagementStage, getStadiumSectors } from '../game/managementCycle.js?v=1673';
+import { MANAGEMENT_STAGES, getManagementStage, getPendingUserFixtures, getStadiumSectors } from '../game/managementCycle.js?v=1673';
 import { renderStadiumPhoto } from './stadiumPhoto.js?v=1673';
 import {
   getGameDateFor,
@@ -200,6 +200,7 @@ function ensureMatchScreenBindings() {
 function getKickoffTime(fx, idx = 0) {
   const t = fx?.kickoffTime;
   if (typeof t === 'string' && t.includes(':')) return t;
+  if (fx?.meta?.official) return 'Pendiente';
   const slots = ['16:00', '18:00', '20:30', '22:00'];
   return slots[Math.max(0, idx) % slots.length];
 }
@@ -996,7 +997,7 @@ export function updateNextMatchView() {
   // ----------------
   // PREVIA: próximo partido (jornada actual)
   // ----------------
-  const nextFx = getFixtureForUser(currentMd, userId, fixtures);
+  const nextFx = getPendingUserFixtures(GameState)[0] || getFixtureForUser(currentMd, userId, fixtures);
 
   if (!nextFx) {
     setText('nextmatch-next-title', 'No hay próximo partido');
