@@ -122,7 +122,9 @@
     save.flags.introSeen=true;persist();
     Object.assign(agent,{x:305,y:594,facing:1,moving:false,stride:0});
     Object.assign(terraceWaiter,{x:1090,y:403,stride:0,facing:-1,held:false});
-    terraceWaiter.path=route('terrace',terraceWaiter,{x:390,y:575},false);
+    // Gabriel steps out of the café and waits beside the entrance. Sending him
+    // across the occupied terrace would visually place his legs over the tables.
+    terraceWaiter.path=route('terrace',terraceWaiter,{x:1075,y:406},false);
     $('cinematic').hidden=true;refresh();
     tell('Find a clue. Talk to Gabriel.','Busca una pista. Habla con Gabriel.');
   }
