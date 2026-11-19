@@ -17,7 +17,7 @@
   const SCENES = {
     terrace:{
       image:'./assets/terrace-pixel.webp',name:'PLAZA DE ORIENTE · CAFÉ DE ORIENTE · 18:47',spawn:[290,590],
-      perspective:{farY:405,nearY:655,farScale:.64,nearScale:1.52,doorway:{x:1095,y:476,rangeX:280,rangeY:180,boost:.43}},
+      perspective:{farY:405,nearY:655,farScale:.64,nearScale:2.02,doorway:{x:1095,y:476,rangeX:280,rangeY:180,boost:.26}},
       actors:[{role:'stranger',x:380,y:477}],
       // Floor routes are narrow, connected walkways. The rear route goes BEHIND
       // the terrace furniture; it no longer cuts through the middle of it.
@@ -34,18 +34,36 @@
           masks:[{footY:667,poly:[[0,430],[155,426],[230,485],[227,675],[0,675]]}]},
         {id:'planter',foot:[[422,481],[551,477],[562,542],[426,543]],
           masks:[{footY:552,poly:[[422,430],[452,376],[519,378],[556,414],[566,539],[434,543]]}]},
-        {id:'terrace-chairs-a',foot:[[627,423],[715,412],[730,521],[626,530]],
-          masks:[{footY:535,poly:[[624,391],[721,383],[737,532],[621,531]]}]},
-        {id:'terrace-chairs-b',foot:[[727,410],[826,402],[841,512],[723,521]],
-          masks:[{footY:524,poly:[[722,377],[831,370],[849,521],[712,522]]}]},
-        {id:'terrace-chairs-c',foot:[[833,410],[956,403],[976,516],[831,520]],
-          masks:[{footY:527,poly:[[826,376],[963,371],[988,522],[817,525]]}]},
+        {id:'terrace-chair-left',foot:[[627,423],[715,412],[730,521],[626,530]],
+          masks:[{footY:535,poly:[[625,392],[659,384],[690,385],[721,406],[735,527],[620,531]]}]},
+        {id:'terrace-chair-centre',foot:[[727,410],[826,402],[841,512],[723,521]],
+          masks:[{footY:524,poly:[[725,378],[768,371],[805,378],[834,401],[847,516],[713,521]]}]},
+        {id:'terrace-chair-right',foot:[[833,410],[956,403],[976,516],[831,520]],
+          masks:[{footY:527,poly:[[832,379],[872,370],[931,374],[966,397],[981,521],[820,523]]}]},
         {id:'door-planter',foot:[[915,434],[1039,430],[1053,532],[913,536]],
           masks:[{footY:540,poly:[[900,405],[941,364],[1038,374],[1064,417],[1064,526],[912,534]]}]},
+        // Each foreground object is a separate cutout. A table is not the
+        // chair beside it, and its thin pedestal is not a huge opaque box.
         {id:'foreground-table',foot:[[550,551],[614,526],[995,513],[1059,566],[1026,675],[622,675]],
-          masks:[{footY:676,poly:[[541,561],[565,515],[635,496],[955,489],[1034,522],[1054,571],[1023,601],[957,630],[638,638],[551,606]]}]},
+          masks:[
+            {part:'marble-top',footY:627,poly:[[551,542],[569,515],[647,485],[905,477],[957,481],[1031,519],[1052,555],[1044,582],[1012,599],[969,606],[911,607],[643,602],[580,586],[549,567]]},
+            {part:'pedestal',footY:677,poly:[[730,587],[778,595],[819,590],[842,675],[713,675]]}
+          ]},
         {id:'foreground-chair',foot:[[1012,511],[1087,458],[1200,478],[1200,675],[1026,675]],
-          masks:[{footY:684,poly:[[978,460],[1048,412],[1200,428],[1200,675],[1025,675]]}]},
+          masks:[
+            {part:'back-top-rail',footY:671,poly:[[966,418],[978,407],[1008,399],[1097,399],[1128,407],[1142,426],[1132,443],[989,436],[971,448]]},
+            {part:'back-left-rail',footY:672,poly:[[964,425],[991,421],[998,547],[982,585],[965,585]]},
+            {part:'back-right-rail',footY:673,poly:[[1106,419],[1140,425],[1144,530],[1113,589],[1094,577]]},
+            // Only the lattice bars, rather than the empty spaces between
+            // them, should cover the person standing behind the chair.
+            {part:'lattice-diagonal-1',footY:674,poly:[[983,452],[993,449],[1099,552],[1091,562]]},
+            {part:'lattice-diagonal-2',footY:674,poly:[[1005,446],[1015,444],[1118,543],[1110,554]]},
+            {part:'lattice-diagonal-3',footY:674,poly:[[1106,450],[1116,454],[998,563],[986,561]]},
+            {part:'lattice-diagonal-4',footY:674,poly:[[1080,446],[1090,449],[987,551],[979,545]]},
+            {part:'seat',footY:681,poly:[[838,590],[874,580],[992,582],[1084,589],[1105,617],[1083,655],[865,666],[835,641]]},
+            {part:'front-legs',footY:685,poly:[[845,630],[878,625],[900,675],[844,675]]},
+            {part:'rear-legs',footY:685,poly:[[1060,624],[1097,612],[1115,675],[1064,675]]}
+          ]},
       ],
       hotspots:[
         {id:'receipt',x:840,y:545,w:86,h:60,walk:[557,595],label:'Folded receipt'},
@@ -57,7 +75,7 @@
     },
     interior:{
       image:'./assets/interior-pixel.webp',name:'CAFÉ DE ORIENTE · SALÓN · 18:52',spawn:[1010,575],
-      perspective:{farY:390,nearY:660,farScale:.65,nearScale:1.47,doorway:{x:1022,y:469,rangeX:172,rangeY:185,boost:.13}},
+      perspective:{farY:390,nearY:660,farScale:.65,nearScale:1.94,doorway:{x:1022,y:469,rangeX:172,rangeY:185,boost:.08}},
       actors:[{role:'carmen',x:418,y:582}],
       corridors:[
         [343,450,439,645], // Between the reception and the red chair
@@ -71,7 +89,10 @@
         {id:'reception-counter',foot:[[0,478],[328,461],[346,675],[0,675]],
           // The counter ends at x≈345. The old cutout reached x=462 and
           // incorrectly removed the agent and Carmen in the open side aisle.
-          masks:[{footY:675,poly:[[0,405],[327,394],[345,425],[347,675],[0,675]]}]},
+          masks:[
+            {part:'wooden-top',footY:656,poly:[[0,416],[90,397],[311,392],[340,416],[334,478],[0,486]]},
+            {part:'counter-front',footY:675,poly:[[0,473],[332,462],[346,675],[0,675]]}
+          ]},
         {id:'rear-dining',foot:[[468,459],[736,452],[784,489],[460,497]],
           masks:[
             // Mask only chair seats and legs, not the empty air above them.
@@ -79,9 +100,19 @@
             {footY:466,poly:[[653,418],[707,393],[771,400],[785,460],[652,463]]}
           ]},
         {id:'main-table',foot:[[429,482],[506,432],[754,430],[833,487],[864,670],[476,675]],
-          masks:[{footY:676,poly:[[415,512],[470,458],[560,420],[747,420],[833,467],[858,629],[816,675],[461,675]]}]},
+          masks:[
+            {part:'tablecloth-and-objects',footY:665,poly:[[527,436],[550,409],[614,405],[732,405],[786,426],[803,466],[798,579],[775,622],[733,647],[573,642],[546,598]]},
+            {part:'table-legs',footY:675,poly:[[552,618],[602,617],[617,675],[548,675]]}
+          ]},
+        {id:'main-chair-near',foot:[[450,523],[622,507],[652,675],[458,675]],
+          masks:[{part:'upholstery-and-legs',footY:676,poly:[[426,464],[445,427],[486,417],[536,430],[560,460],[571,538],[611,566],[637,591],[650,675],[460,675],[450,609]]}]},
+        {id:'main-chair-right',foot:[[756,483],[822,455],[848,675],[769,675]],
+          masks:[{part:'upholstery-and-legs',footY:676,poly:[[762,412],[784,380],[817,372],[841,395],[848,465],[830,675],[775,675]]}]},
         {id:'serving-trolley',foot:[[1052,444],[1175,445],[1200,628],[1085,653],[1045,553]],
-          masks:[{footY:677,poly:[[1043,351],[1081,338],[1190,348],[1200,380],[1200,606],[1117,649],[1048,621]]}]},
+          masks:[
+            {part:'upper-tray',footY:601,poly:[[1037,371],[1052,353],[1123,342],[1177,350],[1197,368],[1195,402],[1050,410]]},
+            {part:'frame-and-shelves',footY:666,poly:[[1047,398],[1081,402],[1086,587],[1177,581],[1198,390],[1200,605],[1170,658],[1104,648],[1042,614]]}
+          ]},
       ],
       hotspots:[
         {id:'carmen',x:419,y:503,w:92,h:152,walk:[368,591],label:'Speak with Carmen'},
@@ -116,9 +147,9 @@
     img.onload=()=>{if(role===state.avatar.style)drawAvatarPreview();};
     spriteImages[role]=img;
   }
-  // Each named prop owns BOTH its floor collision and the artwork that must
-  // cover actors behind it. The render order is now based on the PROP'S feet,
-  // rather than an unrelated hand-picked depth for an entire scene.
+  // Each table, chair, counter and planter has its own object and cutouts.
+  // The original background is only the paint source: narrow, transparent
+  // cutouts are rendered again at the individual piece's actual ground depth.
   function prepareForegrounds(id){
     const bg=scenes[id],layers=SCENES[id].props.flatMap(prop=>
       (prop.masks||[]).map(mask=>({...mask,owner:prop.id,depth:mask.footY})));
@@ -132,7 +163,7 @@
       const m=mask.getContext('2d');m.beginPath();
       layer.poly.forEach(([x,y],i)=>i?m.lineTo(x-left,y-top):m.moveTo(x-left,y-top));m.closePath();m.clip();
       m.imageSmoothingEnabled=true;m.drawImage(bg,-left,-top,W,H);
-      return {depth:layer.depth,x:left,y:top,canvas:mask};
+      return {owner:layer.owner,part:layer.part||'body',depth:layer.depth,x:left,y:top,canvas:mask};
     });
   }
   // The original illustration already contains the receipt. The restoration
@@ -345,7 +376,7 @@
       const h=liveHotspot(base.id)||base,visible=base.id!=='gabriel'||Boolean(liveHotspot('gabriel'));
       const acquired=(h.id==='receipt'&&has('receipt'))||(h.id==='table'&&has('key'))||(h.id==='note'&&has('note'));
       const translation=state.help?' · '+LABEL_ES[h.id]:'';
-      return `<button class="hotspot ${acquired?'revealed':''}" ${visible?'':'hidden'} data-hotspot="${h.id}" style="left:${(h.x/W*100).toFixed(2)}%;top:${(h.y/H*100).toFixed(2)}%;--hit-width:${(h.w/W*100).toFixed(2)}%;--hit-height:${(h.h/H*100).toFixed(2)}%" aria-label="${esc(h.label)}" title="${esc(h.label+translation)}"><span class="hotspot-label">${esc(h.label+translation)}</span></button>`;
+      return `<button class="hotspot ${acquired?'revealed':''}" ${visible?'':'hidden'} data-hotspot="${h.id}" style="left:${(h.x/W*100).toFixed(2)}%;top:${(h.y/H*100).toFixed(2)}%;--hit-width:${(h.w/W*100).toFixed(2)}%;--hit-height:${(h.h/H*100).toFixed(2)}%" aria-label="${esc(h.label)}"><span class="hotspot-label">${esc(h.label+translation)}</span></button>`;
     }).join('');
   }
   function trackGabriel(g){
@@ -452,10 +483,9 @@
     }
     return smooth;
   }
-  // Optional authoring overlay: /pixel-preview/?navdebug=1. No debug graphics
-  // appear in a normal game, and these pure helpers cannot change a save.
-  const navDebug=new URLSearchParams(location.search).has('navdebug');
-  if(navDebug){
+  // Read-only route diagnostics for testing; never paints selection rectangles
+  // over a scene, even when someone opens an old bookmarked debug URL.
+  if(new URLSearchParams(location.search).has('navqa')){
     const report=Object.entries(SCENES).map(([id,s])=>({scene:id,
       routes:s.hotspots.map(h=>{
         const route=routeTo(id,{x:s.spawn[0],y:s.spawn[1]},{x:h.walk[0],y:h.walk[1]});
@@ -467,21 +497,6 @@
         .map(a=>{const b=GABRIEL_STOPS[GABRIEL_STOPS.indexOf(a)+1];return [a.t,b.t,lineClear(id,a,b)];})
     }));
     document.body.dataset.navqa=JSON.stringify(report);
-  }
-  function drawNavDebug(){
-    const data=SCENES[state.scene];ctx.save();
-    ctx.lineWidth=2;
-    for(const [l,t,r,b] of data.corridors){
-      ctx.fillStyle='#43ff6b16';ctx.fillRect(l,t,r-l,b-t);
-      ctx.strokeStyle='#3cff77a9';ctx.strokeRect(l,t,r-l,b-t);
-    }
-    for(const prop of data.props){
-      if(!prop.foot)continue;
-      ctx.beginPath();prop.foot.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();
-      ctx.fillStyle='#ff3a5d33';ctx.fill();ctx.strokeStyle='#ff6878df';ctx.stroke();
-    }
-    ctx.strokeStyle='#fff2a0';ctx.beginPath();ctx.moveTo(actor.x,actor.y);
-    for(const p of path)ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();
   }
   function walkTo(x,y,callback=null){
     const next=routeTo(state.scene,{x:actor.x,y:actor.y},{x,y});
@@ -713,8 +728,6 @@
     }
     drawCollectedPatches();
     trackGabriel(gabriel);
-    if(navDebug)drawNavDebug();
-    if(path.length){const p=path[path.length-1];const pulse=Math.sin(time*5)*2;block(p.x-5-pulse,p.y+4,10+pulse*2,2,'#ffe1a8');}
     requestAnimationFrame(frame);
   }
   function openCustomizer(){
