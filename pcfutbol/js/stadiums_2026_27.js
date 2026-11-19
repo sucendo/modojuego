@@ -21,6 +21,7 @@ const STADIUM_PROFILES = Object.freeze({
   },
   barcelona: {
     capacity: 62652,
+    plan: 'campnou',
     plannedCapacity: 105000,
     levels: ['Primera gradería', 'Segunda gradería'],
     plannedLevels: 3,
@@ -30,12 +31,14 @@ const STADIUM_PROFILES = Object.freeze({
     structureSource: 'https://www.fcbarcelona.es/es/club/instalaciones/spotify-camp-nou',
   },
   realmadrid: {
+    plan: 'bernabeu',
     levels: ['Grada y tribuna', 'Primer anfiteatro', 'Segundo anfiteatro', 'Tercer anfiteatro', 'Cuarto anfiteatro'],
     amphitheaters: 4,
     structureStatus: 'documented',
     structureSource: 'https://www.realmadrid.com/es-ES/area-vip/partido-vip/matchday-grada',
   },
   athletic: {
+    plan: 'sanmames',
     levels: ['Grada baja', 'Grada alta'],
     structureStatus: 'documented',
     structureSource: 'https://www.athletic-club.eus/noticias/2022/12/29/entrenamiento-con-aficion-en-san-mames/',

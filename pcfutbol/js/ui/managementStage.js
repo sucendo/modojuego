@@ -1,13 +1,13 @@
 import { GameState } from '../state.js';
-import { getStadiumStructure } from '../stadiums_2026_27.js?v=1671';
-import { renderStadiumPlan, stadiumPlanAvailable } from './stadiumSvgPlan.js?v=1671';
+import { getStadiumStructure } from '../stadiums_2026_27.js?v=1672';
+import { renderStadiumPlan, stadiumPlanAvailable } from './stadiumSvgPlan.js?v=1672';
 import {
   MANAGEMENT_STAGES, TRAINING_TYPES, TICKET_SECTORS, PLAYER_TRAINING_FOCUS, TRAINED_ATTRIBUTES, ensureManagementState,
   getManagementStage, getPendingUserFixtures, getTicketPrice, getStadiumSectors,
   getTicketSectorPrices, getTicketLevelPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice, setTicketLevelPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
   getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus, getPlayerTrainingReport,
-} from '../game/managementCycle.js?v=1671';
+} from '../game/managementCycle.js?v=1672';
 
 let initialized = false;
 let currentMonth = '';
@@ -213,30 +213,13 @@ function updateTicketView(stage) {
       item.append(name, count); facts.append(item);
     }
   }
-  text('pcf-stadium-capacity', `${number(stadiumCapacity)} localidades · Pulsa una grada del plano para elegir su nivel y tarifa.`);
+  text('pcf-stadium-capacity', `${number(stadiumCapacity)} localidades · Selecciona una zona y su tarifa${tierCount ? '; también puedes elegir cada altura.' : '. Los niveles están pendientes de documentar.'}`);
 
   const map = get('pcf-stadium-map');
-  if (map && stadiumPlanAvailable(structure.plan)) {
+  const plan = stadiumPlanAvailable(structure.plan) ? structure.plan : 'generic';
+  if (map && stadiumPlanAvailable(plan)) {
     const levelPrices = Object.fromEntries(sectors.map(sector => [sector.id, getTicketLevelPrices(GameState, fx, sector.id)]));
-    renderStadiumPlan(map, { plan: structure.plan, sectors, prices, levelPrices, selectedSector, selectedLevel });
-  } else if (map?.classList.contains('pcf-stadium-map--svg')) {
-    // No conservar el Metropolitano si el usuario inicia una nueva partida con otro club.
-    map.classList.remove('pcf-stadium-map--svg');
-    map.innerHTML = '<button type="button" class="pcf-sector-stand pcf-sector-stand--vip" data-sector="vip">PALCOS VIP</button>' +
-      '<button type="button" class="pcf-sector-stand pcf-sector-stand--tribuna" data-sector="tribuna">TRIBUNA</button>' +
-      '<button type="button" class="pcf-sector-stand pcf-sector-stand--norte" data-sector="norte">FONDO NORTE</button>' +
-      '<div class="pcf-stadium-pitch" aria-hidden="true"><div class="pcf-stadium-pitch__center"></div></div>' +
-      '<button type="button" class="pcf-sector-stand pcf-sector-stand--sur" data-sector="sur">FONDO SUR</button>' +
-      '<button type="button" class="pcf-sector-stand pcf-sector-stand--preferencia" data-sector="preferencia">PREFERENCIA</button>';
-  }
-
-  for (const button of map?.querySelectorAll('button[data-sector]') || []) {
-    const sector = sectors.find(s => s.id === button.dataset.sector);
-    if (!sector) continue;
-    button.classList.toggle('is-selected', sector.id === selectedSector);
-    button.textContent = `${sector.label.toUpperCase()}${fx ? ` · ${prices[sector.id]} €` : ''}`;
-    button.title = `${sector.label}: ${number(sector.capacity)} plazas (reparto ${sector.allocationStatus === 'documented' ? 'documentado' : 'estimado'})`;
-    button.setAttribute('aria-pressed', String(sector.id === selectedSector));
+    renderStadiumPlan(map, { plan, stadiumName: home?.stadium?.name, sectors, prices, levelPrices, selectedSector, selectedLevel });
   }
   const list = get('pcf-ticket-sector-list');
   if (list) {
@@ -300,6 +283,7 @@ function updateTicketView(stage) {
     const note = document.createElement('span');
     note.textContent = `${structure.note ? `${structure.note} ` : ''}Los aforos por zona y nivel son estimaciones del juego, no cifras oficiales. `;
     source.append(note);
+    if (plan === 'generic') source.append('Plano orientativo: la distribución física de los graderíos está pendiente de documentar. ');
     if (structure.structureSource || structure.source) {
       for (const [url, label] of [[structure.source, 'Fuente del aforo'], [structure.structureSource, 'Fuente de las gradas']]) {
         if (!url) continue;
