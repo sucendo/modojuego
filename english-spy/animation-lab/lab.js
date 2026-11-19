@@ -191,7 +191,9 @@
     y:(e.clientY-r.top-camera.top)/camera.scale+camera.y
   };}
   function floor(x,y){
-    if(x<55||x>1155||y<350||y>651)return false;
+    // In the pixel-art room the floor starts at world Y≈381. Leave a small
+    // buffer for the actor's feet so they never walk onto the wall skirting.
+    if(x<55||x>1155||y<378||y>651)return false;
     if(obstacles.some(o=>x>o.x1&&x<o.x2&&y>o.y1&&y<o.y2))return false;
     return true;
   }
