@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#182d35" />
+  <title>Minecraft.js v11.5.1 · Agua continua y canales</title>
+  
+  <!-- Allows running this folder on a simple static web server without bundling. -->
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.156.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" crossorigin src="./assets/index-8977732c.js"></script>
+  <link rel="stylesheet" href="./assets/index-d1c2a361.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="info"><div id="info-player-position"></div></div>
+  <div id="playtime-hud" aria-live="off" role="timer">
+    <span class="timer-world" id="timer-world"></span>
+    <span><span data-i18n="playtimeTotal">Tiempo de juego</span> <b id="timer-total">00:00:00</b></span>
+    <span class="timer-session"><span data-i18n="playtimeSession">Sesión</span> <b id="timer-session">00:00:00</b></span>
+  </div>
+  <div id="world-clock-hud" aria-live="off"><span id="day-label" data-i18n="gameDay">Día</span> <b id="game-day">1</b><span class="world-time-icon" id="world-time-icon" aria-hidden="true">☀</span><b id="game-time">08:00</b></div>
+  <div id="weather-hud" aria-live="off" data-i18n-title="weatherForecastHelp">☀ Despejado</div>
+  <div id="mini-map-hud" title="M · Mapa"><canvas id="mini-map-canvas" width="164" height="164"></canvas><span data-i18n="mapMiniHint">M · Mapa</span></div>
+  <div id="menu-hint" data-i18n="menuHint">ESC · Abrir menú</div>
+
+  <div id="selected-extra" class="selected-extra" hidden></div>
+  <div id="toolbar-container"><div id="toolbar" class="hotbar" aria-label="Acceso rápido"></div></div>
+
+  <div id="overlay" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+    <div class="menu-panel">
+      <header class="menu-hero">
+      <div class="menu-header">
+        <span class="eyebrow" data-i18n="menuEyebrow">MUNDO DE BLOQUES</span>
+        <div class="language-field">
+          <label for="language-select" data-i18n="language">Idioma</label>
+          <select id="language-select" aria-label="Idioma">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select>
+        </div>
+      </div>
+        <div class="menu-brand-row">
+          <div class="menu-brand">
+            <h1 id="menu-title">MINECRAFT<span>.JS</span></h1>
+            <p class="subtitle" data-i18n="subtitle">Explora, construye y lleva tus mundos contigo.</p>
+          </div>
+          <span class="menu-edition" aria-label="Versión 11.5.1">v11.5.1</span>
+        </div>
+        <div class="menu-hero-bottom">
+          <button id="start-game" class="game-button primary" type="button" data-i18n="resume">Jugar / Continuar</button>
+          <span id="menu-current-world" class="menu-current-world"></span>
+        </div>
+      </header>
+      <div class="menu-content">
+        <div class="menu-main">
+      <section class="worlds-section" aria-labelledby="worlds-title">
+        <div class="section-heading"><h2 id="worlds-title" data-i18n="myWorlds">Mis mundos</h2><span id="active-world-name" class="active-world-name"></span></div>
+        <div id="world-list" class="world-list"></div>
+        <div class="new-world-form">
+          <label class="world-name-field"><span data-i18n="worldNamePlaceholder">Nombre del nuevo mundo</span><input id="new-world-name" type="text" maxlength="40" data-i18n-aria="worldNamePlaceholder" /></label>
+          <label class="seed-field"><span data-i18n="seed">Semilla</span><input id="new-world-seed" type="number" min="0" max="10000" step="1" value="1234" /></label>
+          <label class="world-type-field"><span data-i18n="worldType">Tipo de mundo</span><select id="new-world-type"><option value="classic" data-i18n="typeclassic">Clásico mixto</option><option value="ocean" data-i18n="typeocean">Océano e islas</option><option value="jungle" data-i18n="typejungle">Selva</option><option value="desert" data-i18n="typedesert">Desierto</option><option value="snow" data-i18n="typesnow">Nieve</option><option value="lava" data-i18n="typelava">Volcánico y lava</option></select></label>
+          <label class="world-mode-field"><span data-i18n="startingMode">Modo inicial</span><select id="new-world-mode"><option value="creative" data-i18n="creativeMode">Creativo</option><option value="survival" data-i18n="survivalMode">Supervivencia</option></select></label>
+          <label class="starter-kit-field"><input id="new-world-starter" type="checkbox" checked/><span data-i18n="starterKit">Kit inicial (herramientas y bloques)</span></label>
+          <button id="create-world" type="button" class="game-button" data-i18n="createWorld">Crear mundo</button>
+        </div>
+        <p id="world-type-help" class="world-type-help"></p>
+        <p class="autosave-note" data-i18n="worldStartHelp">Creativo: barra con 9 objetos. Supervivencia: comienza con un kit opcional y fabrica objetos con recursos.</p>
+        <p class="autosave-note" data-i18n="autosaveNote">Autoguardado cada 45 segundos y al salir. Cada mundo tiene su propia partida.</p>
+      </section>
+          <aside class="menu-side">
+            <h2 data-i18n="menuQuickActions">Partida y herramientas</h2>
+      <div class="menu-actions">
+        <button id="open-world-map" class="game-button" type="button" data-i18n="openWorldMap">Mapa y puntos de interés (M)</button>
+
+        <button id="open-inventory" class="game-button" type="button" data-i18n="inventoryCrafting">Inventario y fabricación (E)</button>
+        <div class="button-grid">
+          <button id="save-game" class="game-button" type="button" data-i18n="save">Guardar (F1)</button>
+          <button id="load-game" class="game-button" type="button" data-i18n="load">Cargar (F2)</button>
+          <button id="export-game" class="game-button" type="button" data-i18n="export">Exportar partida</button>
+          <button id="import-game" class="game-button" type="button" data-i18n="import">Importar partida</button>
+        </div>
+      </div>
+      <details class="beginner-guide">
+        <summary data-i18n="beginnerGuide">Primeros pasos</summary>
+        <p data-i18n="beginnerTip1">En creativo puedes construir con la barra de 9 objetos desde el primer minuto.</p>
+        <p data-i18n="beginnerTip2">En supervivencia recoges madera y hojas y fabricas herramientas.</p>
+        <p data-i18n="beginnerTip3">Los bloques se colocan con clic izquierdo en 1–9; el derecho pone el objeto preseleccionado con E.</p>
+        <p data-i18n="nightHelp">La noche oscurece el mundo. Las antorchas iluminan y puedes dormir en una cama para amanecer.</p>
+        <p data-i18n="beginnerTip4">Las antorchas iluminan y las recetas se consultan con E.</p>
+      </details>
+          </aside>
+        </div>
+        <div class="menu-stat-panels">
+      <details class="playtime-history" id="playtime-history">
+        <summary data-i18n="playtimeHistory">Registro de juego</summary>
+        <div class="playtime-summary" id="playtime-summary"></div>
+        <div class="playtime-entries" id="playtime-entries"></div>
+      </details>
+      <details class="progress-history" id="progress-history">
+        <summary data-i18n="progressTitle">Estadísticas del mundo</summary>
+        <div class="progress-grid" id="progress-grid"></div>
+      </details>
+      <details class="achievement-history" id="achievement-history">
+        <summary data-i18n="achievementsTitle">Logros</summary>
+        <div id="achievements-grid" class="achievement-grid"></div>
+      </details>
+        </div>
+        <details class="menu-controls-disclosure">
+          <summary id="controls-title" data-i18n="controlsTitle">Controles</summary>
+      <section class="menu-controls" aria-labelledby="controls-title">
+        <div class="controls-grid">
+          <div><kbd>W A S D</kbd><span data-i18n="move">Moverse</span></div>
+          <div><kbd>SHIFT</kbd><span data-i18n="sprint">Correr</span></div>
+          <div><kbd>ESPACIO</kbd><span data-i18n="jump">Saltar</span></div>
+          <div><kbd>0 + clic izq.</kbd><span data-i18n="mine">Romper / recoger</span></div>
+          <div><kbd>1–9 + clic izq.</kbd><span data-i18n="place">Colocar bloque</span></div>
+          <div><kbd>1–9 / rueda</kbd><span data-i18n="selectBlock">Barra rápida</span></div>
+          <div><kbd>Botón derecho</kbd><span data-i18n="interact">Usar mesa, cama, cofre y horno</span></div>
+          <div><kbd>0 + clic izq.</kbd><span data-i18n="toolSelectionHint">Herramienta del inventario</span></div>
+          <div><kbd>Clic derecho</kbd><span data-i18n="rightObjectTitle">Colocar objeto preseleccionado con E</span></div>
+          <div><kbd>E</kbd><span data-i18n="inventoryCrafting">Inventario y fabricación</span></div>
+          <div><kbd>M</kbd><span data-i18n="openWorldMap">Mapa y puntos de interés</span></div>
+          <div><kbd>U</kbd><span data-i18n="toggleUI">Mostrar / ocultar ajustes</span></div>
+          <div><kbd>R</kbd><span data-i18n="cameraReset">Restablecer altura</span></div>
+          <div><kbd>F3</kbd><span data-i18n="perfTitle">Rendimiento · F3</span></div>
+          <div><kbd>F10</kbd><span data-i18n="debugCamera">Cámara de depuración</span></div>
+        </div>
+      </section>
+        </details>
+      <p class="menu-footer" data-i18n="menuFooter">La partida se guarda en este navegador. Exporta un archivo para conservarla o llevarla a otro equipo.</p>
+      </div>
+    </div>
+  </div>
+  <div id="world-map-overlay" class="inventory-overlay" role="dialog" aria-modal="true" aria-labelledby="world-map-title" hidden>
+    <div class="inventory-panel map-panel">
+      <div class="inventory-top"><h2 id="world-map-title" data-i18n="mapTitle">Mapa del mundo</h2>
+      <button id="map-close-menu" type="button" class="small-button" data-i18n="backToMenu">Volver al menú</button></div>
+      <p class="inventory-explain" data-i18n="mapHelp">Explora para descubrir el terreno. Haz clic en una zona conocida para poner un marcador.</p>
+      <div class="map-layout">
+        <section class="map-canvas-section">
+          <canvas id="world-map-canvas" width="480" height="480" aria-label="Mapa del terreno explorado"></canvas>
+          <div class="map-controls">
+            <button id="map-zoom-in" type="button" class="small-button" data-i18n="mapZoomIn">Acercar +</button>
+            <button id="map-zoom-out" type="button" class="small-button" data-i18n="mapZoomOut">Alejar −</button>
+            <button id="map-center" type="button" class="small-button" data-i18n="mapRecenter">Mi posición</button>
+          </div>
+          <div id="map-player-coordinates" class="inventory-explain"></div>
+        </section>
+        <section class="map-side-panel">
+          <h3 data-i18n="mapMyMarkers">Mis marcadores</h3>
+          <div class="map-controls"><select id="marker-kind" aria-label="Tipo de marcador">
+             <option value="home" data-i18n="markerHome">Casa</option>
+             <option value="build" data-i18n="markerBuild">Construcción</option>
+             <option value="flag" data-i18n="markerFlag" selected>Otro</option>
+           </select><button id="map-add-marker" type="button" class="small-button" data-i18n="mapMarkHere">Marcar mi posición</button></div>
+          <div id="map-marker-list" class="map-list"></div>
+          <h3 data-i18n="mapNearbyPois">Lugares descubiertos cerca de ti</h3>
+          <div id="map-poi-list" class="map-list"></div>
+          <h3 data-i18n="mapHydrology">Hidrología</h3>
+          <div id="map-hydrology-info" class="inventory-explain" aria-live="polite"></div>
+          <p id="map-hydro-debug-legend" class="inventory-explain" hidden>DESARROLLO · Azul oscuro: manantial · Línea azul y flechas: cauce y sentido · Blanco: salto de agua · Verde: salida al mar · Amarillo: afluente · Azul claro: laguna · Naranja: tramo pendiente de continuación.</p>
+          <div id="map-hydrology-sources" class="map-list"></div>
+          <button id="map-enable-pois" type="button" class="small-button" data-i18n="mapEnablePlaces" hidden>Activar lugares en este mundo</button>
+        </section>
+      </div>
+      <button id="map-resume" class="game-button primary" type="button" data-i18n="resume">Jugar / Continuar</button>
+    </div>
+  </div>
+  <div id="inventory-overlay" class="inventory-overlay" role="dialog" aria-modal="true" aria-labelledby="inventory-title" hidden>
+    <div class="inventory-panel">
+      <div class="inventory-top"><h2 id="inventory-title" data-i18n="inventoryCrafting">Inventario y fabricación</h2><button id="inventory-close" type="button" class="small-button" data-i18n="backToMenu">Volver al menú</button></div>
+      <label class="inventory-mode"><span data-i18n="gameMode">Modo de juego</span>
+        <select id="game-mode-select"><option value="creative" data-i18n="creativeMode">Creativo (bloques ilimitados)</option><option value="survival" data-i18n="survivalMode">Recolección (inventario limitado)</option></select>
+      </label>
+      <p id="current-block" class="selection-label"></p>
+      <div class="equipment-pickers">
+        <section><h3 data-i18n="equipToolTitle">Herramienta del 0 (clic izquierdo)</h3>
+          <p class="inventory-explain" data-i18n="equipToolHelp">Elige el pico, la sierra o la espada. La tecla 0 equipa esta herramienta.</p>
+          <div id="equipment-tools" class="equipment-buttons"></div></section>
+        <section><h3 data-i18n="rightObjectTitle">Objeto del clic derecho</h3>
+          <p class="inventory-explain" data-i18n="rightObjectHelp">Preselecciona aquí el objeto que colocarás con el botón derecho, independientemente de los bloques 1–9.</p>
+          <div id="equipment-objects" class="equipment-buttons"></div></section>
+      </div>
+      <div class="inventory-layout">
+        <section class="inventory-storage">
+          <h3 data-i18n="backpack">Mochila · 27 casillas</h3>
+          <div id="inventory-main-slots" class="inventory-grid"></div>
+          <h3 data-i18n="quickbar">Barra rápida · 9 casillas</h3>
+          <div id="inventory-slots" class="inventory-grid"></div>
+          <div class="creative-actions"><h3 id="creative-heading" data-i18n="creativeItems">Catálogo creativo</h3><button id="fill-starter-bar" class="small-button" type="button" data-i18n="fillStarter">Rellenar huecos de la barra rápida</button></div>
+          <div id="creative-catalog" class="creative-catalog"></div>
+          <div id="inventory-reserve" class="inventory-reserve" hidden></div>
+        </section>
+        <section class="crafting-section">
+          <h3 data-i18n="craftingTitle">Fabricación</h3>
+          <label class="craft-size-select"><span data-i18n="craftSize">Cuadrícula</span><select id="craft-size"><option value="2">2 × 2</option><option value="3">3 × 3</option></select></label>
+          <p id="craft-hint" class="inventory-explain"></p>
+          <div class="crafting-center"><div id="crafting-grid" class="craft-grid"></div><span aria-hidden="true">→</span><button id="crafting-output" type="button" class="craft-result"></button></div>
+          <p id="crafting-recipe-help" class="inventory-explain"></p>
+          <h3 data-i18n="recipeBook">Libro de recetas</h3><div id="recipe-book" class="recipe-book"></div>
+        </section>
+      </div>
+      <p class="inventory-explain" data-i18n="inventoryHelp">Pulsa en una casilla y luego otra para mover objetos; botón derecho para dividir pilas.</p>
+      <button id="inventory-resume" class="game-button primary" type="button" data-i18n="resume">Jugar / Continuar</button>
+    </div>
+  </div>
+  <div id="station-overlay" class="inventory-overlay" role="dialog" aria-modal="true" aria-labelledby="station-title" hidden>
+    <div class="inventory-panel station-panel">
+      <div class="inventory-top"><h2 id="station-title">Cofre</h2><button id="station-back-menu" class="small-button" type="button" data-i18n="backToMenu">Volver al menú</button></div>
+      <p id="station-help" class="inventory-explain"></p>
+      <div id="station-content"></div>
+      <h3 data-i18n="stationInventory">Tu mochila · selecciona un objeto para guardarlo</h3>
+      <div id="station-inventory" class="inventory-grid"></div>
+      <button id="station-close" class="game-button primary" type="button" data-i18n="resume">Jugar / Continuar</button>
+    </div>
+  </div>
+  <input id="save-file-input" type="file" accept=".json,application/json" hidden />
+  <div id="status" role="status" aria-live="polite"></div>
+  
+</body>
+</html>
