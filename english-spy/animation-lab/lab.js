@@ -6,18 +6,44 @@
   const statusNode=document.getElementById('status'),inventoryNode=document.getElementById('inventory');
   const atlas=document.getElementById('atlas-backdrop'),poseGrid=document.getElementById('pose-grid');
   const asset=new Image(),walkAsset=new Image(),runAsset=new Image(),sitAsset=new Image();
+  const standingGesturesAsset=new Image(),seatedGesturesAsset=new Image(),portraitAsset=new Image();
   const sheets=[{img:asset,src:'./assets/agent-sheet.webp',cols:5,rows:4},
     {img:walkAsset,src:'./assets/agent-walk-side.webp',cols:4,rows:2},
     {img:runAsset,src:'./assets/agent-run-side.webp',cols:4,rows:2},
-    {img:sitAsset,src:'./assets/agent-sit.webp',cols:3,rows:2}];
+    {img:sitAsset,src:'./assets/agent-sit.webp',cols:3,rows:2},
+    {img:standingGesturesAsset,src:'./assets/agent-gestures-standing.webp',cols:4,rows:2},
+    {img:seatedGesturesAsset,src:'./assets/agent-gestures-seated.webp',cols:4,rows:2}];
+  const gestures=['explain','point','shrug','cross','think','shush','angry','startled'];
+  const gestureLabels=['Explicar','Señalar','Encogerse de hombros','Cruzar brazos','Pensar','Pedir silencio','Mostrar enfado','Sorprenderse'];
   const poses=['Quieto · tres cuartos','Quieto · perfil','Quieto · derecha','Quieto · espaldas','Escuchando',
     'Caminar · frente A','Caminar · frente B','Paso lateral · apoyo 1','Paso lateral · avance 2','Paso lateral · cruce 3',
     'Paso lateral · impulso 4','Caminar · atrás A','Caminar · atrás B','Girar · izquierda','Girar · derecha',
     'Hablar','Señalar','Examinar','Recoger una prueba','Abrir una puerta',
     ...['extensión 5','recogida 6','contacto 7','cierre 8'].map(s=>'Paso lateral · '+s),
     ...Array.from({length:8},(_,i)=>'Correr · zancada '+(i+1)),
-    'Sentarse · de pie','Sentarse · flexión','Sentarse · descenso','Sentado en silla','Levantarse · impulso','Levantarse · erguido'];
+    'Sentarse · de pie','Sentarse · flexión','Sentarse · descenso','Sentado en silla','Levantarse · impulso','Levantarse · erguido',
+    ...gestureLabels.map(s=>'De pie · '+s),...gestureLabels.map(s=>'Sentado · '+s)];
   const frames=[];
+  const emotions=[{key:'neutral',label:'Neutral',gesture:0},{key:'happy',label:'Alegre',gesture:0},
+    {key:'surprised',label:'Sorprendido',gesture:7},{key:'angry',label:'Enfadado',gesture:6},
+    {key:'worried',label:'Preocupado',gesture:2},{key:'suspicious',label:'Desconfiado',gesture:5},
+    {key:'thinking',label:'Pensativo',gesture:4},{key:'sad',label:'Triste',gesture:3}];
+  const sampleLines=[
+    {text:'I am looking for Evelyn Blackwood.',mood:5,gesture:5},
+    {text:'Hello. My name is Alex.',mood:1,gesture:0},
+    {text:'I have got a message for Evelyn.',mood:6,gesture:4},
+    {text:'Can you hear me?',mood:4,gesture:2},
+    {text:'Where did she go yesterday?',mood:2,gesture:7},
+    {text:'I do not trust that man!',mood:3,gesture:6},
+    {text:'If I had known about the meeting, I would have warned her.',mood:7,gesture:3}
+  ];
+  const dialogue={open:false,mood:0,gesture:0,speaking:false,pending:false,text:sampleLines[0].text,
+    start:0,wordAt:0,charAt:0,token:0,simulationEnd:0};
+  const dialoguePanel=document.getElementById('dialogue-panel'),portraitCanvas=document.getElementById('dialogue-portrait');
+  const portraitCtx=portraitCanvas.getContext('2d'),moodName=document.getElementById('emotion-name');
+  const dialogueLine=document.getElementById('dialogue-line'),voiceStatus=document.getElementById('voice-status');
+  const phraseSelect=document.getElementById('phrase-select'),gestureSelect=document.getElementById('gesture-select');
+  const customDialogue=document.getElementById('custom-dialogue'),voiceDot=document.getElementById('voice-dot');
   const initial={x:397,y:592,facing:'front'};
   const agent={...initial,stride:0,moving:false,path:[],onArrival:null,action:null,seated:false,runMode:false};
   let noteTaken=false,doorOpen=false,hover=null,last=performance.now();
@@ -50,6 +76,100 @@
   function notify(message){tip.textContent=message;}
   function setStatus(message){if(message===shownStatus)return;shownStatus=message;statusNode.innerHTML='Estado: <strong>'+message.replaceAll('&','&amp;').replaceAll('<','&lt;')+'</strong>';}
   function refreshInventory(){inventoryNode.textContent=noteTaken?'Inventario: documento ✓':'Inventario: vacío';}
+  function syncDialogue(){const mood=emotions[dialogue.mood];moodName.textContent=mood.label+' · '+(agent.seated?'sentado':'de pie');
+    gestureSelect.value=gestures[dialogue.gesture];dialogueLine.textContent=dialogue.text;
+    for(const button of document.querySelectorAll('[data-emotion]')){
+      const pressed=button.dataset.emotion===mood.key;button.classList.toggle('active',pressed);
+      button.setAttribute('aria-pressed',String(pressed));
+    }
+  }
+  function chooseEmotion(key){const index=emotions.findIndex(e=>e.key===key);if(index<0)return;
+    dialogue.mood=index;dialogue.gesture=emotions[index].gesture;syncDialogue();}
+  function stopSpeech(silent=false){dialogue.token++;dialogue.speaking=false;dialogue.pending=false;
+    dialogue.simulationEnd=0;voiceDot.classList.remove('speaking');
+    if('speechSynthesis' in window)window.speechSynthesis.cancel();
+    if(!silent){voiceStatus.textContent='Voz detenida. Puedes cambiar la frase y repetir.';
+      if(dialogue.open)setStatus(agent.seated?'Sentado · escuchando':'Conversación preparada');}
+  }
+  function closeConversation(){stopSpeech(true);dialogue.open=false;dialoguePanel.hidden=true;
+    document.querySelector('[data-action="talk"]').classList.remove('active');
+    if(!agent.moving)setStatus(agent.seated?'Sentado':'En reposo');}
+  function openConversation(){stopWalking();showcase=null;
+    if(agent.action&&!['sit','rise'].includes(agent.action.kind))agent.action=null;
+    agent.facing='right';dialogue.open=true;dialoguePanel.hidden=false;
+    document.querySelector('[data-action="talk"]').classList.add('active');
+    syncDialogue();setStatus('Conversando · '+(agent.seated?'sentado':'de pie'));
+    notify('Selecciona una emoción y un gesto, después escucha la frase en inglés.');
+  }
+  function selectExample(){const selected=sampleLines[Number(phraseSelect.value)]||sampleLines[0];
+    stopSpeech(true);dialogue.text=selected.text;customDialogue.value=selected.text;
+    dialogue.mood=selected.mood;dialogue.gesture=selected.gesture;
+    syncDialogue();voiceStatus.textContent='Frase seleccionada. Pulsa «Escuchar y hablar».';}
+  function playDialogue(){const spoken=customDialogue.value.trim();
+    if(!spoken){voiceStatus.textContent='Escribe primero una frase en inglés.';return;}
+    stopSpeech(true);dialogue.text=spoken;dialogue.start=now();dialogue.wordAt=dialogue.start;
+    dialogue.charAt=0;dialogue.pending=true;syncDialogue();
+    const token=dialogue.token;
+    if('speechSynthesis' in window&&'SpeechSynthesisUtterance' in window){
+      const u=new SpeechSynthesisUtterance(spoken);u.lang='en-GB';u.rate=.84;u.pitch=1;u.volume=1;
+      const available=window.speechSynthesis.getVoices();
+      const preferred=available.find(v=>v.lang.toLowerCase().startsWith('en-gb'))||available.find(v=>v.lang.toLowerCase().startsWith('en'));
+      if(preferred)u.voice=preferred;
+      u.onstart=()=>{if(token!==dialogue.token)return;dialogue.speaking=true;dialogue.pending=false;
+        dialogue.wordAt=now();dialogue.simulationEnd=0;voiceDot.classList.add('speaking');
+        voiceStatus.textContent='Reproduciendo inglés · articulación aproximada de labios';
+        setStatus('Hablando inglés · '+(agent.seated?'sentado':'de pie'));};
+      u.onboundary=e=>{if(token!==dialogue.token)return;dialogue.charAt=e.charIndex;dialogue.wordAt=now();};
+      u.onend=()=>{if(token!==dialogue.token)return;dialogue.speaking=false;dialogue.pending=false;
+        voiceDot.classList.remove('speaking');voiceStatus.textContent='Frase terminada. Puedes cambiar el gesto y repetir.';
+        setStatus(agent.seated?'Sentado · conversación':'Conversación preparada');};
+      u.onerror=()=>{if(token!==dialogue.token)return;dialogue.speaking=true;dialogue.pending=false;
+        dialogue.wordAt=now();dialogue.simulationEnd=now()+clamp(spoken.length*80,1500,12000);
+        voiceDot.classList.add('speaking');voiceStatus.textContent='Sin sonido disponible: mostrando la articulación de los labios.';};
+      try{window.speechSynthesis.speak(u);}catch(error){u.onerror();}
+    }else{
+      dialogue.speaking=true;dialogue.pending=false;dialogue.simulationEnd=now()+clamp(spoken.length*75,1300,12000);
+      voiceDot.classList.add('speaking');voiceStatus.textContent='Sin voz del navegador: simulando el movimiento de boca.';
+    }
+  }
+  function lipFrame(t){const letters=(dialogue.text.toUpperCase().match(/[A-Z]/g)||['A']);
+    const pointer=(dialogue.charAt+Math.max(0,Math.floor((t-dialogue.wordAt)/110)))%letters.length,letter=letters[pointer];
+    if('MBP'.includes(letter))return 0;if('A'.includes(letter))return 1;
+    if('EIY'.includes(letter))return 2;if(letter==='O')return 3;if('UW'.includes(letter))return 4;
+    if('FV'.includes(letter))return 5;if('TDH'.includes(letter))return 6;return 7;
+  }
+  function drawPortrait(t){if(!dialogue.open||!portraitAsset.naturalWidth)return;
+    const p=portraitCtx,size=200,cw=portraitAsset.naturalWidth/4,ch=portraitAsset.naturalHeight/4;
+    const cell=dialogue.mood;const sx=(cell%4)*cw,sy=Math.floor(cell/4)*ch;
+    // Expressions shift the head slightly within their cells. Each mouth and
+    // eyelid is positioned relative to its own face, never the atlas cell.
+    const emotionMouths=[[128,96],[124,97],[125,100],[143,96],[132,91],[115,93],[129,91],[91,102]];
+    const visemeMouths=[[132,95],[118,100],[128,96],[149,98],[127,97],[118,96],[129,97],[149,100]];
+    const eyes=[[116,143,66],[113,141,66],[113,143,64],[123,152,66],[116,145,66],[100,130,65],[114,142,67],[79,104,71]];
+    p.clearRect(0,0,size,size);p.imageSmoothingEnabled=true;p.imageSmoothingQuality='high';
+    p.drawImage(portraitAsset,sx,sy,cw,ch,0,0,size,size);
+    if(dialogue.speaking){const sound=lipFrame(t),mouth=8+sound,mx=(mouth%4)*cw,my=Math.floor(mouth/4)*ch;
+      const [tx,ty]=emotionMouths[dialogue.mood], [vx,vy]=visemeMouths[sound];
+      const w=36,h=20;
+      p.save();p.beginPath();p.ellipse(tx,ty,18,10,0,0,Math.PI*2);p.clip();
+      p.drawImage(portraitAsset,mx+(vx-w/2)/200*cw,my+(vy-h/2)/200*ch,w/200*cw,h/200*ch,
+        tx-w/2,ty-h/2,w,h);p.restore();
+    }else if((t%4700)>4550&&t%4700<4660){
+      const [left,right,ey]=eyes[dialogue.mood];
+      p.fillStyle='#c38b61';p.fillRect(left-6,ey-3,12,5);p.fillRect(right-6,ey-5,12,5);
+      p.strokeStyle='#533525';p.lineWidth=2;p.beginPath();p.moveTo(left-6,ey);p.lineTo(left+6,ey-1);
+      p.moveTo(right-6,ey-2);p.lineTo(right+6,ey-3);p.stroke();
+    }
+  }
+  for(const b of document.querySelectorAll('[data-emotion]'))b.addEventListener('click',()=>chooseEmotion(b.dataset.emotion));
+  gestureSelect.addEventListener('change',()=>{dialogue.gesture=Math.max(0,gestures.indexOf(gestureSelect.value));syncDialogue();});
+  phraseSelect.addEventListener('change',selectExample);
+  customDialogue.addEventListener('input',()=>{dialogue.text=customDialogue.value;dialogueLine.textContent=dialogue.text||'...';});
+  document.getElementById('speak-dialogue').addEventListener('click',playDialogue);
+  document.getElementById('stop-dialogue').addEventListener('click',()=>stopSpeech());
+  document.getElementById('dialogue-close').addEventListener('click',closeConversation);
+  portraitAsset.addEventListener('error',()=>{voiceStatus.textContent='No se ha cargado la imagen de las expresiones.';});
+  portraitAsset.src='./assets/agent-expressions.webp';
   function resize(){
     const rect=stage.getBoundingClientRect();if(!rect.width||!rect.height)return;
     const dpr=Math.min(window.devicePixelRatio||1,2);screen={w:rect.width,h:rect.height,dpr};
@@ -160,14 +280,16 @@
     if(name==='run'){agent.runMode=!agent.runMode;syncButtons();notify(agent.runMode?'Modo carrera: activo. Toca el suelo o usa las flechas.':'Modo carrera: desactivado.');
       if(!agent.moving)setStatus(agent.runMode?'Listo para correr':'En reposo');return;}
     if(name==='sit'){sitOrRise();return;}
+    if(name==='talk'){if(dialogue.open)closeConversation();else openConversation();return;}
     if(agent.seated||agent.action&&['sit','rise'].includes(agent.action.kind)){notify('Primero levántate para realizar esa acción.');return;}
+    if(dialogue.open)closeConversation();
     if(name==='pick'){
       if(noteTaken){startAction('pick');notify('El documento ya está guardado en el inventario.');}
       else interact(objects.find(o=>o.id==='note'));
     }else if(name==='open')interact(objects.find(o=>o.id==='door'));
     else{startAction(name);notify({talk:'I am looking for Evelyn Blackwood.',look:'Una pista puede estar en cualquier lugar.',point:'Por allí. Mira esa dirección.',listen:'Escucho con atención...',turn:'Cambio de orientación.'}[name]||'Movimiento');}
   }
-  function reset(){Object.assign(agent,{...initial,stride:0,moving:false,path:[],onArrival:null,action:null,seated:false,runMode:false});
+  function reset(){closeConversation();Object.assign(agent,{...initial,stride:0,moving:false,path:[],onArrival:null,action:null,seated:false,runMode:false});
     noteTaken=false;doorOpen=false;showcase=null;targetMark=null;heldPad.clear();heldKeys.clear();shiftHeld=false;
     document.querySelectorAll('.dir').forEach(b=>b.classList.remove('pressed'));
     refreshInventory();syncButtons();setStatus('En reposo');notify('Toca el suelo para caminar o correr · Pulsa la silla para sentarte.');}
@@ -200,6 +322,8 @@
   const keyDirections={arrowup:'up',w:'up',arrowdown:'down',s:'down',arrowleft:'left',a:'left',arrowright:'right',d:'right'};
   document.addEventListener('keydown',e=>{
     if(!atlas.hidden){if(e.key==='Escape')atlas.hidden=true;return;}
+    if(e.key==='Escape'&&dialogue.open){closeConversation();return;}
+    if(['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))return;
     const k=e.key.toLowerCase(),dir=keyDirections[k];
     if(k==='shift'){shiftHeld=true;return;}
     if(dir){e.preventDefault();if(agent.seated){notify('Primero levántate de la silla.');return;}if(!heldKeys.has(dir)){stopWalking();cancelAnimation();}heldKeys.add(dir);}
@@ -248,17 +372,21 @@
   }
   function makeFrames(){
     if(sheets.some(sheet=>!sheet.img.complete||!sheet.img.naturalWidth))return;
-    const [base,walk,run,sit]=sheets.map(s=>extractFrames(s.img,s.cols,s.rows));
+    const [base,walk,run,sit,standingGestures,seatedGestures]=sheets.map(s=>extractFrames(s.img,s.cols,s.rows));
     const reference=base[0].h;
-    for(const group of [walk,run,sit]){
+    for(const group of [walk,run,sit,standingGestures]){
       const heights=group.map(f=>f.h).sort((a,b)=>a-b);
       const middle=(heights[Math.floor((heights.length-1)/2)]+heights[Math.floor(heights.length/2)])/2;
       const factor=reference/middle;
       for(const f of group)f.factor=factor;
     }
+    const seatedHeights=seatedGestures.map(f=>f.h).sort((a,b)=>a-b);
+    const seatedMiddle=(seatedHeights[3]+seatedHeights[4])/2;
+    const seatedFactor=sit[3].h*sit[3].factor/seatedMiddle;
+    for(const f of seatedGestures)f.factor=seatedFactor;
     frames.splice(0,frames.length,...base);
     for(let i=0;i<4;i++)frames[7+i]=walk[i];
-    frames.push(...walk.slice(4),...run,...sit);
+    frames.push(...walk.slice(4),...run,...sit,...standingGestures,...seatedGestures);
     buildAtlas();
   }
   function buildAtlas(){poseGrid.replaceChildren();for(let i=0;i<poses.length;i++){
@@ -291,23 +419,31 @@
         if(phase>.09&&phase<.91)return {index:actions[a.kind]??0,flip:false};
       }
     }
-    if(agent.seated)return {index:35,flip:false};
     if(agent.moving){const frame=Math.floor(agent.stride)%8;
       if(agent.facing==='front')return {index:[5,0,6,0,5,0,6,0][frame],flip:false};
       if(agent.facing==='back')return {index:[11,3,12,3,11,3,12,3][frame],flip:false};
       return {index:(running()?[24,25,26,27,28,29,30,31]:[7,8,9,10,20,21,22,23])[frame],flip:agent.facing==='left',run:running()};
     }
+    if(dialogue.open)return {index:(agent.seated?46:38)+dialogue.gesture,flip:false,conversing:true};
+    if(agent.seated)return {index:35,flip:false};
     if(agent.facing==='back')return {index:3,flip:false};
     if(agent.facing==='left')return {index:2,flip:true};
     if(agent.facing==='right')return {index:2,flip:false};
     return {index:0,flip:false};
   }
   function update(t,dt){
+    if(dialogue.pending&&t-dialogue.start>1600){dialogue.pending=false;dialogue.speaking=true;
+      dialogue.wordAt=t;dialogue.simulationEnd=t+clamp(dialogue.text.length*68,1200,12000);
+      voiceDot.classList.add('speaking');voiceStatus.textContent='La voz tarda en responder: simulando la articulación.';}
+    if(dialogue.simulationEnd&&t>=dialogue.simulationEnd){dialogue.simulationEnd=0;dialogue.speaking=false;
+      voiceDot.classList.remove('speaking');voiceStatus.textContent='Simulación de habla terminada.';}
     if(agent.action&&['sit','rise'].includes(agent.action.kind)){
       const a=agent.action,progress=clamp((t-a.since)/a.duration,0,1),
         blend=a.kind==='sit'?clamp(progress/.57,0,1):clamp((progress-.43)/.57,0,1),smooth=blend*blend*(3-2*blend);
       agent.x=lerp(a.from.x,a.to.x,smooth);agent.y=lerp(a.from.y,a.to.y,smooth);
-      if(progress>=1){agent.seated=a.kind==='sit';agent.action=null;syncButtons();setStatus(agent.seated?'Sentado':'En reposo');
+      if(progress>=1){agent.seated=a.kind==='sit';agent.action=null;syncButtons();
+        setStatus(dialogue.open?'Conversando · '+(agent.seated?'sentado':'de pie'):agent.seated?'Sentado':'En reposo');
+        if(dialogue.open)syncDialogue();
         notify(agent.seated?'Ya está sentado. Pulsa «Levantarse» o toca la silla.':'Ya puede volver a caminar o correr.');}
       return;
     }
@@ -425,7 +561,9 @@
     const phase=Math.floor(agent.stride)%8;
     const bob=agent.moving?(f.run?[0,3,-8,-5,0,3,-8,-5][phase]:Math.sin(agent.stride*Math.PI)*1.1):0;
     shadow(agent.x,agent.y,42*depthScale,8*depthScale);
-    ctx.save();ctx.translate(agent.x,agent.y+bob);ctx.scale(f.flip?-size:size,size);
+    ctx.save();ctx.translate(agent.x,agent.y+bob);
+    if(f.conversing&&dialogue.speaking)ctx.rotate(Math.sin(t/170)*.008);
+    ctx.scale(f.flip?-size:size,size);
     ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     ctx.drawImage(frame.img,frame.x,frame.y,frame.w,frame.h,-frame.w/2,-frame.h,frame.w,frame.h);
     ctx.restore();
@@ -441,10 +579,14 @@
     if(targetMark&&targetMark.until>t){ctx.globalAlpha=(targetMark.until-t)/1100*.6;
       const {x,y}=targetMark;line(x-8,y,x+8,y,'#f4c476',2);line(x,y-6,x,y+6,'#f4c476',2);ctx.globalAlpha=1;}
     ctx.restore();
+    if(dialogue.open)dialoguePanel.classList.toggle('panel-left',agent.x>675);
+    drawPortrait(t);
     if(hover&&atlas.hidden&&!agent.moving)tip.textContent=hover.name+' · Toca para interactuar';
   }
   function loop(t){const dt=Math.min(.04,(t-last)/1000);last=t;update(t,Math.max(.001,dt));draw(t);requestAnimationFrame(loop);}
   refreshInventory();syncButtons();setStatus('En reposo');requestAnimationFrame(loop);
   // A small read-only probe for automated geometry QA; never changes game state.
-  window.ENGLISH_SPY_ANIMATION_QA={canStand,planRoute,objects:objects.map(({id,go})=>({id,go})),start:{...initial}};
+  window.ENGLISH_SPY_ANIMATION_QA={canStand,planRoute,objects:objects.map(({id,go})=>({id,go})),start:{...initial},
+    getDialogueState:()=>({open:dialogue.open,mood:emotions[dialogue.mood].key,gesture:gestures[dialogue.gesture],speaking:dialogue.speaking,
+      seated:agent.seated,pose:currentPose(now()).index})};
 })();
