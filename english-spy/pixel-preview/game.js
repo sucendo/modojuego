@@ -1,8 +1,22 @@
-/* Where Is Evelyn Blackwood? · A small, self-contained pixel-art adventure prototype.
-   This preview uses its own save slot; it does not modify the original game. */
+/* Where Is Evelyn Blackwood? · Pixel art with exact green-footprint navigation. */
 (() => {
   'use strict';
   const W = 1200, H = 675, SAVE = 'evelyn-pixel-prototype-v03';
+  // Pixel mask faithfully traced from the green marks on the user's image.
+  // The strict mask is loaded before this file by walkmap.js.
+  const terraceFootMap=(()=>{
+    const map=window.ENGLISH_SPY_TERRACE_FOOT_MASK;
+    if(!map?.bits||!map.cell||!map.columns||!map.rows)return null;
+    const bytes=Uint8Array.from(atob(map.bits),c=>c.charCodeAt(0));
+    if(bytes.length*8<map.columns*map.rows)return null;
+    return {inside(x,y){
+      if(x<0||x>=W||y<0||y>=H)return false;
+      const column=Math.floor(x/map.cell),row=Math.floor(y/map.cell);
+      if(column>=map.columns||row>=map.rows)return false;
+      const bit=row*map.columns+column;
+      return Boolean(bytes[bit>>3]&(1<<(bit&7)));
+    }};
+  })();
   const $ = id => document.getElementById(id);
   const canvas = $('world'), ctx = canvas.getContext('2d');
   const sceneShell = $('scene-shell'), hotspotsNode = $('hotspots');
@@ -23,25 +37,8 @@
       ],
       perspective:{farY:405,nearY:655,farScale:.64,nearScale:2.02,doorway:{x:1095,y:476,rangeX:280,rangeY:180,boost:.26}},
       actors:[{role:'stranger',x:380,y:477}],
-      // Feet must remain on the walkable floor areas traced from the green
-      // reference. Furniture footprints are deducted separately below.
-      // The slim rear link connects the plaza to the actual café threshold.
-      walkZones:[
-        [[78,452],[184,420],[346,382],[403,405],[421,480],[367,558],[308,629],[172,633],[138,548]],
-        [[300,518],[381,450],[546,414],[625,421],[648,476],[569,536],[469,624],[289,631]],
-        [[520,369],[1129,369],[1153,421],[1127,478],[1083,459],[1080,416],[529,417]],
-        [[1073,417],[1159,420],[1200,454],[1200,555],[1080,521]]
-      ],
-      // Floor routes are narrow, connected walkways. The rear route goes BEHIND
-      // the terrace furniture; it no longer cuts through the middle of it.
-      corridors:[
-        [230,397,420,655], // Open Plaza de Oriente pavement
-        [387,373,630,437], // Around the far side of the planted island
-        [385,540,620,655], // Paved approach to the foreground table
-        [565,414,627,568], // Single-file passage beside the planter
-        [563,362,1138,410], // Arcade-side walk, behind the terrace seating
-        [1049,382,1150,510], // Clear threshold at the café entrance
-      ],
+      // The terrace uses the actual green brush marks from the annotated
+      // screenshot (walkmap.js). No approximate rectangles or extra corridors.
       props:[
         {id:'plaza-flowers',foot:[[0,508],[150,500],[231,548],[229,675],[0,675]],
           masks:[{footY:667,poly:[[0,430],[155,426],[230,485],[227,675],[0,675]]}]},
@@ -57,7 +54,9 @@
           masks:[{footY:540,poly:[[900,405],[941,364],[1038,374],[1064,417],[1064,526],[912,534]]}]},
         // Each foreground object is a separate cutout. A table is not the
         // chair beside it, and its thin pedestal is not a huge opaque box.
-        {id:'foreground-table',foot:[[553,557],[627,527],[903,521],[977,546],[978,674],[550,675]],
+        // The tabletop is elevated: a character may stand on the marked
+        // pavement BEHIND it. Block its floor-level pedestal instead.
+        {id:'foreground-table',foot:[[703,611],[767,605],[809,618],[817,675],[702,675]],
           masks:[
             {part:'marble-top',footY:627,poly:[[551,542],[569,515],[647,485],[905,477],[957,481],[1031,519],[1052,555],[1044,582],[1012,599],[969,606],[911,607],[643,602],[580,586],[549,567]]},
             {part:'pedestal',footY:677,poly:[[730,587],[778,595],[819,590],[842,675],[713,675]]}
@@ -79,11 +78,11 @@
           ]},
       ],
       hotspots:[
-        {id:'receipt',x:811,y:522,w:62,h:56,walk:[544,552],label:'Folded receipt'},
-        {id:'cup',x:779,y:461,w:100,h:60,walk:[564,489],label:'Coffee cup'},
+        {id:'receipt',x:811,y:522,w:62,h:56,walk:[639,553],label:'Folded receipt'},
+        {id:'cup',x:779,y:461,w:100,h:60,walk:[639,553],label:'Coffee cup'},
         {id:'stranger',x:380,y:410,w:72,h:122,walk:[320,486],label:'Man in grey'},
         {id:'palace',x:466,y:277,w:490,h:148,walk:[330,550],label:'Royal Palace'},
-        {id:'door',x:1111,y:327,w:105,h:205,walk:[1100,447],label:'Enter the café'},
+        {id:'door',x:1111,y:327,w:105,h:205,walk:[1110,494],label:'Enter the café'},
       ],
     },
     interior:{
@@ -159,7 +158,7 @@
   let path=[], pending=null, time=0, lastFrame=performance.now();
   let customizationDraft=null, gabrielHeldUntil=0, gabrielHeldPosition=null;
   let patrolPausedAt=null, patrolPausedDuration=0;
-  const scenes={};
+  const scenes={},originalScenes={};
   const spriteImages={}, coatSprites=new Map(), foregrounds={},individualObjects={};
   const spriteNames=['agent-m','agent-f','gabriel','carmen','stranger'];
   for(const role of spriteNames){
@@ -189,11 +188,18 @@
   }
   for(const [id,scene] of Object.entries(SCENES)){
     scenes[id]=new Image();scenes[id].onload=()=>prepareForegrounds(id);scenes[id].src=scene.image;
+    originalScenes[id]=new Image();originalScenes[id].src=`./assets/${id}-pixel.webp`;
     individualObjects[id]=scene.foregroundObjects.map(part=>{
       const img=new Image();img.src=part.src;
       const collectedImg=part.collectedSrc?new Image():null;
       if(collectedImg)collectedImg.src=part.collectedSrc;
       return {...part,img,collectedImg};
+    });
+  }
+  function originalsReady(id){
+    return scenes[id]?.complete&&scenes[id].naturalWidth>0&&individualObjects[id].every(obj=>{
+      const [l,t,r,b]=obj.sourceCrop;
+      return obj.img.complete&&obj.img.naturalWidth===r-l&&obj.img.naturalHeight===b-t;
     });
   }
   function drawIndividualObjects(){
@@ -220,27 +226,28 @@
       *clamp01(1-Math.abs(y-door.y)/door.rangeY);
     return ground+door.boost*influence*influence;
   };
-  // The waiter follows the same open floor route and scale curve as the agent.
-  // A segment's two ends share a clear corridor, so interpolation stays there.
+  // The waiter must use the same marked green floor and collision routing.
   const GABRIEL_STOPS=[
-    {t:0, scene:'terrace',x:811,y:384,alpha:1},
-    {t:3, scene:'terrace',x:811,y:384,alpha:1},
-    {t:7, scene:'terrace',x:916,y:384,alpha:1},
-    {t:9, scene:'terrace',x:916,y:384,alpha:1},
-    {t:14,scene:'terrace',x:1095,y:397,alpha:1},
-    {t:17,scene:'terrace',x:1107,y:446,alpha:0},
-    {t:17.001,scene:'interior',x:1020,y:461,alpha:0},
-    {t:20,scene:'interior',x:1000,y:506,alpha:1},
-    {t:24,scene:'interior',x:920,y:544,alpha:1},
-    {t:28,scene:'interior',x:920,y:544,alpha:1},
-    {t:32,scene:'interior',x:1000,y:506,alpha:1},
-    {t:35,scene:'interior',x:1020,y:461,alpha:0},
-    {t:35.001,scene:'terrace',x:1107,y:446,alpha:0},
-    {t:38,scene:'terrace',x:1095,y:397,alpha:1},
-    {t:42,scene:'terrace',x:916,y:384,alpha:1},
-    {t:46,scene:'terrace',x:811,y:384,alpha:1},
-    {t:49,scene:'terrace',x:811,y:384,alpha:1},
+    {t:0, scene:'terrace',x:340,y:455,alpha:1},
+    {t:4, scene:'terrace',x:340,y:455,alpha:1},
+    {t:12,scene:'terrace',x:580,y:552,alpha:1},
+    {t:18,scene:'terrace',x:830,y:553,alpha:1},
+    {t:23,scene:'terrace',x:1110,y:490,alpha:1},
+    {t:25,scene:'terrace',x:1140,y:505,alpha:0},
+    {t:25.001,scene:'interior',x:1020,y:461,alpha:0},
+    {t:28,scene:'interior',x:1000,y:506,alpha:1},
+    {t:32,scene:'interior',x:920,y:544,alpha:1},
+    {t:35,scene:'interior',x:920,y:544,alpha:1},
+    {t:40,scene:'interior',x:1000,y:506,alpha:1},
+    {t:43,scene:'interior',x:1020,y:461,alpha:0},
+    {t:43.001,scene:'terrace',x:1140,y:505,alpha:0},
+    {t:45,scene:'terrace',x:1110,y:490,alpha:1},
+    {t:49,scene:'terrace',x:830,y:553,alpha:1},
+    {t:54,scene:'terrace',x:580,y:552,alpha:1},
+    {t:60,scene:'terrace',x:340,y:455,alpha:1},
+    {t:64,scene:'terrace',x:340,y:455,alpha:1},
   ];
+  const GABRIEL_NAV_CACHE=new Map();
   // Walking phase follows metres travelled, not the frame clock; idle characters
   // therefore stop moving their feet and resume without a sudden animation jump.
   let patrolDistance=0;
@@ -263,11 +270,33 @@
     const p=Math.max(0,Math.min(1,progress-Math.sin(2*Math.PI*progress)/(2*Math.PI)));
     const distance=Math.hypot(b.x-a.x,b.y-a.y);
     const walking=a.scene===b.scene&&distance>2;
-    const x=mix(a.x,b.x,p),y=mix(a.y,b.y,p);
+    let x=a.x,y=a.y,travelled=distance*p;
+    if(walking){
+      if(!GABRIEL_NAV_CACHE.has(i)){
+        const route=routeTo(a.scene,{x:a.x,y:a.y},{x:b.x,y:b.y});
+        GABRIEL_NAV_CACHE.set(i,route?.length?[{x:a.x,y:a.y},...route]:null);
+      }
+      const nodes=GABRIEL_NAV_CACHE.get(i);
+      if(nodes){
+        const lengths=nodes.slice(1).map((node,j)=>Math.hypot(node.x-nodes[j].x,node.y-nodes[j].y));
+        const total=lengths.reduce((sum,n)=>sum+n,0);
+        travelled=total*p;
+        let remaining=travelled;
+        for(let j=0;j<lengths.length;j++){
+          if(remaining<=lengths[j]||j===lengths.length-1){
+            const fraction=lengths[j]?Math.min(1,remaining/lengths[j]):0;
+            x=mix(nodes[j].x,nodes[j+1].x,fraction);
+            y=mix(nodes[j].y,nodes[j+1].y,fraction);
+            break;
+          }
+          remaining-=lengths[j];
+        }
+      }
+    }else if(a.scene===b.scene){x=mix(a.x,b.x,p);y=mix(a.y,b.y,p);}
     return {role:'gabriel',scene:a.scene,x,y,
       scale:perspectiveScale(a.scene,y,x),alpha:mix(a.alpha,b.alpha,p),walking,
       facing:walking&&Math.abs(b.x-a.x)>4?(b.x<a.x?-1:1):(i<9?-1:1),
-      step:(a.walkDistance+(walking?distance*p:0))*.1};
+      step:(a.walkDistance+(walking?travelled:0))*.1};
   }
   function holdGabriel(now){
     if(patrolPausedAt===null){gabrielHeldPosition=gabrielAt(now);patrolPausedAt=now;}
@@ -432,8 +461,8 @@
   }
   function pointOnFloor(scene,x,y){
     const data=SCENES[scene];
-    const inFloor=data.walkZones
-      ?data.walkZones.some(poly=>polygonContains(x,y,poly))
+    const inFloor=scene==='terrace'
+      ?Boolean(terraceFootMap?.inside(x,y))
       :data.corridors.some(([l,t,r,b])=>x>=l&&x<=r&&y>=t&&y<=b);
     return inFloor
       && !data.props.some(prop=>prop.foot&&polygonContains(x,y,prop.foot));
@@ -576,7 +605,7 @@
       case 'stranger':openDialogue('stranger');break;
       case 'palace':notify('The Royal Palace. This is exactly the meeting place Evelyn described.','El Palacio Real confirma el lugar de la cita.');break;
       case 'door':switchScene('interior',[1032,477],[992,555]);notify('Inside the Café de Oriente.','Has entrado al salón.');break;
-      case 'exit':switchScene('terrace',[1108,410],[1093,443]);notify('Back on the terrace.','Has regresado a la terraza.');break;
+      case 'exit':switchScene('terrace',[1140,505],[1110,493]);notify('Back on the terrace.','Has regresado a la terraza.');break;
       case 'carmen':openDialogue('carmen');break;
       case 'table':
         if(collect('key')){notify('A brass key! The tag says “Plaza de la Lealtad”.','La llave señala una plaza de Madrid.');speak('A brass key. Plaza de la Lealtad.');}
@@ -728,7 +757,8 @@
       if(dist<=step+1.5){actor.x=next.x;actor.y=next.y;path.shift();if(!path.length&&pending){const action=pending;pending=null;action();}}
     }
     ctx.clearRect(0,0,W,H);
-    const bg=scenes[state.scene];
+    const fullyLayered=originalsReady(state.scene);
+    const bg=fullyLayered?scenes[state.scene]:originalScenes[state.scene];
     if(bg.complete&&bg.naturalWidth){ctx.imageSmoothingEnabled=true;ctx.drawImage(bg,0,0,W,H);}
     else{ctx.fillStyle='#172b40';ctx.fillRect(0,0,W,H);}
     ctx.imageSmoothingEnabled=false;
@@ -747,7 +777,9 @@
     }
     // The round table and each chair are real independent foreground assets,
     // not a redraw of an area of the same scenery image.
-    drawIndividualObjects();
+    // While an image is still loading (or has failed), use the complete
+    // ORIGINAL scene so neither the foreground table nor its chairs vanish.
+    if(fullyLayered)drawIndividualObjects();
     trackGabriel(gabriel);
     requestAnimationFrame(frame);
   }

@@ -5,20 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101827">
   <meta name="description" content="Demo de aventura gráfica pixel art de Where Is Evelyn Blackwood? en el Café de Oriente, Madrid.">
-  <title>English Spy · Pixel Adventure v0.10</title>
-  <link rel="stylesheet" href="./game.css?v=10">
+  <title>English Spy · Pixel Adventure v0.11</title>
+  <link rel="stylesheet" href="./game.css?v=11">
 </head>
 <body>
   <div class="game-shell">
     <header class="mission-header">
-      <div class="mission-brand"><span class="brand-diamond">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>OPERACIÓN MADRID · PIXEL ADVENTURE v0.10</small></div></div>
+      <div class="mission-brand"><span class="brand-diamond">◆</span><div><strong>WHERE IS EVELYN BLACKWOOD?</strong><small>OPERACIÓN MADRID · PIXEL ADVENTURE v0.11</small></div></div>
       <div class="header-tools">
         <button class="header-button agent-button" data-ui="customize" title="Aspecto y nombre de tu agente">✦ Mi agente</button>
         <label class="level-picker">INGLÉS <select id="english-level" aria-label="Nivel de inglés"><option value="starter">Pre-A1</option><option value="basic">A1–A2</option><option value="intermediate">B1</option><option value="advanced">B2+</option></select></label>
         <button class="header-button" id="help-button" data-ui="help" aria-pressed="true">ES ✓</button>
         <button class="header-button" id="audio-button" data-ui="audio" aria-pressed="true" title="Audio en inglés">🔊</button>
         <button class="header-button" data-ui="reset" title="Reiniciar solo esta demostración">Reiniciar</button>
-        <a class="return-link" href="../">Versión anterior</a>
       </div>
     </header>
     <main class="game-main">
@@ -65,6 +64,7 @@
     </main>
     <div class="game-footer"><span>PISTA: clic en el suelo para caminar · pasa el cursor sobre los objetos y personajes</span><span id="status-text">SISTEMA PREPARADO</span></div>
   </div>
-  <script src="./game.js?v=10" defer></script>
+  <script src="./walkmap.js?v=11" defer></script>
+  <script src="./game.js?v=11" defer></script>
 </body>
 </html>
