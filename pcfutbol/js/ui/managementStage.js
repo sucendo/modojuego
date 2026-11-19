@@ -1,13 +1,13 @@
 import { GameState } from '../state.js';
-import { getStadiumStructure } from '../stadiums_2026_27.js';
-import { renderStadiumPlan, stadiumPlanAvailable } from './stadiumSvgPlan.js';
+import { getStadiumStructure } from '../stadiums_2026_27.js?v=1671';
+import { renderStadiumPlan, stadiumPlanAvailable } from './stadiumSvgPlan.js?v=1671';
 import {
   MANAGEMENT_STAGES, TRAINING_TYPES, TICKET_SECTORS, PLAYER_TRAINING_FOCUS, TRAINED_ATTRIBUTES, ensureManagementState,
   getManagementStage, getPendingUserFixtures, getTicketPrice, getStadiumSectors,
   getTicketSectorPrices, getTicketLevelPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice, setTicketLevelPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
   getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus, getPlayerTrainingReport,
-} from '../game/managementCycle.js?v=1670';
+} from '../game/managementCycle.js?v=1671';
 
 let initialized = false;
 let currentMonth = '';

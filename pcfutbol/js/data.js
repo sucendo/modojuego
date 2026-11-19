@@ -13,7 +13,7 @@ import { SQUAD_SUPPLEMENTS_2026_27 } from './squadSupplements2026.js';
 import { buildSquadFromSnapshot } from './rosterSnapshot.js';
 import { createClubTacticalIdentity } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
-import { createStadiumRecord } from './stadiums_2026_27.js';
+import { createStadiumRecord } from './stadiums_2026_27.js?v=1671';
 
 // Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
 // La clave es el id del club (real_madrid, barcelona, arsenal, astonvilla, ...).
