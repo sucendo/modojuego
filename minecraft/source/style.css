@@ -442,3 +442,7 @@ h1 span { color: #a2d57f; margin-left: 12px; font-size: .55em; }
  .touch-actions{bottom:85px}
  .touch-look-hint,.touch-playing #mini-map-hud{display:none}
 }
+
+:fullscreen {background:#142b31}
+.touch-top button[data-touch="fullscreen"]{min-width:44px;font-size:23px;line-height:1;padding:6px}
+#fullscreen-game[hidden]{display:none}

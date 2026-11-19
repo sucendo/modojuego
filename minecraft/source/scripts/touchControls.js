@@ -1,3 +1,4 @@
+import { enterFullscreen, toggleFullscreen, fullscreenSupported } from './fullscreen.js';
 import { TouchInput } from './touchInput.js';
 import { t, onLanguageChange } from './i18n.js';
 
@@ -17,15 +18,19 @@ export function setupTouchControls(player, canvas, orbitControls) {
       <button type="button" data-touch="tool"></button>
     </div>
     <div class="touch-top">
+      <button type="button" data-touch="fullscreen"></button>
       <button type="button" data-touch="inventory"></button>
       <button type="button" data-touch="menu"></button>
     </div><div class="touch-look-hint"></div>`;
   document.body.append(root);
   const stick=root.querySelector('#touch-stick'), thumb=stick.querySelector('span');
-  const labels={jump:'touchJump',action:'touchAction',use:'touchUse',tool:'touchTool',inventory:'touchInventory',menu:'touchMenu'};
+  const labels={jump:'touchJump',action:'touchAction',use:'touchUse',tool:'touchTool',inventory:'touchInventory',menu:'touchMenu',fullscreen:'touchFullscreen'};
   const translate=()=>{
     for(const [action,key] of Object.entries(labels))root.querySelector(`[data-touch="${action}"]`).textContent=t(key);
     stick.setAttribute('aria-label',t('touchMove'));
+    const fullButton=root.querySelector('[data-touch="fullscreen"]');
+    fullButton.textContent='⛶';fullButton.setAttribute('aria-label',t('touchFullscreen'));fullButton.title=t('touchFullscreen');
+    fullButton.hidden=!fullscreenSupported();
     root.querySelector('.touch-look-hint').textContent=t('touchLook');
   };
   translate();onLanguageChange(translate);
@@ -43,6 +48,7 @@ export function setupTouchControls(player, canvas, orbitControls) {
   controls.lock=()=>{
     if(!touchMode)return nativeLock();
     if(controls.isLocked)return;
+    void enterFullscreen();
     player.camera.rotation.reorder('YXZ');
     controls.isLocked=true;controls.dispatchEvent({type:'lock'});show();
   };
@@ -80,9 +86,10 @@ export function setupTouchControls(player, canvas, orbitControls) {
   },true);
   for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,e=>input.end(e.pointerId),true);
   const act=button=>player.onMouseDown({button,shiftKey:false,preventDefault(){}});
-  const actions={jump:()=>player.onKeyDown({code:'Space',repeat:false}),action:()=>act(0),use:()=>act(2),tool:()=>player.selectPickaxe(),inventory:()=>player.openInventory(),menu:()=>controls.unlock()};
+  const actions={fullscreen:()=>{void toggleFullscreen();},jump:()=>player.onKeyDown({code:'Space',repeat:false}),action:()=>act(0),use:()=>act(2),tool:()=>player.selectPickaxe(),inventory:()=>player.openInventory(),menu:()=>controls.unlock()};
   for(const button of root.querySelectorAll('button')){
     button.addEventListener('pointerdown',e=>{
+      if(button.dataset.touch==='fullscreen')return;
       consume(e);if(!controls.isLocked)return;
       button.setPointerCapture(e.pointerId);
       const action=button.dataset.touch;actions[action]();
@@ -91,7 +98,7 @@ export function setupTouchControls(player, canvas, orbitControls) {
     const release=()=>{if(button.dataset.touch==='action'){clearInterval(repeat);repeat=null;}};
     for(const name of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(name,release);
     // Keyboard and assistive technology can also activate the controls.
-    button.addEventListener('click',e=>{if(e.detail===0&&controls.isLocked)actions[button.dataset.touch]();});
+    button.addEventListener('click',e=>{if(controls.isLocked&&(button.dataset.touch==='fullscreen'||e.detail===0))actions[button.dataset.touch]();});
   }
   document.getElementById('toolbar').addEventListener('pointerdown',e=>{
     if(touchMode&&controls.isLocked)e.stopPropagation();
