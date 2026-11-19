@@ -59,6 +59,7 @@ export function ensureManagementState(state) {
   if (!Object.values(MANAGEMENT_STAGES).includes(m.stage)) m.stage = MANAGEMENT_STAGES.WEEK;
   if (!m.ticketPrices || typeof m.ticketPrices !== 'object') m.ticketPrices = {};
   if (!m.ticketZonePrices || typeof m.ticketZonePrices !== 'object') m.ticketZonePrices = {};
+  if (!m.ticketLevelPrices || typeof m.ticketLevelPrices !== 'object') m.ticketLevelPrices = {};
   if (m.ticketMode !== 'auto' && m.ticketMode !== 'manual') m.ticketMode = 'auto';
   if (!m.trainingDays || typeof m.trainingDays !== 'object') m.trainingDays = {};
   if (!m.trainingApplied || typeof m.trainingApplied !== 'object') m.trainingApplied = {};
@@ -81,6 +82,7 @@ export function setTicketPrice(state, fx, price) {
   management.ticketPrices[fixtureKey(fx)] = Math.round(numeric);
   // La API antigua sigue representando una tarifa plana de todas las localidades.
   management.ticketZonePrices[fixtureKey(fx)] = Object.fromEntries(TICKET_SECTORS.map(s => [s.id, Math.round(numeric)]));
+  delete management.ticketLevelPrices[fixtureKey(fx)];
   return true;
 }
 
@@ -165,19 +167,62 @@ export function setTicketSectorPrice(state, fx, sectorId, price) {
   const key = fixtureKey(fx);
   if (!management.ticketZonePrices[key]) management.ticketZonePrices[key] = {};
   management.ticketZonePrices[key][sectorId] = Math.round(value);
+  // Ajustar una zona completa prevalece sobre precios antiguos de sus niveles.
+  if (management.ticketLevelPrices[key]) delete management.ticketLevelPrices[key][sectorId];
   return true;
 }
 
-export function adjustTicketSectorPrices(state, fixtures, { sectorId = 'all', operation = 'percent', amount = 0 } = {}) {
+export function getTicketLevelPrices(state, fx, sectorId) {
+  const sector = getStadiumSectors(state, fx).find(s => s.id === sectorId);
+  if (!sector) return [];
+  const management = ensureManagementState(state);
+  const locked = fx?.meta?.ticketLevelPricesLocked?.[sectorId];
+  const custom = locked || (fx?.meta?.ticketPriceLocked != null ? null : management.ticketLevelPrices[fixtureKey(fx)]?.[sectorId]);
+  const base = getTicketSectorPrices(state, fx)[sectorId];
+  return sector.levels.map((tier, index) => {
+    const value = Number(custom?.[index]);
+    return { ...tier, index, price: custom?.[index] != null && value >= 5 && value <= 250 ? value : base };
+  });
+}
+
+export function setTicketLevelPrice(state, fx, sectorId, levelIndex, price) {
+  if (!fx || fx.played || fx.meta?.ticketPriceLocked != null ||
+      String(fx.homeClubId) !== String(state.user?.clubId) ||
+      !Number.isInteger(levelIndex) || levelIndex < 0 ||
+      !getStadiumSectors(state, fx).find(s => s.id === sectorId)?.levels[levelIndex]) return false;
+  const value = Number(price);
+  if (!Number.isFinite(value) || value < 5 || value > 250) return false;
+  const management = ensureManagementState(state);
+  const key = fixtureKey(fx);
+  if (!management.ticketLevelPrices[key]) management.ticketLevelPrices[key] = {};
+  if (!management.ticketLevelPrices[key][sectorId]) management.ticketLevelPrices[key][sectorId] = {};
+  management.ticketLevelPrices[key][sectorId][levelIndex] = Math.round(value);
+  return true;
+}
+
+export function adjustTicketSectorPrices(state, fixtures, { sectorId = 'all', levelIndex = null, operation = 'percent', amount = 0 } = {}) {
   if (!['all', ...TICKET_SECTORS.map(s => s.id)].includes(sectorId) ||
       !['percent', 'euros'].includes(operation) || !Number.isFinite(Number(amount))) return 0;
+  if (levelIndex != null && (sectorId === 'all' || !Number.isInteger(levelIndex))) return 0;
   let changed = 0;
   for (const fx of fixtures || []) {
     const prices = getTicketSectorPrices(state, fx);
     for (const sector of TICKET_SECTORS) {
       if (sectorId !== 'all' && sector.id !== sectorId) continue;
+      const updatedPrice = value => clamp(Math.round(operation === 'percent' ? value * (1 + Number(amount) / 100) : value + Number(amount)), 5, 250);
+      if (levelIndex != null) {
+        const tier = getTicketLevelPrices(state, fx, sector.id)[levelIndex];
+        if (tier && setTicketLevelPrice(state, fx, sector.id, levelIndex, updatedPrice(tier.price))) changed++;
+        continue;
+      }
+      const overrides = { ...ensureManagementState(state).ticketLevelPrices[fixtureKey(fx)]?.[sector.id] };
       const value = operation === 'percent' ? prices[sector.id] * (1 + Number(amount) / 100) : prices[sector.id] + Number(amount);
-      if (setTicketSectorPrice(state, fx, sector.id, clamp(Math.round(value), 5, 250))) changed++;
+      if (setTicketSectorPrice(state, fx, sector.id, clamp(Math.round(value), 5, 250))) {
+        changed++;
+        for (const [index, tierPrice] of Object.entries(overrides)) {
+          setTicketLevelPrice(state, fx, sector.id, Number(index), updatedPrice(Number(tierPrice)));
+        }
+      }
     }
   }
   return changed;
@@ -194,12 +239,21 @@ export function getTicketSalesProjection(state, fx, baseAttendance = null) {
   const breakdown = sectors.map(sector => {
     const price = prices[sector.id];
     const reference = clamp(Math.round(base * sector.factor), 5, 250);
-    const demand = clamp(1 - 0.30 * Math.log(price / reference), 0.35, 1.18);
-    const filled = clamp(Math.round(attendance * sector.share * demand), 0, sector.capacity);
-    const revenue = Math.round(filled * price);
+    const tiers = getTicketLevelPrices(state, fx, sector.id);
+    const distributions = tiers.length ? tiers : [{ name: 'Zona completa', capacity: sector.capacity, price }];
+    let filled = 0;
+    let revenue = 0;
+    const levels = distributions.map(tier => {
+      const demand = clamp(1 - 0.30 * Math.log(tier.price / reference), 0.35, 1.18);
+      const attendanceAtLevel = clamp(Math.round(attendance * tier.capacity / capacity * demand), 0, tier.capacity);
+      const ticketRevenue = Math.round(attendanceAtLevel * tier.price);
+      filled += attendanceAtLevel;
+      revenue += ticketRevenue;
+      return { ...tier, attendance: attendanceAtLevel, revenue: ticketRevenue };
+    });
     totalAttendance += filled;
     totalRevenue += revenue;
-    return { ...sector, price, attendance: filled, revenue };
+    return { ...sector, price, attendance: filled, revenue, levels };
   });
   return { capacity, attendance: totalAttendance, revenue: totalRevenue, breakdown };
 }
@@ -443,6 +497,7 @@ export function lockCurrentTicketPrice(state, fx) {
   if (!fx.meta || typeof fx.meta !== 'object') fx.meta = {};
   if (fx.meta.ticketPriceLocked == null) fx.meta.ticketPriceLocked = getTicketPrice(state, fx);
   if (!fx.meta.ticketZonePricesLocked) fx.meta.ticketZonePricesLocked = getTicketSectorPrices(state, fx);
+  if (!fx.meta.ticketLevelPricesLocked) fx.meta.ticketLevelPricesLocked = structuredClone(ensureManagementState(state).ticketLevelPrices[fixtureKey(fx)] || {});
 }
 
 // Recaudación real a la caja del club, solo una vez y únicamente como local.
@@ -457,6 +512,10 @@ export function settleUserTicketSales(state, fx) {
   fx.meta.attendance = result.attendance;
   fx.meta.ticketRevenue = result.revenue;
   fx.meta.ticketRevenueBySector = result.breakdown.map(({ id, capacity, attendance, price, revenue }) => ({ id, capacity, attendance, price, revenue }));
+  fx.meta.ticketRevenueByLevel = result.breakdown.flatMap(sector => sector.levels.map((tier, index) => ({
+    sectorId: sector.id, levelIndex: index, name: tier.name,
+    capacity: tier.capacity, attendance: tier.attendance, price: tier.price, revenue: tier.revenue,
+  })));
   fx.meta.ticketRevenueApplied = true;
   home.cash = Number(home.cash || 0) + result.revenue;
   return result.revenue;
@@ -469,4 +528,5 @@ function lockTicketPriceAfterMatch(state, fx) {
 function lockCurrentTicketPriceAfterMatch(state, fx) {
   if (fx.meta.ticketPriceLocked == null) fx.meta.ticketPriceLocked = getTicketPrice(state, fx);
   if (!fx.meta.ticketZonePricesLocked) fx.meta.ticketZonePricesLocked = getTicketSectorPrices(state, fx);
+  if (!fx.meta.ticketLevelPricesLocked) fx.meta.ticketLevelPricesLocked = structuredClone(ensureManagementState(state).ticketLevelPrices[fixtureKey(fx)] || {});
 }

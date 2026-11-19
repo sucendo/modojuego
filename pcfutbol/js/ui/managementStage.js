@@ -1,17 +1,19 @@
 import { GameState } from '../state.js';
 import { getStadiumStructure } from '../stadiums_2026_27.js';
+import { renderStadiumPlan, stadiumPlanAvailable } from './stadiumSvgPlan.js';
 import {
   MANAGEMENT_STAGES, TRAINING_TYPES, TICKET_SECTORS, PLAYER_TRAINING_FOCUS, TRAINED_ATTRIBUTES, ensureManagementState,
   getManagementStage, getPendingUserFixtures, getTicketPrice, getStadiumSectors,
-  getTicketSectorPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice,
+  getTicketSectorPrices, getTicketLevelPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice, setTicketLevelPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
   getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus, getPlayerTrainingReport,
-} from '../game/managementCycle.js?v=1660';
+} from '../game/managementCycle.js?v=1670';
 
 let initialized = false;
 let currentMonth = '';
 let selectedTrainingDay = '';
 let selectedSector = 'tribuna';
+let selectedLevel = null;
 let selectedPlayer = '';
 
 const get = id => document.getElementById(id);
@@ -53,16 +55,34 @@ export function initManagementUI({ onContinue } = {}) {
     updateManagementView();
   });
   // Selección desde el plano o la lista: mismo sector y precio en ambos sitios.
-  for (const id of ['pcf-stadium-map', 'pcf-ticket-sector-list']) {
+  for (const id of ['pcf-stadium-map', 'pcf-ticket-sector-list', 'pcf-stadium-levels']) {
     get(id)?.addEventListener('click', event => {
-      const button = event.target.closest('button[data-sector]');
+      const button = event.target.closest('[data-sector]');
       if (!button) return;
       selectedSector = button.dataset.sector;
+      selectedLevel = button.dataset.levelIndex == null ? null : Number(button.dataset.levelIndex);
       updateManagementView();
     });
   }
+  get('pcf-stadium-map')?.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const target = event.target.closest('[role="button"][data-sector]');
+    if (!target) return;
+    event.preventDefault();
+    selectedSector = target.dataset.sector;
+    selectedLevel = target.dataset.levelIndex == null ? null : Number(target.dataset.levelIndex);
+    updateManagementView();
+  });
+  get('pcf-ticket-level-select')?.addEventListener('change', event => {
+    selectedLevel = event.target.value === 'all' ? null : Number(event.target.value);
+    updateManagementView();
+  });
   get('pcf-ticket-sector-apply')?.addEventListener('click', () => {
-    if (!setTicketSectorPrice(GameState, selectedFixture(), selectedSector, get('pcf-ticket-sector-price')?.value)) {
+    const change = selectedLevel == null ? setTicketSectorPrice : setTicketLevelPrice;
+    const args = [GameState, selectedFixture(), selectedSector];
+    if (selectedLevel != null) args.push(selectedLevel);
+    args.push(get('pcf-ticket-sector-price')?.value);
+    if (!change(...args)) {
       text('pcf-ticket-hint', 'No se puede cambiar este precio. Comprueba la tarifa y la fecha.');
       return;
     }
@@ -71,9 +91,15 @@ export function initManagementUI({ onContinue } = {}) {
   get('pcf-ticket-adjust-apply')?.addEventListener('click', () => {
     const fx = selectedFixture();
     const targets = get('pcf-ticket-adjust-scope')?.value === 'future' ? homeFixtures() : fx ? [fx] : [];
-    const zone = get('pcf-ticket-adjust-zone')?.value === 'selected' ? selectedSector : 'all';
+    const choice = get('pcf-ticket-adjust-zone')?.value;
+    const zone = choice === 'selected' || choice === 'level' ? selectedSector : 'all';
+    if (choice === 'level' && selectedLevel == null) {
+      text('pcf-ticket-hint', 'Selecciona primero una grada concreta en el plano o en la lista de niveles.');
+      return;
+    }
     const count = adjustTicketSectorPrices(GameState, targets, {
       sectorId: zone,
+      levelIndex: choice === 'level' ? selectedLevel : null,
       operation: get('pcf-ticket-adjust-operation')?.value,
       amount: Number(get('pcf-ticket-adjust-amount')?.value),
     });
@@ -162,6 +188,9 @@ function updateTicketView(stage) {
   const prices = fx ? getTicketSectorPrices(GameState, fx) : {};
   const projection = fx ? getTicketSalesProjection(GameState, fx) : null;
   const stadiumCapacity = projection?.capacity || sectors.reduce((sum, s) => sum + s.capacity, 0);
+  const activeSector = sectors.find(s => s.id === selectedSector);
+  if (selectedLevel != null && !activeSector?.levels[selectedLevel]) selectedLevel = null;
+  const activeLevels = getTicketLevelPrices(GameState, fx, selectedSector);
   const tierCount = structure.levels?.length || 0;
   const facts = get('pcf-stadium-facts');
   if (facts) {
@@ -184,9 +213,24 @@ function updateTicketView(stage) {
       item.append(name, count); facts.append(item);
     }
   }
-  text('pcf-stadium-capacity', `${number(stadiumCapacity)} plazas disponibles · Selecciona una zona del plano para consultar sus graderíos.`);
+  text('pcf-stadium-capacity', `${number(stadiumCapacity)} localidades · Pulsa una grada del plano para elegir su nivel y tarifa.`);
 
-  for (const button of get('pcf-stadium-map')?.querySelectorAll('button[data-sector]') || []) {
+  const map = get('pcf-stadium-map');
+  if (map && stadiumPlanAvailable(structure.plan)) {
+    const levelPrices = Object.fromEntries(sectors.map(sector => [sector.id, getTicketLevelPrices(GameState, fx, sector.id)]));
+    renderStadiumPlan(map, { plan: structure.plan, sectors, prices, levelPrices, selectedSector, selectedLevel });
+  } else if (map?.classList.contains('pcf-stadium-map--svg')) {
+    // No conservar el Metropolitano si el usuario inicia una nueva partida con otro club.
+    map.classList.remove('pcf-stadium-map--svg');
+    map.innerHTML = '<button type="button" class="pcf-sector-stand pcf-sector-stand--vip" data-sector="vip">PALCOS VIP</button>' +
+      '<button type="button" class="pcf-sector-stand pcf-sector-stand--tribuna" data-sector="tribuna">TRIBUNA</button>' +
+      '<button type="button" class="pcf-sector-stand pcf-sector-stand--norte" data-sector="norte">FONDO NORTE</button>' +
+      '<div class="pcf-stadium-pitch" aria-hidden="true"><div class="pcf-stadium-pitch__center"></div></div>' +
+      '<button type="button" class="pcf-sector-stand pcf-sector-stand--sur" data-sector="sur">FONDO SUR</button>' +
+      '<button type="button" class="pcf-sector-stand pcf-sector-stand--preferencia" data-sector="preferencia">PREFERENCIA</button>';
+  }
+
+  for (const button of map?.querySelectorAll('button[data-sector]') || []) {
     const sector = sectors.find(s => s.id === button.dataset.sector);
     if (!sector) continue;
     button.classList.toggle('is-selected', sector.id === selectedSector);
@@ -206,13 +250,14 @@ function updateTicketView(stage) {
       const left = document.createElement('span');
       left.textContent = `${s.label} · ${number(s.capacity)} plazas${s.allocationStatus === 'estimated' ? ' aprox.' : ''}`;
       const right = document.createElement('strong');
-      right.textContent = fx ? euros(prices[s.id]) : '—';
+      const byLevel = fx ? getTicketLevelPrices(GameState, fx, s.id) : [];
+      const distinct = [...new Set(byLevel.map(level => level.price))];
+      right.textContent = !fx ? '—' : distinct.length > 1 ? `${Math.min(...distinct)}–${Math.max(...distinct)} €` : euros(distinct[0] ?? prices[s.id]);
       button.append(left, right);
       list.append(button);
     }
   }
   const levels = get('pcf-stadium-levels');
-  const activeSector = sectors.find(s => s.id === selectedSector);
   if (levels) {
     levels.replaceChildren();
     const heading = document.createElement('strong');
@@ -222,13 +267,18 @@ function updateTicketView(stage) {
       const message = document.createElement('p');
       message.textContent = 'Zona comercial VIP. Los palcos se distribuyen por el recinto; no constituyen un anfiteatro independiente.';
       levels.append(message);
-    } else if (activeSector?.levels?.length) {
+    } else if (activeLevels.length) {
       const wrapper = document.createElement('div'); wrapper.className = 'pcf-stadium-levels__grid';
-      for (const tier of activeSector.levels) {
-        const item = document.createElement('div'); item.className = 'pcf-stadium-levels__item';
+      for (const tier of activeLevels) {
+        const item = document.createElement('button'); item.type = 'button';
+        item.dataset.sector = selectedSector;
+        item.dataset.levelIndex = String(tier.index);
+        item.setAttribute('aria-pressed', String(selectedLevel === tier.index));
+        item.className = `pcf-stadium-levels__item${selectedLevel === tier.index ? ' is-selected' : ''}`;
         const label = document.createElement('span'); label.textContent = tier.name;
-        const count = document.createElement('strong'); count.textContent = `${number(tier.capacity)} aprox.`;
-        item.append(label, count); wrapper.append(item);
+        const count = document.createElement('strong'); count.textContent = `${number(tier.capacity)} plazas aprox.`;
+        const amount = document.createElement('em'); amount.textContent = `${tier.price ?? prices[selectedSector] ?? '—'} € / entrada`;
+        item.append(label, count, amount); wrapper.append(item);
       }
       levels.append(wrapper);
     } else {
@@ -236,6 +286,13 @@ function updateTicketView(stage) {
       message.textContent = 'No se ha documentado todavía cuántas alturas tiene esta zona; se mantiene el precio y el aforo comercial estimado.';
       levels.append(message);
     }
+  }
+  const levelSelector = get('pcf-ticket-level-select');
+  if (levelSelector) {
+    levelSelector.replaceChildren(new Option(`Zona completa · ${activeSector?.label || '—'}`, 'all'));
+    for (const tier of activeLevels) levelSelector.add(new Option(`${tier.name} · ${number(tier.capacity)} plazas aprox.`, String(tier.index)));
+    levelSelector.value = selectedLevel == null ? 'all' : String(selectedLevel);
+    levelSelector.disabled = !fx || !activeLevels.length;
   }
   const source = get('pcf-stadium-source');
   if (source) {
@@ -258,7 +315,10 @@ function updateTicketView(stage) {
     }
   }
   const sectorInput = get('pcf-ticket-sector-price');
-  if (sectorInput) { sectorInput.value = fx ? String(prices[selectedSector]) : ''; sectorInput.disabled = locked; }
+  if (sectorInput) {
+    sectorInput.value = fx ? String(selectedLevel == null ? prices[selectedSector] : activeLevels[selectedLevel]?.price ?? prices[selectedSector]) : '';
+    sectorInput.disabled = locked;
+  }
   const sectorSave = get('pcf-ticket-sector-apply');
   if (sectorSave) sectorSave.disabled = locked;
   const bulk = get('pcf-ticket-adjust-apply');
@@ -273,7 +333,8 @@ function updateTicketView(stage) {
       totals.textContent = `${number(projection.attendance)} espectadores / ${number(projection.capacity)} plazas · ${euros(projection.revenue)} de taquilla`;
       const selected = projection.breakdown.find(s => s.id === selectedSector);
       const detail = document.createElement('small');
-      detail.textContent = `${selected?.label || 'Zona'}: ${number(selected?.attendance)} entradas estimadas · ${euros(selected?.revenue)}`;
+      const tier = selectedLevel == null ? null : selected?.levels[selectedLevel];
+      detail.textContent = `${tier ? `${tier.name} (${selected.label})` : selected?.label || 'Zona'}: ${number(tier?.attendance ?? selected?.attendance)} entradas estimadas · ${euros(tier?.revenue ?? selected?.revenue)}`;
       forecast.append(title, totals, detail);
     } else forecast.textContent = 'Selecciona un partido como local para ver la previsión.';
   }
