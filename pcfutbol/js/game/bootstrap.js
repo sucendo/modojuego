@@ -8,7 +8,7 @@
 import { configureMainLeagueSync, configureWorldSimulateFixture } from './world/sync.js';
 import { configureAdvancedStatsGenerator, simulateQuickWorldFixture } from './world/quickSim.js';
 import { generateAdvancedStatsForFixture } from './match/advancedStats.js';
-import { syncMainLeagueUpTo } from './simulateMatchday.js?v=1651';
+import { syncMainLeagueUpTo } from './simulateMatchday.js?v=1660';
 
 let _bootstrapped = false;
 

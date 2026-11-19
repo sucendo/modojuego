@@ -11,7 +11,7 @@
 	<link rel="stylesheet" href="css/matchPreviewVisual26.css?v=1" />
 	<link rel="stylesheet" href="css/matchPostVisual26.css?v=141" />
 	<link rel="stylesheet" href="css/mobileVisual26.css?v=1" />
-	<link rel="stylesheet" href="css/managementCycle26.css?v=1651" />
+	<link rel="stylesheet" href="css/managementCycle26.css?v=1660" />
 </head>
 <body>
 	<header class="app-header">
@@ -429,21 +429,28 @@
 					<span id="pcf-ticket-status" class="pcf-management__status">Venta de entradas</span>
 				</header>
 				<p id="pcf-ticket-description" class="pcf-management__description">Configura los precios de tus próximos partidos en casa.</p>
-				<div class="pcf-management__column pcf-management__column--wide">
-					<label for="pcf-ticket-fixture">Próximo partido como local</label>
-					<select id="pcf-ticket-fixture"></select>
-					<label for="pcf-ticket-mode">Gestión de tarifas</label>
-					<select id="pcf-ticket-mode"><option value="auto">Automática (con ajustes propios)</option><option value="manual">Manual</option></select>
-					<div class="pcf-management__flat">
-						<label for="pcf-ticket-price">Aplicar precio único a todas las zonas (€)</label>
-						<input id="pcf-ticket-price" type="number" min="5" max="250" step="1" inputmode="numeric" />
-						<button id="pcf-ticket-flat-apply" type="button" class="btn btn-secondary">Aplicar precio único</button>
+				<div class="pcf-ticket-setup">
+					<div class="pcf-ticket-setup__panel">
+						<h3>1. Partido y gestión de entradas</h3>
+						<label for="pcf-ticket-fixture">Partido como local</label>
+						<select id="pcf-ticket-fixture"></select>
+						<label for="pcf-ticket-mode">Gestión de tarifas</label>
+						<select id="pcf-ticket-mode"><option value="auto">Automática (con ajustes propios)</option><option value="manual">Manual</option></select>
 					</div>
-					<p id="pcf-ticket-hint" class="pcf-management__hint" aria-live="polite"></p>
+					<div class="pcf-ticket-setup__panel">
+						<h3>2. Precio general</h3>
+						<p class="pcf-management__hint">Aplica una tarifa idéntica a todas las zonas; también puedes ajustar cada una en el plano.</p>
+						<div class="pcf-management__flat">
+							<label for="pcf-ticket-price">Precio único (€)<input id="pcf-ticket-price" type="number" min="5" max="250" step="1" inputmode="numeric" /></label>
+							<button id="pcf-ticket-flat-apply" type="button" class="btn btn-secondary">Aplicar a todas</button>
+						</div>
+						<p id="pcf-ticket-hint" class="pcf-management__hint" aria-live="polite"></p>
+					</div>
 				</div>
+				<div id="pcf-stadium-facts" class="pcf-stadium-facts" aria-label="Ficha del estadio"></div>
 				<div class="pcf-stadium-layout">
 					<div class="pcf-stadium-board">
-						<h3>Plano orientativo del estadio</h3>
+						<h3>3. Zonas del estadio</h3>
 						<p id="pcf-stadium-capacity" class="pcf-management__hint"></p>
 						<div id="pcf-stadium-map" class="pcf-stadium-map" aria-label="Seleccionar sector del estadio">
 							<button type="button" class="pcf-sector-stand pcf-sector-stand--vip" data-sector="vip">PALCOS VIP</button>
@@ -453,10 +460,11 @@
 							<button type="button" class="pcf-sector-stand pcf-sector-stand--sur" data-sector="sur">FONDO SUR</button>
 							<button type="button" class="pcf-sector-stand pcf-sector-stand--preferencia" data-sector="preferencia">PREFERENCIA</button>
 						</div>
-						<p class="pcf-management__hint">Distribución proporcional al aforo; no reproduce la arquitectura real del estadio.</p>
+						<div id="pcf-stadium-levels" class="pcf-stadium-levels" aria-live="polite"></div>
+						<p id="pcf-stadium-source" class="pcf-management__hint"></p>
 					</div>
 					<div class="pcf-stadium-controls">
-						<h3>Tarifas y previsión por sector</h3>
+						<h3>4. Tarifas y previsión por zona</h3>
 						<div id="pcf-ticket-sector-list" class="pcf-sector-list" aria-label="Zonas y precios"></div>
 						<label for="pcf-ticket-sector-price">Precio del sector seleccionado (€)</label>
 						<div class="pcf-sector-edit"><input id="pcf-ticket-sector-price" type="number" min="5" max="250" step="1" inputmode="numeric" /><button id="pcf-ticket-sector-apply" type="button" class="btn btn-secondary">Guardar sector</button></div>
@@ -464,7 +472,7 @@
 					</div>
 				</div>
 				<div class="pcf-ticket-bulk">
-					<h3>Subir o bajar tarifas</h3>
+					<h3>5. Subir o bajar tarifas</h3>
 					<div class="pcf-ticket-bulk__fields">
 						<label>Zona <select id="pcf-ticket-adjust-zone"><option value="all">Todas las zonas</option><option value="selected">Zona seleccionada</option></select></label>
 						<label>Cambio <select id="pcf-ticket-adjust-operation"><option value="percent">Porcentaje (%)</option><option value="euros">Importe (€)</option></select></label>
@@ -1861,7 +1869,7 @@
 		</div>
 	</div>
 	
-	<script type="module" src="js/main.js?v=1651"></script>
+	<script type="module" src="js/main.js?v=1660"></script>
 	
 </body>
 </html>
