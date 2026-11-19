@@ -373,7 +373,7 @@
   }
   function drawPerson(role,x,y,{facing=1,walking=false,stride=0,seated=false,heightFactor=1,rise=1,shadow=true}={}){
     const sprite=sprites[seated?'stranger-seated':role];if(!sprite?.naturalWidth)return;
-    const h=(save.scene==='terrace'?184:164)*scale(save.scene,y)*heightFactor*(seated?.78:1),w=h*sprite.naturalWidth/sprite.naturalHeight;
+    const h=(save.scene==='terrace'?218:164)*scale(save.scene,y)*heightFactor*(seated?.78:1),w=h*sprite.naturalWidth/sprite.naturalHeight;
     ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.imageSmoothingEnabled=false;
     if(shadow&&!seated){
       ctx.fillStyle='#08101b73';ctx.beginPath();ctx.ellipse(0,1,Math.max(10,w*.34),Math.max(3,3.3*scale(save.scene,y)),0,0,Math.PI*2);ctx.fill();
