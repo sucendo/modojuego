@@ -38,15 +38,18 @@
         {depth:525,poly:[[422,430],[452,376],[519,378],[556,414],[566,539],[434,543]]},
         {depth:548,poly:[[900,405],[941,364],[1038,374],[1064,417],[1064,526],[912,534]]},
         {depth:640,poly:[[0,430],[155,426],[230,485],[227,675],[0,675]]},
-        {depth:652,poly:[[541,561],[565,515],[635,496],[955,489],[1034,522],[1054,571],[1023,601],[957,630],[638,638],[551,606]]},
+        // The table is in front of visitors in the back aisle, but beside or
+        // behind visitors standing at its edge. Its old depth (652) erased
+        // whole torsos even when their feet were on the near-side pavement.
+        {depth:565,poly:[[541,561],[565,515],[635,496],[955,489],[1034,522],[1054,571],[1023,601],[957,630],[638,638],[551,606]]},
         {depth:663,poly:[[978,460],[1048,412],[1200,428],[1200,675],[1025,675]]},
       ],
       hotspots:[
-        {id:'receipt',x:766,y:552,w:140,h:75,walk:[580,595],label:'Folded receipt'},
+        {id:'receipt',x:840,y:545,w:86,h:60,walk:[580,595],label:'Folded receipt'},
         {id:'cup',x:825,y:498,w:66,h:57,walk:[592,511],label:'Coffee cup'},
-        {id:'stranger',x:380,y:410,w:72,h:122,walk:[412,551],label:'Man in grey'},
+        {id:'stranger',x:380,y:410,w:72,h:122,walk:[325,492],label:'Man in grey'},
         {id:'palace',x:466,y:277,w:490,h:148,walk:[330,550],label:'Royal Palace'},
-        {id:'door',x:1111,y:327,w:105,h:205,walk:[1065,464],label:'Enter the café'},
+        {id:'door',x:1111,y:327,w:105,h:205,walk:[1100,456],label:'Enter the café'},
       ],
     },
     interior:{
@@ -66,16 +69,16 @@
       ],
       foreground:[
         {depth:635,poly:[[0,531],[345,508],[441,542],[462,675],[0,675]]},
-        {depth:655,poly:[[435,501],[472,456],[563,424],[747,430],[835,473],[852,624],[810,675],[480,675]]},
+        {depth:564,poly:[[435,501],[472,456],[563,424],[747,430],[835,473],[852,624],[810,675],[480,675]]},
         {depth:660,poly:[[1048,378],[1179,376],[1200,603],[1118,649],[1051,621]]},
       ],
       hotspots:[
-        {id:'carmen',x:419,y:503,w:92,h:152,walk:[493,565],label:'Speak with Carmen'},
+        {id:'carmen',x:419,y:503,w:92,h:152,walk:[462,617],label:'Speak with Carmen'},
         {id:'table',x:637,y:532,w:230,h:145,walk:[866,574],label:'Look under the table'},
         {id:'window',x:1005,y:306,w:150,h:145,walk:[970,510],label:'Window by the plaza'},
         {id:'note',x:1015,y:529,w:65,h:61,walk:[960,564],label:'Folded paper'},
         {id:'menu',x:654,y:415,w:72,h:75,walk:[863,518],label:'Restaurant menu'},
-        {id:'exit',x:1043,y:321,w:113,h:138,walk:[1015,530],label:'Return to the terrace'},
+        {id:'exit',x:1043,y:321,w:113,h:138,walk:[1036,478],label:'Return to the terrace'},
       ],
     },
   };
@@ -94,7 +97,7 @@
   let path=[], pending=null, time=0, lastFrame=performance.now();
   let customizationDraft=null, gabrielHeldUntil=0, gabrielHeldPosition=null;
   let patrolPausedAt=null, patrolPausedDuration=0;
-  const scenes={};
+  const scenes={},surfacePatches={};
   const spriteImages={}, coatSprites=new Map(), foregrounds={};
   const spriteNames=['agent-m','agent-f','gabriel','carmen','stranger'];
   for(const role of spriteNames){
@@ -119,13 +122,40 @@
       return {depth:layer.depth,x:left,y:top,canvas:mask};
     });
   }
+  // The original illustration already contains the receipt. The restoration
+  // patch copies a nearby marble area once and feathers its edges so picking
+  // the receipt actually removes it, without repainting the whole café.
+  function makeSurfacePatch(bg,{x,y,w,h,sampleX,sampleY}){
+    const patch=document.createElement('canvas');patch.width=w;patch.height=h;
+    const p=patch.getContext('2d',{willReadFrequently:true});
+    p.imageSmoothingEnabled=true;p.drawImage(bg,-sampleX,-sampleY,W,H);
+    const pixels=p.getImageData(0,0,w,h),a=pixels.data,feather=8;
+    for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){
+      const edge=Math.min(xx,yy,w-1-xx,h-1-yy);
+      a[(yy*w+xx)*4+3]*=Math.min(1,Math.max(0,edge/feather));
+    }
+    p.putImageData(pixels,0,0);
+    return {x,y,canvas:patch};
+  }
   for(const [id,scene] of Object.entries(SCENES)){
-    scenes[id]=new Image();scenes[id].onload=()=>prepareForegrounds(id);scenes[id].src=scene.image;
+    scenes[id]=new Image();scenes[id].onload=()=>{
+      prepareForegrounds(id);
+      if(id==='terrace')surfacePatches.receipt=makeSurfacePatch(scenes[id],
+        {x:805,y:520,w:77,h:56,sampleX:870,sampleY:520});
+    };scenes[id].src=scene.image;
   }
   const mix=(a,b,t)=>a+(b-a)*Math.min(1,Math.max(0,t));
-  const perspectiveScale=(scene,y)=>{
+  const perspectiveScale=(scene,y,x=0)=>{
     const p=SCENES[scene].perspective;
-    return mix(p.farScale,p.nearScale,(y-p.farY)/(p.nearY-p.farY));
+    const depth=mix(p.farScale,p.nearScale,(y-p.farY)/(p.nearY-p.farY));
+    // The terrace doorway is raised relative to the plaza. World depth here
+    // depends on BOTH screen coordinates; Y alone made people tiny at the door.
+    if(scene==='terrace'){
+      const facade=Math.min(1,Math.max(0,(x-940)/170));
+      const close=Math.min(1,Math.max(0,(640-y)/130));
+      return depth+.42*facade*close;
+    }
+    return depth;
   };
   // Perspective has a hand-authored scale at the café threshold: its raised
   // doorway is nearer the camera than the terrace aisle at the same screen Y.
@@ -297,7 +327,9 @@
   }
   function allHotspots(){return [...SCENES[state.scene].hotspots,{id:'gabriel',x:0,y:0,w:85,h:135,label:'Talk to Gabriel'}];}
   function renderHotspots(){
-    hotspotsNode.innerHTML=allHotspots().map(base=>{
+    hotspotsNode.innerHTML=allHotspots().filter(base=>
+      !(base.id==='receipt'&&has('receipt'))&&!(base.id==='note'&&has('note'))
+    ).map(base=>{
       const h=liveHotspot(base.id)||base,visible=base.id!=='gabriel'||Boolean(liveHotspot('gabriel'));
       const acquired=(h.id==='receipt'&&has('receipt'))||(h.id==='table'&&has('key'))||(h.id==='note'&&has('note'));
       const translation=state.help?' · '+LABEL_ES[h.id]:'';
@@ -315,7 +347,7 @@
       el.style.setProperty('--hit-height',height/H*100+'%');
     }
   }
-  function switchScene(id,arrival=null){
+  function switchScene(id,arrival=null,walkOut=null){
     if(!SCENES[id])return;
     state.scene=id;state.flags.visitedInterior ||= id==='interior';
     actor={x:(arrival||SCENES[id].spawn)[0],y:(arrival||SCENES[id].spawn)[1],facing:id==='interior'?-1:1,step:0};
@@ -323,6 +355,9 @@
     $('scene-caption').textContent=SCENES[id].name;
     save();renderUI();
     sceneShell.classList.remove('scene-flash');void sceneShell.offsetWidth;sceneShell.classList.add('scene-flash');
+    // A doorway has two sides. Enter just across the threshold and physically
+    // walk out into the room, rather than teleporting to the middle of it.
+    if(walkOut)walkTo(...walkOut);
   }
   function polygonContains(x,y,points){
     let inside=false;
@@ -400,6 +435,29 @@
     if(!next?.length){notify('I cannot walk through the furniture.','Busca el pasillo libre.');return;}
     path=next;pending=callback;
   }
+  function approachPerson(h){
+    if(h.id!=='gabriel')return h.walk;
+    const g=gabrielHeldPosition||gabrielAt();
+    const offsets=[[-65,10],[65,10],[-48,-20],[48,-20],[-85,29],[85,29],[-40,52],[40,52],[-95,63],[95,63]];
+    let best=null,score=Infinity;
+    for(const [dx,dy] of offsets){
+      const x=g.x+dx,y=g.y+dy;
+      if(!walkable(state.scene,x,y))continue;
+      const route=routeTo(state.scene,{x:actor.x,y:actor.y},{x,y});
+      if(!route?.length)continue;
+      // A conversation happens at similar ground depth, facing one another.
+      // Only compromise on depth when a table separates the two characters.
+      const s=Math.abs(dy)*3+Math.abs(Math.hypot(dx,dy)-70)*.8+Math.hypot(x-actor.x,y-actor.y)*.09;
+      if(s<score){score=s;best=[x,y];}
+    }
+    return best||h.walk;
+  }
+  function facePartner(id){
+    const person=id==='gabriel'?(gabrielHeldPosition||gabrielAt()):SCENES[state.scene].actors.find(a=>a.role===id);
+    if(!person)return;
+    actor.facing=actor.x<person.x?1:-1;
+    if(id==='gabriel'&&gabrielHeldPosition)gabrielHeldPosition.facing=actor.x<person.x?-1:1;
+  }
   function interact(h){
     if(selectedItem){
       if(selectedItem==='receipt'&&h.id==='gabriel'){
@@ -426,8 +484,8 @@
       case 'gabriel':openDialogue('gabriel');break;
       case 'stranger':openDialogue('stranger');break;
       case 'palace':notify('The Royal Palace. This is exactly the meeting place Evelyn described.','El Palacio Real confirma el lugar de la cita.');break;
-      case 'door':switchScene('interior');notify('Inside the Café de Oriente.','Has entrado al salón.');break;
-      case 'exit':switchScene('terrace',[1063,438]);notify('Back on the terrace.','Has regresado a la terraza.');break;
+      case 'door':switchScene('interior',[1032,477],[992,555]);notify('Inside the Café de Oriente.','Has entrado al salón.');break;
+      case 'exit':switchScene('terrace',[1108,410],[1093,443]);notify('Back on the terrace.','Has regresado a la terraza.');break;
       case 'carmen':openDialogue('carmen');break;
       case 'table':
         if(collect('key')){notify('A brass key! The tag says “Plaza de la Lealtad”.','La llave señala una plaza de Madrid.');speak('A brass key. Plaza de la Lealtad.');}
@@ -474,6 +532,7 @@
     ]},
   };
   function openDialogue(id){
+    facePartner(id);
     dialog={id,reply:null};renderDialogue();
     speak(CONVERSATIONS[id].intro[0]);
   }
@@ -492,6 +551,8 @@
   }
   function renderDialogue(){
     if(!dialog){dialogNode.innerHTML='';return;}
+    dialogNode.dataset.mode=CONVERSATIONS[dialog.id]?'conversation':'case';
+    dialogNode.dataset.side=['carmen','stranger'].includes(dialog.id)?'right':'left';
     if(dialog.id==='case-end'){
       dialogNode.innerHTML=`<div class="dialog-panel"><div class="dialog-head"><span>CASE REPORT · NEW DESTINATION</span><button data-ui="close-dialog" aria-label="Cerrar">×</button></div><p class="dialog-text">“Plaza de la Lealtad. 19:10.” The trail leads to the Ritz — but it does not tell us whether Evelyn is safe.</p>${state.help?'<p class="dialog-spanish">La llave y la nota apuntan al Hotel Ritz. Seguimos sin saber si Evelyn está allí o quién está siguiendo sus pasos.</p>':''}<div class="dialog-actions"><button class="dialog-choice primary" data-ui="close-dialog">Continuar explorando Madrid</button><button class="dialog-choice" data-ui="notebook">Examinar el expediente</button></div></div>`;
       return;
@@ -510,7 +571,7 @@
   }
   function closeDialogue(){
     if(dialog?.id==='gabriel')gabrielHeldUntil=performance.now()+2000;
-    dialog=null;dialogNode.innerHTML='';
+    dialog=null;dialogNode.innerHTML='';delete dialogNode.dataset.mode;
   }
   function combine(first,second){
     selectedItem=null;renderUI();
@@ -533,10 +594,27 @@
   }
 
   function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
+  function drawSceneObjects(){
+    if(state.scene==='interior'&&!has('note')){
+      // The note is a real scene prop, not just an invisible click target.
+      ctx.save();ctx.translate(1016,529);ctx.rotate(-.15);
+      ctx.fillStyle='#10152699';ctx.fillRect(-15,-6,32,20);
+      ctx.fillStyle='#e2c69b';ctx.fillRect(-16,-10,29,17);
+      ctx.fillStyle='#fff0c9';ctx.fillRect(-13,-11,26,15);
+      ctx.fillStyle='#a17b54';ctx.fillRect(-8,-6,15,1);ctx.fillRect(-8,-2,18,1);
+      ctx.fillStyle='#c1a179';ctx.fillRect(-5,3,12,1);
+      ctx.restore();
+    }
+  }
+  function drawCollectedPatches(){
+    if(state.scene==='terrace'&&has('receipt')&&surfacePatches.receipt){
+      const p=surfacePatches.receipt;ctx.drawImage(p.canvas,p.x,p.y);
+    }
+  }
   function drawPerson({role,x,y,walking=false,facing=1,step=0,scale=null,alpha=1}, now){
     const img=role==='agent'?coatImage(state.avatar.style,state.avatar.coat):spriteImages[role];
     if(!img?.naturalWidth && !img?.width)return;
-    const depth=scale??perspectiveScale(state.scene,y);
+    const depth=scale??perspectiveScale(state.scene,y,x);
     const height=(role==='carmen'?116:123)*depth,width=height*img.width/img.height;
     const stride=walking?Math.sin(step)*3.2*depth:0;
     const bob=walking?Math.abs(Math.sin(step))*1.7*depth:Math.sin(now*.0021+x)*.35;
@@ -558,7 +636,7 @@
     if(patrolPausedAt!==null && now>=gabrielHeldUntil && dialog?.id!=='gabriel')releaseGabriel(now);
     if(path.length){
       const next=path[0],dx=next.x-actor.x,dy=next.y-actor.y,dist=Math.hypot(dx,dy);
-      const step=Math.min(dist,175*perspectiveScale(state.scene,actor.y)*dt);
+      const step=Math.min(dist,175*perspectiveScale(state.scene,actor.y,actor.x)*dt);
       if(dist>0){actor.x+=dx/dist*step;actor.y+=dy/dist*step;if(Math.abs(dx)>2)actor.facing=dx<0?-1:1;actor.step+=step*.1;}
       if(dist<=step+1.5){actor.x=next.x;actor.y=next.y;path.shift();if(!path.length&&pending){const action=pending;pending=null;action();}}
     }
@@ -567,7 +645,9 @@
     if(bg.complete&&bg.naturalWidth){ctx.imageSmoothingEnabled=true;ctx.drawImage(bg,0,0,W,H);}
     else{ctx.fillStyle='#172b40';ctx.fillRect(0,0,W,H);}
     ctx.imageSmoothingEnabled=false;
-    const all=SCENES[state.scene].actors.map(a=>({...a,walking:false,facing:a.role==='stranger'?-1:1}));
+    drawSceneObjects();
+    const all=SCENES[state.scene].actors.map(a=>({...a,walking:false,
+      facing:dialog?.id===a.role?(actor.x<a.x?-1:1):(a.role==='stranger'?-1:1)}));
     all.push({...actor,role:'agent',walking:path.length>0});
     const gabriel=gabrielAt(now);if(gabriel.scene===state.scene&&gabriel.alpha>.01)all.push(gabriel);
     const elements=[
@@ -578,6 +658,7 @@
       if(item.person)drawPerson(item.person,now);
       else ctx.drawImage(item.layer.canvas,item.layer.x,item.layer.y);
     }
+    drawCollectedPatches();
     trackGabriel(gabriel);
     if(path.length){const p=path[path.length-1];const pulse=Math.sin(time*5)*2;block(p.x-5-pulse,p.y+4,10+pulse*2,2,'#ffe1a8');}
     requestAnimationFrame(frame);
@@ -635,7 +716,8 @@
         if(h.id==='gabriel'){
           holdGabriel(performance.now());
         }
-        walkTo(...h.walk,()=>interact(h));
+        const approach=['gabriel','stranger','carmen'].includes(h.id)?approachPerson(h):h.walk;
+        walkTo(...approach,()=>interact(h));
       }
       return;
     }
