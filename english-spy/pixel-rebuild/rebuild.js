@@ -1,30 +1,41 @@
 /* English Spy — rebuilt scenery prototype. Clean, independent scene geometry. */
 (() => {
   'use strict';
-  const W=1200,H=675,STORAGE='english-spy-rebuild-alpha-02';
+  const W=1200,H=675,STORAGE='english-spy-rebuild-alpha-03';
   const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
   const $=id=>document.getElementById(id);
-  const sprites={},backdrops={},evidenceSprites={},furnitureSprites={};
+  const sprites={},backdrops={},evidenceSprites={},terraceLayers=[];
   const asset=(file)=>`./assets/${file}.webp`;
-  for(const [id,file] of Object.entries({terrace:'terrace',bistro:'bistro'})){
-    backdrops[id]=new Image();backdrops[id].src=asset(file);
+  for(const [id,file] of Object.entries({terrace:'../pixel-preview/assets/terrace-pixel',bistro:'bistro'})){
+    backdrops[id]=new Image();
+    backdrops[id].src=id==='terrace'?'../pixel-preview/assets/terrace-pixel.webp':asset(file);
   }
   for(const id of ['agent-m','agent-f','carmen','gabriel','stranger','stranger-seated']){
     sprites[id]=new Image();sprites[id].src=asset('characters/'+id);
   }
   for(const id of ['receipt','note','key']){evidenceSprites[id]=new Image();evidenceSprites[id].src='./assets/'+id+'.svg';}
-  for(const [id,file] of Object.entries({table:'marble-table',chair:'wrought-chair',planter:'flower-planter'})){
-    furnitureSprites[id]=new Image();furnitureSprites[id].src=`./assets/props/${file}.webp`;
-  }
-
-  // Furniture is a world object, not part of the background painting. Its foot
-  // collider and screen-depth are independent of its tall visual silhouette.
-  // The right-hand chair is drawn in two passes around the marble table so its
-  // far back is behind the tabletop while its near seat is in front.
-  const terraceFurniture=[
-    {id:'planter',image:'planter',x:4,y:402,w:220,h:290,footY:680},
-    {id:'chair',image:'chair',x:969,y:401,w:218,h:281,footY:674},
-    {id:'table',image:'table',x:559,y:411,w:460,h:306,footY:712}
+  // Recover the original, densely furnished terrace. Each object is traced
+  // from the SAME illustration, so perspective, lighting and pixels match.
+  // Its floor collision is separate from its foreground paint mask.
+  const terraceProps=[
+    {id:'flowerbed',depth:667,foot:[[0,508],[150,500],[231,548],[229,675],[0,675]],
+      masks:[[[0,430],[155,426],[230,485],[227,675],[0,675]]]},
+    {id:'planter',depth:552,foot:[[422,481],[551,477],[562,542],[426,543]],
+      masks:[[[422,430],[452,376],[519,378],[556,414],[566,539],[434,543]]]},
+    {id:'chairs-west',depth:535,foot:[[627,423],[715,412],[730,521],[626,530]],
+      masks:[[[624,391],[721,383],[737,532],[621,531]]]},
+    {id:'chairs-centre',depth:524,foot:[[727,410],[826,402],[841,512],[723,521]],
+      masks:[[[722,377],[831,370],[849,521],[712,522]]]},
+    {id:'chairs-east',depth:527,foot:[[833,410],[956,403],[976,516],[831,520]],
+      masks:[[[826,376],[963,371],[988,522],[817,525]]]},
+    {id:'door-planter',depth:540,foot:[[915,434],[1039,430],[1053,532],[913,536]],
+      masks:[[[900,405],[941,364],[1038,374],[1064,417],[1064,526],[912,534]]]},
+    {id:'front-table',depth:676,foot:[[550,551],[614,526],[995,513],[1059,566],[1026,675],[622,675]],
+      masks:[[[541,561],[565,515],[635,496],[955,489],[1034,522],[1054,571],[1023,601],[957,630],[638,638],[551,606]]]},
+    {id:'front-chair',depth:684,foot:[[1012,511],[1087,458],[1200,478],[1200,675],[1026,675]],
+      masks:[[[978,460],[1048,412],[1200,428],[1200,675],[1025,675]]]},
+    {id:'tree-trunk',depth:685,foot:[[0,0],[108,0],[99,401],[0,409]],
+      masks:[[[0,0],[490,0],[453,64],[284,101],[186,180],[94,386],[0,410]]]}
   ];
 
   // Every scene has one authoritative floor mesh, measured at the ACTOR'S FEET.
@@ -33,31 +44,31 @@
   const world={
     terrace:{
       title:'PLAZA DE ORIENTE · CAFÉ DE ORIENTE · 18:47',
-      scale:{farY:375,nearY:675,far:.72,near:1.35},
-      spawn:{x:325,y:615},door:{x:1085,y:494},
-      floors:[[[124,532],[315,467],[485,426],[700,416],[850,440],[1000,470],[1129,485],[1198,675],[150,675]],
-        [[945,460],[1129,454],[1198,620],[1031,655]]],
-      blocks:[
-        [[0,412],[115,422],[148,503],[148,675],[0,675]],
-        [[726,377],[801,375],[823,454],[734,460]],
-        [[986,371],[1070,363],[1100,470],[1009,476]],
-        // Closer foliage occupies the floor even where some leaves float above it.
-        [[0,534],[205,555],[243,628],[247,675],[0,675]],
-        // Table, chair and pedestal form an actual no-walk furniture island.
-        [[614,561],[932,555],[1017,594],[1036,675],[593,675],[563,610]],
-        [[1024,557],[1151,535],[1194,675],[1027,675]]
+      scale:{farY:405,nearY:655,far:.74,near:1.40},
+      spawn:{x:305,y:594},door:{x:1095,y:448},
+      floors:[
+        [[230,397],[420,397],[420,655],[230,655]],
+        [[387,373],[630,373],[630,437],[387,437]],
+        [[385,540],[620,540],[620,675],[385,675]],
+        [[565,414],[627,414],[627,568],[565,568]],
+        [[563,362],[1138,362],[1138,410],[563,410]],
+        [[1049,382],[1150,382],[1150,510],[1049,510]]
       ],
+      blocks:terraceProps.filter(p=>p.id!=='tree-trunk').map(p=>p.foot),
       targets:[
-        {id:'palace',name:'Royal Palace',es:'Palacio Real',x:390,y:255,rx:285,ry:142,walk:[437,540],verb:'look'},
-        {id:'table',name:'Outdoor table',es:'Mesa de mármol',x:790,y:477,rx:229,ry:82,walk:[548,532],verb:'look'},
-        {id:'chair',name:'Wrought-iron chair',es:'Silla de forja',x:1093,y:481,rx:80,ry:113,walk:[987,500],verb:'look'},
-        {id:'cup',name:'Coffee cup',es:'Taza de café',x:835,y:465,rx:42,ry:30,walk:[548,533],verb:'look'},
-        {id:'newspaper',name:'Folded newspaper',es:'Periódico doblado',x:739,y:513,rx:64,ry:28,walk:[548,533],verb:'look'},
-        {id:'receipt',name:'Folded receipt',es:'Recibo doblado',x:860,y:513,rx:30,ry:25,walk:[548,533],verb:'take',item:'receipt'},
-        {id:'planter',name:'Flower planter',es:'Jardinera',x:112,y:535,rx:113,ry:132,walk:[284,585],verb:'look'},
-        {id:'tree',name:'Old plane tree',es:'Plátano de sombra',x:113,y:156,rx:125,ry:147,walk:[277,544],verb:'look'},
-        {id:'garden',name:'Ornamental garden',es:'Jardín',x:260,y:413,rx:92,ry:53,walk:[291,538],verb:'look'},
-        {id:'door',name:'Café de Oriente entrance',es:'Entrar al café',x:1074,y:417,rx:74,ry:115,walk:[1085,494],verb:'enter'}
+        {id:'palace',name:'Royal Palace',es:'Palacio Real',x:425,y:269,rx:316,ry:141,walk:[320,539],verb:'look'},
+        {id:'table',name:'Outdoor table',es:'Mesa de mármol de la terraza',x:785,y:541,rx:221,ry:82,walk:[540,592],verb:'look'},
+        {id:'chair',name:'Wrought-iron chair',es:'Silla de forja',x:1096,y:506,rx:88,ry:111,walk:[1066,477],verb:'look'},
+        {id:'cup',name:'Coffee cup',es:'Taza de café',x:824,y:495,rx:40,ry:35,walk:[585,553],verb:'look'},
+        {id:'newspaper',name:'Folded newspaper',es:'Periódico doblado',x:716,y:540,rx:66,ry:27,walk:[540,592],verb:'look'},
+        {id:'receipt',name:'Folded receipt',es:'Recibo doblado',x:839,y:548,rx:31,ry:30,walk:[540,592],verb:'take',item:'receipt'},
+        {id:'planter',name:'Flower planter',es:'Jardinera de hortensias',x:105,y:545,rx:107,ry:122,walk:[273,587],verb:'look'},
+        {id:'planter-middle',name:'Terrace planter',es:'Jardinera central',x:485,y:458,rx:71,ry:94,walk:[416,574],verb:'look'},
+        {id:'table-middle',name:'Terrace tables',es:'Mesas del café',x:673,y:430,rx:90,ry:68,walk:[594,551],verb:'look'},
+        {id:'table-back',name:'Tables by the arcade',es:'Mesas bajo la marquesina',x:863,y:417,rx:99,ry:49,walk:[1027,395],verb:'look'},
+        {id:'tree',name:'Old plane tree',es:'Plátano de sombra',x:94,y:153,rx:122,ry:145,walk:[281,529],verb:'look'},
+        {id:'garden',name:'Ornamental garden',es:'Jardín de la plaza',x:193,y:430,rx:91,ry:55,walk:[284,525],verb:'look'},
+        {id:'door',name:'Café de Oriente entrance',es:'Entrar al café',x:1110,y:355,rx:86,ry:126,walk:[1095,448],verb:'enter'}
       ]
     },
     bistro:{
@@ -114,7 +125,7 @@
   const cell=(id)=>({x:(id%COLS)*CELL+CELL/2,y:Math.floor(id/COLS)*CELL+CELL/2});
   function nearest(scene,target,avoid=true){if(canStand(scene,target.x,target.y,avoid))return {x:target.x,y:target.y};
     let best=null,d=Infinity;for(let i=0;i<COLS*ROWS;i++){const p=cell(i);if(!canStand(scene,p.x,p.y,avoid))continue;const n=sqr(p.x-target.x)+sqr(p.y-target.y);if(n<d){d=n;best=p;}}return best;}
-  function clearLine(scene,a,b,avoid=true){for(let i=0,n=Math.ceil(dist(a,b)/7);i<=n;i++){
+  function clearLine(scene,a,b,avoid=true){for(let i=0,n=Math.ceil(dist(a,b)/2);i<=n;i++){
     const p=i/n||0;if(!canStand(scene,lerp(a.x,b.x,p),lerp(a.y,b.y,p),avoid))return false;
   }return true;}
   function route(scene,from,to,avoid=true){const start=nearest(scene,from,avoid),goal=nearest(scene,to,avoid);if(!start||!goal)return [];
@@ -131,6 +142,9 @@
         if(!dx&&!dy)continue;const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=COLS||ny>=ROWS)continue;
         const next=ny*COLS+nx;if(!valid[next]||closed[next])continue;
         if(dx&&dy&&(!valid[y*COLS+nx]||!valid[ny*COLS+x]))continue;
+        // Two walkable grid points can still straddle a diagonal corner.
+        // Check the entire step, otherwise the actor replans forever there.
+        if(!clearLine(scene,cell(cur),cell(next),avoid))continue;
         const alternative=cost[cur]+Math.hypot(dx,dy)*CELL;if(alternative<cost[next]){
           cost[next]=alternative;prev[next]=cur;if(!open.includes(next))open.push(next);
         }
@@ -149,10 +163,10 @@
     nodes=path;onArrival=callback;return true;
   }
   function transition(scene){save.scene=scene;guestMode='seated';guestX=guestSeat.x;guestY=guestSeat.y;guestChangeAt=0;approachingGuest=false;
-    const spawn=scene==='bistro'?{x:1090,y:572}:{x:1085,y:494};Object.assign(agent,spawn,{moving:false,stride:0});nodes=[];onArrival=null;
+    const spawn=scene==='bistro'?{x:1090,y:572}:{x:1095,y:448};Object.assign(agent,spawn,{moving:false,stride:0});nodes=[];onArrival=null;
     dialogue=null;$('dialogue').hidden=true;$('hover-label').hidden=true;hovered=null;$('scene-name').textContent=world[scene].title;
     persist();refresh();
-    if(scene==='bistro')moveTo({x:1007,y:590});else moveTo({x:942,y:515});
+    if(scene==='bistro')moveTo({x:1007,y:590});else moveTo({x:1090,y:398});
   }
   const includes=id=>save.inventory.includes(id);
   const languageWords={
@@ -163,6 +177,9 @@
     newspaper:['The folded newspaper is dated today. It may hide a message.','El periódico está fechado hoy. Quizá esconda una pista.'],
     chair:['A wrought-iron chair. It was pushed back in a hurry.','Una silla de forja apartada con prisa.'],
     planter:['White and pink hydrangeas. The flowerbed hides no footprints.','Hortensias blancas y rosas. No ves huellas.'],
+    'planter-middle':['The terrace has several flower planters. This one conceals the tables from the plaza.','La jardinera separa las mesas de la zona de paso.'],
+    'table-middle':['Several tables are prepared for the evening service.','Hay varias mesas preparadas para el servicio de tarde.'],
+    'table-back':['From these tables the customers can see the palace and the café entrance.','Desde aquí los clientes ven el palacio y la entrada del café.'],
     tree:['An old plane tree shades the terrace.','Un plátano de sombra cubre parte de la terraza.'],
     painting:['An ornate framed mirror reflects the bistro.','You see the room from another angle.']
   };
@@ -359,12 +376,8 @@
     const id=b.dataset.item;tell(`${itemTitles[id]} added to the case file.`,`${itemTitles[id]} en el expediente.`);});
   function drawEvidence(){
     ctx.save();ctx.imageSmoothingEnabled=false;
-    if(save.scene==='terrace'&&!includes('receipt')&&evidenceSprites.receipt.naturalWidth){
-      // On top of the separate clean-table sprite. Never baked into the backdrop.
-      ctx.translate(857,508);ctx.rotate(.22);ctx.scale(1,.56);
-      ctx.drawImage(evidenceSprites.receipt,-17,-22,34,44);
-      ctx.setTransform(1,0,0,1,0,0);
-    }
+    // The original terrace painting already contains the receipt. A clean
+    // tabletop patch replaces its pixels after collection (below).
     if(save.scene==='bistro'){
       if(!includes('note')&&evidenceSprites.note.naturalWidth)ctx.drawImage(evidenceSprites.note,499,550,30,30);
       if(save.flags.keyRevealed&&!includes('key')&&evidenceSprites.key.naturalWidth)ctx.drawImage(evidenceSprites.key,840,472,28,28);
@@ -399,25 +412,37 @@
     ctx.save();ctx.beginPath();[[0,372],[153,369],[304,335],[332,358],[332,675],[0,675]].forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
     ctx.closePath();ctx.clip();ctx.imageSmoothingEnabled=true;ctx.drawImage(img,0,0,W,H);ctx.restore();
   }
-  function furnitureShadow(x,y,rx,ry){
-    ctx.save();ctx.fillStyle='#08122350';ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,2*Math.PI);ctx.fill();ctx.restore();
+  let receiptPatch=null;
+  function prepareTerraceLayers(){
+    const bg=backdrops.terrace;if(!bg.naturalWidth)return;
+    terraceLayers.length=0;
+    for(const prop of terraceProps)for(const poly of prop.masks){
+      const xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);
+      const left=Math.max(0,Math.floor(Math.min(...xs))),top=Math.max(0,Math.floor(Math.min(...ys)));
+      const width=Math.min(W-left,Math.ceil(Math.max(...xs))-left+2);
+      const height=Math.min(H-top,Math.ceil(Math.max(...ys))-top+2);
+      if(!width||!height)continue;
+      const layer=document.createElement('canvas');layer.width=width;layer.height=height;
+      const m=layer.getContext('2d');m.beginPath();
+      poly.forEach(([x,y],i)=>i?m.lineTo(x-left,y-top):m.moveTo(x-left,y-top));
+      m.closePath();m.clip();m.imageSmoothingEnabled=true;
+      m.drawImage(bg,-left,-top,W,H);
+      terraceLayers.push({owner:prop.id,depth:prop.depth,canvas:layer,x:left,y:top});
+    }
+    // A small feathered marble patch removes the ORIGINAL paper after pickup.
+    const p=document.createElement('canvas');p.width=77;p.height=56;
+    const c=p.getContext('2d',{willReadFrequently:true});
+    c.drawImage(bg,-870,-520,W,H);
+    const pixels=c.getImageData(0,0,77,56),data=pixels.data;
+    for(let y=0;y<56;y++)for(let x=0;x<77;x++){
+      const edge=Math.min(x,y,76-x,55-y);
+      data[(y*77+x)*4+3]*=Math.min(1,Math.max(0,edge/8));
+    }
+    c.putImageData(pixels,0,0);
+    receiptPatch={canvas:p,x:805,y:520};
   }
-  function drawFurniture(prop){
-    const img=furnitureSprites[prop.image];if(!img?.naturalWidth)return;
-    ctx.save();ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(img,prop.x,prop.y,prop.w,prop.h);
-    ctx.restore();
-  }
-  function drawTreeOcclusion(){
-    // Tree and foreground urn remain from the real scene painting. A precise
-    // screen-space occluder draws ONLY the matching pixels when an actor passes
-    // under the branches; the character is never artificially transparent.
-    const img=backdrops.terrace;if(!img.naturalWidth)return;
-    ctx.save();ctx.beginPath();
-    const outline=[[0,0],[540,0],[455,42],[369,77],[292,84],[224,135],[147,235],[94,309],[68,359],[0,370]];
-    outline.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.clip();
-    ctx.imageSmoothingEnabled=true;ctx.drawImage(img,0,0,W,H);ctx.restore();
-  }
+  backdrops.terrace.onload=prepareTerraceLayers;
+  if(backdrops.terrace.complete&&backdrops.terrace.naturalWidth)prepareTerraceLayers();
   let last=performance.now();
   function tick(now){const dt=Math.min(.045,Math.max(.001,(now-last)/1000));last=now;
     if(save.scene==='bistro'){
@@ -465,15 +490,13 @@
     }
     actors.sort((a,b)=>a.y-b.y).forEach(a=>drawPerson(a.role,a.x,a.y,a.options));
     if(save.scene==='terrace'){
-      // Separate opaque pixels determine what is in front. Nothing fades.
-      furnitureShadow(1048,674,67,8);
-      furnitureShadow(773,672,138,10);
-      furnitureShadow(113,668,103,11);
-      drawFurniture(terraceFurniture[1]); // chair behind the tabletop
-      drawFurniture(terraceFurniture[2]); // marble table and pedestal
-      drawEvidence();                      // collectible receipt on the tabletop
-      drawFurniture(terraceFurniture[0]); // flowers in nearest foreground
-      drawTreeOcclusion();
+      // Original pixels re-render above actors only where the corresponding
+      // furniture sits closer to the camera than the actor's feet. No fading,
+      // no AI replacement, and no enlarged/distorted prop sprites.
+      for(const layer of terraceLayers)if(agent.y<layer.depth)
+        ctx.drawImage(layer.canvas,layer.x,layer.y);
+      if(includes('receipt')&&receiptPatch)
+        ctx.drawImage(receiptPatch.canvas,receiptPatch.x,receiptPatch.y);
     }
     if(new URLSearchParams(location.search).has('debug')){
       ctx.save();ctx.lineWidth=2;ctx.strokeStyle='#54e697';for(const p of world[save.scene].floors){ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.stroke();}
@@ -483,7 +506,7 @@
   window.ENGLISH_SPY_REBUILD_QA={world,walkable,route,agent,save,activeTargets};
   if(new URLSearchParams(location.search).has('debug')){
     document.body.dataset.navigationQa=JSON.stringify({
-      terrace:{start:walkable('terrace',295,600),goal:walkable('terrace',689,501),route:route('terrace',{x:295,y:600},{x:689,y:501})},
+      terrace:{start:walkable('terrace',305,594),goal:walkable('terrace',540,592),route:route('terrace',{x:305,y:594},{x:540,y:592})},
       bistro:{start:walkable('bistro',1090,572),goal:walkable('bistro',821,520),route:route('bistro',{x:1090,y:572},{x:821,y:520})},
       targets:Object.fromEntries(Object.entries(world).map(([scene,data])=>[
         scene,data.targets.filter(t=>!t.dynamic).map(t=>{
