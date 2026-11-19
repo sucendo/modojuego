@@ -28,21 +28,25 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #ffd
 /* Direct manipulation: objects are part of the illustration, not permanently marked icons. */
 .hotspot,.hotspot.revealed{
   display:block;width:var(--hit-width,7%);height:var(--hit-height,12%);
-  transform:translate(-50%,-50%);border:1px solid transparent;
-  background:transparent;box-shadow:none;border-radius:5px;animation:none;
-  color:#ffe5ac;transition:background .15s,border-color .15s;
+  transform:translate(-50%,-50%);border:0!important;outline:0!important;
+  padding:0;background:transparent!important;box-shadow:none!important;
+  border-radius:0;animation:none!important;appearance:none;
+  color:transparent;transition:none;cursor:pointer;
 }
-.hotspot::before{content:'';position:absolute;inset:0;border-radius:4px;background:transparent;pointer-events:none}
+.hotspot::before{content:none}
 .hotspot:hover,.hotspot:focus-visible,.hotspot.revealed:hover,.hotspot.revealed:focus-visible{
-  transform:translate(-50%,-50%);border:1px solid rgba(255,221,153,.9);
-  background:rgba(240,189,100,.13);box-shadow:inset 0 0 18px #edbd6740,0 0 15px #0007;z-index:5;
+  transform:translate(-50%,-50%);border:0!important;outline:0!important;
+  background:transparent!important;box-shadow:none!important;z-index:5;
 }
-.hotspot .hotspot-label{display:block;visibility:hidden;opacity:0;bottom:calc(100% + 5px);z-index:6;
+.hotspot .hotspot-label{display:block;visibility:hidden;opacity:0;bottom:calc(100% + 6px);z-index:6;
   font-size:clamp(.73rem,.9vw,.89rem);line-height:1.15;letter-spacing:.015em;
-  background:#0b1728f5;color:#ffe3ab;pointer-events:none;transition:opacity .12s;
+  background:#0b1728e9;color:#ffe3ab;border:0;box-shadow:none;pointer-events:none;transition:opacity .12s;
 }
 .hotspot:hover .hotspot-label,.hotspot:focus-visible .hotspot-label{visibility:visible;opacity:1}
-.hotspot.revealed{opacity:.9}
+.hotspot[data-hotspot="door"] .hotspot-label,.hotspot[data-hotspot="exit"] .hotspot-label{
+  left:auto;right:0;transform:none;
+}
+.hotspot.revealed{opacity:1}
 .hotspot[hidden]{display:none}
 .hotspot[data-hotspot="gabriel"]{z-index:2}
 .hotspot[data-hotspot="door"],.hotspot[data-hotspot="exit"]{z-index:4}
