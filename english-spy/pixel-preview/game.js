@@ -1,4 +1,4 @@
-/* Where Is Evelyn Blackwood? · Pixel art with exact green-footprint navigation. */
+/* Where Is Evelyn Blackwood? · Pixel art, grounded actors and independent scenery. */
 (() => {
   'use strict';
   const W = 1200, H = 675, SAVE = 'evelyn-pixel-prototype-v03';
@@ -19,6 +19,7 @@
   })();
   const $ = id => document.getElementById(id);
   const canvas = $('world'), ctx = canvas.getContext('2d');
+  const WITNESS_SEAT={x:915,y:456},WITNESS_FOOT={x:962,y:510};
   const sceneShell = $('scene-shell'), hotspotsNode = $('hotspots');
   const dialogNode = $('dialog-layer'), noticeNode = $('scene-message');
   const inventoryNode = $('inventory');
@@ -36,7 +37,7 @@
         {id:'foreground-chair',src:'./assets/foreground/terrace-chair.webp',sourceCrop:[1165,559,1594,941]}
       ],
       perspective:{farY:405,nearY:655,farScale:.64,nearScale:2.02,doorway:{x:1095,y:476,rangeX:280,rangeY:180,boost:.26}},
-      actors:[{role:'stranger',x:380,y:477}],
+      actors:[],
       // The terrace uses the actual green brush marks from the annotated
       // screenshot (walkmap.js). No approximate rectangles or extra corridors.
       props:[
@@ -80,7 +81,6 @@
       hotspots:[
         {id:'receipt',x:811,y:522,w:62,h:56,walk:[639,553],label:'Folded receipt'},
         {id:'cup',x:779,y:461,w:100,h:60,walk:[639,553],label:'Coffee cup'},
-        {id:'stranger',x:380,y:410,w:72,h:122,walk:[320,486],label:'Man in grey'},
         {id:'palace',x:466,y:277,w:490,h:148,walk:[330,550],label:'Royal Palace'},
         {id:'door',x:1111,y:327,w:105,h:205,walk:[1110,494],label:'Enter the café'},
       ],
@@ -95,7 +95,8 @@
         {id:'main-chair-near',src:'./assets/foreground/interior-chair-front.webp',sourceCrop:[596,577,898,941]}
       ],
       perspective:{farY:390,nearY:660,farScale:.65,nearScale:1.94,doorway:{x:1022,y:469,rangeX:172,rangeY:185,boost:.08}},
-      actors:[{role:'carmen',x:418,y:582}],
+      // Carmen serves the dining room FROM BEHIND the host's counter.
+      actors:[{role:'carmen',x:272,y:488}],
       corridors:[
         [343,450,439,645], // Between the reception and the red chair
         [347,361,475,487], // Walk around the reception-side pillar
@@ -134,7 +135,9 @@
           ]},
       ],
       hotspots:[
-        {id:'carmen',x:419,y:503,w:92,h:152,walk:[368,591],label:'Speak with Carmen'},
+        {id:'carmen',x:272,y:387,w:96,h:134,walk:[372,574],label:'Speak with Carmen'},
+        {id:'stranger',x:916,y:406,w:103,h:128,walk:[885,540],label:'Guest beside the window'},
+        {id:'painting',x:704,y:230,w:140,h:118,walk:[935,500],label:'Framed painting'},
         {id:'table',x:637,y:532,w:230,h:145,walk:[866,574],label:'Look under the table'},
         {id:'window',x:1005,y:306,w:150,h:145,walk:[970,510],label:'Window by the plaza'},
         {id:'note',x:1015,y:529,w:65,h:61,walk:[960,564],label:'Folded paper'},
@@ -155,12 +158,13 @@
   let state=readSave();
   let verb='smart', selectedItem=null, dialog=null, noticeTimer=null;
   let actor={x:SCENES[state.scene].spawn[0],y:SCENES[state.scene].spawn[1],facing:1,step:0};
-  let path=[], pending=null, time=0, lastFrame=performance.now();
+  let path=[], pending=null, time=0, lastFrame=performance.now(),lastReroute=0;
+  let approachingStranger=false;
   let customizationDraft=null, gabrielHeldUntil=0, gabrielHeldPosition=null;
-  let patrolPausedAt=null, patrolPausedDuration=0;
+  let patrolPausedAt=null, patrolPausedDuration=0,waiterAvoidingAgent=false;
   const scenes={},originalScenes={};
   const spriteImages={}, coatSprites=new Map(), foregrounds={},individualObjects={};
-  const spriteNames=['agent-m','agent-f','gabriel','carmen','stranger'];
+  const spriteNames=['agent-m','agent-f','gabriel','carmen','stranger','stranger-seated'];
   for(const role of spriteNames){
     const img=new Image();img.src='./assets/characters/'+role+'.webp';
     img.onload=()=>{if(role===state.avatar.style)drawAvatarPreview();};
@@ -214,6 +218,20 @@
       ctx.drawImage(img,left*W/1672,top*H/941,(right-left)*W/1672,(bottom-top)*H/941);
     }
   }
+  // These are foreground silhouettes taken straight from the ORIGINAL scene,
+  // so their colour, detail and perspective agree pixel-for-pixel with it.
+  // The left flower planter and tree are always in front of passing figures.
+  const PINNED_FOREGROUND={terrace:[
+    [[0,0],[520,0],[515,35],[413,80],[306,108],[211,169],[141,226],[111,353],[101,432],[0,450]],
+    [[0,434],[112,417],[183,436],[234,479],[235,675],[0,675]],
+  ],interior:[]};
+  function drawPinnedForeground(){
+    const bg=originalScenes[state.scene];if(!bg?.complete||!bg.naturalWidth)return;
+    for(const polygon of PINNED_FOREGROUND[state.scene]){
+      ctx.save();ctx.beginPath();polygon.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
+      ctx.closePath();ctx.clip();ctx.imageSmoothingEnabled=true;ctx.drawImage(bg,0,0,W,H);ctx.restore();
+    }
+  }
   const mix=(a,b,t)=>a+(b-a)*Math.min(1,Math.max(0,t));
   const clamp01=value=>Math.max(0,Math.min(1,value));
   const perspectiveScale=(scene,y,x=0)=>{
@@ -235,10 +253,10 @@
     {t:23,scene:'terrace',x:1110,y:490,alpha:1},
     {t:25,scene:'terrace',x:1140,y:505,alpha:0},
     {t:25.001,scene:'interior',x:1020,y:461,alpha:0},
-    {t:28,scene:'interior',x:1000,y:506,alpha:1},
-    {t:32,scene:'interior',x:920,y:544,alpha:1},
-    {t:35,scene:'interior',x:920,y:544,alpha:1},
-    {t:40,scene:'interior',x:1000,y:506,alpha:1},
+    {t:28,scene:'interior',x:1000,y:565,alpha:1},
+    {t:32,scene:'interior',x:920,y:580,alpha:1},
+    {t:35,scene:'interior',x:920,y:580,alpha:1},
+    {t:40,scene:'interior',x:1000,y:565,alpha:1},
     {t:43,scene:'interior',x:1020,y:461,alpha:0},
     {t:43.001,scene:'terrace',x:1140,y:505,alpha:0},
     {t:45,scene:'terrace',x:1110,y:490,alpha:1},
@@ -273,7 +291,9 @@
     let x=a.x,y=a.y,travelled=distance*p;
     if(walking){
       if(!GABRIEL_NAV_CACHE.has(i)){
-        const route=routeTo(a.scene,{x:a.x,y:a.y},{x:b.x,y:b.y});
+        // The guest's chair is an obstacle for the waiter, too.
+        const route=routeTo(a.scene,{x:a.x,y:a.y},{x:b.x,y:b.y},
+          a.scene==='interior'?[WITNESS_FOOT]:[]);
         GABRIEL_NAV_CACHE.set(i,route?.length?[{x:a.x,y:a.y},...route]:null);
       }
       const nodes=GABRIEL_NAV_CACHE.get(i);
@@ -294,7 +314,8 @@
       }
     }else if(a.scene===b.scene){x=mix(a.x,b.x,p);y=mix(a.y,b.y,p);}
     return {role:'gabriel',scene:a.scene,x,y,
-      scale:perspectiveScale(a.scene,y,x),alpha:mix(a.alpha,b.alpha,p),walking,
+      // No fade-through-walls: a waiter is either physically in this room or not.
+      scale:perspectiveScale(a.scene,y,x),alpha:1,walking,
       facing:walking&&Math.abs(b.x-a.x)>4?(b.x<a.x?-1:1):(i<9?-1:1),
       step:(a.walkDistance+(walking?travelled:0))*.1};
   }
@@ -308,6 +329,21 @@
     patrolPausedAt=null;gabrielHeldPosition=null;
   }
   const patrolOrigin=performance.now();
+  let strangerStoodAt=state.flags.strangerStood?performance.now()-1000:null;
+  function strangerAt(now=performance.now()){
+    if(state.scene!=='interior')return null;
+    const standing=Boolean(state.flags.strangerStood);
+    const rising=standing?Math.min(1,Math.max(0,(now-strangerStoodAt)/680)):0;
+    return {role:'stranger',scene:'interior',
+      x:mix(WITNESS_SEAT.x,WITNESS_FOOT.x,rising),
+      y:mix(WITNESS_SEAT.y,WITNESS_FOOT.y,rising),
+      // A witness first sits behind the small back table, then gets up when approached.
+      seated:!standing,standProgress:rising,walking:false,facing:-1,step:0};
+  }
+  function standStranger(){
+    if(state.flags.strangerStood)return;
+    state.flags.strangerStood=true;strangerStoodAt=performance.now();save();
+  }
   function coatImage(role,coat){
     const original=spriteImages[role];if(!original?.complete||!original.naturalWidth)return null;
     if(coat==='classic'||!role.startsWith('agent-'))return original;
@@ -399,9 +435,10 @@
   }
   const LABEL_ES={
     receipt:'Examinar y recoger',cup:'Examinar la taza',gabriel:'Hablar con el camarero',
-    stranger:'Interrogar',palace:'Observar el Palacio Real',door:'Entrar al café',
+    stranger:'Hablar con el testigo',palace:'Observar el Palacio Real',door:'Entrar al café',
     carmen:'Hablar con Carmen',table:'Buscar debajo',window:'Examinar la ventana',
-    note:'Recoger el papel',menu:'Leer el menú',exit:'Volver a la terraza'
+    note:'Recoger el papel',menu:'Leer el menú',exit:'Volver a la terraza',
+    painting:'Observar el cuadro'
   };
   function liveHotspot(id){
     if(id!=='gabriel')return SCENES[state.scene].hotspots.find(h=>h.id===id);
@@ -441,6 +478,7 @@
   }
   function switchScene(id,arrival=null,walkOut=null){
     if(!SCENES[id])return;
+    approachingStranger=false;
     state.scene=id;state.flags.visitedInterior ||= id==='interior';
     actor={x:(arrival||SCENES[id].spawn)[0],y:(arrival||SCENES[id].spawn)[1],facing:id==='interior'?-1:1,step:0};
     path=[];pending=null;selectedItem=null;dialog=null;dialogNode.innerHTML='';
@@ -477,30 +515,44 @@
     const ry=Math.max(6,Math.min(12,7*scale));
     return ACTOR_FOOTPRINT.every(([dx,dy])=>pointOnFloor(scene,x+dx*rx,y+dy*ry));
   }
+  function activePeople(scene,now=performance.now()){
+    const people=[];
+    if(scene==='interior')people.push(state.flags.strangerStood?WITNESS_FOOT:WITNESS_SEAT);
+    const waiter=gabrielAt(now);
+    if(waiter.scene===scene)people.push({x:waiter.x,y:waiter.y});
+    return people;
+  }
+  function overlappingFeet(scene,x,y,other){
+    const scale=(perspectiveScale(scene,y,x)+perspectiveScale(scene,other.y,other.x))/2;
+    return ((x-other.x)/(37*scale))**2+((y-other.y)/(19*scale))**2<1;
+  }
+  function walkableWithPeople(scene,x,y,people=[]){
+    return walkable(scene,x,y)&&!people.some(p=>overlappingFeet(scene,x,y,p));
+  }
   const GRID=15,COLS=Math.ceil(W/GRID),ROWS=Math.ceil(H/GRID);
   const cellPoint=i=>({x:(i%COLS)*GRID+GRID/2,y:Math.floor(i/COLS)*GRID+GRID/2});
-  function closestWalkable(scene,x,y){
-    if(walkable(scene,x,y))return {x,y};
+  function closestWalkable(scene,x,y,people=[]){
+    if(walkableWithPeople(scene,x,y,people))return {x,y};
     let best=null,dist=Infinity;
     for(let i=0;i<COLS*ROWS;i++){
-      const p=cellPoint(i);if(!walkable(scene,p.x,p.y))continue;
+      const p=cellPoint(i);if(!walkableWithPeople(scene,p.x,p.y,people))continue;
       const d=(p.x-x)**2+(p.y-y)**2;
       if(d<dist){dist=d;best=p;}
     }
     return best;
   }
-  function lineClear(scene,a,b){
+  function lineClear(scene,a,b,people=[]){
     const distance=Math.hypot(b.x-a.x,b.y-a.y),n=Math.max(1,Math.ceil(distance/8));
-    for(let i=0;i<=n;i++){const t=i/n;if(!walkable(scene,mix(a.x,b.x,t),mix(a.y,b.y,t)))return false;}
+    for(let i=0;i<=n;i++){const t=i/n;if(!walkableWithPeople(scene,mix(a.x,b.x,t),mix(a.y,b.y,t),people))return false;}
     return true;
   }
-  function routeTo(scene,start,end){
-    const first=closestWalkable(scene,start.x,start.y),last=closestWalkable(scene,end.x,end.y);
+  function routeTo(scene,start,end,people=[]){
+    const first=closestWalkable(scene,start.x,start.y,people),last=closestWalkable(scene,end.x,end.y,people);
     if(!first||!last)return null;
-    if(lineClear(scene,first,last))return [last];
+    if(lineClear(scene,first,last,people))return [last];
     const valid=new Uint8Array(COLS*ROWS),g=new Float64Array(COLS*ROWS),came=new Int32Array(COLS*ROWS);
     g.fill(Infinity);came.fill(-1);
-    for(let i=0;i<valid.length;i++){const p=cellPoint(i);valid[i]=Number(walkable(scene,p.x,p.y));}
+    for(let i=0;i<valid.length;i++){const p=cellPoint(i);valid[i]=Number(walkableWithPeople(scene,p.x,p.y,people));}
     const nearestIndex=p=>{
       let best=-1,dist=Infinity;
       for(let i=0;i<valid.length;i++){if(!valid[i])continue;const q=cellPoint(i),d=(p.x-q.x)**2+(p.y-q.y)**2;if(d<dist){dist=d;best=i;}}
@@ -530,7 +582,7 @@
     const chain=[first,...tiles,last],smooth=[];
     for(let i=0;i<chain.length-1;){
       let furthest=i+1;
-      for(let j=chain.length-1;j>i+1;j--){if(lineClear(scene,chain[i],chain[j])){furthest=j;break;}}
+      for(let j=chain.length-1;j>i+1;j--){if(lineClear(scene,chain[i],chain[j],people)){furthest=j;break;}}
       smooth.push(chain[furthest]);i=furthest;
     }
     return smooth;
@@ -551,7 +603,7 @@
     document.body.dataset.navqa=JSON.stringify(report);
   }
   function walkTo(x,y,callback=null){
-    const next=routeTo(state.scene,{x:actor.x,y:actor.y},{x,y});
+    const next=routeTo(state.scene,{x:actor.x,y:actor.y},{x,y},activePeople(state.scene));
     if(!next?.length){notify('I cannot walk through the furniture.','Busca el pasillo libre.');return;}
     path=next;pending=callback;
   }
@@ -573,7 +625,8 @@
     return best||h.walk;
   }
   function facePartner(id){
-    const person=id==='gabriel'?(gabrielHeldPosition||gabrielAt()):SCENES[state.scene].actors.find(a=>a.role===id);
+    const person=id==='gabriel'?(gabrielHeldPosition||gabrielAt()):
+      id==='stranger'?strangerAt():SCENES[state.scene].actors.find(a=>a.role===id);
     if(!person)return;
     actor.facing=actor.x<person.x?1:-1;
     if(id==='gabriel'&&gabrielHeldPosition)gabrielHeldPosition.facing=actor.x<person.x?-1:1;
@@ -611,6 +664,7 @@
         if(collect('key')){notify('A brass key! The tag says “Plaza de la Lealtad”.','La llave señala una plaza de Madrid.');speak('A brass key. Plaza de la Lealtad.');}
         else inspect('table');break;
       case 'window':notify('The plaza is quiet. A folded scrap lies beside the curtain.','Hay un papel cerca de la cortina.');break;
+      case 'painting':inspect('painting');break;
       case 'note':
         if(collect('note')){notify('The note reads: “Lealtad — 19:10”.','Has encontrado otra pista escrita.');speak('Lealtad. Seven ten P M.');}
         else inspect('note');break;
@@ -623,12 +677,13 @@
       receipt:['A folded receipt, printed at 18:36.','Un recibo con una hora y una anotación.'],
       cup:['An unfinished cup of coffee.','Una taza sin terminar.'],
       gabriel:['Gabriel is working on the terrace.','El camarero parece dispuesto a hablar.'],
-      stranger:['A man in a grey coat watches the café entrance.','Un desconocido observa la puerta del café.'],
+      stranger:['A guest is sitting near the window with a clear view of the terrace.','Un cliente está sentado junto a la ventana y puede ver la terraza.'],
       palace:['The Royal Palace is on the other side of the plaza.','El Palacio Real es reconocible al fondo.'],
       door:['The Café de Oriente entrance.','La entrada del Café de Oriente.'],
       carmen:['Carmen works at the café reception.','Carmen podría haber visto a Evelyn.'],
       table:['One chair is empty. Something shines below the table.','Hay un reflejo metálico debajo de la mesa.'],
       window:['The doors overlook the terrace.','Las puertas miran hacia la terraza.'],
+      painting:['A romanticised view of old Madrid. The painting is decorative, and its exact location is not verified.','Una vista idealizada del Madrid antiguo. El lugar exacto representado no está identificado.'],
       note:['A piece of paper beside the curtain.','Un papel doblado junto a la cortina.'],
       menu:['The restaurant menu.','La carta del restaurante.'],
       exit:['The glass door leads back to the terrace.','La puerta devuelve a la terraza.'],
@@ -646,12 +701,14 @@
       {id:'time',question:'When did she leave?',reply:['Before half past six. Her phone rang.','Antes de las 18:30, después de recibir una llamada.']},
       {id:'folder',question:'Did she leave anything?',reply:['There is a folded paper near the window.','Hay un papel doblado cerca de la ventana.']},
     ]},
-    stranger:{name:'UNKNOWN VISITOR',intro:['I am just passing through. Why are you asking?','Dice que simplemente está de paso.'],topics:[
-      {id:'name',question:'What is your name?',reply:['That is none of your business.','Se niega a dar su nombre.'],advanced:'I do not make a habit of introducing myself to strangers who interrogate me.'},
-      {id:'sighting',question:'Did you see a woman leave?',reply:['Maybe. I was looking at my phone.','Dice que estaba mirando el móvil.']},
+    stranger:{name:'THE GUEST BY THE WINDOW',intro:['I was having dinner by the window. I saw her outside.','Estaba cenando junto a la ventana. Vio a una mujer en la terraza.'],topics:[
+      {id:'name',question:'May I ask your name?',reply:['Call me Mr Grey. I would rather not be involved.','Prefiere que le llamemos señor Grey y no quiere involucrarse.'],advanced:'You can call me Mr Grey, but I would prefer that my name not appear in any official report.'},
+      {id:'sighting',question:'What did you see from the window?',reply:['She sat at the outside table. A man came to speak to her.','Vio a la mujer sentada en la mesa exterior. Un hombre se acercó a hablar con ella.'],advanced:'From this window I had a direct line of sight to the outside table. A second person approached her shortly before she disappeared.'},
+      {id:'departure',question:'Where did the man go?',reply:['Towards the palace, I think. He was wearing a blue scarf.','Cree que se dirigió hacia el palacio. Llevaba una bufanda azul.']},
     ]},
   };
   function openDialogue(id){
+    if(id==='stranger'){standStranger();approachingStranger=false;}
     facePartner(id);
     dialog={id,reply:null};renderDialogue();
     speak(CONVERSATIONS[id].intro[0]);
@@ -726,36 +783,92 @@
       ctx.restore();
     }
   }
-  function drawPerson({role,x,y,walking=false,facing=1,step=0,scale=null,alpha=1}, now){
+  function drawPerson({role,x,y,walking=false,facing=1,step=0,scale=null,seated=false,standProgress=1}, now){
     const img=role==='agent'?coatImage(state.avatar.style,state.avatar.coat):spriteImages[role];
     if(!img?.naturalWidth && !img?.width)return;
     const depth=scale??perspectiveScale(state.scene,y,x);
-    // Larger foreground figures, without exaggerating the far end of the room.
-    const height=(role==='carmen'?151:158)*depth,width=height*img.width/img.height;
-    const stride=walking?Math.sin(step)*3.2*depth:0;
-    const bob=walking?Math.abs(Math.sin(step))*1.7*depth:Math.sin(now*.0021+x)*.35;
+    const height=(role==='carmen'?152:158)*depth,width=height*img.width/img.height;
     ctx.save();ctx.translate(Math.round(x),Math.round(y));
-    ctx.globalAlpha=Math.max(0,Math.min(1,alpha));
-    ctx.fillStyle='#06080fa0';ctx.beginPath();ctx.ellipse(0,1,Math.max(13,width*.47),4.5,0,0,Math.PI*2);ctx.fill();
-    ctx.scale(facing<0?-.95:.95,1);ctx.translate(walking?Math.sin(step*.5)*depth:0,-bob);ctx.imageSmoothingEnabled=false;
-    if(walking){
-      const split=Math.round(img.height*.765),remaining=img.height-split,half=Math.floor(img.width/2);
-      ctx.drawImage(img,0,0,img.width,split,-width/2,-height,width,height*split/img.height);
-      ctx.drawImage(img,0,split,half,remaining,-width/2+stride,-height*remaining/img.height,width*half/img.width,height*remaining/img.height);
-      ctx.drawImage(img,half,split,img.width-half,remaining,-width/2+width*half/img.width-stride,-height*remaining/img.height,width*(img.width-half)/img.width,height*remaining/img.height);
-    } else ctx.drawImage(img,-width/2,-height,width,height);
+    // Feet remain planted on the painted floor. A diffuse, depth-scaled
+    // contact shadow is less distracting than the black opaque floating disc.
+    if(!seated){
+      ctx.save();ctx.scale(Math.max(15,width*.46),Math.max(3,4.2*depth));
+      const shade=ctx.createRadialGradient(0,-.1,.08,0,-.1,1);
+      shade.addColorStop(0,'#08070b99');shade.addColorStop(.58,'#09070a53');shade.addColorStop(1,'#08070a00');
+      ctx.fillStyle=shade;ctx.beginPath();ctx.arc(0,0,1,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+    ctx.scale(facing<0?-.97:.97,1);ctx.imageSmoothingEnabled=false;
+    if(seated){
+      // Independent fully drawn sitting pose, including the genuine chair.
+      // Never fake a seated figure by truncating the legs of a standing sprite.
+      const sitting=spriteImages['stranger-seated'];
+      if(sitting?.naturalWidth){
+        const sittingH=height*.77,sittingW=sittingH*sitting.width/sitting.height;
+        ctx.drawImage(sitting,-sittingW/2,-sittingH,sittingW,sittingH);
+      }else ctx.drawImage(img,-width/2,-height,width,height);
+    }else if(role==='stranger'&&standProgress<1){
+      // Reveal the legs as the witness rises, then step into the aisle.
+      const visible=Math.round(img.height*(.67+.33*standProgress));
+      const shownH=height*(.61+.39*standProgress);
+      ctx.drawImage(img,0,0,img.width,visible,-width/2,-shownH,width,shownH);
+    }else if(walking){
+      // Two legs swing around their hips, covered at their joint by the coat
+      // or apron. The torso does not jump vertically, and no pixels vanish at
+      // the split; each stride leaves at least one foot touching the ground.
+      const split=Math.round(img.height*(role==='gabriel'?.77:.765));
+      const remaining=img.height-split,half=Math.floor(img.width/2);
+      const hipY=-height+height*split/img.height;
+      const legH=height*remaining/img.height,angle=Math.sin(step)*.115;
+      for(let leg=0;leg<2;leg++){
+        const srcX=leg?half:0,srcW=leg?img.width-half:half;
+        const legW=width*srcW/img.width,pivot=leg?width*.06:-width*.06;
+        ctx.save();ctx.translate(pivot,hipY+1);ctx.rotate(leg?-angle:angle);
+        ctx.drawImage(img,srcX,split,srcW,remaining,
+          -width/2+width*srcX/img.width-pivot,-2,legW,legH+2);
+        ctx.restore();
+      }
+      const overlap=Math.min(img.height,split+9);
+      ctx.drawImage(img,0,0,img.width,overlap,-width/2,-height,width,height*overlap/img.height);
+    }else{
+      // Standing up is a visible rising motion, with completely opaque pixels.
+      const lift=(1-standProgress)*17*depth;
+      ctx.drawImage(img,-width/2,-height+lift,width,height);
+    }
     ctx.restore();
   }
   function frame(now){
     // Keep walking responsive even on browsers that render the canvas at a low frame rate.
     const dt=Math.min(.13,(now-lastFrame)/1000||.016);lastFrame=now;time+=dt;
-    if(patrolPausedAt!==null && now>=gabrielHeldUntil && dialog?.id!=='gabriel')releaseGabriel(now);
+    if(patrolPausedAt!==null && now>=gabrielHeldUntil && dialog?.id!=='gabriel'){
+      releaseGabriel(now);waiterAvoidingAgent=false;
+    }
+    // Waiters and agents yield instead of walking through each other.
+    if(patrolPausedAt===null){
+      const g=gabrielAt(now),ahead=gabrielAt(now+300);
+      if(g.scene===state.scene&&g.walking&&overlappingFeet(state.scene,actor.x,actor.y,ahead)){
+        holdGabriel(now);gabrielHeldUntil=now+2500;waiterAvoidingAgent=true;
+      }
+    }else if(waiterAvoidingAgent&&gabrielHeldPosition&&
+        !overlappingFeet(state.scene,actor.x,actor.y,{x:gabrielHeldPosition.x,y:gabrielHeldPosition.y})){
+      releaseGabriel(now);waiterAvoidingAgent=false;
+    }
     if(path.length){
       const next=path[0],dx=next.x-actor.x,dy=next.y-actor.y,dist=Math.hypot(dx,dy);
       const step=Math.min(dist,175*perspectiveScale(state.scene,actor.y,actor.x)*dt);
-      if(dist>0){actor.x+=dx/dist*step;actor.y+=dy/dist*step;if(Math.abs(dx)>2)actor.facing=dx<0?-1:1;actor.step+=step*.1;}
-      if(dist<=step+1.5){actor.x=next.x;actor.y=next.y;path.shift();if(!path.length&&pending){const action=pending;pending=null;action();}}
+      const moveX=dist?actor.x+dx/dist*step:next.x;
+      const moveY=dist?actor.y+dy/dist*step:next.y;
+      if(walkableWithPeople(state.scene,moveX,moveY,activePeople(state.scene,now))){
+        if(dist>0){actor.x=moveX;actor.y=moveY;if(Math.abs(dx)>2)actor.facing=dx<0?-1:1;actor.step+=step*.1;}
+        if(dist<=step+1.5){actor.x=next.x;actor.y=next.y;path.shift();if(!path.length&&pending){const action=pending;pending=null;action();}}
+      }else if(now-lastReroute>480){
+        lastReroute=now;
+        // Re-plan around someone's feet; never step through their sprite.
+        const replacement=routeTo(state.scene,{x:actor.x,y:actor.y},path.at(-1),activePeople(state.scene,now));
+        if(replacement?.length)path=replacement;
+      }
     }
+    if(state.scene==='interior'&&approachingStranger&&!state.flags.strangerStood&&
+        Math.hypot(actor.x-WITNESS_FOOT.x,actor.y-WITNESS_FOOT.y)<130)standStranger();
     ctx.clearRect(0,0,W,H);
     const fullyLayered=originalsReady(state.scene);
     const bg=fullyLayered?scenes[state.scene]:originalScenes[state.scene];
@@ -766,6 +879,7 @@
     const all=SCENES[state.scene].actors.map(a=>({...a,walking:false,
       facing:dialog?.id===a.role?(actor.x<a.x?-1:1):(a.role==='stranger'?-1:1)}));
     all.push({...actor,role:'agent',walking:path.length>0});
+    const stranger=strangerAt(now);if(stranger)all.push(stranger);
     const gabriel=gabrielAt(now);if(gabriel.scene===state.scene&&gabriel.alpha>.01)all.push(gabriel);
     const elements=[
       ...all.map(person=>({depth:person.y,person})),
@@ -780,6 +894,7 @@
     // While an image is still loading (or has failed), use the complete
     // ORIGINAL scene so neither the foreground table nor its chairs vanish.
     if(fullyLayered)drawIndividualObjects();
+    drawPinnedForeground();
     trackGabriel(gabriel);
     requestAnimationFrame(frame);
   }
@@ -836,6 +951,7 @@
         if(h.id==='gabriel'){
           holdGabriel(performance.now());
         }
+        approachingStranger=h.id==='stranger';
         const approach=['gabriel','stranger','carmen'].includes(h.id)?approachPerson(h):h.walk;
         walkTo(...approach,()=>interact(h));
       }
