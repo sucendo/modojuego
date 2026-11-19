@@ -413,3 +413,32 @@ h1 span { color: #a2d57f; margin-left: 12px; font-size: .55em; }
 
 /* v10.5 — more room for the three-tier LOD diagnosis. */
 .performance-panel{width:min(352px,calc(100vw - 24px));max-height:calc(100dvh - 90px);overflow:auto}
+
+/* Touch play shares physics, inventory, tools and saving with desktop play. */
+#touch-controls[hidden]{display:none!important}
+#touch-controls{position:fixed;inset:0;z-index:12;pointer-events:none;user-select:none;-webkit-user-select:none}
+.touch-playing>canvas{touch-action:none}
+#touch-controls button,#touch-stick{pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent}
+#touch-controls button{min-height:46px;min-width:58px;border:2px solid #bbd3bbaa;border-radius:10px;background:#16352bcb;color:#fff;font:600 12px system-ui;text-shadow:0 1px 2px #000;padding:8px}
+#touch-stick{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:calc(105px + env(safe-area-inset-bottom));width:120px;height:120px;border:2px solid #d9efd799;border-radius:50%;background:#16352b88;display:grid;place-items:center}
+#touch-stick span{width:48px;height:48px;border-radius:50%;border:2px solid #e2f6da;background:#739c6ccc;pointer-events:none}
+.touch-actions{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:calc(105px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(2,minmax(65px,95px));gap:8px}
+.touch-top{position:absolute;right:max(12px,env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));display:flex;gap:8px}
+.touch-look-hint{position:absolute;right:18px;bottom:250px;color:#fffd;font:11px system-ui;text-shadow:0 1px 3px #000}
+.touch-playing #toolbar.hotbar,.touch-playing #toolbar.hotbar .stack-slot{pointer-events:auto;touch-action:manipulation}
+.touch-playing #toolbar.hotbar{grid-template-columns:repeat(9,minmax(0,44px));max-width:calc(100vw - 12px);gap:2px;padding:3px}
+.touch-playing #toolbar-container{bottom:calc(8px + env(safe-area-inset-bottom))}
+.touch-playing #menu-hint,.touch-playing #info{display:none}
+.touch-playing #mini-map-hud{width:90px;top:74px;right:10px;opacity:.75}
+@media(max-width:600px){
+ .touch-playing #playtime-hud{left:6px;top:6px;transform:none;font-size:10px;max-width:160px}
+ .touch-playing #world-clock-hud{left:6px;top:53px;transform:none;font-size:10px;padding:4px}
+ .touch-playing #weather-hud{display:none}
+ .touch-top{top:8px;right:8px;gap:5px}
+ #touch-controls .touch-top button{min-width:50px;font-size:11px;padding:6px}
+}
+@media(max-height:500px){
+ #touch-stick{width:100px;height:100px;bottom:85px}
+ .touch-actions{bottom:85px}
+ .touch-look-hint,.touch-playing #mini-map-hud{display:none}
+}

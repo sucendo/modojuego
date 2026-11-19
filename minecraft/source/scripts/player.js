@@ -507,6 +507,7 @@ export class Player {
   }
 
   onMouseDown(event) {
+    if(event.target?.closest?.('button,input,select,textarea')) return;
     if(!this.controls.isLocked || (event.button!==0 && event.button!==2)) return;
     if(this.mineMode && this.equippedToolId!=='basic_pickaxe' && !this.inventory.has(this.equippedToolId)){
       this.equipTool('basic_pickaxe');
