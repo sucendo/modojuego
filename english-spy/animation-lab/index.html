@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111927">
+  <meta name="description" content="Sala interactiva para probar los movimientos de nuestro agente de English Spy, también en móvil.">
+  <title>English Spy · Laboratorio de movimientos</title>
+  <style>
+    :root{color-scheme:dark;--ink:#0b1220;--panel:#111d2d;--panel2:#18283a;--line:#445365;--gold:#e9b76c;--white:#f1eee5;--dim:#aab3c2}
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--white)}
+    button,a{-webkit-tap-highlight-color:transparent}button{color:inherit;cursor:pointer;font:inherit;touch-action:manipulation}
+    button:focus-visible,a:focus-visible{outline:3px solid #f7ce86;outline-offset:2px}
+    .app{height:100dvh;min-height:360px;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(160deg,#101a29,#0d1623)}
+    .top{flex:none;min-height:65px;padding:9px clamp(12px,2.5vw,27px);display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:2px solid #74512c;background:#0b1422;box-shadow:0 3px 0 #0a1018;z-index:2}
+    .brand{display:flex;align-items:center;gap:10px;min-width:0}.diamond{color:var(--gold);font-size:23px}.brand h1{margin:0;font-size:clamp(14px,1.75vw,21px);letter-spacing:.16em;line-height:1.13}.brand p{margin:4px 0 0;color:var(--dim);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;font-size:clamp(10px,1vw,12px)}
+    .top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.top button,.top a{border:1px solid #435169;background:#182638;text-decoration:none;border-radius:5px;padding:10px 13px;font-size:13px;font-weight:700}.top button:hover,.top a:hover{background:#26394e}.top .primary{background:#805a30;border-color:#c38b4b}
+    .room-frame{position:relative;flex:1;min-height:140px;overflow:hidden;background:#10151d;touch-action:none;cursor:crosshair;isolation:isolate}
+    #stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+    .stage-caption{position:absolute;top:12px;left:14px;padding:8px 11px;font-size:11px;font-weight:800;letter-spacing:.11em;background:#0c1627e6;border:1px solid #c18d52;color:#fff;pointer-events:none}
+    .scene-tip{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);text-align:center;white-space:nowrap;max-width:92%;text-overflow:ellipsis;overflow:hidden;font-size:12px;letter-spacing:.03em;background:#0b1423da;border:1px solid #6c727d;padding:6px 10px;border-radius:4px;pointer-events:none}
+    .scene-tip strong{color:var(--gold)}
+    .hud{flex:none;display:flex;align-items:stretch;gap:16px;padding:10px 16px 12px;min-height:152px;background:#111e2e;border-top:3px solid #8a602e;box-shadow:0 -4px 18px #0006}
+    .hud-title{display:block;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:.17em;color:var(--gold);margin-bottom:7px}
+    .dpad-wrap{display:flex;align-items:center;gap:12px;min-width:220px}.dpad{width:132px;display:grid;grid-template:repeat(3,39px)/repeat(3,39px);gap:3px;touch-action:none;user-select:none}
+    .dir{border:1px solid #65758a;background:linear-gradient(#30455f,#23364a);border-radius:5px;font-size:23px;font-weight:800;display:flex;align-items:center;justify-content:center;user-select:none;touch-action:none}.dir:active,.dir.pressed{background:#ca9050;color:#102033;border-color:#f2c17e}.dir[data-dir="up"]{grid-column:2;grid-row:1}.dir[data-dir="left"]{grid-column:1;grid-row:2}.dir[data-dir="right"]{grid-column:3;grid-row:2}.dir[data-dir="down"]{grid-column:2;grid-row:3}.dpad-center{grid-column:2;grid-row:2;background:#152335;border:1px solid #465770;border-radius:50%;margin:9px}
+    .dpad-note{max-width:145px;font-size:12px;line-height:1.45;color:#bac5d2}
+    .actions{min-width:0;flex:1}.action-list{display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:6px}.action-list button{min-height:43px;padding:5px 5px;border-radius:5px;background:#21344b;border:1px solid #657287;font-size:12px;font-weight:750}.action-list button:hover{background:#344b63}.action-list button:active,.action-list button.active{background:#a77640;color:#101824;border-color:#efc181}
+    .action-info{margin-top:10px;min-height:25px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:#c6d1dd}.action-info strong{color:#f1c27a}.inventory{border:1px solid #66758a;color:#e2e7f0;border-radius:4px;background:#182c43;padding:5px 8px;font-size:12px}
+    .footnote{flex:none;font-size:11px;padding:5px 16px;background:#0b1421;color:#98a7b8;text-align:center;border-top:1px solid #293e51}
+    .atlas-backdrop[hidden]{display:none}.atlas-backdrop{position:absolute;inset:0;z-index:20;background:#07101bdc;display:grid;place-items:center;padding:18px;overflow:auto}
+    .atlas{width:min(940px,100%);max-height:100%;display:flex;flex-direction:column;background:#152438;border:1px solid #a06e34;box-shadow:0 22px 70px #000b;border-radius:10px;overflow:hidden}
+    .atlas-head{padding:14px 16px;background:#0e1a2b;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #526174}.atlas-head h2{font-size:18px;margin:0;color:#f7d199}.atlas-head p{font-size:12px;margin:4px 0 0;color:#b4c1d0}.atlas-head-actions{display:flex;gap:8px;flex-shrink:0}.atlas-head button{font-size:12px;font-weight:800;background:#2a415c;border:1px solid #7b8b9c;border-radius:5px;padding:9px 12px}.atlas-head button:first-child{background:#b37b3b;color:#0f1924}
+    .pose-grid{overflow:auto;padding:15px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;min-height:0}.pose-card{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;min-height:148px;padding:6px 4px 8px;background:#1c2d40;border:1px solid #4a6176;border-radius:7px}.pose-card:hover,.pose-card:focus-visible{border-color:#f2c582;background:#273e55}.pose-card canvas{width:100%;max-width:120px;height:112px;object-fit:contain}.pose-card span{font-size:11px;text-align:center;color:#e8e1d2;line-height:1.25}
+    @media(max-width:980px){.hud{gap:10px}.action-list{grid-template-columns:repeat(4,minmax(65px,1fr))}.action-list button{min-height:38px}.dpad-wrap{min-width:160px}.dpad-note{display:none}}
+    @media(max-width:680px){.top{min-height:59px;padding:8px 10px}.brand h1{font-size:12px;letter-spacing:.08em}.brand p{font-size:10px;letter-spacing:0}.diamond{font-size:18px}.top-actions{gap:5px}.top button,.top a{padding:9px 7px;font-size:11px}.top a{display:none}.hud{padding:8px;min-height:193px;gap:8px}.hud-title{margin-bottom:5px;font-size:10px}.dpad-wrap{min-width:142px;align-items:flex-start}.dpad{width:138px;grid-template:repeat(3,44px)/repeat(3,44px);gap:3px}.dir{font-size:22px}.actions{flex:1}.action-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.action-list button{padding:3px 2px;min-height:42px;font-size:11px}.action-info{font-size:11px;margin-top:5px;gap:6px}.inventory{font-size:10px;padding:4px 5px}.footnote{padding:5px 8px;font-size:10px}.scene-tip{font-size:11px;bottom:7px}.stage-caption{font-size:10px;top:8px;left:8px}.atlas-backdrop{padding:8px}.atlas-head{padding:10px}.atlas-head h2{font-size:14px}.atlas-head-actions{gap:5px}.atlas-head button{padding:7px;font-size:10px}.pose-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px}.pose-card{min-height:116px}.pose-card canvas{height:84px}.pose-card span{font-size:10px}}
+    @media(max-width:420px){.brand p{max-width:180px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.top button{max-width:94px}.action-info{line-height:1.2}}
+    @media(orientation:landscape) and (max-height:560px){.top{min-height:42px;padding:5px 9px}.brand h1{font-size:12px}.brand p{display:none}.hud{min-height:134px;padding:5px 10px;align-items:center}.hud-title{display:none}.dpad-wrap{min-width:145px}.dpad{width:124px;grid-template:repeat(3,40px)/repeat(3,40px);gap:2px}.dir{font-size:19px}.action-list{grid-template-columns:repeat(7,minmax(50px,1fr))}.action-list button{min-height:43px}.action-info{margin-top:5px}.footnote{display:none}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="brand"><span class="diamond" aria-hidden="true">◆</span><div><h1>ENGLISH SPY · ANIMATION LAB</h1><p>OPERACIÓN BLACKWOOD · SALA DE MOVIMIENTOS</p></div></div>
+    <div class="top-actions">
+      <button id="atlas-toggle" class="primary" type="button">Ver 20 poses</button>
+      <button id="reset" type="button">Reiniciar</button>
+      <a href="../pixel-rebuild/">Volver al juego</a>
+    </div>
+  </header>
+  <section class="room-frame" id="room-frame" aria-label="Sala interactiva de ensayo: pulsa el suelo para caminar, toca los muebles para interactuar">
+    <canvas id="stage" aria-label="Habitación de pruebas con agente, mesa, sillón, puerta y objetos"></canvas>
+    <div class="stage-caption">SALA 01 · ENTRENAMIENTO</div>
+    <div class="scene-tip" id="scene-tip">Toca el suelo para caminar · <strong>WASD</strong> o flechas en ordenador</div>
+  </section>
+  <section class="hud" aria-label="Controles de movimientos">
+    <div class="dpad-wrap">
+      <div><span class="hud-title">MOVER</span><div class="dpad" aria-label="Control táctil de dirección">
+        <button class="dir" data-dir="up" aria-label="Caminar arriba">↑</button><button class="dir" data-dir="left" aria-label="Caminar a la izquierda">←</button><span class="dpad-center" aria-hidden="true"></span><button class="dir" data-dir="right" aria-label="Caminar a la derecha">→</button><button class="dir" data-dir="down" aria-label="Caminar abajo">↓</button>
+      </div></div><div class="dpad-note">Mantenlo pulsado para caminar. También puedes tocar un punto del suelo.</div>
+    </div>
+    <div class="actions"><span class="hud-title">PROBAR ANIMACIONES</span><div class="action-list">
+      <button data-action="talk" type="button">Hablar</button><button data-action="look" type="button">Examinar</button><button data-action="pick" type="button">Recoger</button><button data-action="point" type="button">Señalar</button><button data-action="listen" type="button">Escuchar</button><button data-action="turn" type="button">Girar</button><button data-action="open" type="button">Abrir</button>
+    </div><div class="action-info"><span id="status">Estado: <strong>En reposo</strong></span><span class="inventory" id="inventory">Inventario: vacío</span></div></div>
+  </section>
+  <footer class="footnote">Prototipo táctil independiente · Sprites de referencia del protagonista · Sin cambios en la aventura principal</footer>
+</main>
+<div class="atlas-backdrop" id="atlas-backdrop" hidden role="presentation">
+  <section class="atlas" role="dialog" aria-modal="true" aria-labelledby="atlas-title">
+    <header class="atlas-head"><div><h2 id="atlas-title">20 poses del protagonista</h2><p>Toca una pose para verla a tamaño real en la habitación.</p></div>
+      <div class="atlas-head-actions"><button id="play-all" type="button">Reproducir todas</button><button id="atlas-close" type="button">Cerrar</button></div></header>
+    <div class="pose-grid" id="pose-grid"></div>
+  </section>
+</div>
+<script src="./lab.js?v=1" defer></script>
+</body>
+</html>
