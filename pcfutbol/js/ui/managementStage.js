@@ -1,11 +1,12 @@
 import { GameState } from '../state.js';
+import { getStadiumStructure } from '../stadiums_2026_27.js';
 import {
   MANAGEMENT_STAGES, TRAINING_TYPES, TICKET_SECTORS, PLAYER_TRAINING_FOCUS, TRAINED_ATTRIBUTES, ensureManagementState,
   getManagementStage, getPendingUserFixtures, getTicketPrice, getStadiumSectors,
   getTicketSectorPrices, getTicketSalesProjection, setTicketPrice, setTicketSectorPrice,
   adjustTicketSectorPrices, setTicketMode, getSeasonTrainingMonths, getTrainingDayPlan,
   getUserFixturesOnDay, setTrainingDay, clearTrainingDay, setTrainingMode, setPlayerTrainingFocus, getPlayerTrainingReport,
-} from '../game/managementCycle.js?v=1651';
+} from '../game/managementCycle.js?v=1660';
 
 let initialized = false;
 let currentMonth = '';
@@ -156,16 +157,41 @@ function updateTicketView(stage) {
     : 'Precios entre 5 y 250 €. Los ajustes manuales prevalecen sobre las recomendaciones automáticas.');
 
   const home = (GameState.clubs || []).find(c => String(c.id) === String(GameState.user?.clubId));
+  const structure = getStadiumStructure(home);
   const sectors = getStadiumSectors(GameState, fx);
   const prices = fx ? getTicketSectorPrices(GameState, fx) : {};
   const projection = fx ? getTicketSalesProjection(GameState, fx) : null;
-  text('pcf-stadium-capacity', `${home?.stadium?.name || 'Estadio'} · ${number(projection?.capacity || sectors.reduce((sum, s) => sum + s.capacity, 0))} localidades`);
+  const stadiumCapacity = projection?.capacity || sectors.reduce((sum, s) => sum + s.capacity, 0);
+  const tierCount = structure.levels?.length || 0;
+  const facts = get('pcf-stadium-facts');
+  if (facts) {
+    facts.replaceChildren();
+    const items = [
+      ['Estadio', home?.stadium?.name || 'Por determinar'],
+      ['Aforo disponible', `${number(stadiumCapacity)} localidades`],
+      ['Origen del aforo', home?.stadium?.capacityStatus === 'official' ? 'Fuente oficial' :
+        home?.stadium?.capacityStatus === 'provisional' ? 'Provisional' : 'Catálogo del juego'],
+      ['Graderíos / niveles', tierCount ? `${tierCount} niveles${structure.amphitheaters ? ` · ${structure.amphitheaters} anfiteatros` : ''}` : 'Pendiente de verificar'],
+      ['Distribución por zonas', structure.sectorCapacities ? 'Desglose del estadio' : 'Estimación proporcional'],
+    ];
+    if (structure.plannedCapacity && structure.plannedCapacity > stadiumCapacity) {
+      items.splice(2, 0, ['Aforo final previsto', `${number(structure.plannedCapacity)} localidades`]);
+    }
+    for (const [label, value] of items) {
+      const item = document.createElement('div'); item.className = 'pcf-stadium-facts__item';
+      const name = document.createElement('span'); name.textContent = label;
+      const count = document.createElement('strong'); count.textContent = value;
+      item.append(name, count); facts.append(item);
+    }
+  }
+  text('pcf-stadium-capacity', `${number(stadiumCapacity)} plazas disponibles · Selecciona una zona del plano para consultar sus graderíos.`);
 
   for (const button of get('pcf-stadium-map')?.querySelectorAll('button[data-sector]') || []) {
     const sector = sectors.find(s => s.id === button.dataset.sector);
     if (!sector) continue;
     button.classList.toggle('is-selected', sector.id === selectedSector);
     button.textContent = `${sector.label.toUpperCase()}${fx ? ` · ${prices[sector.id]} €` : ''}`;
+    button.title = `${sector.label}: ${number(sector.capacity)} plazas (reparto ${sector.allocationStatus === 'documented' ? 'documentado' : 'estimado'})`;
     button.setAttribute('aria-pressed', String(sector.id === selectedSector));
   }
   const list = get('pcf-ticket-sector-list');
@@ -178,11 +204,57 @@ function updateTicketView(stage) {
       button.className = `pcf-sector-item${selectedSector === s.id ? ' is-selected' : ''}`;
       button.setAttribute('aria-pressed', String(selectedSector === s.id));
       const left = document.createElement('span');
-      left.textContent = `${s.label} · ${number(s.capacity)} plazas`;
+      left.textContent = `${s.label} · ${number(s.capacity)} plazas${s.allocationStatus === 'estimated' ? ' aprox.' : ''}`;
       const right = document.createElement('strong');
       right.textContent = fx ? euros(prices[s.id]) : '—';
       button.append(left, right);
       list.append(button);
+    }
+  }
+  const levels = get('pcf-stadium-levels');
+  const activeSector = sectors.find(s => s.id === selectedSector);
+  if (levels) {
+    levels.replaceChildren();
+    const heading = document.createElement('strong');
+    heading.textContent = activeSector ? `${activeSector.label} · ${number(activeSector.capacity)} localidades` : 'Graderíos';
+    levels.append(heading);
+    if (activeSector?.id === 'vip') {
+      const message = document.createElement('p');
+      message.textContent = 'Zona comercial VIP. Los palcos se distribuyen por el recinto; no constituyen un anfiteatro independiente.';
+      levels.append(message);
+    } else if (activeSector?.levels?.length) {
+      const wrapper = document.createElement('div'); wrapper.className = 'pcf-stadium-levels__grid';
+      for (const tier of activeSector.levels) {
+        const item = document.createElement('div'); item.className = 'pcf-stadium-levels__item';
+        const label = document.createElement('span'); label.textContent = tier.name;
+        const count = document.createElement('strong'); count.textContent = `${number(tier.capacity)} aprox.`;
+        item.append(label, count); wrapper.append(item);
+      }
+      levels.append(wrapper);
+    } else {
+      const message = document.createElement('p');
+      message.textContent = 'No se ha documentado todavía cuántas alturas tiene esta zona; se mantiene el precio y el aforo comercial estimado.';
+      levels.append(message);
+    }
+  }
+  const source = get('pcf-stadium-source');
+  if (source) {
+    source.replaceChildren();
+    const note = document.createElement('span');
+    note.textContent = `${structure.note ? `${structure.note} ` : ''}Los aforos por zona y nivel son estimaciones del juego, no cifras oficiales. `;
+    source.append(note);
+    if (structure.structureSource || structure.source) {
+      for (const [url, label] of [[structure.source, 'Fuente del aforo'], [structure.structureSource, 'Fuente de las gradas']]) {
+        if (!url) continue;
+        const link = document.createElement('a');
+        link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.textContent = label;
+        source.append(' · ', link);
+      }
+    } else {
+      const pending = document.createElement('span');
+      pending.textContent = 'Estructura pendiente de contrastar.';
+      source.append(pending);
     }
   }
   const sectorInput = get('pcf-ticket-sector-price');
@@ -201,7 +273,7 @@ function updateTicketView(stage) {
       totals.textContent = `${number(projection.attendance)} espectadores / ${number(projection.capacity)} plazas · ${euros(projection.revenue)} de taquilla`;
       const selected = projection.breakdown.find(s => s.id === selectedSector);
       const detail = document.createElement('small');
-      detail.textContent = `${selected.label}: ${number(selected.attendance)} entradas estimadas · ${euros(selected.revenue)}`;
+      detail.textContent = `${selected?.label || 'Zona'}: ${number(selected?.attendance)} entradas estimadas · ${euros(selected?.revenue)}`;
       forecast.append(title, totals, detail);
     } else forecast.textContent = 'Selecciona un partido como local para ver la previsión.';
   }

@@ -1,6 +1,8 @@
 // Fase 16.1: dos pausas de gestión por encuentro, sin reloj en tiempo real.
 // Todas las decisiones se guardan dentro de GameState (exportación JSON normal).
 
+import { getStadiumStructure } from '../stadiums_2026_27.js';
+
 export const MANAGEMENT_STAGES = Object.freeze({ WEEK: 'week', MATCHDAY: 'matchday', POST: 'post' });
 export const TRAINING_TYPES = Object.freeze({
   rest: 'Descanso', recovery: 'Recuperación', balanced: 'Equilibrado',
@@ -94,15 +96,44 @@ export function setTicketMode(state, mode) {
   return true;
 }
 
+// Reparte plazas enteras sin perder ni inventar una sola localidad por redondeos.
+// Los pesos son estimaciones de la simulación mientras no se conozca el aforo
+// exacto de cada sector del recinto.
+function allocateSeats(capacity, weights) {
+  const normalized = weights.map(weight => Math.max(0, Number(weight) || 0));
+  const total = normalized.reduce((sum, weight) => sum + weight, 0);
+  const shares = normalized.map(weight => total ? weight / total : 1 / normalized.length);
+  const exact = shares.map(share => capacity * share);
+  const seats = exact.map(Math.floor);
+  let pending = capacity - seats.reduce((sum, count) => sum + count, 0);
+  const order = exact.map((value, i) => ({ i, fraction: value - seats[i] }))
+    .sort((a, b) => b.fraction - a.fraction || a.i - b.i);
+  for (let i = 0; i < pending; i++) seats[order[i].i]++;
+  return seats;
+}
+
 export function getStadiumSectors(state, fx) {
   const home = (state.clubs || []).find(c => String(c.id) === String(fx?.homeClubId ?? state.user?.clubId));
   const rawCapacity = Number(fx?.meta?.stadiumCapacity || fx?.meta?.capacity || home?.stadium?.capacity || 30000);
   const capacity = Math.max(1, Math.round(Number.isFinite(rawCapacity) ? rawCapacity : 30000));
-  let assigned = 0;
+  const structure = getStadiumStructure(home);
+  const fixed = structure.sectorCapacities;
+  const hasOfficialBreakdown = fixed && TICKET_SECTORS.every(s => Number.isInteger(fixed[s.id]) && fixed[s.id] >= 0)
+    && TICKET_SECTORS.reduce((sum, s) => sum + fixed[s.id], 0) === capacity;
+  const weights = TICKET_SECTORS.map(s => structure.sectorShares?.[s.id] ?? s.share);
+  const capacities = hasOfficialBreakdown ? TICKET_SECTORS.map(s => fixed[s.id]) : allocateSeats(capacity, weights);
+  const levelNames = Array.isArray(structure.levels) ? structure.levels : [];
   return TICKET_SECTORS.map((s, i) => {
-    const seats = i === TICKET_SECTORS.length - 1 ? capacity - assigned : Math.floor(capacity * s.share);
-    assigned += seats;
-    return { ...s, capacity: seats };
+    const seats = capacities[i];
+    const sectorLevels = structure.sectorLevels?.[s.id] || levelNames;
+    const tierCounts = s.id === 'vip' || !sectorLevels.length ? [] : allocateSeats(seats, sectorLevels.map(() => 1));
+    return {
+      ...s,
+      capacity: seats,
+      share: seats / capacity,
+      allocationStatus: hasOfficialBreakdown ? 'documented' : 'estimated',
+      levels: tierCounts.map((count, index) => ({ name: sectorLevels[index], capacity: count, estimated: true })),
+    };
   });
 }
 

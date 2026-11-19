@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { GameState, newGame, applyLoadedState } from '../js/state.js';
+import { allLeagues } from '../js/data.js';
 import '../js/game/bootstrap.js';
 import {
   MANAGEMENT_STAGES, getManagementStage, getPendingUserFixtures,
@@ -262,7 +263,7 @@ test('la ficha de evolución está dentro de Entrenamiento, con resumen, atribut
   assert.match(training, /Evolución del jugador/);
   assert.match(ui, /getPlayerTrainingReport\(GameState, selectedPlayer\)/);
   assert.match(css, /pcf-training-evolution__history/);
-  assert.match(html, /managementCycle26\.css\?v=1651/);
+  assert.match(html, /managementCycle26\.css\?v=1660/);
 });
 
 test('sectorización: aforo exacto, reajuste por zona/partido y cierre irreversible', () => {
@@ -296,6 +297,78 @@ test('sectorización: aforo exacto, reajuste por zona/partido y cierre irreversi
     assert.equal(setTicketSectorPrice(GameState, lockedFixture, 'vip', 160), false);
     assert.equal(lockedFixture.meta.ticketZonePricesLocked.vip, 145);
   }
+});
+
+test('todas las fichas de los clubes conservan aforo y ficha estructural, sin inventar graderíos', () => {
+  const unique = new Map(allLeagues.flatMap(league => league.clubs.map(club => [club.id, club])));
+  assert.ok(unique.size >= 250, 'la ficha de estadio existe para todos los clubes de la temporada');
+  for (const club of unique.values()) {
+    assert.ok(club.stadium.name && Number.isInteger(club.stadium.capacity) && club.stadium.capacity > 0, club.id);
+    assert.ok(['official', 'catalog', 'provisional'].includes(club.stadium.capacityStatus), club.id);
+    assert.ok(['documented', 'pending'].includes(club.stadium.structure.status), club.id);
+    assert.ok(Array.isArray(club.stadium.structure.levels), club.id);
+    if (club.stadium.structure.status === 'pending') assert.equal(club.stadium.structure.levels.length, 0, club.id);
+    assert.equal(Object.keys(club.stadium.structure.sectorShares).length, TICKET_SECTORS.length, club.id);
+  }
+});
+
+test('estadios documentados: aforo operativo, niveles y cuatro anfiteatros del Bernabéu', () => {
+  begin('barcelona');
+  const barca = GameState.clubs.find(c => c.id === 'barcelona').stadium;
+  assert.equal(barca.capacity, 62652, 'no simular el Camp Nou en obras con el aforo final previsto');
+  assert.equal(barca.plannedCapacity, 105000);
+  assert.equal(barca.structure.levels.length, 2);
+  const barcaHome = getPendingUserFixtures(GameState).find(fx => fx.homeClubId === 'barcelona');
+  const barcaSectors = getStadiumSectors(GameState, barcaHome);
+  assert.equal(barcaSectors.reduce((sum, s) => sum + s.capacity, 0), 62652);
+  for (const sector of barcaSectors.filter(s => s.id !== 'vip')) {
+    assert.equal(sector.levels.length, 2);
+    assert.equal(sector.levels.reduce((sum, l) => sum + l.capacity, 0), sector.capacity);
+    assert.equal(sector.allocationStatus, 'estimated');
+  }
+  begin('atletico');
+  const metropolitano = GameState.clubs.find(c => c.id === 'atletico').stadium;
+  assert.equal(metropolitano.capacity, 70813);
+  assert.deepEqual(metropolitano.structure.levels, ['Grada baja', 'Grada media', 'Grada alta']);
+  const atleticoHome = getPendingUserFixtures(GameState).find(fx => fx.homeClubId === 'atletico');
+  const athleticSectors = getStadiumSectors(GameState, atleticoHome);
+  assert.equal(athleticSectors.find(s => s.id === 'preferencia').levels.length, 2, 'lateral este sin grada media');
+  assert.equal(athleticSectors.find(s => s.id === 'tribuna').levels.length, 3);
+  begin('realmadrid');
+  const bernabeu = GameState.clubs.find(c => c.id === 'realmadrid').stadium;
+  assert.equal(bernabeu.structure.amphitheaters, 4);
+  assert.equal(bernabeu.structure.levels.length, 5, 'grada/tribuna y cuatro anfiteatros');
+});
+
+test('aforo oficial desglosado se respeta si es válido y se ignora si no coincide con el total', () => {
+  const home = begin('atletico');
+  const fixture = getPendingUserFixtures(GameState).find(fx => fx.homeClubId === 'atletico');
+  const stadium = GameState.clubs.find(c => c.id === 'atletico').stadium;
+  const original = getStadiumSectors(GameState, fixture);
+  const exact = Object.fromEntries(original.map(s => [s.id, s.capacity]));
+  exact.tribuna += 3;
+  exact.preferencia -= 3;
+  stadium.structure.sectorCapacities = exact;
+  const official = getStadiumSectors(GameState, fixture);
+  assert.equal(official.find(s => s.id === 'tribuna').capacity, exact.tribuna);
+  assert.ok(official.every(s => s.allocationStatus === 'documented'));
+  stadium.structure.sectorCapacities.norte++;
+  const fallback = getStadiumSectors(GameState, fixture);
+  assert.equal(fallback.reduce((sum, s) => sum + s.capacity, 0), stadium.capacity);
+  assert.ok(fallback.every(s => s.allocationStatus === 'estimated'));
+  assert.equal(home != null, true);
+});
+
+test('la pantalla de Estadio ordena la venta, ficha, niveles y ajuste de precios', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('../js/ui/managementStage.js', import.meta.url), 'utf8');
+  const stadium = html.split('<section id="view-stadium"')[1].split('<section id="view-training"')[0];
+  for (const id of ['pcf-ticket-setup', 'pcf-stadium-facts', 'pcf-stadium-levels', 'pcf-stadium-source', 'pcf-ticket-bulk']) {
+    assert.match(stadium, new RegExp(id));
+  }
+  assert.match(ui, /getStadiumStructure\(home\)/);
+  assert.match(ui, /tier\.capacity/);
+  assert.match(stadium, /Zonas del estadio/);
 });
 
 test('taquilla de sectores se cobra una vez y conserva el detalle en el postpartido', () => {
@@ -336,7 +409,7 @@ test('v16.4 presenta calendario y plano en sus menús, sin añadir gestión al d
   }
   assert.match(css, /pcf-training-calendar__day/);
   assert.match(css, /pcf-stadium-pitch/);
-  assert.match(html, /js\/main\.js\?v=1651/);
+  assert.match(html, /js\/main\.js\?v=1660/);
 });
 
 test('entrenamiento individual permite objetivos específicos persistentes y medibles', () => {

@@ -13,6 +13,7 @@ import { SQUAD_SUPPLEMENTS_2026_27 } from './squadSupplements2026.js';
 import { buildSquadFromSnapshot } from './rosterSnapshot.js';
 import { createClubTacticalIdentity } from './game/tactics/identity.js';
 import { ensurePlayerPositionData } from './game/tactics/positions.js';
+import { createStadiumRecord } from './stadiums_2026_27.js';
 
 // Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
 // La clave es el id del club (real_madrid, barcelona, arsenal, astonvilla, ...).
@@ -96,10 +97,7 @@ function createLeagueFromBase(baseClubs, id, name, country, tier = 1) {
       id: c.id,
       name: c.name,
       shortName: c.shortName,
-      stadium: {
-        name: c.stadiumName,
-        capacity: c.capacity
-      },
+      stadium: createStadiumRecord(c),
       cash: c.cash,
       wageBudget: c.wageBudget,
       players,

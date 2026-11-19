@@ -37,6 +37,16 @@
 #screen-dashboard .pcf-management__flat label { flex:1 1 230px; color:#c8dfed; font-size:11px; }
 #screen-dashboard .pcf-management__flat input { display:block; width:100%; min-height:35px; margin-top:4px; background:#0e2439; color:#fff; border:1px solid #39768f; border-radius:7px; padding:5px 9px; box-sizing:border-box; }
 #screen-dashboard .pcf-management__flat button { min-height:36px; }
+#screen-dashboard .pcf-ticket-setup { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:15px; }
+#screen-dashboard .pcf-ticket-setup__panel { min-width:0; padding:15px; border:1px solid rgba(101,188,225,.33); border-radius:12px; background:rgba(2,20,40,.46); }
+#screen-dashboard .pcf-ticket-setup__panel > label { display:block; margin:9px 0 5px; color:#cdeaf5; font-size:12px; }
+#screen-dashboard .pcf-ticket-setup__panel > select { width:100%; min-height:36px; padding:6px 9px; border:1px solid #38758f; border-radius:7px; background:#0b273e; color:#fff; }
+#screen-dashboard .pcf-ticket-setup__panel .pcf-management__flat label { flex-basis:120px; }
+#screen-dashboard .pcf-ticket-setup__panel .pcf-management__hint { margin-top:8px; }
+#screen-dashboard .pcf-stadium-facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(172px,1fr)); gap:9px; margin-top:13px; }
+#screen-dashboard .pcf-stadium-facts__item { padding:11px 12px; min-width:0; border:1px solid rgba(105,185,224,.26); border-radius:9px; background:linear-gradient(145deg,rgba(13,66,96,.68),rgba(2,22,41,.68)); }
+#screen-dashboard .pcf-stadium-facts__item span { display:block; margin-bottom:5px; font-size:10px; letter-spacing:.04em; color:#9acbdf; }
+#screen-dashboard .pcf-stadium-facts__item strong { display:block; color:#f2faff; font-size:13px; overflow-wrap:anywhere; }
 #screen-dashboard .pcf-stadium-layout { display:grid; grid-template-columns:minmax(245px,.95fr) minmax(300px,1fr); gap:17px; margin-top:15px; }
 #screen-dashboard .pcf-stadium-board,#screen-dashboard .pcf-stadium-controls,#screen-dashboard .pcf-ticket-bulk,
 #screen-dashboard .pcf-training-planner__calendar,#screen-dashboard .pcf-training-planner__details {
@@ -50,6 +60,14 @@
 #screen-dashboard .pcf-sector-stand--norte { grid-area:3/1; }
 #screen-dashboard .pcf-sector-stand--sur { grid-area:3/3; }
 #screen-dashboard .pcf-sector-stand--preferencia { grid-area:4/2; }
+#screen-dashboard .pcf-stadium-levels { margin:14px 0 10px; padding:11px; background:rgba(21,78,106,.43); border:1px solid #38738c; border-radius:9px; }
+#screen-dashboard .pcf-stadium-levels > strong { display:block; font-size:12px; color:#f2fbff; margin-bottom:6px; }
+#screen-dashboard .pcf-stadium-levels p { font-size:11px; color:#bcd9e6; margin:6px 0 0; line-height:1.4; }
+#screen-dashboard .pcf-stadium-levels__grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(115px,1fr)); gap:6px; }
+#screen-dashboard .pcf-stadium-levels__item { min-width:0; padding:7px; border-radius:6px; background:#07243a; border:1px solid #30677f; }
+#screen-dashboard .pcf-stadium-levels__item span { display:block; font-size:10px; color:#b7d8e5; }
+#screen-dashboard .pcf-stadium-levels__item strong { display:block; margin-top:4px; font-size:12px; color:#e9f9ff; }
+#screen-dashboard #pcf-stadium-source a { color:#91e4ff; text-decoration:underline; }
 #screen-dashboard .pcf-stadium-pitch { grid-area:3/2; position:relative; border:3px solid #edf9ec; border-radius:4px; box-shadow:0 0 0 5px #174a57; background:repeating-linear-gradient(90deg,#266c40 0%,#266c40 14.28%,#2c7d49 14.28%,#2c7d49 28.56%); }
 #screen-dashboard .pcf-stadium-pitch::before { content:""; position:absolute; inset:0 49.5%; width:1px; background:#eef9f1; }
 #screen-dashboard .pcf-stadium-pitch::after { content:""; position:absolute; top:26%; bottom:26%; left:0; width:16%; border:2px solid #eef9f1; border-left:0; }
@@ -135,6 +153,8 @@
   #screen-dashboard .pcf-management__training { grid-template-columns:repeat(2,minmax(0,1fr)); }
   #screen-dashboard .pcf-management__day { flex-wrap:wrap; }
   #screen-dashboard .pcf-management__day select { width:100%; max-width:100%; }
+  #screen-dashboard .pcf-ticket-setup { grid-template-columns:1fr; }
+  #screen-dashboard .pcf-ticket-setup__panel { padding:11px; }
   #screen-dashboard .pcf-stadium-layout,#screen-dashboard .pcf-training-planner { grid-template-columns:1fr; }
   #screen-dashboard .pcf-stadium-board,#screen-dashboard .pcf-stadium-controls,#screen-dashboard .pcf-ticket-bulk,#screen-dashboard .pcf-training-planner__calendar,#screen-dashboard .pcf-training-planner__details { padding:11px; }
   #screen-dashboard .pcf-training-calendar { gap:3px; }
