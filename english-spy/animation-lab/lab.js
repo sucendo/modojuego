@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const W=1200,H=675,canvas=document.getElementById('stage'),ctx=canvas.getContext('2d');
+  const pixelRoom=window.EnglishSpyPixelRoom;
   const stage=document.getElementById('room-frame'),tip=document.getElementById('scene-tip');
   const statusNode=document.getElementById('status'),inventoryNode=document.getElementById('inventory');
   const atlas=document.getElementById('atlas-backdrop'),poseGrid=document.getElementById('pose-grid');
@@ -484,6 +485,7 @@
     ctx.fillStyle=fillColor;ctx.fill();if(strokeColor){ctx.strokeStyle=strokeColor;ctx.lineWidth=width;ctx.stroke();}}
   function line(x1,y1,x2,y2,color,width=1){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}
   function room(){
+    if(pixelRoom){pixelRoom.draw(ctx,doorOpen?'roomOpen':'room');return;}
     // A quiet espionage safe house; plain furniture provides real occlusion tests.
     fill(0,0,W,H,'#273547');
     const wall=ctx.createLinearGradient(0,0,0,360);wall.addColorStop(0,'#25364c');wall.addColorStop(.7,'#43516a');wall.addColorStop(1,'#536075');fill(0,0,W,345,wall);
@@ -521,6 +523,7 @@
   }
   function shadow(x,y,rx,ry){ctx.fillStyle='#141a2073';ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
   function desk(){
+    if(pixelRoom){pixelRoom.draw(ctx,'desk');return;}
     shadow(633,548,151,18);
     fill(522,480,18,84,'#57301e');fill(727,480,18,84,'#57301e');
     fill(529,485,216,16,'#a46a45');fill(517,495,246,17,'#63412f');
@@ -534,6 +537,7 @@
     fill(701,463,24,7,'#ece4d6');
   }
   function sofa(){
+    if(pixelRoom){pixelRoom.draw(ctx,'sofa');return;}
     shadow(232,559,150,20);
     fill(112,410,245,119,'#442b2c');fill(120,420,229,102,'#688270');
     fill(137,431,98,77,'#819b7f');fill(243,431,89,77,'#768c73');
@@ -543,6 +547,7 @@
     line(135,526,331,526,'#9da88a',3);line(104,482,104,540,'#a27853',3);
   }
   function chair(){
+    if(pixelRoom){pixelRoom.draw(ctx,'chair');return;}
     shadow(833,605,70,12);
     fill(779,481,15,101,'#493529');fill(872,477,15,101,'#493529');
     fill(790,481,83,52,'#815f49');fill(797,488,68,40,'#8b765f');
@@ -550,6 +555,7 @@
     fill(799,556,15,52,'#5a392a');fill(878,552,12,52,'#5a392a');
   }
   function plant(){
+    if(pixelRoom){pixelRoom.draw(ctx,'plant');return;}
     shadow(1019,644,77,13);
     poly([[988,579],[1052,577],[1048,644],[998,644]],'#996444','#362a27',5);
     fill(995,589,48,6,'#c58c5c');line(1005,600,1038,600,'#d09b6b',2);
@@ -558,7 +564,7 @@
       ctx.fillStyle=i%3?'#426442':'#6f8554';ctx.beginPath();ctx.ellipse(x,y,27,11,i*.8,0,Math.PI*2);ctx.fill();}
     for(let i=0;i<5;i++){ctx.fillStyle='#dbac89';ctx.beginPath();ctx.arc(986+i*14,490+(i%2)*12,5,0,Math.PI*2);ctx.fill();}
   }
-  function note(){if(noteTaken)return;ctx.save();ctx.translate(-150,4);shadow(881,618,28,5);
+  function note(){if(noteTaken)return;if(pixelRoom){pixelRoom.draw(ctx,'note');return;}ctx.save();ctx.translate(-150,4);shadow(881,618,28,5);
     poly([[854,596],[890,591],[909,616],[867,623]],'#ead6ac','#8a7256',2);
     line(864,603,892,601,'#b98c67',2);line(867,608,898,607,'#9b7a68',1);
     poly([[870,612],[879,609],[881,618]],'#bd5950');ctx.restore();
