@@ -17,6 +17,7 @@
   const SCENES = {
     terrace:{
       image:'./assets/terrace-pixel.webp',name:'PLAZA DE ORIENTE · CAFÉ DE ORIENTE · 18:47',spawn:[290,590],
+      perspective:{farY:405,nearY:655,farScale:.62,nearScale:1.62},
       actors:[{role:'stranger',x:380,y:477}],
       // Each accessible corridor is deliberately separate from the foreground furniture.
       corridors:[
@@ -50,6 +51,7 @@
     },
     interior:{
       image:'./assets/interior-pixel.webp',name:'CAFÉ DE ORIENTE · SALÓN · 18:52',spawn:[1010,575],
+      perspective:{farY:390,nearY:660,farScale:.62,nearScale:1.57},
       actors:[{role:'carmen',x:418,y:582}],
       corridors:[
         [445,397,1110,490], // Behind the main table
@@ -91,6 +93,7 @@
   let actor={x:SCENES[state.scene].spawn[0],y:SCENES[state.scene].spawn[1],facing:1,step:0};
   let path=[], pending=null, time=0, lastFrame=performance.now();
   let customizationDraft=null, gabrielHeldUntil=0, gabrielHeldPosition=null;
+  let patrolPausedAt=null, patrolPausedDuration=0;
   const scenes={};
   const spriteImages={}, coatSprites=new Map(), foregrounds={};
   const spriteNames=['agent-m','agent-f','gabriel','carmen','stranger'];
@@ -120,20 +123,67 @@
     scenes[id]=new Image();scenes[id].onload=()=>prepareForegrounds(id);scenes[id].src=scene.image;
   }
   const mix=(a,b,t)=>a+(b-a)*Math.min(1,Math.max(0,t));
+  const perspectiveScale=(scene,y)=>{
+    const p=SCENES[scene].perspective;
+    return mix(p.farScale,p.nearScale,(y-p.farY)/(p.nearY-p.farY));
+  };
+  // Perspective has a hand-authored scale at the café threshold: its raised
+  // doorway is nearer the camera than the terrace aisle at the same screen Y.
+  // Each stop lasts several seconds; the waiter actually walks between stops.
+  const GABRIEL_STOPS=[
+    {t:0, scene:'terrace', x:832,y:439,scale:.81,alpha:1},
+    {t:3, scene:'terrace', x:832,y:439,scale:.81,alpha:1},
+    {t:7, scene:'terrace', x:921,y:434,scale:.92,alpha:1},
+    {t:9, scene:'terrace', x:921,y:434,scale:.92,alpha:1},
+    {t:14,scene:'terrace', x:1067,y:458,scale:1.25,alpha:1},
+    {t:17,scene:'terrace', x:1117,y:459,scale:1.44,alpha:0},
+    {t:17.001,scene:'interior', x:1080,y:486,scale:1.42,alpha:0},
+    {t:20,scene:'interior', x:1018,y:511,scale:1.31,alpha:1},
+    {t:24,scene:'interior', x:927,y:534,scale:1.18,alpha:1},
+    {t:28,scene:'interior', x:927,y:534,scale:1.18,alpha:1},
+    {t:32,scene:'interior', x:1018,y:511,scale:1.31,alpha:1},
+    {t:35,scene:'interior', x:1080,y:486,scale:1.42,alpha:0},
+    {t:35.001,scene:'terrace', x:1117,y:459,scale:1.44,alpha:0},
+    {t:38,scene:'terrace', x:1067,y:458,scale:1.25,alpha:1},
+    {t:42,scene:'terrace', x:921,y:434,scale:.92,alpha:1},
+    {t:46,scene:'terrace', x:832,y:439,scale:.81,alpha:1},
+    {t:49,scene:'terrace', x:832,y:439,scale:.81,alpha:1},
+  ];
+  // Walking phase follows metres travelled, not the frame clock; idle characters
+  // therefore stop moving their feet and resume without a sudden animation jump.
+  let patrolDistance=0;
+  for(let i=1;i<GABRIEL_STOPS.length;i++){
+    const a=GABRIEL_STOPS[i-1],b=GABRIEL_STOPS[i];
+    patrolDistance+=a.scene===b.scene?Math.hypot(b.x-a.x,b.y-a.y):0;
+    b.walkDistance=patrolDistance;
+  }
+  GABRIEL_STOPS[0].walkDistance=0;
+  const PATROL_DURATION=GABRIEL_STOPS.at(-1).t;
   function gabrielAt(now=performance.now()){
-    if((now<gabrielHeldUntil||dialog?.id==='gabriel')&&gabrielHeldPosition)
-      return {...gabrielHeldPosition,role:'gabriel',walking:false};
-    const phase=((now-patrolOrigin)/1000)%42;
-    if(phase<12){
-      const p=Math.min(1,Math.max(0,(phase-5)/7));
-      return {role:'gabriel',scene:'terrace',x:mix(841,1061,p),y:mix(439,428,p),walking:p>0&&p<1,facing:1};
-    }
-    if(phase<30){
-      const a=Math.min(1,Math.max(0,(phase-12)/6)),b=Math.min(1,Math.max(0,(phase-24)/6));
-      return {role:'gabriel',scene:'interior',x:mix(1044,929,a)+mix(0,115,b),y:mix(491,544,a)-mix(0,53,b),walking:(a>0&&a<1)||(b>0&&b<1),facing:a>0&&a<1?-1:1};
-    }
-    const p=Math.min(1,Math.max(0,(phase-30)/7));
-    return {role:'gabriel',scene:'terrace',x:mix(1061,841,p),y:mix(428,439,p),walking:p>0&&p<1,facing:-1};
+    if(patrolPausedAt!==null&&gabrielHeldPosition)
+      return {...gabrielHeldPosition,walking:false};
+    const phase=((now-patrolOrigin-patrolPausedDuration)/1000)%PATROL_DURATION;
+    let i=0;
+    while(i<GABRIEL_STOPS.length-2&&GABRIEL_STOPS[i+1].t<=phase)i++;
+    const a=GABRIEL_STOPS[i],b=GABRIEL_STOPS[i+1],duration=b.t-a.t;
+    const progress=duration>0?(phase-a.t)/duration:0;
+    // Gently accelerate/decelerate, without the abrupt reversals of v0.4.
+    const p=Math.max(0,Math.min(1,progress-Math.sin(2*Math.PI*progress)/(2*Math.PI)));
+    const distance=Math.hypot(b.x-a.x,b.y-a.y);
+    const walking=a.scene===b.scene&&distance>2;
+    return {role:'gabriel',scene:a.scene,x:mix(a.x,b.x,p),y:mix(a.y,b.y,p),
+      scale:mix(a.scale,b.scale,p),alpha:mix(a.alpha,b.alpha,p),walking,
+      facing:walking&&Math.abs(b.x-a.x)>4?(b.x<a.x?-1:1):(i<9?-1:1),
+      step:(a.walkDistance+(walking?distance*p:0))*.1};
+  }
+  function holdGabriel(now){
+    if(patrolPausedAt===null){gabrielHeldPosition=gabrielAt(now);patrolPausedAt=now;}
+    gabrielHeldUntil=now+18000;
+  }
+  function releaseGabriel(now){
+    if(patrolPausedAt===null)return;
+    patrolPausedDuration+=now-patrolPausedAt;
+    patrolPausedAt=null;gabrielHeldPosition=null;
   }
   const patrolOrigin=performance.now();
   function coatImage(role,coat){
@@ -233,10 +283,15 @@
   };
   function liveHotspot(id){
     if(id!=='gabriel')return SCENES[state.scene].hotspots.find(h=>h.id===id);
-    const g=gabrielAt();if(g.scene!==state.scene)return null;
-    return {id:'gabriel',x:g.x,y:g.y-66,w:g.scene==='terrace'?91:80,h:133,
-      walk:g.scene==='terrace'?(g.x>970?[1067,450]:[607,491]):[920,570],
+    const g=gabrielForInteraction();if(!g)return null;
+    const height=123*g.scale,width=Math.max(55,height*.58);
+    return {id:'gabriel',x:g.x-width/2,y:g.y-height,w:width,h:height,
+      walk:g.scene==='terrace'?(g.x>970?[1067,492]:[607,491]):[919,565],
       label:'Talk to Gabriel'};
+  }
+  function gabrielForInteraction(){
+    const g=gabrielAt();
+    return g.scene===state.scene&&g.alpha>.34?g:null;
   }
   function allHotspots(){return [...SCENES[state.scene].hotspots,{id:'gabriel',x:0,y:0,w:85,h:135,label:'Talk to Gabriel'}];}
   function renderHotspots(){
@@ -250,8 +305,13 @@
   function trackGabriel(g){
     const el=hotspotsNode.querySelector('[data-hotspot="gabriel"]');
     if(!el)return;
-    const visible=g.scene===state.scene;el.hidden=!visible;
-    if(visible){el.style.left=g.x/W*100+'%';el.style.top=(g.y-65)/H*100+'%';}
+    const visible=g.scene===state.scene&&g.alpha>.34;el.hidden=!visible;
+    if(visible){
+      const height=123*g.scale,width=Math.max(55,height*.58);
+      el.style.left=(g.x-width/2)/W*100+'%';el.style.top=(g.y-height)/H*100+'%';
+      el.style.setProperty('--hit-width',width/W*100+'%');
+      el.style.setProperty('--hit-height',height/H*100+'%');
+    }
   }
   function switchScene(id,arrival=null){
     if(!SCENES[id])return;
@@ -471,16 +531,17 @@
   }
 
   function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
-  function drawPerson({role,x,y,walking=false,facing=1,step=0}, now){
+  function drawPerson({role,x,y,walking=false,facing=1,step=0,scale=null,alpha=1}, now){
     const img=role==='agent'?coatImage(state.avatar.style,state.avatar.coat):spriteImages[role];
     if(!img?.naturalWidth && !img?.width)return;
-    const depth=Math.min(1.19,Math.max(.76,.77+(y-365)*.0014));
+    const depth=scale??perspectiveScale(state.scene,y);
     const height=(role==='carmen'?116:123)*depth,width=height*img.width/img.height;
-    const stride=walking?Math.sin(step||now*.012)*3.3:0;
-    const bob=walking?Math.abs(Math.sin(step||now*.012))*2.8:Math.sin(now*.0021+x)*.55;
+    const stride=walking?Math.sin(step)*3.2*depth:0;
+    const bob=walking?Math.abs(Math.sin(step))*1.7*depth:Math.sin(now*.0021+x)*.35;
     ctx.save();ctx.translate(Math.round(x),Math.round(y));
+    ctx.globalAlpha=Math.max(0,Math.min(1,alpha));
     ctx.fillStyle='#06080fa0';ctx.beginPath();ctx.ellipse(0,1,Math.max(13,width*.47),4.5,0,0,Math.PI*2);ctx.fill();
-    ctx.scale(facing<0?-1:1,1);ctx.translate(0,-bob);ctx.imageSmoothingEnabled=false;
+    ctx.scale(facing<0?-.95:.95,1);ctx.translate(walking?Math.sin(step*.5)*depth:0,-bob);ctx.imageSmoothingEnabled=false;
     if(walking){
       const split=Math.round(img.height*.765),remaining=img.height-split,half=Math.floor(img.width/2);
       ctx.drawImage(img,0,0,img.width,split,-width/2,-height,width,height*split/img.height);
@@ -492,9 +553,11 @@
   function frame(now){
     // Keep walking responsive even on browsers that render the canvas at a low frame rate.
     const dt=Math.min(.13,(now-lastFrame)/1000||.016);lastFrame=now;time+=dt;
+    if(patrolPausedAt!==null && now>=gabrielHeldUntil && dialog?.id!=='gabriel')releaseGabriel(now);
     if(path.length){
-      const next=path[0],dx=next.x-actor.x,dy=next.y-actor.y,dist=Math.hypot(dx,dy),step=Math.min(dist,640*dt);
-      if(dist>0){actor.x+=dx/dist*step;actor.y+=dy/dist*step;if(Math.abs(dx)>2)actor.facing=dx<0?-1:1;actor.step+=dt*12;}
+      const next=path[0],dx=next.x-actor.x,dy=next.y-actor.y,dist=Math.hypot(dx,dy);
+      const step=Math.min(dist,175*perspectiveScale(state.scene,actor.y)*dt);
+      if(dist>0){actor.x+=dx/dist*step;actor.y+=dy/dist*step;if(Math.abs(dx)>2)actor.facing=dx<0?-1:1;actor.step+=step*.1;}
       if(dist<=step+1.5){actor.x=next.x;actor.y=next.y;path.shift();if(!path.length&&pending){const action=pending;pending=null;action();}}
     }
     ctx.clearRect(0,0,W,H);
@@ -504,7 +567,7 @@
     ctx.imageSmoothingEnabled=false;
     const all=SCENES[state.scene].actors.map(a=>({...a,walking:false,facing:a.role==='stranger'?-1:1}));
     all.push({...actor,role:'agent',walking:path.length>0});
-    const gabriel=gabrielAt(now);if(gabriel.scene===state.scene)all.push({...gabriel,step:time*12});
+    const gabriel=gabrielAt(now);if(gabriel.scene===state.scene&&gabriel.alpha>.01)all.push(gabriel);
     const elements=[
       ...all.map(person=>({depth:person.y,person})),
       ...(foregrounds[state.scene]||[]).map(layer=>({depth:layer.depth,layer}))
@@ -568,7 +631,7 @@
       const h=liveHotspot(hs.dataset.hotspot);
       if(h){
         if(h.id==='gabriel'){
-          gabrielHeldPosition=gabrielAt();gabrielHeldUntil=performance.now()+18000;
+          holdGabriel(performance.now());
         }
         walkTo(...h.walk,()=>interact(h));
       }
