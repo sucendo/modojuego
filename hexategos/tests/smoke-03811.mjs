@@ -7,7 +7,7 @@ assert.doesNotThrow(()=>new Function(js),'0.38.11 production syntax');
 assert.ok(js.includes('iconOffset03811'),'co-located marker layout missing');
 assert.ok(css.includes('industryBudget0388'),'disabled-choice explanation styling missing');
 assert.match(index,/js\/production-0388\.js\?v=\d+/);
-assert.match(index,/css\/production-0388\.css\?v=0381[15]/);
+assert.match(index,/css\/production-0388\.css\?v=[A-Za-z0-9_-]+/);
 
 const owner=Array(20).fill(0),gold=[0,2500];
 const centers=Array(60).fill(5000),edges=[],offsets=[0];

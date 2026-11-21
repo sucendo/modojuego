@@ -15,6 +15,7 @@
   let embassyOpen=false,embassyContacts=[],embassyFilter='',embassySelected=-1;
   let maritimePort=-1,showAllSeaRoutes=false,lastTab='dip';
   let governmentCity0386=-1;
+  let nationNameDraft0389=null;
   const states={none:'Sin embajada',active:'Embajada activa',pending:'Solicitud pendiente',rejected:'Solicitud rechazada',expelled:'Embajada expulsada'};
   const routeNames={active:'Activa',risky:'Sin permiso',smuggling:'Contrabando',blocked:'Bloqueada',inspected:'En inspección',suspended:'Suspendida',broken:'Interrumpida',rebuilding:'Recalculando'};
   const msg=s=>{if(typeof toast==='function')toast(s)};
@@ -176,6 +177,24 @@
         '<p class="hubEmpty03851">Todavía no has creado rutas marítimas. Puedes comerciar también entre puertos de tu propio país.</p>')+
       (routes.length>12?'<button class="hubMore03851" data-hub-action="sea-more">'+(showAllSeaRoutes?'Ver menos':'Ver todas las '+routes.length+' rutas')+'</button>':'');
   }
+  function nationIdentityCard0389(){
+    const identity=window.HexategosRegionalNames0389?.identity?.(0);
+    const current=String(typeof factionName3230==='function'?factionName3230(0):identity?.name||'Mi nación');
+    const names=(identity?.history||[]).filter(Boolean).slice(-12);
+    const input=nationNameDraft0389===null?current:nationNameDraft0389;
+    return '<section class="sysBlock3213 sysGovIdentity0389">'+
+      '<div class="hubHeader03851"><div><b>🏷️ Identidad de la nación</b>'+
+      '<p>El nombre oficial aparece en la clasificación, diplomacia y fichas nacionales. Los nombres anteriores se conservan.</p></div></div>'+
+      '<div class="hubStats03851">'+makeHint('Nombre actual',current)+'</div>'+
+      '<label class="sysGovLabel0386" for="hubNationName0389">Renombrar nación</label>'+
+      '<div class="hubButtons03851" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+      '<input id="hubNationName0389" data-hub-nation-name0389 type="text" maxlength="64" minlength="3" '+
+      'autocomplete="off" style="flex:1 1 190px;min-width:0" value="'+escape(input)+'">'+
+      '<button type="button" class="hubPrimary03851" data-hub-rename-nation0389>Guardar nombre</button></div>'+
+      '<p class="hubEmpty03851"><b>Nombres anteriores:</b> '+
+      (names.length?names.map(escape).join(' → '):'No hay cambios registrados')+'</p>'+
+      '</section>';
+  }
   function governmentCard0386(){
     const api=nationApi();
     if(!started3230||!api?.governmentCities){
@@ -200,6 +219,7 @@
       '<div class="hubStats03851">'+makeHint('Estabilidad media',Math.round(national.avg)+' %')+
       makeHint('Ciudades en crisis',crisis)+makeHint('Ciudades administradas',national.n)+
       makeHint('Tesoro nacional',pretty(gold3212)+' oro')+'</div></div>';
+    html+=nationIdentityCard0389();
     if(!cities.length){
       host.innerHTML=html+'<div class="sysBlock3213"><b>Sin ciudades</b><p>Funda una ciudad para poder administrarla desde Gobierno.</p></div>';
       return;
@@ -340,6 +360,7 @@
   }
 
   host.addEventListener('input',e=>{
+    if(e.target.matches('[data-hub-nation-name0389]'))nationNameDraft0389=e.target.value;
     if(e.target.matches('[data-embassy-search]')){
       embassyFilter=e.target.value||'';
       renderEmbassyRoster();
@@ -361,6 +382,21 @@
     }
   });
   host.addEventListener('click',e=>{
+    if(e.target.closest?.('[data-hub-rename-nation0389]')){
+      e.preventDefault();
+      const raw=host.querySelector('[data-hub-nation-name0389]')?.value||'';
+      const name=raw.trim();
+      if(name.length<3||name.length>64){
+        msg('El nombre debe tener entre 3 y 64 caracteres.');
+        return;
+      }
+      if(window.HexategosRegionalNames0389?.renamePlayer?.(name)){
+        nationNameDraft0389=null;
+        msg('Nación renombrada a '+name);
+        renderSystems3220();
+      }else msg('No se pudo modificar el nombre nacional.');
+      return;
+    }
     if(e.target.closest?.('[data-hub-gov-read0386]')){
       window.HexategosMessagesStable8?.markAll?.('government');
       governmentCard0386();decorateNew();

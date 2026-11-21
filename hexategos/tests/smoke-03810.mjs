@@ -34,7 +34,7 @@ const args=[
  'modalBody3244','modalActions3244','buildClassicActions3246','classicAction3246',
  'handleContextAction3244','sites','TYPES','FUTURE_INDUSTRIES','gold3212','MAX_SITES',
  'MAX_PER_NATION','MAX_PER_CELL','MAX_PLAYER_SITES','sitesOnCell','availability','countNation','potential','esc','placeDisplayName3271',
- 'build','saveGame3212','updateUI3230','sysTab3220','renderSystems3220',
+ 'build','maintenanceRate','saveGame3212','updateUI3230','sysTab3220','renderSystems3220',
  'selected','MAX_GAME_LEVEL3233','contextBuildPermit3282',
  'industryLevel3230','industries3212','build3212','performance','toast',
  'needsRender'
@@ -49,7 +49,7 @@ const value=[
  sites,types,[{name:'Central nuclear',note:'Tecnología futura'}],1500,3200,18,3,160,cell=>[...sites.values()].filter(s=>s.cell===cell),
  ()=>({ok:true,reason:'Disponible'}),()=>sites.size,()=>1,s=>s,s=>'Lugar 8',
  (f,cell,kind)=>{sites.set(cell,{f,cell,kind,level:1});buildCount++;return true},
- ()=>{},()=>{},'dip',()=>{},null,5,null,levels,industries,
+ ()=>0.012,()=>{},()=>{},'dip',()=>{},null,5,null,levels,industries,
  type=>{assert.equal(type,'industry');industries.add(8);levels[8]++;return true},
  {now:()=>500},()=>{},false
 ];
@@ -65,7 +65,7 @@ assert.ok(!list.some(x=>x.id==='build_industry'),'old industry option still visi
 st.availableActions=list.filter(x=>x.enabled).map(x=>x.id);
 module.handle('production0388');
 assert.equal(module.modalState()?.type,'production0388');
-assert.ok(body.innerHTML.includes('Industria manufacturera · área general'));
+assert.ok(body.innerHTML.includes('Complejo industrial'),'unified manufacturing catalog must open');
 for(const label of ['Nivel I','Nivel II','Nivel III','Nivel IV','Nivel V'])
   assert.ok(body.innerHTML.includes(label),'catalog level '+label+' missing');
 assert.ok(!body.innerHTML.includes('data-industry-view0388'),'industry split-menu should be gone');
@@ -83,8 +83,9 @@ list=module.actions(st.contextData);
 st.availableActions=list.map(x=>x.id);
 module.handle('production0388');
 assert.equal(module.modalState()?.type,'production0388','second territory selection still blocked');
-body.fire('click',target('[data-industry-general0388]',{disabled:false}));
-assert.equal(closeCount,2,'normal close missing for general industry');
+body.fire('click',target('[data-industry-build0388]',{dataset:{industryBuild0388:'gasplant'},disabled:false}));
+assert.equal(buildCount,2,'second construction action must use specialized catalog');
+assert.equal(closeCount,2,'normal close missing for second construction');
 assert.equal(module.modalState(),null);
-assert.equal(levels[8],1,'general industry build path not reached');
-console.log('HEXATEGOS 0.38.10 industry menu, map unlock, general/specialized levels: OK');
+assert.equal(overlay.classList.contains('open3244'),false,'modal still visible after second construction');
+console.log('HEXATEGOS 0.38.10 unified industry catalog and consecutive builds: OK');

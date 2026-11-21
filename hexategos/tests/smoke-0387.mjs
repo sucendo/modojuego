@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -8,12 +9,12 @@ const css=read('css/dialog-unified-0387.css'),html=read('index.html'),about=read
 for(const [name,script] of [['core',core],['trade',trade],['visual',visual],['ui',ui],['about',about]]){
   assert.doesNotThrow(()=>new Function(script),name+' syntax');
 }
-assert.ok(/v0\.38\.(?:[789]|1\d{1,2})<\/title>/.test(html),'version missing');
+assert.ok(versionAtLeast(html,'0.38.7'),'game must retain unified UI version or later');
 assert.ok(/js\/game\.js\?v=\d+/.test(html),'updated economic engine must use a versioned asset');
-assert.ok(html.includes('js/national-visuals-0378.js?v=0387'),'updated fleet visuals may be cached');
+assert.ok(/js\/national-visuals-0378\.js\?v=[A-Za-z0-9_-]+/.test(html),'updated fleet visuals must carry a cache revision');
 assert.ok(/js\/trade-logistics-0370\.js\?v=\d+/.test(html),'updated fleet logic may be cached');
-assert.ok(/js\/ui-typography-0387\.js\?v=038[78]/.test(html),'font choice script missing');
-assert.ok(/css\/dialog-unified-0387\.css\?v=038[78]/.test(html),'unified dialog styles missing');
+assert.ok(/js\/ui-typography-0387\.js\?v=[A-Za-z0-9_-]+/.test(html),'font choice script missing');
+assert.ok(/css\/dialog-unified-0387\.css\?v=[A-Za-z0-9_-]+/.test(html),'unified dialog styles missing');
 assert.ok(html.includes('id="landingFontSelect0387"'),'landing option missing');
 assert.ok(about.includes("version:'0.38.7'"),'history missing');
 assert.ok(!core.includes('Math.min(9999,gold3212+r.gold*dt)'),'player gold still capped at 9999');

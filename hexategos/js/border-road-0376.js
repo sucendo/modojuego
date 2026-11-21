@@ -182,19 +182,29 @@
     return true;
   }
   function save0376(){
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize0376()))}catch(_){}
+    const state=serialize0376(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,state);
+    try{const raw=JSON.stringify(state);localStorage.setItem(SAVE_KEY,raw);
+      return localStorage.getItem(SAVE_KEY)===raw;
+    }catch(error){console.warn('[Hexategos aduanas] Error de guardado',error);return false}
   }
   function load0376(){
-    try{return restore0376(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(_){return restore0376(null)}
+    try{const codec=window.HexategosSaveStorage03827;
+      return restore0376(codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))
+    }catch(error){console.warn('[Hexategos aduanas] Error de carga',error);return false}
   }
 
   const baseSave0376=saveGame3212;
   saveGame3212=function(){
-    const out=baseSave0376.apply(this,arguments);save0376();return out;
+    const out=baseSave0376.apply(this,arguments);
+    if(out===false)return false;
+    return save0376()===false?false:out;
   };
   const baseLoad0376=loadGame3212;
   loadGame3212=function(){
-    const out=baseLoad0376.apply(this,arguments);load0376();return out;
+    const out=baseLoad0376.apply(this,arguments);
+    if(out!==false)load0376();
+    return out;
   };
   const baseReset0376=resetGame3230;
   resetGame3230=function(clearSave=true){
@@ -219,7 +229,8 @@
     applyPortableFile3275=function(file){
       const data=file?.payload?.borderRoad0376||null;
       const out=basePortableApply0376.apply(this,arguments);
-      restore0376(data);save0376();return out;
+      if(out!==false){restore0376(data);save0376()}
+      return out;
     };
   }
 

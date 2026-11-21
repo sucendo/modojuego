@@ -67,14 +67,15 @@ assert.equal(modes.length,10,'all old and six new modes');
 assert.equal(menu.children.length,10,'unified map selector includes old options');
 assert.equal(api.select('natural-food'),true);
 assert.equal(runtime.mode(),'natural-food');
-assert.equal(button.textContent,'Agr');
+assert.equal(button.getAttribute('aria-label'),'Mapa: Agricultura','accessible map label must identify the real layer');
+assert.ok(button.innerHTML.includes('hexMapIcon03855'),'new SVG map icon must render');
 assert.equal(storage.getItem('ofhex_map_mode_3252'),'natural-food');
 const low={land:[1],centers:new Int16Array([0,0,32767])};
-assert.deepEqual(fill('3',0,low,0,1),[84,157,85],
-  'natural agriculture comes from public low-LOD regional sample');
-assert.equal(invocations.sample,1);
-assert.deepEqual(fill('3',0,low,1,1),[84,157,85]);
-assert.equal(invocations.sample,1,'same lower LOD cell served from cache');
+assert.deepEqual(fill('3',0,low,0,1),[154,155,78],
+  'unresearched agriculture must use public terrain suitability, not hidden natural potential');
+assert.equal(invocations.sample,0,'unknown agricultural plots must not be sampled before agronomic survey');
+assert.deepEqual(fill('3',0,low,1,1),[154,155,78]);
+assert.equal(invocations.sample,0,'unresearched farmland must not leak actual potentials');
 assert.equal(api.select('natural-forest'),true);
 assert.deepEqual(fill('3',0,low,0,1),[50,53,53],
   'non-forest region has zero forest cover');

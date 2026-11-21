@@ -55,7 +55,20 @@
     kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const sites=new Map(),perCell=new Map(),nationSites=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
+  const legacyReconciledCells03872=new Set();
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
+  const maintenanceByNation=new Map();
+  const maintenanceRate=s=>TYPES[s.kind].cost*.000045*Math.max(1,s.level);
+  function chargeMaintenance(s,activity,dt){
+    const base=maintenanceRate(s),fixed=base*.2*dt,variable=base*.8*clamp(activity,0,1)*dt;
+    const amount=fixed+variable;
+    s.maintenanceFixed=fixed/Math.max(.1,dt);
+    s.maintenanceVariable=variable/Math.max(.1,dt);
+    if(s.f===0)gold3212-=amount;
+    else if(Number.isFinite(botGold3230[s.f]))botGold3230[s.f]-=amount;
+    maintenanceByNation.set(s.f,(maintenanceByNation.get(s.f)||0)+amount);
+
+  }
   let lastPeriodicSaveWall03827=0;
   const nationalElectricDeficit=new Map();
   const electricalNetworks=new Map();
@@ -254,8 +267,33 @@
   function activeFactor(s){
     return clamp(Math.min(s.pct,sec(s.f,TYPES[s.kind].sector))/100,0,1)*efficiency(s.f)*(window.HexategosInfrastructureDecay0373?.productionFactor?.(s.cell,s.kind)??1);
   }
+  // Legacy industry hexes remain as infrastructure anchors for old saves.
+  // Each is converted exactly once to a specialised civilian site.
+  function migrateGeneralIndustry(){
+    let migrated=0;
+    for(const cell of industries3212){
+      const f=owner6[cell];
+      if(f<0||legacyReconciledCells03872.has(cell))continue;
+      const level=clamp(Math.trunc(industryLevel3230[cell]||1),1,3);
+      const existing=sites.get(siteKey(cell,'civilian'));
+      // Migrar exactamente UNA VEZ por partida. Si la fábrica se degrada,
+      // nunca restaurar el nivel gratis en el próximo tick.
+      if(existing){
+        if(existing.level<level){existing.level=level;migrated++;}
+        legacyReconciledCells03872.add(cell);
+        continue;
+      }
+      if(sites.size>=MAX_SITES||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
+      if(addSite({cell,f,kind:'civilian',level,pct:100,stock:0,byproducts:{},output:0,legacyQuality:0,potential:1,updated:campaignSeconds3230||0})){
+        legacyReconciledCells03872.add(cell);migrated++;
+      }
+    }
+    if(migrated)revision++;
+    return migrated;
+  }
   function tick({nodes,routes,dt}){
     if(!started3230)return;
+    migrateGeneralIndustry();
     const now=campaignSeconds3230||0,groups=new Map();
     const group=(f,comp,cell)=>{
       const key=groupKey(f,comp,cell);
@@ -265,6 +303,7 @@
     };
     const conn=new Map();
     let produced=0,processed=0,shipped=0,disconnected=0;
+    maintenanceByNation.clear();
     // Capturas y pérdida de instalaciones: no se reconstruye el mapa entero.
     for(const s of sites.values()){
       const owner=owner6[s.cell];
@@ -304,6 +343,7 @@
               g.raw.get(material).push({site:s,product:material});
           }
         }
+        chargeMaintenance(s,extracted/Math.max(.000001,.37*s.level*dt*clamp(s.potential,0,2.6)),dt);
         produced+=extracted;
         if(s.f===0){
           s.lastRate=extracted/Math.max(.1,dt);
@@ -422,11 +462,11 @@
         }
         const room=powerStation?Infinity:Math.max(0,n.cap[out]-n.stock[out]);
         const buffer=intermediate?Math.max(0,65*s.level-s.stock):0;
-        if(room+buffer<=.000001){if(s.f===0)s.status='Almacén lleno';continue}
+        if(room+buffer<=.000001){chargeMaintenance(s,0,dt);if(s.f===0)s.status='Almacén lleno';continue}
         const sharedLevel=industries3212.has(s.cell)?Math.max(1,industryLevel3230[s.cell]||1):0;
         const industrialBonus=1+Math.min(.24,sharedLevel*.08);
         let amount=Math.min(.39*s.level*activeFactor(s)*dt*industrialBonus,(room+buffer)/.90);
-        if(amount<=0){if(s.f===0)s.status='Producción reducida';continue}
+        if(amount<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status='Producción reducida';continue}
         const nominal=amount;
         if(def.group==='manufacture'){
           if(!fairShares){
@@ -458,11 +498,12 @@
         // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
         if(electricRate>0)amount=Math.min(amount,availablePower(g)/electricRate);
         if(amount<=0){
+          chargeMaintenance(s,0,dt);
           if(s.f===0)s.status=electricRate>0&&availablePower(g)<=.000001?'Falta electricidad':'Producción reducida';
           continue;
         }
         const inputs=def.inputs||[];
-        if(!inputs.length)continue;
+        if(!inputs.length){chargeMaintenance(s,0,dt);continue;}
         if(def.inputMode==='any'){
           let chosen=null,maximum=0;
           for(const kind of inputs){
@@ -470,7 +511,7 @@
             if((powerStation||s.kind==='textile')&&qty>0){chosen=kind;maximum=qty;break}
             if(qty>maximum){chosen=kind;maximum=qty}
           }
-          if(!chosen||maximum<=0){if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
+          if(!chosen||maximum<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
           amount=Math.min(amount,maximum);
           // Los telares antiguos pueden seguir usando lana o fibras naturales
           // sin hilandería; los materiales elaborados rinden más por unidad.
@@ -478,10 +519,11 @@
           amount=take(g,chosen,amount);
         }else{
           for(const kind of inputs)amount=Math.min(amount,available(g,kind));
-          if(amount<=0){if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
+          if(amount<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
           for(const kind of inputs)take(g,kind,amount);
         }
-        if(amount<=0){if(s.f===0)s.status='Falta materia prima';continue}
+        if(amount<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status='Falta materia prima';continue}
+        chargeMaintenance(s,amount/Math.max(.000001,.39*s.level*dt*industrialBonus),dt);
         if(s.f===0){
           s.status=amount<nominal*.98?'Producción reducida':'Produciendo';
           s.lastRate=amount*.9/Math.max(.1,dt);
@@ -530,8 +572,6 @@
         nationalElectricDeficit.set(g.f,Math.max(old,clamp(1-(g.generatedElectricity||0)/demand,0,1)));
       }
     }
-    if(typeof document.dispatchEvent==='function')
-      document.dispatchEvent(new CustomEvent('hexategos:electricity-updated'));
     // La IA invierte escalonadamente, siempre con su presupuesto y de forma
     // condicionada por riqueza geográfica y carencias de su economía.
     const batch=activeFactionCount3230>350?10:activeFactionCount3230>180?8:5;
@@ -543,6 +583,8 @@
     }
     lastStats={aiReviewed,produced:+produced.toFixed(2),processed:+processed.toFixed(2),
       shipped:+shipped.toFixed(2),disconnected,sites:sites.size};
+    if(typeof document.dispatchEvent==='function')
+      document.dispatchEvent(new CustomEvent('hexategos:electricity-updated'));
     // Physical stocks change even without player actions; checkpoint them
     // on the existing simulation tick, never with a new polling timer.
     const wall=performance.now();
@@ -551,12 +593,92 @@
       persistProduction0388();
     }
   }
+  // Fase IA económica: comprobar materias accesibles en la MISMA red
+  // antes de invertir. Reutiliza el índice nacional y el identificador de
+  // componente existente; no recorre el mapa ni crea temporizadores.
+  function aiLocalChain0388(own,f,cell,comp){
+    const supplied=new Set(),power={ready:false};
+    if(comp<0)return {supplied,power};
+    for(const site of own){
+      if(owner6[site.cell]!==f||connect(site.cell,f)!==comp)continue;
+      const def=TYPES[site.kind];if(!def)continue;
+      if(def.group==='extract'){
+        supplied.add(site.kind);
+        for(const derivative of Object.keys(DERIVATIVES[site.kind]||{}))supplied.add(derivative);
+      }
+      const processed=PROCESSED[site.kind];
+      if(processed)supplied.add(processed);
+      if(site.kind==='thermal' && (electricitySampleTime===null || (electricalNetworks.get(groupKey(f,comp,site.cell))?.generatedRate||0)>0))power.ready=true;
+    }
+    return {supplied,power};
+  }
+  function aiChainViable0388(kind,chain){
+    const def=TYPES[kind];if(!def||def.group==='extract')return true;
+    if(def.group==='manufacture'&&!chain.power.ready)return false;
+    const input=def.inputs||[];
+    return def.inputMode==='any'
+      ?input.some(k=>chain.supplied.has(k))
+      :input.every(k=>chain.supplied.has(k));
+  }
+  // Diagnóstico acotado por nación. Evalúa infraestructura existente por red
+  // y propone reparar el primer eslabón ausente, no otra fábrica final.
+  function aiRecoveryNeeds0388(own,f){
+    const byNetwork=new Map(),producerByMaterial=new Map();
+    for(const [kind,material] of Object.entries(PROCESSED))producerByMaterial.set(material,kind);
+    const derivativeSource={plantfiber:'crops',wool:'livestock',hides:'livestock',dairy:'livestock'};
+    for(const site of own){
+      if(owner6[site.cell]!==f)continue;
+      const comp=connect(site.cell,f);
+      if(comp<0)continue;
+      let network=byNetwork.get(comp);
+      if(!network){network={comp,sites:[],materials:new Set(),power:false,depots:[]};byNetwork.set(comp,network)}
+      network.sites.push(site);
+      const def=TYPES[site.kind];
+      if(def?.group==='extract'){
+        network.materials.add(site.kind);
+        for(const k of Object.keys(DERIVATIVES[site.kind]||{}))network.materials.add(k);
+      }
+      if(PROCESSED[site.kind])network.materials.add(PROCESSED[site.kind]);
+      if(site.kind==='thermal')network.power=true;
+    }
+    const plans=new Map();
+    for(const network of byNetwork.values()){
+      let examined=0;
+      const add=(kind,reason)=>{
+        if(!TYPES[kind]||network.sites.some(s=>s.kind===kind))return;
+        const key=network.comp+':'+kind;
+        if(!plans.has(key))plans.set(key,{comp:network.comp,kind,reason});
+      };
+      for(const site of network.sites){
+        if(examined++>=18)break;
+        const def=TYPES[site.kind];
+        if(!def||def.group==='extract')continue;
+        if((def.group==='manufacture'||def.electricity)&&!network.power){
+          const fuel=['coal','fuel','gasfuel'].some(k=>network.materials.has(k));
+          if(fuel)add('thermal','restablecer electricidad');
+          else if(!network.materials.has('coal'))add('coal','abastecer central eléctrica');
+        }
+        const inputs=def.inputs||[];
+        if(!inputs.length)continue;
+        const missing=def.inputMode==='any'
+          ?(inputs.some(k=>network.materials.has(k))?[]:[inputs[0]])
+          :inputs.filter(k=>!network.materials.has(k));
+        for(const material of missing){
+          const source=producerByMaterial.get(material)||derivativeSource[material]||material;
+          add(source,'recuperar suministro de '+material);
+        }
+      }
+    }
+    return [...plans.values()].slice(0,18);
+  }
   function aiDevelop(f){
     if(f<=0||f>=activeFactionCount3230||!Number.isInteger(capitals[f]))return;
     const now=campaignSeconds3230||0;
     if(now<nextAI[f])return;
     nextAI[f]=now+44+(f%11)*6;
-    if(botGold3230[f]<150||countNation(f)>=nationLimit(f))return;
+    // Permitir arrancar una explotación agrícola (55+45 oro) sin esperar
+    // a disponer de una reserva propia de una fábrica avanzada.
+    if(botGold3230[f]<125||countNation(f)>=nationLimit(f))return;
     const own=Array.from(nationSites.get(f)||[]);
     const summary=api()?.resourceSummaryCached?.(f);
     const coverage=summary?.coverage||[.5,.5,.5];
@@ -614,11 +736,18 @@
       manufacturing:role==='growth'?100:90};
     sectorPct.set(f,policy);
     let choice=null,score=0;
+    const recoveryNeeds=aiRecoveryNeeds0388(own,f);
     const sample=aiNationalSamples3275?.[f]||[];
     const cells=[capitals[f]];
     // 500 IA: búsqueda acotada a once ubicaciones por revisión.
     const step=Math.max(1,Math.ceil(sample.length/10));
     for(let i=0;i<sample.length&&cells.length<12;i+=step)cells.push(sample[i]);
+    // Muestrear también la red que necesita repararse: elegir solo la capital
+    // o muestras dispersas dejaba sin solución los corredores secundarios.
+    for(const need of recoveryNeeds.slice(0,4)){
+      const origin=own.find(site=>connect(site.cell,f)===need.comp);
+      if(origin&&cells.length<20&&!cells.includes(origin.cell))cells.push(origin.cell);
+    }
     for(const cell of cells){
       if(!Number.isInteger(cell)||owner6[cell]!==f||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
       const road=connect(cell,f);
@@ -646,7 +775,21 @@
         const value=p*(.72+need*1.35)*logistics;
         if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
+      // Recuperación industrial por red: dar preferencia a construir el
+      // eslabón ausente en la red afectada, respetando prospección y presupuesto.
+      for(const need of recoveryNeeds){
+        if(road<0||road!==need.comp)continue;
+        const kind=need.kind,type=TYPES[kind];
+        if(!type||!availability(f,cell,kind,true).ok||botGold3230[f]<=type.cost+85)continue;
+        if(type.group!=='extract'&&!aiChainViable0388(kind,aiLocalChain0388(own,f,cell,road)))continue;
+        const viability=type.group==='extract'?potential(cell,f,kind):1;
+        if(viability<=.000001)continue;
+        const value=4.1+Math.min(1.5,viability*.55);
+        if(value>score){score=value;choice={cell,kind}}
+      }
+      const chain=aiLocalChain0388(own,f,cell,road);
       for(const kind of factoryNeeds){
+        if(!aiChainViable0388(kind,chain))continue;
         const type=TYPES[kind];
         const strategic=kind==='arms'?(role==='aggressive'?1.45:.77):
           kind==='thermal'?(1+pressure.energy*.5+electricShortage*1.1):
@@ -690,10 +833,14 @@
     return {v:3,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
       level:s.level,pct:s.pct,stock:s.stock,output:s.output,
       legacyQuality:Number(s.legacyQuality)||0,byproducts:s.byproducts||{}})),
-      depots:[...depots],sectors:[...sectorPct]};
+      depots:[...depots],sectors:[...sectorPct],
+      legacyReconciled03872:[...legacyReconciledCells03872]};
   }
   function restore(data){
-    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();nationalElectricDeficit.clear();electricalNetworks.clear();electricitySampleTime=null;revision++;aiCursor=1;nextAI.fill(0);
+    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();legacyReconciledCells03872.clear();nationalElectricDeficit.clear();electricalNetworks.clear();electricitySampleTime=null;revision++;aiCursor=1;nextAI.fill(0);
+    if(Array.isArray(data?.legacyReconciled03872))for(const cell of data.legacyReconciled03872){
+      if(Number.isInteger(cell)&&cell>=0&&cell<owner6.length)legacyReconciledCells03872.add(cell);
+    }
     if(!data||!Array.isArray(data.sites))return;
     for(const x of data.sites.slice(0,MAX_SITES)){
       if(!x||!TYPES[x.kind]||!Number.isInteger(x.cell)||x.cell<0||x.cell>=owner6.length)continue;
@@ -734,8 +881,8 @@
     const codec=window.HexategosSaveStorage03827;
     return codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
   }
-  function persistProduction0388(){
-    const state=saveState(),codec=window.HexategosSaveStorage03827;
+  function persistProduction0388(state=saveState()){
+    const codec=window.HexategosSaveStorage03827;
     if(codec?.set)return codec.set(SAVE_KEY,state);
     try{
       const text=JSON.stringify(state);
@@ -748,10 +895,12 @@
   }
   const baseSave=saveGame3212;
   saveGame3212=function(){
+    // Capturar ANTES: el guardado base puede reiniciar el estado industrial.
+    const industrialSnapshot=started3230?saveState():null;
     const out=baseSave.apply(this,arguments);
     // Guardar una sola vez y comprobar su resultado; evitar duplicar la
     // escritura de industrias en cada pulsación/guardado automático.
-    const stored=started3230?persistProduction0388():true;
+    const stored=industrialSnapshot?persistProduction0388(industrialSnapshot):true;
     return out===false||!stored?false:out;
   };
   const baseLoad=loadGame3212;
@@ -765,7 +914,11 @@
     if(out!==false){
       // No borrar industrias si la partida no contiene copia industrial.
       // Las partidas antiguas siguen siendo válidas y pueden no incluirla.
-      if(snapshot&&Array.isArray(snapshot.sites))restore(snapshot);
+      if(snapshot&&Array.isArray(snapshot.sites)){
+        restore(snapshot);
+        // Evitar que un reinicio interno del cargador deje el almacén vacío.
+        persistProduction0388(snapshot);
+      }
     }
     return out;
   };
@@ -795,15 +948,50 @@
       return out;
     };
   }
+
+  // Actualizar el panel sin destruir sus sliders ni alterar el scroll táctil.
+  function syncIndustryNode03864(oldNode,newNode){
+    if(oldNode.nodeType!==newNode.nodeType||
+       (oldNode.nodeType===1&&oldNode.tagName!==newNode.tagName)){
+      oldNode.replaceWith(newNode.cloneNode(true));return;
+    }
+    if(oldNode.nodeType===3){
+      if(oldNode.nodeValue!==newNode.nodeValue)oldNode.nodeValue=newNode.nodeValue;
+      return;
+    }
+    if(oldNode.nodeType!==1)return;
+    const focused=oldNode===document.activeElement;
+    for(const attr of Array.from(oldNode.attributes)){
+      if(!newNode.hasAttribute(attr.name)&&!(focused&&attr.name==='value'))
+        oldNode.removeAttribute(attr.name);
+    }
+    for(const attr of Array.from(newNode.attributes)){
+      if(focused&&oldNode.tagName==='INPUT'&&attr.name==='value')continue;
+      if(oldNode.getAttribute(attr.name)!==attr.value)
+        oldNode.setAttribute(attr.name,attr.value);
+    }
+    if(oldNode.tagName==='INPUT'){
+      if(!focused&&oldNode.value!==newNode.value)oldNode.value=newNode.value;
+      return;
+    }
+    const length=newNode.childNodes.length;
+    for(let i=0;i<length;i++){
+      if(oldNode.childNodes[i])syncIndustryNode03864(oldNode.childNodes[i],newNode.childNodes[i]);
+      else oldNode.appendChild(newNode.childNodes[i].cloneNode(true));
+    }
+    while(oldNode.childNodes.length>length)oldNode.lastChild.remove();
+  }
   function economyPanel(){
     if(sysTab3220!=='eco'||!started3230)return;
     const host=document.getElementById('sysContent3213');
-    if(!host||host.querySelector('#productionDashboard0388'))return;
+    if(!host)return;
     const wrapper=document.createElement('div');
     wrapper.className='sysBlock3213 industryDashboard0388';
     wrapper.id='productionDashboard0388';
     const mine=[...sites.values()].filter(s=>s.f===0);
     const count=mine.length;
+    const upkeepFixed=mine.reduce((sum,s)=>sum+maintenanceRate(s)*.2,0);
+    const upkeepVariable=mine.reduce((sum,s)=>sum+(Number(s.maintenanceVariable)||0),0);
     const summary=api()?.resourceSummaryCached?.(0);
     const rows=Object.entries(SECTORS).map(([k,label])=>
       '<label class="industrySector0388"><span>'+esc(label)+'</span>'+
@@ -820,6 +1008,8 @@
         (def.group==='extract'?' · Yacimiento '+Math.round(s.potential*100)+'%':' · Transformación')+
         ' · '+esc(status)+' · Producción '+Number(s.lastRate||0).toFixed(2)+'/s'+
         ' · Eficiencia '+Math.round(s.efficiency||0)+'%'+
+        ' · Mantenimiento fijo '+(maintenanceRate(s)*.2).toFixed(4)+' oro/s'+
+        ' · Variable '+Number(s.maintenanceVariable||0).toFixed(4)+' oro/s'+
         (def.electricity||def.group==='manufacture'?' · Electricidad '+Number(s.lastPower||0).toFixed(2):'')+
         (inputInfo?' · '+esc(inputInfo):'')+'</small></div>'+
         '<label>Actividad <input type="range" min="0" max="100" step="5" value="'+s.pct+'" data-industry-site0388="'+id+'"></label>'+
@@ -830,16 +1020,49 @@
       '<p>Explotaciones de hasta siete hexágonos. La extracción se almacena localmente; las fábricas necesitan una conexión logística para recibirla. Los productos transformados abastecen ciudades mediante la red comercial.</p>'+
       '<div class="industryStats0388"><span>Instalaciones <b>'+count+'</b></span><span>Extracción/ciclo <b>'+lastStats.produced+'</b></span>'+
       '<span>Transformado/ciclo <b>'+lastStats.processed+'</b></span><span>Combustible nacional <b>'+Math.round((summary?.coverage?.[2]||0)*100)+'%</b></span></div>'+
+      '<div class="industryUpkeepSummary0388"><b>💰 Mantenimiento industrial: '+(upkeepFixed+upkeepVariable).toFixed(4)+' oro/s</b><small>Fijo '+upkeepFixed.toFixed(4)+' oro/s · Variable '+upkeepVariable.toFixed(4)+' oro/s (producción efectiva)</small></div>'+
       '<h4>Reguladores nacionales por sector</h4><div class="industrySectors0388">'+rows+'</div>'+
       '<h4>Instalaciones y control individual</h4>'+
       (count?'<div class="industrySites0388">'+data+'</div>':'<p>Sin instalaciones especializadas. Selecciona un hexágono propio y pulsa INDUSTRIA PRODUCTIVA para construir.</p>')+
       '<p class="industryNote0388">Una explotación aislada puede producir y almacenar, pero no abastecerá a fábricas desconectadas. Los suministros existentes siguen activos durante la transición económica.</p>';
-    host.prepend(wrapper);
+    const previous=host.querySelector('#productionDashboard0388');
+    if(previous)syncIndustryNode03864(previous,wrapper);
+    else host.prepend(wrapper);
   }
+  // La lectura industrial está viva mientras se consulta Economía.
+  // El tick de producción existente dispara el evento, sin nuevo intervalo.
+  document.addEventListener?.('hexategos:electricity-updated',()=>{
+    const p=document.getElementById('systemsPanel3213');
+    if(sysTab3220!=='eco'||!p?.classList.contains('open'))return;
+    try{economyPanel()}catch(error){console.warn('[Hexategos industry live data]',error)}
+  });
   const baseRender=renderSystems3220;
-  renderSystems3220=function(){const r=baseRender.apply(this,arguments);
+  // El render general se ejecuta periódicamente y reconstruye #sysContent3213.
+  // Conservar la posición de ambos contenedores desplazables evita que el
+  // usuario vuelva al inicio cada segundo al consultar fábricas en el móvil.
+  renderSystems3220=function(){
+    const host=document.getElementById('sysContent3213');
+    const panel=document.getElementById('systemsPanel3213');
+    const main=panel?.querySelector('.sysMain0385');
+    const list=host?.querySelector('.industrySites0388');
+    const wasEco=sysTab3220==='eco';
+    const positions=wasEco?{
+      host:host?.scrollTop||0,
+      main:main?.scrollTop||0,
+      list:list?.scrollTop||0
+    }:null;
+    const result=baseRender.apply(this,arguments);
     try{economyPanel()}catch(e){console.warn('[Hexategos Production UI]',e)}
-    return r};
+    if(positions&&sysTab3220==='eco'){
+      const newHost=document.getElementById('sysContent3213');
+      const newMain=document.getElementById('systemsPanel3213')?.querySelector('.sysMain0385');
+      const newList=newHost?.querySelector('.industrySites0388');
+      if(newHost)newHost.scrollTop=positions.host;
+      if(newMain)newMain.scrollTop=positions.main;
+      if(newList)newList.scrollTop=positions.list;
+    }
+    return result;
+  };
   const systemHost=document.getElementById('sysContent3213');
   systemHost?.addEventListener('input',event=>{
     const target=event.target;
@@ -880,9 +1103,6 @@
     state.data.section='catalog';
     const existing=sitesOnCell(cell);
     const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(cell):'Hexágono '+cell;
-    const generalLevel=context.industry||0;
-    const generalCost=generalLevel?115+generalLevel*55:110;
-    const generalEnabled=typeof canIndustry3244==='function'&&canIndustry3244(context);
     const gold=Math.floor(gold3212);
     modalTitle3244.textContent='Industria · '+place;
     const primary=Object.entries(TYPES);
@@ -892,22 +1112,18 @@
       {name:'Nivel III · Manufactura y bienes finales',tip:'Bienes civiles, maquinaria, textiles, química y electrónica',kinds:primary.filter(([k,d])=>d.group==='manufacture'&&k!=='arms')},
       {name:'Nivel IV · Electricidad y producción militar',tip:'Centrales térmicas y fabricación de material para el ejército',kinds:primary.filter(([k,d])=>d.group==='power'||k==='arms')}
     ];
-    const general='<button type="button" class="industryBuildChoice0388 industryGeneric03815" data-industry-general0388 '+
-      (generalEnabled?'':'disabled')+'><span class="industryTypeIcon0388">🏭</span>'+
-      '<span class="industryBuildText0388"><b>Industria manufacturera · área general</b>'+
-      '<small>Nivel '+generalLevel+'/3 · '+generalCost+' oro · infraestructura y capacidad industrial'+
-      (generalEnabled?'':' · mejora no disponible')+'</small></span></button>';
+    const existingCosts=existing.map(site=>{const fixed=maintenanceRate(site)*.2,variable=Number(site.maintenanceVariable)||0;return '<div class="industryUpkeepLine0388">'+esc(TYPES[site.kind].name)+' · Nivel '+site.level+' · Fijo '+fixed.toFixed(4)+' + variable '+variable.toFixed(4)+' = <b>'+(fixed+variable).toFixed(4)+' oro/s</b></div>'}).join('');
     const cards=groups.map((group,i)=>
       '<section class="industryGroup0388 industryStage03815" data-stage03815="'+(i+1)+'">'+
       '<h4>'+group.name+'</h4><p class="industryStageHint03815">'+group.tip+'</p>'+
-      '<div class="industryBuildGrid0388">'+(i===2?general:'')+
+      '<div class="industryBuildGrid0388">'+
       group.kinds.map(([kind,def])=>{
         const strength=def.group==='extract'?Math.round(potential(cell,0,kind)*100):null;
         const test=availability(0,cell,kind,true);
         return '<button type="button" class="industryBuildChoice0388" data-industry-build0388="'+kind+'" '+
           (test.ok?'':'disabled')+'><span class="industryTypeIcon0388">'+def.icon+'</span>'+
           '<span class="industryBuildText0388"><b>'+esc(def.name)+'</b>'+
-          '<small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+
+          '<small>'+def.cost+' oro · Mantenimiento fijo '+(def.cost*.000045*.2).toFixed(4)+' oro/s · Máximo '+(def.cost*.000045).toFixed(4)+' oro/s'+(strength===null?'':' · potencial '+strength+'%')+
           (test.ok?' · Disponible':' · '+esc(test.reason))+'</small></span></button>';
       }).join('')+'</div></section>').join('');
     const future='<section class="industryGroup0388 industryFuture03815"><h4>Nivel V · Tecnologías futuras</h4>'+
@@ -921,8 +1137,7 @@
       '<div class="industryBudget0388">Oro: <b>'+gold.toLocaleString('es-ES')+'</b> · '+
       'Instalaciones especializadas: <b>'+countNation(0)+'/'+MAX_PLAYER_SITES+'</b> · '+
       'En este hexágono: <b>'+existing.length+'/'+MAX_PER_CELL+'</b></div>'+
-      (existing.length?'<div class="industryExisting0388"><b>Ya construidas aquí:</b> '+
-         existing.map(site=>esc(TYPES[site.kind].name)).join(' · ')+'</div>':'')+
+      (existing.length?'<div class="industryExisting0388"><b>Industrias locales · mantenimiento:</b>'+existingCosts+'</div>':'')+
       cards+future+'</div>';
     modalActions3244.innerHTML='<button type="button" data-modal-action="close">CERRAR</button>';
     return true;
@@ -959,35 +1174,10 @@
     }
     return baseHandle.apply(this,arguments);
   };
-  function buildGeneralIndustry0388(cell){
-    const context=industryContext0388(cell);
-    if(!context||typeof canIndustry3244!=='function'||!canIndustry3244(context))return false;
-    // El motor exige un permiso explícito por acción; el submenú forma parte
-    // de la misma acción voluntaria del jugador, y no elude ese control.
-    selected={key:MAX_GAME_LEVEL3233,i:cell};
-    uiInteractionState3244.selectedCell=cell;
-    if(typeof contextBuildPermit3282!=='undefined')
-      contextBuildPermit3282={type:'industry',cell,until:performance.now()+900};
-    const previous=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
-    build3212('industry');
-    const next=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
-    return next>previous;
-  }
   modalBody3244?.addEventListener('click',event=>{
     const state=uiInteractionState3244?.modal;
     if(state?.type!=='production0388')return;
     const cell=state.data?.cell;
-    const general=event.target.closest('[data-industry-general0388]');
-    if(general){
-      event.preventDefault();
-      if(general.disabled)return;
-      // Este cierre devuelve el control al globo: no basta con ocultar el CSS.
-      closeModal3244();
-      if(buildGeneralIndustry0388(cell)){
-        if(typeof updateUI3230==='function')updateUI3230();
-      }else if(typeof toast==='function')toast('No se pudo construir o mejorar la industria general');
-      return;
-    }
     const change=event.target.closest('[data-industry-view0388]');
     if(change){
       event.preventDefault();
@@ -1138,6 +1328,8 @@
   window.HexategosProduction0388={
     version:VERSION,types:TYPES,electricityAt,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
+    maintenance:f=>maintenanceByNation.get(Number(f))||0,
+    migrateGeneralIndustry,
     stage:(kind)=>TYPES[kind]?industryStage(TYPES[kind]):null,
     build,upgrade,removeSite,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
     legacyManufacturingFactor:f=>Math.max(.15,1-(manufacturingCounts.get(Number(f))||0)*.22),

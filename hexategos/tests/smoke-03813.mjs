@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -5,7 +6,7 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const source=read('js/map-icons-03812.js');
 const html=read('index.html'),history=read('js/about-0351.js');
 assert.doesNotThrow(()=>new Function(source),'icon renderer syntax');
-assert.match(html,/v0\.38\.1\d<\/title>/,'version number');
+assert.ok(versionAtLeast(html,'0.38.13'),'icons must remain included in current game');
 assert.match(html,/js\/map-icons-03812\.js\?v=\d+/,'browser must reload icon styling');
 assert.ok(history.includes("version:'0.38.13'"),'missing changelog version');
 

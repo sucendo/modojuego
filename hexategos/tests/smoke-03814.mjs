@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -5,7 +6,7 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const src=read('js/map-icons-03812.js');
 const html=read('index.html');
 assert.doesNotThrow(()=>new Function(src),'icon map syntax');
-assert.match(html,/v0\.38\.1\d<\/title>/);
+assert.ok(versionAtLeast(html,'0.38.14'));
 assert.match(html,/js\/map-icons-03812\.js\?v=\d+/);
 assert.ok(!src.includes('frame.historic'),'old blue historic-capital markers must be absent');
 

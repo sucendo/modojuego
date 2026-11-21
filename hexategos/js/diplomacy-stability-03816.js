@@ -26,11 +26,18 @@
   }
   const snapshot=()=>({v:1,peaceUntil:[...peaceUntil]});
   function store(){
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()))}catch(_){}
+    const state=snapshot(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,state);
+    try{
+      const data=JSON.stringify(state);localStorage.setItem(SAVE_KEY,data);
+      return localStorage.getItem(SAVE_KEY)===data;
+    }catch(error){console.warn('[Hexategos treguas] No se ha podido guardar',error);return false}
   }
   function recover(){
     let data=null;
-    try{data=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(_){}
+    try{const codec=window.HexategosSaveStorage03827;
+      data=codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    }catch(error){console.warn('[Hexategos treguas] Estado ilegible',error)}
     copyCooldowns(data);
   }
   // La copia básica conserva las relaciones con el jugador y todos los
@@ -39,7 +46,7 @@
   // usuario sale antes del siguiente autoguardado (hasta 25 s).
   function persistDiplomaticChange(){
     if(!started3230)return;
-    try{saveGame3212();persistedWars++}catch(err){
+    try{if(saveGame3212()!==false)persistedWars++}catch(err){
       console.warn('[HEXATEGOS 0.38.16] no se pudo guardar la diplomacia',err);
     }
     store();
@@ -87,6 +94,13 @@
       }
     }
     return result;
+  };
+  // Las treguas también forman parte del guardado completo del navegador.
+  const baseSave03816=saveGame3212;
+  saveGame3212=function(){
+    const out=baseSave03816.apply(this,arguments);
+    if(out===false)return false;
+    return started3230&&store()===false?false:out;
   };
   const baseLoad=loadGame3212;
   loadGame3212=function(){
