@@ -1,4 +1,4 @@
-# Minecraft.js 11.6.5
+# Minecraft.js 11.6.6
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -30,3 +30,5 @@ Cascadas 11.6.3: se conserva el aporte del tramo natural de río situado aguas a
 Representación 11.6.4: el agua finita de un acueducto usa la altura de su propio fondo, sin desplazarse hacia el terreno o el agua inferiores. Se mantienen separadas las capas al dibujar y detectar inmersión. Las estelas superficiales muestran el sentido de la corriente calculada y las de las cascadas descienden.
 
 Corriente 11.6.5: estelas más largas y contrastadas, con movimiento visual amplificado para corrientes lentas y actualización de direcciones que antes quedaban bajo el umbral. Cuando cesa el flujo se borra su vector anterior. No modifica el caudal ni el volumen físicos.
+
+Rendimiento 11.6.6: los cambios de corriente actualizan atributos de velocidad sin reconstruir las mallas del agua o de las cuevas. El patrón superficial usa dos ondas y evita superponer el cálculo completo de ondulaciones ambientales sobre agua que ya corre. Se reducen las manchas blancas y se mantiene la separación de alturas de los acueductos.

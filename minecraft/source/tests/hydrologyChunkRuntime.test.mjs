@@ -1,4 +1,4 @@
-import {waterFlowVector} from '../scripts/waterFlow.js';
+import {waterFlowVector,bindWaterFlow,refreshWaterFlowAttribute} from '../scripts/waterFlow.js';
 import { continuousCorner, connectedWater, WaterTransitions, waterTime } from '../scripts/continuousWater.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -65,7 +65,7 @@ const blocks=Object.fromEntries(Object.entries(ids).map(([key,id])=>[key,{id,mat
 const resources=[{id:4,scarcity:.8,scale:{x:20,y:20,z:20}},{id:5,scarcity:.85,scale:{x:40,y:40,z:40}}];
 const raw=readFileSync(new URL('../scripts/worldChunk.js',import.meta.url),'utf8')
  .replace(/^import .*;\s*$/gm,'').replace('export class WorldChunk','class WorldChunk')+'\nWorldChunk;';
-const WorldChunk=vm.runInNewContext(raw,{waterFlowVector,continuousCorner,connectedWater,WaterTransitions,waterTime,THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
+const WorldChunk=vm.runInNewContext(raw,{waterFlowVector,bindWaterFlow,refreshWaterFlowAttribute,continuousCorner,connectedWater,WaterTransitions,waterTime,THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
  makeFadeMaterial:()=>{},disposeFadeMaterial:()=>{},clampFade:a=>a,
  biomeForType,terrainHeight,advancedSurfaceHeight,isCave,geologyColumn,advancedUndergroundBlock,
  TERRAIN_V10,TERRAIN_HYBRID,TERRAIN_V11,TERRAIN_V112,TERRAIN_HYBRID_V112,LEGACY_HEIGHT,hybridSurfaceHeight,transitionWeight,hybridHydrologyColumn,makeHybridContext,
@@ -637,4 +637,16 @@ test('a suspended aqueduct keeps both upper water tiles above a lower water laye
  assert.equal(attr.array.length,p.length/3*2);assert.ok(attr.array.every(Number.isFinite));
  c.waterColumns[5]=null;c.refreshWater();
  for(const mesh of c.children.filter(m=>m.userData.waterSurface))assert.ok(mesh.geometry.position.array.filter((_,i)=>i%3===1).every(y=>y>=7.5),'drying water stays at the upper deck while fading');
+});
+
+test('changing current updates velocity attributes without replacing aqueduct geometry',()=>{
+ const c=syntheticSheet();c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;
+ for(const x of [1,2])c.waterColumns[4+x]={kind:'river',bed:7.5,y:7.85,depth:.6,dynamic:true,finite:true,flowX:.12};
+ c.generateWater();const mesh=c.children.find(m=>m.userData.waterSurface),geometry=mesh.geometry;
+ const positions=[...geometry.position.array],indices=[...geometry.index],heights=[...geometry.waterHeightMotion.array];
+ for(const x of [1,2])c.waterColumns[4+x].flowX=-.12;
+ c.refreshWaterFlow();assert.equal(c.children.find(m=>m.userData.waterSurface),mesh);assert.equal(mesh.geometry,geometry);
+ assert.deepEqual([...geometry.position.array],positions);assert.deepEqual([...geometry.index],indices);assert.deepEqual([...geometry.waterHeightMotion.array],heights);
+ assert.ok(geometry.waterFlow.array.filter((_,i)=>i%2===0).every(v=>v<0));
+ assert.equal(geometry.waterFlow.needsUpdate,true);
 });

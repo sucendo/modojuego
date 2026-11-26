@@ -82,7 +82,7 @@ export function continuousCorner(x,z,sx,sz,sample,cache=null){
   const dz=mean(sorted.filter(c=>c.z>vz))-mean(sorted.filter(c=>c.z<vz));
   const length=Math.hypot(dx,1,dz);
   const flow=[0,1].map(axis=>sorted.reduce((sum,c)=>sum+(c.flow?.[axis]||0),0)/sorted.length);
-  const result={top,flow,normal:[-dx/length,1/length,-dz/length],key:`${vx},${vz}:${sorted.map(c=>`${c.x},${c.z}@${c.bottom}`).join(';')}`};
+  const result={top,flow,flowSamples:sorted.map(c=>[c.x,c.z,c.bottom]),normal:[-dx/length,1/length,-dz/length],key:`${vx},${vz}:${sorted.map(c=>`${c.x},${c.z}@${c.bottom}`).join(';')}`};
   if(cache)for(const c of sorted)cache.set(`${c.x},${c.z},${vx},${vz}`,result);
   return result;
 }

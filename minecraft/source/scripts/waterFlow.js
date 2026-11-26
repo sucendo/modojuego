@@ -26,3 +26,42 @@ export function waterFlowChanged(cell){
   if(speed<.0005&&previous>=.0005)return true;
   return Math.hypot(now[0]-old[0],now[1]-old[1])>Math.max(.003,previous*.2);
 }
+
+/** Cache which physical columns contribute to each rendered corner. */
+export function bindWaterFlow(geometry,motion){
+  const sourceIds=new Map(),sources=[],groups=new Map();
+  for(let vertex=0;vertex<motion.length;vertex++){
+    const samples=motion[vertex].flowSamples;if(!samples?.length)continue;
+    const ids=samples.map(point=>{
+      const key=point.join(',');
+      if(!sourceIds.has(key)){sourceIds.set(key,sources.length);sources.push(point);}
+      return sourceIds.get(key);
+    });
+    const key=ids.join(':');
+    if(!groups.has(key))groups.set(key,{sources:ids,vertices:[]});
+    groups.get(key).vertices.push(vertex);
+  }
+  geometry.userData??={};
+  geometry.userData.waterFlowBindings={sources,groups:[...groups.values()],values:new Float32Array(sources.length*2)};
+}
+
+/** Update two numbers per vertex, never positions, topology or materials. */
+export function refreshWaterFlowAttribute(geometry,sample){
+  const attr=geometry.getAttribute?.('waterFlow')??geometry.waterFlow;
+  const bindings=geometry.userData?.waterFlowBindings;if(!attr||!bindings)return false;
+  const {sources,groups,values}=bindings;
+  for(let i=0;i<sources.length;i++){
+    const v=sample(...sources[i]);values[i*2]=v?.[0]||0;values[i*2+1]=v?.[1]||0;
+  }
+  let changed=false;
+  for(const group of groups){
+    let x=0,z=0;for(const id of group.sources){x+=values[id*2];z+=values[id*2+1];}
+    x/=group.sources.length;z/=group.sources.length;
+    for(const vertex of group.vertices){
+      const i=vertex*2;
+      if(Math.abs(attr.array[i]-x)>1e-5||Math.abs(attr.array[i+1]-z)>1e-5){attr.array[i]=x;attr.array[i+1]=z;changed=true;}
+    }
+  }
+  if(changed)attr.needsUpdate=true;
+  return changed;
+}

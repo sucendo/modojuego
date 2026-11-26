@@ -1,4 +1,4 @@
-import { waterFlowVector } from './waterFlow.js';
+import { waterFlowVector, bindWaterFlow, refreshWaterFlowAttribute } from './waterFlow.js';
 import { continuousCorner, connectedWater, WaterTransitions, waterTime } from './continuousWater.js';
 import * as THREE from 'three';
 import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
@@ -607,7 +607,7 @@ export class WorldChunk extends THREE.Group {
     const motionFor=(x,z,corner,y)=>{
       const i=z*size+x,cell=renderCells[i],voxel=voxels[i];
       const initial=previous[i]?y:voxel.bottom+.001;
-      return {key:'surface:'+corner.key,initial,normal:corner.normal,flow:corner.flow||flowVectors[i],fixed:!Number.isFinite(corner.top)||Math.abs(y-corner.top)>1e-6,alphaKey:`cell:${this.position.x+x},${this.position.z+z}`,
+      return {key:'surface:'+corner.key,initial,normal:corner.normal,flow:corner.flow||flowVectors[i],flowSamples:corner.flowSamples||[[this.position.x+x,this.position.z+z,voxel.bottom]],fixed:!Number.isFinite(corner.top)||Math.abs(y-corner.top)>1e-6,alphaKey:`cell:${this.position.x+x},${this.position.z+z}`,
         alpha:cell.drying?0:1,initialAlpha:previous[i]?1:0};
     };
     const flat=surfaces.map((cell,i)=>{
@@ -730,6 +730,8 @@ export class WorldChunk extends THREE.Group {
       geometry.setAttribute('waterHeightMotion',new THREE.Float32BufferAttribute(heightMotion,3));
       geometry.setAttribute('waterAlphaMotion',new THREE.Float32BufferAttribute(alphaMotion,4));
       geometry.setAttribute('waterFlow',new THREE.Float32BufferAttribute(flow,2));
+      if(THREE.DynamicDrawUsage!==undefined)geometry.getAttribute?.('waterFlow')?.setUsage?.(THREE.DynamicDrawUsage);
+      bindWaterFlow(geometry,group.motion);
       if(this.terrainVersion===TERRAIN_V112||this.terrainVersion===TERRAIN_HYBRID_V112)
         geometry.setAttribute('waterFall',new THREE.Float32BufferAttribute(group.falls,1));
       geometry.setIndex(group.indices);geometry.computeVertexNormals();
@@ -761,6 +763,19 @@ export class WorldChunk extends THREE.Group {
       this.add(surface);
     }
     timeline.end();
+  }
+
+  refreshWaterFlow(){
+    if(!this.loaded)return;
+    const size=this.size.width;
+    const sample=(wx,wz,bottom)=>{
+      const x=wx-this.position.x,z=wz-this.position.z,inside=x>=0&&x<size&&z>=0&&z<size;
+      const cell=inside?this.waterColumns[z*size+x]:this.hydrologyLookup?.(wx,wz);
+      const bed=inside?this.hydrologyGround?.[z*size+x]:cell?.bed;
+      const water=voxelWaterColumn(cell,bed);
+      return water&&Math.abs(water.bottom-bottom)<.001?waterFlowVector(cell):[0,0];
+    };
+    for(const mesh of this.children)if(mesh.userData?.waterSurface)refreshWaterFlowAttribute(mesh.geometry,sample);
   }
 
   /** Rebuild only the batched water meshes after a hydrology tick. Solid block

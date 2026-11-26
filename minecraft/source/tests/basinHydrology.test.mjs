@@ -343,3 +343,26 @@ test('upstream boundary supply survives saved waterfall edits and reloading',()=
  assert.ok(r.basins.ledger.supplied>1);assert.ok(r.basins.columns.get('40,1').nodes.some(c=>c.fallRate>.001));
  assert.ok(Math.abs(r.basins.balanceError())<1e-8);
 });
+
+test('slow current changes publish velocity without queueing whole water meshes',()=>{
+ const f=publicationFixture(),a=f.put(10,10,1.01),b=f.put(11,10,1);
+ for(const c of [a,b]){c.finite=true;c.kind='river';}
+ let attributeUpdates=0;f.chunks.get('0,0').refreshWaterFlow=()=>attributeUpdates++;
+ f.b.publish();while(f.b.meshQueue.size)f.b.flushMeshes();const meshes=f.calls.length;
+ f.b.update(.1);
+ assert.equal(f.b.dirty.size,0,'subthreshold level changes do not change the surface geometry');
+ assert.ok(f.b.flowDirty.size>0,'the visible slow current is still updated');
+ f.b.publish();assert.equal(f.b.meshQueue.size,0);assert.equal(f.calls.length,meshes);assert.equal(attributeUpdates,1);
+ assert.ok(f.chunks.get('0,0').waterColumns[32*10+10].flowX>0);
+ assert.equal(f.env.revision,0);assert.equal(f.env.flowRevision,1);
+});
+
+
+test('a newly visible thin film still changes geometry rather than only velocity',()=>{
+ const f=publicationFixture(),a=f.put(10,10,.04),b=f.put(11,10,0);
+ for(const c of [a,b]){c.finite=true;c.kind='river';}
+ f.b.publish();while(f.b.meshQueue.size)f.b.flushMeshes();f.b.update(.1);
+ assert.ok(b.volume>.001&&b.volume<.002);
+ assert.ok(f.b.dirty.has('11,10'),'crossing the visibility threshold needs a new surface');
+ f.b.publish();assert.ok(f.b.meshQueue.size>0);
+});
