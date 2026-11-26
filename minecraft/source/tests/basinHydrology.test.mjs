@@ -286,3 +286,60 @@ test('sealing and reopening the aqueduct inlet controls actual transfer',()=>{
  assert.ok(e.basins.columns.get('6,1')?.nodes.find(n=>n.outdoor)?.volume>0);
  assert.ok(Math.abs(e.basins.balanceError())<1e-8);
 });
+
+function waterfallFixture(){
+ const width=32,height=16,blocks=new Map(),chunks=new Map();
+ for(let x=0;x<64;x++)for(let z=0;z<3;z++)for(let y=0;y<=10;y++){
+  const floor=x<=40?4:0;
+  if(y<=floor||z!==1||x===0||x===63)blocks.set(`${x},${y},${z}`,3);
+ }
+ for(let cx=0;cx<2;cx++){
+  const chunk={loaded:true,position:{x:cx*32,z:0},waterColumns:Array(1024).fill(null),hydrologyGround:new Float32Array(1024).fill(10.5),refreshWater(){}};
+  for(let x=Math.max(1,cx*32);x<Math.min(63,(cx+1)*32);x++){
+   const index=32+x-cx*32,bed=x<=40?4.5:.5;chunk.hydrologyGround[index]=bed;
+   chunk.waterColumns[index]={kind:'river',bed,y:bed+.75,depth:1,flowX:1,flowZ:0,source:x===1,stable:true};
+  }
+  chunk.naturalWaterColumns=chunk.waterColumns.map(c=>c?{...c}:null);chunk.naturalWaterGround=chunk.hydrologyGround.slice();chunks.set(`${cx},0`,chunk);
+ }
+ const world={type:'classic',params:{seed:1,terrain:{waterOffset:0}},hybrid:{hydrographyVersion:3},chunkSize:{width,height},getChunk:(x,z)=>chunks.get(`${x},${z}`),getBlockId:(x,y,z)=>x<0||x>=64||z<0||z>2?3:blocks.get(`${x},${y},${z}`)||0};
+ world.hydrology=new HydrologyEngine(world);return {world,chunks,blocks};
+}
+
+test('editing a waterfall retains upstream supply when its spring is outside the local domain but upstream chunks are loaded',()=>{
+ const f=waterfallFixture(),e=f.world.hydrology;f.blocks.set('41,1,1',3);e.onBlockEdit(41,1,1);
+ for(let i=0;i<400;i++)e.update(.1,{x:41,z:1});
+ assert.ok(e.basins.ledger.supplied>1,'the local river remains connected to its upstream background reach');
+ assert.ok(e.basins.columns.get('40,1')?.nodes.some(c=>c.volume>.01&&c.fallRate>.001),'the waterfall lip keeps discharging after consuming its initial volume');
+ assert.ok(Math.abs(e.basins.balanceError())<1e-8);
+});
+
+
+test('a solid upstream dam cuts waterfall inflow and reopening restores it',()=>{
+ const f=waterfallFixture(),e=f.world.hydrology;e.onBlockEdit(41,1,1);
+ for(let i=0;i<300;i++)e.update(.1,{x:41,z:1});
+ for(let y=5;y<=10;y++)f.blocks.set(`28,${y},1`,3);
+ e.onBlockEdit(28,5,1);
+ const downstream=()=>[...e.basins.nodes.values()].filter(c=>c.x>=28).reduce((s,c)=>s+c.volume,0);
+ const trapped=downstream();
+ for(let i=0;i<1000;i++)e.update(.1,{x:35,z:1});
+ const lip=()=>e.basins.columns.get('40,1')?.nodes.find(c=>c.outdoor);
+ assert.ok(downstream()<=trapped+1e-8,'the sealed downstream volume has no continuing artificial recharge');
+ const residual=lip()?.fallRate||0;
+ assert.ok([...e.basins.nodes.values()].filter(c=>c.x>=28).every(c=>c.sourceRate===0));
+ for(let y=5;y<=10;y++)f.blocks.delete(`28,${y},1`);
+ e.onBlockEdit(28,5,1);
+ for(let i=0;i<400;i++)e.update(.1,{x:35,z:1});
+ assert.ok(lip()?.fallRate>Math.max(.001,residual),'physical reconnection restores the waterfall');
+ assert.ok(Math.abs(e.basins.balanceError())<1e-8);
+});
+
+test('upstream boundary supply survives saved waterfall edits and reloading',()=>{
+ const f=waterfallFixture(),e=f.world.hydrology;f.blocks.set('41,1,1',3);e.onBlockEdit(41,1,1);
+ for(let i=0;i<100;i++)e.update(.1,{x:41,z:1});
+ const saved=e.snapshot(),before=e.basins.total(),reload=waterfallFixture();reload.blocks.set('41,1,1',3);
+ const r=reload.world.hydrology;r.restore(saved);for(const chunk of reload.chunks.values())r.reconcileChunk(chunk);
+ assert.ok(Math.abs(r.basins.total()-before)<1e-9);
+ for(let i=0;i<300;i++)r.update(.1,{x:41,z:1});
+ assert.ok(r.basins.ledger.supplied>1);assert.ok(r.basins.columns.get('40,1').nodes.some(c=>c.fallRate>.001));
+ assert.ok(Math.abs(r.basins.balanceError())<1e-8);
+});

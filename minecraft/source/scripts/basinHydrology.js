@@ -198,6 +198,7 @@ export class BasinHydrology {
     if((!prior&&this.columns.size+this.restored.size>=BASIN_SAVED_COLUMNS)||savedNodes>BASIN_SAVED_NODES)return null;
     const width=this.world.chunkSize.width,ix=x-chunk.position.x,iz=z-chunk.position.z,index=iz*width+ix;
     const wasRestored=this.restored.has(id),saved=this.restored.get(id);
+    if(!chunk.naturalWaterColumns&&chunk.waterColumns)chunk.naturalWaterColumns=chunk.waterColumns.map(c=>c?{...c}:null);
     const current=chunk.waterColumns?.[index];
     const bed=current?.dynamic?current.bed:chunk.naturalWaterGround?.[index]??chunk.hydrologyGround?.[index];
     const water=!wasRestored?voxelWaterColumn(current,bed):null;
@@ -215,17 +216,9 @@ export class BasinHydrology {
       if(!env.columns.get(id)?.basinOwned)env.ledger.displaced+=v;env.water.delete(key);
     }
     const original=chunk.naturalWaterColumns?.[index]??current;
-    const sourceWater=voxelWaterColumn(original,chunk.naturalWaterGround?.[index]??bed);
     const column={x,z,chunk,index,top,nodes:[]};this.columns.set(id,column);this.savedNodes=savedNodes;
     for(const span of spans){
       const c={...span,finite:true,kind:current?.kind||original?.kind||'river',volume:0,sourceRate:0,sourceHead:0};
-      // Only actual river springs, or a declared river inlet entering from an
-      // unloaded upstream chunk, replenish water. Lakes never self-refill.
-      if(original?.kind==='river'&&sourceWater&&c.bottom<=sourceWater.bottom+.001&&c.roof>sourceWater.bottom+.001){
-        const fx=original.flowX||0,fz=original.flowZ||0;
-        const inlet=SIDES.some(([dx,dz])=>fx*dx+fz*dz<-.2*Math.hypot(fx,fz)&&!this.chunkAt(x+dx,z+dz));
-        if(original.source||inlet){c.sourceRate=.25;c.sourceHead=sourceWater.top+1;}
-      }
       this.nodes.set(nk(c),c);column.nodes.push(c);this.active=null;
     }
     for(const record of saved||existing){
@@ -234,9 +227,60 @@ export class BasinHydrology {
       if(!wasRestored)this.ledger.initial+=record.volume;
     }
     this.restored.delete(id);
+    this.updateColumnSource(column);
     this.engine.flowCells.delete(id);this.engine.pressureVolumes.delete(id);
     this.engine.pressureInlets.delete(id);this.engine.pressureDrains.delete(id);
     this.dirty.add(id);return column;
+  }
+  naturalRiver(x,z){
+    const chunk=this.chunkAt(x,z);if(!chunk)return null;
+    const width=this.world.chunkSize.width,index=(z-chunk.position.z)*width+x-chunk.position.x;
+    const original=chunk.naturalWaterColumns?chunk.naturalWaterColumns[index]:chunk.waterColumns?.[index];
+    if(original?.kind!=='river')return null;
+    const bed=chunk.naturalWaterGround?.[index]??original.bed??chunk.hydrologyGround?.[index];
+    const water=voxelWaterColumn(original,bed);
+    return water?{chunk,index,original,water}:null;
+  }
+  openInlet(water,node,x,z){
+    for(let y=Math.floor(water.bottom+.5);y<water.top+.5;y++){
+      if(liquidOccluder(this.world.getBlockId(x,y,z)))continue;
+      if(Math.min(water.top,node.roof,y+.5)>Math.max(water.bottom,node.bottom,y-.5)+.001)return true;
+    }
+    return false;
+  }
+  updateColumnSource(column){
+    const river=this.naturalRiver(column.x,column.z);
+    for(const c of column.nodes){
+      c.sourceRate=0;c.sourceHead=0;
+      if(!river||c.bottom>river.water.bottom+.001||c.roof<=river.water.bottom+.001)continue;
+      const {original,water}=river;
+      if(original.source){c.sourceRate=.25;c.sourceHead=water.top+1;continue;}
+      const fx=original.flowX||0,fz=original.flowZ||0,length=Math.hypot(fx,fz);
+      if(!length)continue;
+      // A stable natural river outside the finite domain represents its
+      // upstream network. Loaded terrain is not necessarily simulated water.
+      // This is a boundary input, never a new spring in every river tile.
+      for(const [dx,dz] of SIDES){
+        if(fx*dx+fz*dz>=-.2*length)continue;
+        const x=c.x+dx,z=c.z+dz;
+        if(this.ownsColumn(x,z))continue;
+        const upstream=this.naturalRiver(x,z);
+        let incoming=water;
+        if(this.chunkAt(x,z)){
+          if(!upstream)continue;
+          const ux=upstream.original.flowX||0,uz=upstream.original.flowZ||0;
+          if(ux*(-dx)+uz*(-dz)<=.2*Math.hypot(ux,uz))continue;
+          const current=upstream.chunk.waterColumns?.[upstream.index];
+          incoming=voxelWaterColumn(current,current?.bed??upstream.water.bottom);
+          if(current?.kind!=='river'||!incoming||!this.openInlet(incoming,c,x,z))continue;
+        }
+        if(Math.min(water.top,incoming.top)<=c.bottom+.001)continue;
+        c.sourceRate=.25;c.sourceHead=Math.max(c.sourceHead,Math.min(water.top,incoming.top));
+      }
+    }
+  }
+  updateSources(){
+    for(const column of this.columns.values())if(this.chunkAt(column.x,column.z)===column.chunk)this.updateColumnSource(column);
   }
   assignVolume(column,bottom,volume,kind=null){
     let remaining=volume;
@@ -321,6 +365,7 @@ export class BasinHydrology {
         this.topology=basinTopology(this.active);
       }
       const active=this.active;
+      this.updateSources();
       const result=stepBasinWater(active,BASIN_STEP,{evaporation:.00008,infiltration:1,topology:this.topology});
       for(const k of ['supplied','evaporated','infiltrated'])this.ledger[k]+=result[k];
       for(const c of active.values())if(Math.abs(c.volume-(c.renderedVolume??-1))>.002||Math.abs((c.fallRate||0)-(c.renderedFallRate||0))>Math.max(.0005,(c.renderedFallRate||0)*.15)||((c.fallRate||0)>1e-7)!==((c.renderedFallRate||0)>1e-7))this.dirty.add(ck(c.x,c.z));
