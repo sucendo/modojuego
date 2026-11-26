@@ -153,3 +153,61 @@ test('a real spring continues beneath a roof and retains its inlet after reloadi
  const restored=prepare();restored.world.hydrology.restore(e.snapshot());restored.world.hydrology.reconcileChunk(restored.chunk);
  assert.ok(restored.world.hydrology.basins.columns.get('1,1').nodes.some(n=>!n.outdoor&&n.sourceRate>0));
 });
+
+function publicationFixture(){
+ const chunks=new Map(),calls=[];
+ for(let z=-1;z<=1;z++)for(let x=-1;x<=1;x++)chunks.set(`${x},${z}`,{loaded:true,position:{x:x*32,z:z*32},waterColumns:Array(1024),hydrologyGround:new Float32Array(1024).fill(100),refreshWater(){calls.push(`${x},${z}`);}});
+ const world={chunkSize:{width:32,height:32},getChunk:(x,z)=>chunks.get(`${x},${z}`)};
+ const env={water:new Map(),columns:new Map(),revision:0};
+ const b=new BasinHydrology({world,environment:env,onChange(){}});
+ const put=(x,z,volume=1,bottom=.5,outdoor=true)=>{
+  const id=`${x},${z}`,c=cell(x,z,volume,bottom,20.5,outdoor),chunk=world.getChunk(Math.floor(x/32),Math.floor(z/32));
+  b.nodes.set(`${id},${bottom}`,c);b.columns.set(id,{x,z,chunk,index:(z%32)*32+x%32,top:0,nodes:[c]});b.dirty.add(id);return c;
+ };
+ return {b,env,chunks,calls,put};
+}
+
+test('surface publication touches only chunks sharing the changed vertices and defers mesh work',()=>{
+ for(const [x,z,count] of [[10,10,1],[0,10,2],[0,0,4]]){
+  const f=publicationFixture();f.put(x,z);f.b.publish();
+  assert.equal(f.calls.length,0,'publication never performs a synchronous mesh burst');
+  assert.equal(f.b.meshQueue.size,count);
+  while(f.b.meshQueue.size){const before=f.calls.length;f.b.flushMeshes();assert.equal(f.calls.length-before,1);}
+  assert.equal(f.calls.length,count);assert.equal(f.env.revision,0,'surface-only changes do not rebuild all cave and snow meshes');
+ }
+});
+
+test('publication deletes old cavity spans directly without scanning unrelated water',()=>{
+ const f=publicationFixture();const c=f.put(10,10,.7,2.5,false);
+ f.env.columns.set('10,10',{cavities:[cell(10,10,.3,.5,1.5,false)]});
+ f.env.water.set('10,10,0.5',.3);f.env.water.set('1000,1000,0.5',.9);
+ f.env.water.keys=()=>{throw Error('global water scan');};
+ f.b.publish();assert.equal(f.env.water.has('10,10,0.5'),false);
+ assert.equal(f.env.water.get('10,10,2.5'),c.volume);assert.equal(f.env.water.get('1000,1000,0.5'),.9);
+ assert.equal(f.env.revision,1,'wet cavities still invalidate their presentation');
+});
+
+test('cached basin connections rebuild after chunk unloading and reloading',()=>{
+ const f=publicationFixture();f.put(10,10,2);f.put(11,10,0);f.b.ledger.initial=2;
+ f.b.update(.1);assert.ok(f.b.nodes.get('11,10,0.5').volume>0);
+ const old=f.b.active,totalBefore=f.b.total();f.chunks.get('0,0').loaded=false;
+ f.b.update(.1);assert.notEqual(f.b.active,old);assert.equal(f.b.active.size,0);assert.equal(f.b.total(),totalBefore);
+ f.chunks.get('0,0').loaded=true;f.b.update(.1);assert.equal(f.b.active.size,2);
+ assert.ok(Math.abs(f.b.balanceError())<1e-9);
+});
+
+test('slow frames run at most one physical step and one mesh rebuild',()=>{
+ const f=publicationFixture();f.put(10,10,2);f.put(11,10,0);f.b.publish();
+ let steps=0;const expand=f.b.expand.bind(f.b);f.b.expand=()=>{steps++;expand();};
+ f.b.update(2);assert.equal(steps,1);assert.equal(f.calls.length,1);
+});
+
+test('large lake activation is bounded per edit and continues without losing its reserve',()=>{
+ const chunk={loaded:true,position:{x:0,z:0},waterColumns:Array.from({length:4096},()=>({kind:'lake',bed:.5,y:2.25,depth:2})),hydrologyGround:new Float32Array(4096).fill(.5),refreshWater(){}};
+ const world={chunkSize:{width:64,height:16},getChunk:(x,z)=>x===0&&z===0?chunk:null,getBlockId:(x,y,z)=>y===0?3:0};
+ const engine={world,environment:{water:new Map(),columns:new Map(),ledger:{displaced:0},revision:0},flowCells:new Map(),pressureVolumes:new Map(),pressureInlets:new Map(),pressureDrains:new Map(),onChange(){}};
+ const b=new BasinHydrology(engine);b.edit(32,1,32);
+ assert.ok(b.columns.size<=70,'one edit cannot scan the whole lake');assert.ok(b.activation.length>0);
+ for(let i=0;i<300&&b.columns.size<4096;i++)b.expand();
+ assert.equal(b.columns.size,4096);assert.equal(b.total(),8192);assert.equal(b.balanceError(),0);
+});

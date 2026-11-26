@@ -46,3 +46,13 @@ test('new and drying water fades continuously and ownership stays bounded',()=>{
   assert.equal(transitionValue(dry,2),0);
   t.begin('chunk');t.end();assert.equal(t.records.size,0);
 });
+
+test('a per-sheet corner cache shares work only within a connected component',()=>{
+ const cache=new Map();let calls=0;
+ const sample=(x,z)=>{calls++;return {bottom:.5,top:2,kind:'lake',open:true};};
+ const a=continuousCorner(0,0,1,1,sample,cache);
+ for(const [x,z,sx,sz] of [[1,0,-1,1],[0,1,1,-1],[1,1,-1,-1]])assert.equal(continuousCorner(x,z,sx,sz,sample,cache),a);
+ assert.equal(calls,4,'four adjoining cells calculate their common vertex once');
+ const split=new Map(),diagonal=(x,z)=>(x===z?{bottom:.5,top:2,kind:'lake',open:true}:null);
+ assert.notEqual(continuousCorner(0,0,1,1,diagonal,split).key,continuousCorner(1,1,-1,-1,diagonal,split).key);
+});

@@ -29,8 +29,14 @@ function settleLakePools(nodes,edges,dt){
     for(const k of pool)for(const other of links.get(k)||[])if(!seen.has(other)){seen.add(other);pool.push(other);}
     if(pool.length<2)continue;
     const cells=pool.map(k=>nodes.get(k)),volume=cells.reduce((s,c)=>s+c.volume,0);
-    let low=Math.min(...cells.map(c=>c.bottom)),high=Math.max(...cells.map(c=>c.bottom+c.volume));
-    for(let pass=0;pass<40;pass++){
+    let low=Infinity,high=-Infinity,bottoms=0,minimumRoof=Infinity;
+    for(const c of cells){low=Math.min(low,c.bottom);high=Math.max(high,c.bottom+c.volume);bottoms+=c.bottom;minimumRoof=Math.min(minimumRoof,c.roof);}
+    // The usual fully wetted lake has an exact O(n) solution. Only pools
+    // which expose a floor or meet a ceiling need the bounded search.
+    const level=(volume+bottoms)/cells.length;
+    const maximumBottom=Math.max(...cells.map(c=>c.bottom));
+    if(level>=maximumBottom&&level<=minimumRoof)low=high=level;
+    else for(let pass=0;pass<32;pass++){
       const level=(low+high)/2,total=cells.reduce((s,c)=>s+Math.max(0,Math.min(capacity(c),level-c.bottom)),0);
       if(total>volume)high=level;else low=level;
     }
@@ -43,32 +49,38 @@ function settleLakePools(nodes,edges,dt){
   }
 }
 
+// Geometry changes only when a column is added, edited, loaded or unloaded.
+// Reuse this graph for the many volume-only steps between those changes.
+function basinTopology(nodes){
+  const byColumn=new Map(),edges=[],adjacency=new Map(),covered=[];
+  for(const [k,c] of nodes){
+    const group=ck(c.x,c.z);if(!byColumn.has(group))byColumn.set(group,[]);byColumn.get(group).push(k);
+    adjacency.set(k,[]);if(!c.outdoor)covered.push([k,c]);
+  }
+  for(const [k,c] of nodes)for(const [dx,dz] of [[1,0],[0,1]])for(const other of byColumn.get(ck(c.x+dx,c.z+dz))||[]){
+    const n=nodes.get(other),sill=Math.max(c.bottom,n.bottom),roof=Math.min(c.roof,n.roof);
+    if(roof>sill+.001){const e={a:k,b:other,dx,dz,sill,roof};edges.push(e);adjacency.get(k).push([other,e]);adjacency.get(other).push([k,e]);}
+  }
+  return {edges,adjacency,covered};
+}
+
 /** Finite volumes in real air spans. A lake is stored water, never a source.
  * All edge proposals debit one node and credit another. A filled opening can
  * transmit pressure above its roof; it never stores water inside the wall. */
-export function stepBasinWater(nodes,dt=BASIN_STEP,{evaporation=0,infiltration=0}={}){
+export function stepBasinWater(nodes,dt=BASIN_STEP,{evaporation=0,infiltration=0,topology=null}={}){
   dt=Math.min(BASIN_STEP,Math.max(0,Number(dt)||0));
-  const byColumn=new Map(),volumes=new Map(),heads=new Map();
+  const volumes=new Map(),heads=new Map();
   let supplied=0,evaporated=0,infiltrated=0;
   for(const [k,c] of nodes){
-    const group=ck(c.x,c.z);if(!byColumn.has(group))byColumn.set(group,[]);byColumn.get(group).push(k);
     let v=Math.max(0,c.volume);
     const supply=Math.min(Math.max(0,(c.sourceHead??c.bottom)-c.bottom-v),Math.max(0,c.sourceRate||0)*dt,Math.max(0,capacity(c)-v));
     v+=supply;supplied+=supply;volumes.set(k,v);heads.set(k,c.bottom+v);
     c.flowX=0;c.flowZ=0;c.fallRate=0;c.fallEdges=[0,0,0,0];
   }
-  const edges=[];
-  for(const [k,c] of nodes)for(const [dx,dz] of [[1,0],[0,1]]){
-    for(const other of byColumn.get(ck(c.x+dx,c.z+dz))||[]){
-      const n=nodes.get(other),sill=Math.max(c.bottom,n.bottom),roof=Math.min(c.roof,n.roof);
-      if(roof>sill+.001)edges.push({a:k,b:other,dx,dz,sill,roof});
-    }
-  }
-  const adjacency=new Map([...nodes.keys()].map(k=>[k,[]]));
-  for(const e of edges){adjacency.get(e.a).push([e.b,e]);adjacency.get(e.b).push([e.a,e]);}
+  const {edges,adjacency,covered}=topology||basinTopology(nodes);
   // Hydrostatic pressure in filled spans is determined by connected heads,
   // not by treating the top of a plugged column as its only possible outlet.
-  for(let pass=0;pass<8;pass++)for(const [k,c] of nodes){
+  for(let pass=0;pass<8;pass++)for(const [k,c] of covered){
     if(c.outdoor||volumes.get(k)<capacity(c)-1e-6)continue;
     let sum=0,weights=0;
     for(const [other,e] of adjacency.get(k)){
@@ -126,7 +138,7 @@ export function stepBasinWater(nodes,dt=BASIN_STEP,{evaporation=0,infiltration=0
  * boundary; inaccessible water is neither discarded nor replenished. */
 export class BasinHydrology {
   constructor(engine){this.engine=engine;this.world=engine.world;this.clear();}
-  clear(){this.columns=new Map();this.nodes=new Map();this.restored=new Map();this.displaced=new Map();this.dirty=new Set();this.accumulator=0;this.visualElapsed=0;this.ledger={initial:0,supplied:0,evaporated:0,infiltrated:0,exchangeIn:0,exchangeOut:0};}
+  clear(){this.columns=new Map();this.nodes=new Map();this.restored=new Map();this.displaced=new Map();this.dirty=new Set();this.accumulator=0;this.visualElapsed=0;this.meshQueue=new Set();this.active=null;this.topology=null;this.activeChunks=new Set();this.activation=[];this.ledger={initial:0,supplied:0,evaporated:0,infiltrated:0,exchangeIn:0,exchangeOut:0};}
   supported(){return typeof this.world?.getBlockId==='function'&&Number.isInteger(this.world.chunkSize?.height);}
   ownsColumn(x,z){return this.columns.has(ck(x,z))||this.restored.has(ck(x,z));}
   total(){let v=0;for(const c of this.nodes.values())v+=c.volume;for(const c of this.restored.values())for(const n of c)v+=n.volume;for(const n of this.displaced.values())v+=n;return v;}
@@ -176,7 +188,7 @@ export class BasinHydrology {
         const inlet=SIDES.some(([dx,dz])=>fx*dx+fz*dz<-.2*Math.hypot(fx,fz)&&!this.chunkAt(x+dx,z+dz));
         if(original.source||inlet){c.sourceRate=.25;c.sourceHead=sourceWater.top+1;}
       }
-      this.nodes.set(nk(c),c);column.nodes.push(c);
+      this.nodes.set(nk(c),c);column.nodes.push(c);this.active=null;
     }
     for(const record of saved||existing){
       const remaining=this.assignVolume(column,record.bottom,record.volume,record.kind);
@@ -199,16 +211,18 @@ export class BasinHydrology {
     const id=ck(x,z),old=this.columns.get(id);
     if(old){
       const records=old.nodes.map(c=>({bottom:c.bottom,volume:c.volume,kind:c.kind}));
-      for(const c of old.nodes)this.nodes.delete(nk(c));this.columns.delete(id);
+      for(const c of old.nodes)this.nodes.delete(nk(c));this.columns.delete(id);this.active=null;
       this.restored.set(id,records);this.seedColumn(x,z);
     }
-    const queue=[],seen=new Set();
+    const queue=this.activation.splice(0),seen=new Set();
     for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
       const wx=x+dx,wz=z+dz,chunk=this.chunkAt(wx,wz);if(!chunk)continue;
       const width=this.world.chunkSize.width,index=(wz-chunk.position.z)*width+wx-chunk.position.x;
       if(this.ownsColumn(wx,wz)||chunk.waterColumns?.[index])queue.push([wx,wz]);
     }
-    for(let i=0;i<queue.length&&this.columns.size<BASIN_COLUMNS;i++){
+    let i=0;const initialSize=this.columns.size;
+    for(;i<queue.length&&this.columns.size<BASIN_COLUMNS;i++){
+      if(this.columns.size-initialSize>=64)break;
       const [wx,wz]=queue[i],k=ck(wx,wz);if(seen.has(k))continue;seen.add(k);
       const c=this.seedColumn(wx,wz);if(!c)continue;
       if(!c.nodes.some(n=>n.volume>.00001))continue;
@@ -217,12 +231,22 @@ export class BasinHydrology {
         if(next?.nodes.some(n=>n.volume>.00001))queue.push([wx+dx,wz+dz]);
       }
     }
+    this.activation.push(...queue.slice(i));
     // The edited dry cell becomes a candidate as soon as its bank opens.
     if(queue.length)this.seedColumn(x,z);
     this.publish();return true;
   }
   expand(){
-    let added=0;
+    if(this.columns.size>=BASIN_COLUMNS){this.activation.length=0;return;}
+    let added=0,processed=0;
+    while(this.activation.length&&added<24&&processed++<64){
+      const [x,z]=this.activation.shift(),before=this.columns.size;
+      const column=this.seedColumn(x,z);added+=this.columns.size-before;
+      if(column?.nodes.some(c=>c.volume>.00001))for(const [dx,dz] of SIDES){
+        if(!this.ownsColumn(x+dx,z+dz))this.activation.push([x+dx,z+dz]);
+      }
+    }
+
     for(const c of [...this.nodes.values()]){
       if(c.volume<.002||this.chunkAt(c.x,c.z)!==this.columns.get(ck(c.x,c.z))?.chunk)continue;
       const head=c.bottom+c.volume;
@@ -237,17 +261,25 @@ export class BasinHydrology {
     }
   }
   update(dt){
+    this.flushMeshes();
     if(!this.columns.size)return;
     this.accumulator=Math.min(.3,this.accumulator+Math.max(0,dt));
-    while(this.accumulator>=BASIN_STEP){
+    if(this.accumulator>=BASIN_STEP){
       this.expand();this.releaseDisplaced();
-      const active=new Map([...this.nodes].filter(([,c])=>this.chunkAt(c.x,c.z)===this.columns.get(ck(c.x,c.z))?.chunk));
-      const result=stepBasinWater(active,BASIN_STEP,{evaporation:.00008,infiltration:1});
+      const chunks=new Set();
+      for(const column of this.columns.values())if(this.chunkAt(column.x,column.z)===column.chunk)chunks.add(column.chunk);
+      if(!this.active||chunks.size!==this.activeChunks.size||[...chunks].some(c=>!this.activeChunks.has(c))){
+        this.activeChunks=chunks;
+        this.active=new Map([...this.nodes].filter(([,c])=>chunks.has(this.columns.get(ck(c.x,c.z))?.chunk)));
+        this.topology=basinTopology(this.active);
+      }
+      const active=this.active;
+      const result=stepBasinWater(active,BASIN_STEP,{evaporation:.00008,infiltration:1,topology:this.topology});
       for(const k of ['supplied','evaporated','infiltrated'])this.ledger[k]+=result[k];
       for(const c of active.values())if(Math.abs(c.volume-(c.renderedVolume??-1))>.002||Math.abs((c.fallRate||0)-(c.renderedFallRate||0))>Math.max(.0005,(c.renderedFallRate||0)*.15)||((c.fallRate||0)>1e-7)!==((c.renderedFallRate||0)>1e-7))this.dirty.add(ck(c.x,c.z));
       this.accumulator-=BASIN_STEP;
     }
-    this.visualElapsed+=dt;if(this.visualElapsed>=.15){this.publish();this.visualElapsed=0;}
+    this.visualElapsed+=dt;if(this.visualElapsed>=.25){this.publish();this.visualElapsed=0;}
   }
   releaseDisplaced(){
     for(const [id,v] of this.displaced){
@@ -260,26 +292,41 @@ export class BasinHydrology {
   }
   publish(){
     if(!this.dirty.size)return;
-    const env=this.engine.environment,refresh=new Set();
+    const env=this.engine.environment,refresh=new Set();let caveChanged=false;
     for(const id of this.dirty){
       const column=this.columns.get(id);if(!column||this.chunkAt(column.x,column.z)!==column.chunk)continue;
       const {chunk,index,x,z}=column;
-      for(const key of [...env.water.keys()])if(key.startsWith(id+','))env.water.delete(key);
+      // Delete only this column's old spans, never scan the whole water map.
+      const oldCavities=env.columns.get(id)?.cavities||[];
+      for(const c of oldCavities)env.water.delete(nk(c));
       const outdoor=column.nodes.find(c=>c.outdoor),wet=outdoor?.volume>.00001?outdoor:null;
       chunk.waterColumns[index]=wet?{kind:wet.kind,bed:wet.bottom,y:wet.bottom+wet.volume-.25,depth:wet.volume,
         dynamic:true,finite:true,stable:false,source:wet.sourceRate>0,flowing:true,
         flowX:wet.flowX||0,flowZ:wet.flowZ||0,fallRate:wet.fallRate||0,fallEdges:wet.fallEdges,fallWidth:fallWidth(wet.fallRate||0)}:null;
       const cavities=column.nodes.filter(c=>!c.outdoor);
       env.columns.set(id,{x,z,chunk,top:column.top,cavities,basinOwned:true});
+      if(oldCavities.some(c=>(c.renderedVolume||0)>.001)||cavities.some(c=>c.volume>.001))caveChanged=true;
       for(const c of cavities)env.water.set(nk(c),c.volume);
       for(const c of column.nodes){c.renderedVolume=c.volume;c.renderedFallRate=c.fallRate||0;}
       const width=this.world.chunkSize.width;
-      for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
+      // Only vertices on a shared border can affect a neighbouring mesh.
+      const lx=x-chunk.position.x,lz=z-chunk.position.z;
+      const xs=[0],zs=[0];if(lx===0)xs.push(-1);if(lx===width-1)xs.push(1);
+      if(lz===0)zs.push(-1);if(lz===width-1)zs.push(1);
+      for(const dz of zs)for(const dx of xs){
         const n=this.world.getChunk(Math.floor(x/width)+dx,Math.floor(z/width)+dz);if(n?.loaded)refresh.add(n);
       }
     }
-    this.dirty.clear();env.revision++;
-    for(const chunk of refresh)chunk.refreshWater();this.engine.onChange();
+    this.dirty.clear();if(caveChanged)env.revision++;
+    for(const chunk of refresh)this.meshQueue.add(chunk);this.engine.onChange();
+  }
+  flushMeshes(){
+    // A slow frame must not trigger a burst of whole-chunk allocations, nor
+    // multiple catch-up simulation steps. Heights still interpolate on GPU.
+    for(const chunk of this.meshQueue){
+      this.meshQueue.delete(chunk);
+      if(chunk.loaded){chunk.refreshWater();break;}
+    }
   }
   exchange(x,z,bottom,amount){
     const column=this.columns.get(ck(x,z));if(!column)return 0;
@@ -301,7 +348,7 @@ export class BasinHydrology {
     }
     for(const [id,c] of [...this.columns])if(c.chunk!==this.chunkAt(c.x,c.z)&&this.chunkAt(c.x,c.z)===chunk){
       this.restored.set(id,c.nodes.map(n=>({bottom:n.bottom,volume:n.volume,kind:n.kind})));
-      for(const n of c.nodes)this.nodes.delete(nk(n));this.columns.delete(id);this.seedColumn(c.x,c.z);
+      for(const n of c.nodes)this.nodes.delete(nk(n));this.columns.delete(id);this.active=null;this.seedColumn(c.x,c.z);
     }
     this.publish();
   }

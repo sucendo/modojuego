@@ -508,7 +508,8 @@ export class WorldChunk extends THREE.Group {
     // building a surface, a shoreline and a real vertical waterfall.
     const simplex=advancedWater?new SimplexNoise(new RNG(this.params.seed)):null;
     const heightAt=advancedWater?(wx,wz)=>advancedSurfaceHeight(simplex,this.params,this.type,wx,wz,this.size.height):null;
-    const boundary=(x,z)=>{
+    const boundaryCache=new Map();
+    const readBoundary=(x,z)=>{
       if(!advancedWater)return null;
       const wx=this.position.x+x,wz=this.position.z+z;
       const dynamic=this.hydrologyLookup?.(wx,wz);
@@ -532,6 +533,11 @@ export class WorldChunk extends THREE.Group {
         {y:hydro.waterY,kind:hydro.kind,bed:hydro.height+.5,
           stable:!!hydro.stable,source:!!hydro.source,
           flowX:hydro.flowX??0,flowZ:hydro.flowZ??0};
+    };
+    const boundary=(x,z)=>{
+      const key=`${x},${z}`;
+      if(!boundaryCache.has(key))boundaryCache.set(key,readBoundary(x,z));
+      return boundaryCache.get(key);
     };
     const groups=new Map();
     const now=waterTime();
@@ -559,12 +565,18 @@ export class WorldChunk extends THREE.Group {
       ?this.getBlockId(x,y,z):this.liquidBlockLookup?.(this.position.x+x,y,this.position.z+z)??0;
     const debugSources=typeof window!=='undefined'&&
       /(?:\?|&)waterDebug(?:=1|(?=&|$))/.test(window.location?.search||'');
-    const voxelAt=(x,z)=>{
+    const voxelCache=new Map();
+    const readVoxel=(x,z)=>{
       const inside=x>=0&&x<size&&z>=0&&z<size;
       const cell=inside?renderCells[z*size+x]:boundary(x,z);
       const bed=inside?this.hydrologyGround?.[z*size+x]:cell?.bed;
       const voxel=voxelWaterColumn(cell,bed);
       return voxel?{...voxel,kind:cell.kind,dynamic:!!cell.dynamic,drying:!!cell.drying,open:exposedLiquidTop(voxel.top,y=>blockAt(x,y,z))}:null;
+    };
+    const voxelAt=(x,z)=>{
+      const key=`${x},${z}`;
+      if(!voxelCache.has(key))voxelCache.set(key,readVoxel(x,z));
+      return voxelCache.get(key);
     };
     // Equal-height and equal-kind cells share both a tint and a single mesh
     // rectangle. Per-tile depth colors and transparent triangle edges used to
@@ -581,12 +593,12 @@ export class WorldChunk extends THREE.Group {
           surfaces[i]={kind:cell.kind,top:voxel.top,sourceDebug:debugSources&&!!cell.source};
       }
     }
-    const cornerCache=new Map();
+    const cornerCache=new Map(),sharedCornerCache=new Map();
     const cornersAt=(x,z)=>{
       const id=`${x},${z}`;if(cornerCache.has(id))return cornerCache.get(id);
       const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sz])=>
         continuousCorner(this.position.x+x,this.position.z+z,sx,sz,
-          (wx,wz)=>voxelAt(wx-this.position.x,wz-this.position.z)));
+          (wx,wz)=>voxelAt(wx-this.position.x,wz-this.position.z),sharedCornerCache));
       cornerCache.set(id,corners);return corners;
     };
     const motionFor=(x,z,corner,y)=>{
