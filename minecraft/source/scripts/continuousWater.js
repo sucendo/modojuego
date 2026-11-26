@@ -1,5 +1,5 @@
 // Rendering only: never writes levels, volumes, sources or save data.
-export const WATER_TRANSITION_SECONDS = .32;
+export const WATER_TRANSITION_SECONDS = .4;
 export const WATER_JOIN_DROP = 1.01;
 export const waterTime = () => (typeof performance==='undefined'?Date.now():performance.now())*.001;
 const clamp01 = x => Math.max(0,Math.min(1,x));
@@ -63,26 +63,32 @@ export function continuousCorner(x,z,sx,sz,sample,cache=null){
   if(cache?.has(cacheKey))return cache.get(cacheKey);
   const cells=[];
   for(const cz of [Math.floor(vz),Math.ceil(vz)])for(const cx of [Math.floor(vx),Math.ceil(vx)]){
-    const water=sample(cx,cz);if(water)cells.push({x:cx,z:cz,...water});
+    const water=sample(cx,cz);if(water)cells.push({x:cx,z:cz,water});
   }
   const origin=cells.findIndex(c=>c.x===x&&c.z===z);
   if(origin<0)return null;
-  const reached=new Set([origin]),queue=[origin];
+  // At most four samples meet here. Keep references to the sampled columns:
+  // spreading every physical column into temporary objects dominates rebuilds.
+  let reached=1<<origin;const queue=[origin];
   for(const index of queue)for(let j=0;j<cells.length;j++){
-    if(reached.has(j))continue;
+    if(reached&(1<<j))continue;
     const a=cells[index],b=cells[j];
-    if(Math.abs(a.x-b.x)+Math.abs(a.z-b.z)!==1||!connectedWater(a,b))continue;
-    reached.add(j);queue.push(j);
+    if(Math.abs(a.x-b.x)+Math.abs(a.z-b.z)!==1||!connectedWater(a.water,b.water))continue;
+    reached|=1<<j;queue.push(j);
   }
-  // Face connectivity is evaluated on the same four samples from either tile.
-  const sorted=[...reached].map(i=>cells[i]).sort((a,b)=>a.z-b.z||a.x-b.x);
-  const top=Math.max(...sorted.map(c=>c.bottom+.001),sorted.reduce((s,c)=>s+c.top,0)/sorted.length);
-  const mean=values=>values.length?values.reduce((s,c)=>s+c.top,0)/values.length:top;
-  const dx=mean(sorted.filter(c=>c.x>vx))-mean(sorted.filter(c=>c.x<vx));
-  const dz=mean(sorted.filter(c=>c.z>vz))-mean(sorted.filter(c=>c.z<vz));
+  let count=0,sum=0,floor=-Infinity,left=0,right=0,near=0,far=0,nl=0,nr=0,nn=0,nf=0,fx=0,fz=0;
+  const sorted=[],flowSamples=[],keys=[];
+  // Sampling order is already z then x, independent of the origin tile.
+  for(let i=0;i<cells.length;i++)if(reached&(1<<i)){
+    const c=cells[i],w=c.water;sorted.push(c);count++;sum+=w.top;floor=Math.max(floor,w.bottom+.001);
+    if(c.x>vx){right+=w.top;nr++;}else{left+=w.top;nl++;}
+    if(c.z>vz){far+=w.top;nf++;}else{near+=w.top;nn++;}
+    fx+=w.flow?.[0]||0;fz+=w.flow?.[1]||0;
+    flowSamples.push([c.x,c.z,w.bottom]);keys.push(`${c.x},${c.z}@${w.bottom}`);
+  }
+  const top=Math.max(floor,sum/count),dx=(nr?right/nr:top)-(nl?left/nl:top),dz=(nf?far/nf:top)-(nn?near/nn:top);
   const length=Math.hypot(dx,1,dz);
-  const flow=[0,1].map(axis=>sorted.reduce((sum,c)=>sum+(c.flow?.[axis]||0),0)/sorted.length);
-  const result={top,flow,flowSamples:sorted.map(c=>[c.x,c.z,c.bottom]),normal:[-dx/length,1/length,-dz/length],key:`${vx},${vz}:${sorted.map(c=>`${c.x},${c.z}@${c.bottom}`).join(';')}`};
+  const result={top,flow:[fx/count,fz/count],flowSamples,normal:[-dx/length,1/length,-dz/length],key:`${vx},${vz}:${keys.join(';')}`};
   if(cache)for(const c of sorted)cache.set(`${c.x},${c.z},${vx},${vz}`,result);
   return result;
 }

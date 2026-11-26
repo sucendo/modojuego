@@ -1,4 +1,4 @@
-# Minecraft.js 11.6.7
+# Minecraft.js 11.6.8
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -34,3 +34,5 @@ Corriente 11.6.5: estelas más largas y contrastadas, con movimiento visual ampl
 Rendimiento 11.6.6: los cambios de corriente actualizan atributos de velocidad sin reconstruir las mallas del agua o de las cuevas. El patrón superficial usa dos ondas y evita superponer el cálculo completo de ondulaciones ambientales sobre agua que ya corre. Se reducen las manchas blancas y se mantiene la separación de alturas de los acueductos.
 
 Cascadas y móvil 11.6.7: las caídas naturales ya llegan al nivel inferior como cortinas continuas antes de editar el terreno; solo se estrechan los bordes exteriores de una caída ancha. En juego táctil se muestran las diez casillas en una sola fila y se compactan los controles y relojes en horizontal.
+
+Agua 11.6.8: se restaura la descarga del exceso de agua al mar, contabilizada en el balance. Los lagos estables y los canales siguen teniendo volumen finito. Se reducen las asignaciones temporales al unir superficies y se evita el parpadeo de las cortinas pegadas a las rocas.

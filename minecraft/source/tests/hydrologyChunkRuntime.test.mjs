@@ -1,5 +1,5 @@
 import {waterFlowVector,bindWaterFlow,refreshWaterFlowAttribute} from '../scripts/waterFlow.js';
-import { continuousCorner, connectedWater, WaterTransitions, waterTime } from '../scripts/continuousWater.js';
+import { continuousCorner, connectedWater, WaterTransitions, WATER_TRANSITION_SECONDS, waterTime } from '../scripts/continuousWater.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -65,7 +65,7 @@ const blocks=Object.fromEntries(Object.entries(ids).map(([key,id])=>[key,{id,mat
 const resources=[{id:4,scarcity:.8,scale:{x:20,y:20,z:20}},{id:5,scarcity:.85,scale:{x:40,y:40,z:40}}];
 const raw=readFileSync(new URL('../scripts/worldChunk.js',import.meta.url),'utf8')
  .replace(/^import .*;\s*$/gm,'').replace('export class WorldChunk','class WorldChunk')+'\nWorldChunk;';
-const WorldChunk=vm.runInNewContext(raw,{waterFlowVector,bindWaterFlow,refreshWaterFlowAttribute,continuousCorner,connectedWater,WaterTransitions,waterTime,THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
+const WorldChunk=vm.runInNewContext(raw,{waterFlowVector,bindWaterFlow,refreshWaterFlowAttribute,continuousCorner,connectedWater,WaterTransitions,WATER_TRANSITION_SECONDS,waterTime,THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
  makeFadeMaterial:()=>{},disposeFadeMaterial:()=>{},clampFade:a=>a,
  biomeForType,terrainHeight,advancedSurfaceHeight,isCave,geologyColumn,advancedUndergroundBlock,
  TERRAIN_V10,TERRAIN_HYBRID,TERRAIN_V11,TERRAIN_V112,TERRAIN_HYBRID_V112,LEGACY_HEIGHT,hybridSurfaceHeight,transitionWeight,hybridHydrologyColumn,makeHybridContext,
@@ -288,6 +288,7 @@ test('v11.4.4 steep lateral edges cannot create waterfall glass curtains',()=>{
   assert.equal(longFalls,1,'one true downstream edge creates the waterfall');
   assert.equal(lateralLongFaces,0,'steep sides beside the river have no tall curtain');
   assert.equal(mesh.material.forceSinglePass,true);
+  assert.equal(mesh.material.polygonOffset,true);assert.equal(mesh.material.polygonOffsetFactor,-1);
 });
 
 test('v11.2.1 hybrid chunk matches old v11 water, rocks and caves at a protected edge',()=>{
