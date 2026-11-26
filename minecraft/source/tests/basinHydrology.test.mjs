@@ -202,12 +202,87 @@ test('slow frames run at most one physical step and one mesh rebuild',()=>{
  f.b.update(2);assert.equal(steps,1);assert.equal(f.calls.length,1);
 });
 
-test('large lake activation is bounded per edit and continues without losing its reserve',()=>{
+test('large lake discovery stays local instead of consuming every construction slot',()=>{
  const chunk={loaded:true,position:{x:0,z:0},waterColumns:Array.from({length:4096},()=>({kind:'lake',bed:.5,y:2.25,depth:2})),hydrologyGround:new Float32Array(4096).fill(.5),refreshWater(){}};
  const world={chunkSize:{width:64,height:16},getChunk:(x,z)=>x===0&&z===0?chunk:null,getBlockId:(x,y,z)=>y===0?3:0};
  const engine={world,environment:{water:new Map(),columns:new Map(),ledger:{displaced:0},revision:0},flowCells:new Map(),pressureVolumes:new Map(),pressureInlets:new Map(),pressureDrains:new Map(),onChange(){}};
  const b=new BasinHydrology(engine);b.edit(32,1,32);
  assert.ok(b.columns.size<=70,'one edit cannot scan the whole lake');assert.ok(b.activation.length>0);
  for(let i=0;i<300&&b.columns.size<4096;i++)b.expand();
- assert.equal(b.columns.size,4096);assert.equal(b.total(),8192);assert.equal(b.balanceError(),0);
+ assert.ok(b.columns.size<800);assert.equal(b.total(),b.columns.size*2);assert.equal(b.balanceError(),0);
+});
+
+test('an existing full simulation domain still admits a freshly excavated lake outlet',()=>{
+ const width=128,height=16,waterColumns=Array(width*width).fill(null),ground=new Float32Array(width*width).fill(10.5);
+ const chunk={loaded:true,position:{x:0,z:0},waterColumns,hydrologyGround:ground,refreshWater(){}};
+ const world={chunkSize:{width,height},getChunk:(x,z)=>x===0&&z===0?chunk:null,getBlockId:(x,y,z)=>y===0?3:(x<64&&z<64||x>=64&&x<=70&&z===32)?0:y<=10?3:0};
+ const engine={world,environment:{water:new Map(),columns:new Map(),ledger:{displaced:0},revision:0},flowCells:new Map(),pressureVolumes:new Map(),pressureInlets:new Map(),pressureDrains:new Map(),onChange(){}};
+ const b=new BasinHydrology(engine);
+ for(let z=0;z<64;z++)for(let x=0;x<64;x++){
+  const id=`${x},${z}`,c=cell(x,z,2,.5,15.5);b.nodes.set(`${id},0.5`,c);
+  b.columns.set(id,{x,z,chunk,index:z*width+x,top:0,nodes:[c]});
+  ground[z*width+x]=.5;waterColumns[z*width+x]={kind:'lake',bed:.5,y:2.25,depth:2,dynamic:true,finite:true};
+ }
+ for(let x=64;x<=70;x++)ground[32*width+x]=.5;
+ b.savedNodes=b.nodes.size;b.ledger.initial=b.total();b.edit(64,1,32);
+ for(let i=0;i<20;i++)b.update(.1);
+ assert.ok(b.nodes.get('64,32,0.5')?.volume>0,'excavation must receive water even when the old lake occupied every active slot');
+ assert.ok(Math.abs(b.balanceError())<1e-8);
+ const snapshot=b.snapshot(),before=b.total();assert.ok(snapshot.columns.length>4096);
+ const recovered=new BasinHydrology(engine);recovered.restore(JSON.parse(JSON.stringify(snapshot)));recovered.reconcileChunk(chunk);
+ assert.ok(Math.abs(recovered.total()-before)<1e-8,'passive and active volumes survive a reload together');
+ assert.ok(recovered.restored.has('0,0'));assert.equal(chunk.waterColumns[0].depth,2,'a parked lake keeps its stored presentation on reload');
+ recovered.setFocus(0,0);recovered.update(.1);
+ assert.ok(recovered.columns.has('0,0'),'returning to parked water reactivates it');
+ assert.ok(Math.abs(recovered.balanceError())<1e-8);
+});
+
+function aqueductFixture(sealed=false){
+ const width=32,height=16,blocks=new Map(),chunks=new Map();
+ const solid=(x,y,z)=>blocks.set(`${x},${y},${z}`,3);
+ for(let x=0;x<=42;x++)for(let z=0;z<3;z++){
+  solid(x,0,z);
+  if(x<=4)for(let y=1;y<=4;y++)solid(x,y,z);
+  else solid(x,5,z); // Suspended deck, open air underneath.
+  if(z!==1||x===0||x===41||x===42)for(let y=1;y<=8;y++)solid(x,y,z);
+ }
+ if(sealed)for(let y=6;y<=8;y++)solid(5,y,1);
+ for(let cx=0;cx<2;cx++){
+  const chunk={loaded:true,position:{x:cx*width,z:0},waterColumns:Array(1024).fill(null),hydrologyGround:new Float32Array(1024).fill(8.5),refreshWater(){}};
+  for(let x=Math.max(1,cx*width);x<=Math.min(40,cx*width+31);x++){
+   const index=width+x-cx*width;chunk.hydrologyGround[index]=x<=4?4.5:5.5;
+   if(x<=4)chunk.waterColumns[index]={kind:'lake',bed:4.5,y:6.25,depth:2,stable:true};
+  }
+  chunk.naturalWaterColumns=chunk.waterColumns.map(c=>c?{...c}:null);chunk.naturalWaterGround=chunk.hydrologyGround.slice();
+  chunks.set(`${cx},0`,chunk);
+ }
+ const world={type:'classic',params:{seed:1,terrain:{waterOffset:0}},hybrid:{hydrographyVersion:3},chunkSize:{width,height},getChunk:(x,z)=>chunks.get(`${x},${z}`),getBlockId:(x,y,z)=>x<0||x>42||z<0||z>2?3:blocks.get(`${x},${y},${z}`)||0};
+ world.hydrology=new HydrologyEngine(world);return {world,chunks,blocks};
+}
+
+test('a suspended aqueduct crosses a chunk border, levels and retains water above its deck',()=>{
+ const f=aqueductFixture(),e=f.world.hydrology;e.onBlockEdit(5,6,1);
+ for(let i=0;i<600;i++)e.update(.1,{x:Math.min(36,5+i/10),z:1});
+ const b=e.basins,depth=x=>b.columns.get(`${x},1`)?.nodes.find(n=>n.outdoor)?.volume||0;
+ assert.ok(depth(40)>.02,'water reaches the far end of the elevated canal in the next chunk');
+ assert.ok(depth(1)<2,'the lake pays for the canal');
+ const heads=Array.from({length:40},(_,i)=>{const c=b.columns.get(`${i+1},1`)?.nodes.find(n=>n.outdoor);return c?c.bottom+c.volume:0;});
+ assert.ok(Math.max(...heads)-Math.min(...heads)<.02,'a closed aqueduct becomes level');
+ assert.ok([...b.nodes.values()].filter(n=>n.x>=5&&n.bottom<5.5).every(n=>n.volume===0),'solid deck prevents water entering the air underneath');
+ assert.ok(Math.abs(b.balanceError())<1e-8);
+ const reload=aqueductFixture();reload.world.hydrology.restore(e.snapshot());
+ for(const chunk of reload.chunks.values())reload.world.hydrology.reconcileChunk(chunk);
+ assert.ok(Math.abs(reload.world.hydrology.basins.total()-b.total())<1e-9);
+ assert.ok(reload.chunks.get('1,0').waterColumns[32+8]?.depth>.02);
+});
+
+test('sealing and reopening the aqueduct inlet controls actual transfer',()=>{
+ const f=aqueductFixture(true),e=f.world.hydrology;e.onBlockEdit(5,6,1);
+ for(let i=0;i<100;i++)e.update(.1,{x:12,z:1});
+ assert.equal(e.basins.columns.get('6,1')?.nodes.find(n=>n.outdoor)?.volume||0,0);
+ for(let y=6;y<=8;y++)f.blocks.delete(`5,${y},1`);
+ e.onBlockEdit(5,6,1);
+ for(let i=0;i<100;i++)e.update(.1,{x:12,z:1});
+ assert.ok(e.basins.columns.get('6,1')?.nodes.find(n=>n.outdoor)?.volume>0);
+ assert.ok(Math.abs(e.basins.balanceError())<1e-8);
 });

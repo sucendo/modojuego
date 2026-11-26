@@ -770,7 +770,7 @@ export class HydrologyEngine {
 
   update(dt, playerPosition = null) {
     if (!this.world || this.world.type === 'lava') return;
-    this.basins.update(dt);
+    this.basins.update(dt,playerPosition);
     const settledWorld=this.world.hybrid?.hydrographyVersion>=1;
     if(settledWorld){this.updatePressure(dt);return;}
     if(settledWorld&&this.editActivity<=0)return;

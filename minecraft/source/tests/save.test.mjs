@@ -1,3 +1,4 @@
+import { BASIN_SAVED_COLUMNS, BASIN_SAVED_NODES } from '../scripts/basinHydrology.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -42,7 +43,7 @@ globalThis.__testDayNight={DayNightClock,validateDayNight,freshDayNight};
 globalThis.__testProgress={ProgressTracker,validateProgress,freshProgress};
 globalThis.__testExploration={ExplorationTracker,validateExploration,freshExploration};
 globalThis.__testAchievements={AchievementTracker,validateAchievements,freshAchievements};
-const prepared = `const migrateFogPreferences=globalThis.__testMigrateFogPrefs; const {TERRAIN_V10,TERRAIN_V11,TERRAIN_V112,V10_HEIGHT,LEGACY_HEIGHT}=globalThis.__testTerrain; const {TERRAIN_HYBRID,HYBRID_BLEND_BLOCKS,collectProtectedChunks,validateHybrid}=globalThis.__testHybrid; const {TERRAIN_HYBRID_V112,HYBRID_V112_SOURCES,validateHydrologyHybrid}=globalThis.__testHydroHybrid; const {ExplorationTracker,validateExploration,freshExploration}=globalThis.__testExploration; const {AchievementTracker,validateAchievements,freshAchievements}=globalThis.__testAchievements; const {DayNightClock,validateDayNight,freshDayNight}=globalThis.__testDayNight; const {ProgressTracker,validateProgress,freshProgress}=globalThis.__testProgress; const {PlaytimeTracker,validatePlaytime,emptyPlaytime}=globalThis.__testPlaytime; const validateStations = globalThis.__validateStations; const resources = globalThis.__testResources; const t = globalThis.__testTranslate; const ITEM_CATALOG = globalThis.__testCatalog; const createStartingInventory = globalThis.__createStartingInventory; const WORLD_TYPES = globalThis.__testWorldTypes; const normalizeWorldType = globalThis.__testNormalize; const applyWorldPreset = globalThis.__testApplyPreset;\n${code}`;
+const prepared = `const BASIN_SAVED_COLUMNS=${BASIN_SAVED_COLUMNS}, BASIN_SAVED_NODES=${BASIN_SAVED_NODES}; const migrateFogPreferences=globalThis.__testMigrateFogPrefs; const {TERRAIN_V10,TERRAIN_V11,TERRAIN_V112,V10_HEIGHT,LEGACY_HEIGHT}=globalThis.__testTerrain; const {TERRAIN_HYBRID,HYBRID_BLEND_BLOCKS,collectProtectedChunks,validateHybrid}=globalThis.__testHybrid; const {TERRAIN_HYBRID_V112,HYBRID_V112_SOURCES,validateHydrologyHybrid}=globalThis.__testHydroHybrid; const {ExplorationTracker,validateExploration,freshExploration}=globalThis.__testExploration; const {AchievementTracker,validateAchievements,freshAchievements}=globalThis.__testAchievements; const {DayNightClock,validateDayNight,freshDayNight}=globalThis.__testDayNight; const {ProgressTracker,validateProgress,freshProgress}=globalThis.__testProgress; const {PlaytimeTracker,validatePlaytime,emptyPlaytime}=globalThis.__testPlaytime; const validateStations = globalThis.__validateStations; const resources = globalThis.__testResources; const t = globalThis.__testTranslate; const ITEM_CATALOG = globalThis.__testCatalog; const createStartingInventory = globalThis.__createStartingInventory; const WORLD_TYPES = globalThis.__testWorldTypes; const normalizeWorldType = globalThis.__testNormalize; const applyWorldPreset = globalThis.__testApplyPreset;\n${code}`;
 const { SaveManager } = await import(`data:text/javascript;base64,${Buffer.from(prepared).toString('base64')}`);
 
 const local = new Map();
@@ -118,7 +119,7 @@ test('round-trip captures edited blocks, world settings and player state', () =>
   const { saves, world, player, scene, getRefresh } = fixture();
   const snapshot = JSON.parse(JSON.stringify(saves.createSnapshot()));
   assert.equal(snapshot.format, 'minecraftjs-save');
-  assert.equal(snapshot.version,16);
+  assert.equal(snapshot.version,17);
   assert.equal(snapshot.world.blocks['1,1,2,3,4'], 6);
   world.params.terrain.scale = 22;
   player.position.fromArray([999, 22, 111]);
@@ -351,7 +352,7 @@ test('v2 exported world and aggregated inventory are migrated without changing i
   assert.equal(world.dataStore.data['1,1,2,3,4'],6);
   assert.equal(player.inventory.count(6),5);
   assert.equal(player.inventory.count(15),10);
-  assert.equal(saves.createSnapshot().version,16);
+  assert.equal(saves.createSnapshot().version,17);
 });
 
 test('bad item stacks, world types and malformed grid are rejected',()=>{
@@ -413,7 +414,7 @@ test('v5 chests, furnaces and harvested animals are isolated per world and expor
   world.removedAnimals=['1:1:0'];
   player.mineMode=true;
   const snap=saves.createSnapshot();
-  assert.equal(snap.version,16);
+  assert.equal(snap.version,17);
   assert.equal(snap.world.stations['7,8,9'].slots[0].count,6);
   assert.deepEqual(snap.world.removedAnimals,['1:1:0']);
   assert.equal(saves.createWorld('Second',17,'ocean'),true);
@@ -443,7 +444,7 @@ test('v6 saves independent key-0 tool and E right-click object, and accepts v5 d
   player.equippedToolId='iron_pickaxe';
   player.rightObjectId=25;
   const snap=JSON.parse(JSON.stringify(saves.createSnapshot()));
-  assert.equal(snap.version,16);
+  assert.equal(snap.version,17);
   assert.equal(snap.player.equippedToolId,'iron_pickaxe');
   assert.equal(snap.player.rightObjectId,25);
   const parsed=saves.decode(snap);
@@ -513,7 +514,7 @@ test('v7 worlds migrate to day 1 morning with empty progress; new state survives
   saves.progress.increment('blocksPlaced',12);
   saves.progress.spotSpecies('cow');
   const state=saves.createSnapshot();
-  assert.equal(state.version,16);
+  assert.equal(state.version,17);
   assert.equal(state.progress.blocksPlaced,12);
   assert.deepEqual(state.progress.speciesSeen,['cow']);
   assert.ok(state.dayNight.timeMs > freshDayNight().timeMs);
@@ -624,7 +625,7 @@ test('v11.3.4 worlds use the preserved hybrid generator and can edit up to level
   assert.equal(player.position.toArray()[1],72);
   world.dataStore.data['1,1,2,65,4']=27;
   const snap=saves.createSnapshot();
-  assert.equal(snap.version,16);
+  assert.equal(snap.version,17);
   assert.equal(snap.world.terrainVersion,TERRAIN_HYBRID_V112);
   assert.equal(saves.decode(snap).world.blocks['1,1,2,65,4'],27);
   world.terrainVersion=1;world.chunkSize.height=32;
@@ -644,7 +645,7 @@ test('v9 imports continue using legacy generator and 32-block edits even after v
   assert.equal(world.terrainVersion,1);
   assert.equal(world.chunkSize.height,LEGACY_HEIGHT);
   const resaved=saves.createSnapshot();
-  assert.equal(resaved.version,16);
+  assert.equal(resaved.version,17);
   assert.equal(resaved.world.terrainVersion,1);
   assert.throws(()=>saves.decode({...resaved,world:{...resaved.world,blocks:{'1,1,1,50,1':3}}}),/invalidFile/);
   assert.throws(()=>saves.decode({...snap,world:{...snap.world,terrainVersion:2}}),/invalidFile/);
@@ -690,7 +691,7 @@ test('v10.1 opt-in freezes old explored chunks and constructions before generati
   assert.ok(world.hybridProtectedSet.has('1,1')); // explored
   const frozen=[...world.hybrid.legacyChunks];
   assert.equal(saves.currentWorld().terrainVersion,3);
-  assert.equal(saves.createSnapshot().version,16);
+  assert.equal(saves.createSnapshot().version,17);
   assert.equal(saves.enableMixedGeneration(),false); // one-way protection
   saves.exploration.observe({x:10000,z:10000});
   assert.deepEqual(world.hybrid.legacyChunks,frozen);
@@ -729,7 +730,7 @@ test('v11.4.2 new worlds export hybrid hydrography v3, while old v11 and v10 sav
   const {saves,world}=fixture();
   assert.equal(saves.initialize(),true);
   const v112=saves.createSnapshot();
-  assert.equal(v112.version,16);
+  assert.equal(v112.version,17);
   assert.equal(v112.world.terrainVersion,TERRAIN_HYBRID_V112);
   assert.equal(v112.world.hybrid.hydrographyVersion,3);
   assert.equal(saves.decode(v112).world.terrainVersion,TERRAIN_HYBRID_V112);
@@ -871,7 +872,7 @@ test('v11.2.1 migrates an old stored world without prompts and freezes original 
   assert.ok(world.hybridProtectedSet.has('1,1'));
   assert.equal(world.dataStore.data['-8,13,2,2,1'],9);
   const migrated=JSON.parse(local.get(saves.slotKey(id)));
-  assert.equal(migrated.version,16);
+  assert.equal(migrated.version,17);
   assert.equal(migrated.world.terrainVersion,6);
   assert.equal(saves.currentWorld().terrainVersion,6);
   const frozen=structuredClone(migrated.world.hybrid.protectedChunks);
@@ -919,7 +920,7 @@ test('importing an older world upgrades it without a separate activation step',a
   assert.equal(saves.currentWorld().terrainVersion,6);
   const saved=JSON.parse(local.get(saves.slotKey(saves.index.activeId)));
   assert.equal(saved.world.terrainVersion,6);
-  assert.equal(saved.version,16);
+  assert.equal(saved.version,17);
 });
 
 test('failed migration write keeps the old world and its stored bytes untouched',()=>{
@@ -1010,7 +1011,7 @@ test('finite lake volumes, dry managed columns and displaced water survive valid
  const basins={columns:[[1,2,[[.5,1.23456789,'lake'],[8.5,0,'river']]],[2,2,[[.5,0,'lake']]]],displaced:[[1,2,.0000001]]};
  snapshot.world.hydrology={version:2,cells:[],basins};
  assert.deepEqual(saves.decode(JSON.parse(JSON.stringify(snapshot))).world.hydrology.basins,basins);
- assert.equal(snapshot.version,16);
+ assert.equal(snapshot.version,17);
  for(const invalid of [
   {columns:[[1,2,[[.5,-1,'lake']]]],displaced:[]},
   {columns:[[1,2,[[.5,1,'lake'],[.5,2,'lake']]]],displaced:[]},
@@ -1021,4 +1022,15 @@ test('finite lake volumes, dry managed columns and displaced water survive valid
   snapshot.world.hydrology.basins=invalid;assert.throws(()=>saves.decode(snapshot),/invalidFile/);
  }
  const old=saves.createSnapshot();old.version=15;assert.equal(saves.decode(old).world.type,old.world.type,'previous files remain readable');
+});
+
+
+test('extended finite-water records preserve parked areas and focus in format 17',()=>{
+ const {saves}=fixture(),snapshot=saves.createSnapshot();
+ const basins={focus:[4200,0],columns:Array.from({length:4200},(_,x)=>[x,0,[[.5,.25,'lake']]]),displaced:[]};
+ snapshot.world.hydrology={version:2,cells:[],basins};
+ assert.deepEqual(saves.decode(JSON.parse(JSON.stringify(snapshot))).world.hydrology.basins,basins);
+ snapshot.world.hydrology.basins.focus=[Infinity,0];assert.throws(()=>saves.decode(snapshot),/invalidFile/);
+ snapshot.world.hydrology.basins={columns:[],displaced:[]};snapshot.version=16;
+ assert.ok(saves.decode(snapshot),'11.6.0/11.6.1 finite saves remain readable');
 });
