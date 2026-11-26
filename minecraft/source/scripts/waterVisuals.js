@@ -1,6 +1,7 @@
 // v11.1: rendering only. No new blocks, physics, save fields or world generation.
 // One shared clock drives every visible liquid surface, irrespective of chunk count.
 const waterClock={value:0};
+const waterAnimationTime={value:0};
 const waterWaves={value:1};
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,Number.isFinite(v)?v:a));
 
@@ -31,22 +32,32 @@ export function waterOpacity(kind,type){
 }
 
 /** Shader-local highlights: no extra geometry, render passes or texture fetches. */
-export function applyWaterMotion(material,kind,withFalls=false){
+export function applyWaterMotion(material,kind,withFalls=false,withTransition=false){
   // Ice has a fixed surface. Its lighting and depth tint still respond to day/night.
   if(kind==='frozen')return material;
   const lava=kind==='lava';
   material.onBeforeCompile=shader=>{
     shader.uniforms.waterClock=waterClock;
     shader.uniforms.waterWaves=waterWaves;
-    shader.vertexShader='varying vec3 waterWorldPosition;\n'+
+    if(withTransition)shader.uniforms.waterAnimationTime=waterAnimationTime;
+    shader.vertexShader=(withTransition?'attribute vec3 waterHeightMotion; attribute vec4 waterAlphaMotion; uniform float waterAnimationTime; varying float waterOpacityMix;\n':'')+'varying vec3 waterWorldPosition;\n'+
       (withFalls?'attribute float waterFall; varying float waterfallMix;\n':'')+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
-      '#include <begin_vertex>\nwaterWorldPosition=(modelMatrix*vec4(position,1.0)).xyz;'+
+      '#include <begin_vertex>\n'+
+      (withTransition?
+        'float heightProgress=waterHeightMotion.z>0.0?clamp((waterAnimationTime-waterHeightMotion.y)/waterHeightMotion.z,0.0,1.0):1.0;\n'+
+        'heightProgress=heightProgress*heightProgress*(3.0-2.0*heightProgress);\n'+
+        'transformed.y=mix(waterHeightMotion.x,position.y,heightProgress);\n'+
+        'float alphaProgress=waterAlphaMotion.w>0.0?clamp((waterAnimationTime-waterAlphaMotion.z)/waterAlphaMotion.w,0.0,1.0):1.0;\n'+
+        'alphaProgress=alphaProgress*alphaProgress*(3.0-2.0*alphaProgress);\n'+
+        'waterOpacityMix=mix(waterAlphaMotion.x,waterAlphaMotion.y,alphaProgress);\n':'')+
+      'waterWorldPosition=(modelMatrix*vec4(transformed,1.0)).xyz;'+
       (withFalls?'\nwaterfallMix=waterFall;':''));
-    shader.fragmentShader='varying vec3 waterWorldPosition; uniform float waterClock; uniform float waterWaves;\n'+
+    shader.fragmentShader=(withTransition?'varying float waterOpacityMix;\n':'')+'varying vec3 waterWorldPosition; uniform float waterClock; uniform float waterWaves;\n'+
       (withFalls?'varying float waterfallMix;\n':'')+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
       '#include <color_fragment>\n'+
+      (withTransition?'diffuseColor.a*=waterOpacityMix; if(diffuseColor.a<0.001)discard;\n':'')+
       (withFalls?
         'if(waterfallMix>0.01){\n'+
         ' float streak=sin(waterWorldPosition.y*5.2-waterClock*4.5+waterWorldPosition.x*.8+waterWorldPosition.z*.8);\n'+
@@ -66,12 +77,13 @@ export function applyWaterMotion(material,kind,withFalls=false){
        ' diffuseColor.a*=1.0-waterWaves*.095*(1.0-fresnel);\n')+
       '}');
   };
-  material.customProgramCacheKey=()=>`minecraft-water-v112-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}`;
+  material.customProgramCacheKey=()=>`minecraft-water-v112-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}-${withTransition?'transition':'fixed'}`;
   return material;
 }
 
 /** Called once per animation frame. Low quality skips the expensive ripples. */
 export function updateWaterAnimation(timestampMs,quality='high',hidden=false){
   waterWaves.value=hidden||quality==='low'?0:quality==='medium'?.55:1;
+  if(!hidden)waterAnimationTime.value=(Number(timestampMs)||0)*.001;
   if(!hidden)waterClock.value=((Number(timestampMs)||0)*.001)%8192;
 }

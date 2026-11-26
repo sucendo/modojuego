@@ -1,4 +1,4 @@
-# Minecraft.js 11.5.3
+# Minecraft.js 11.5.4
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -14,3 +14,5 @@ Código editable en `source/`: `npm ci`, `npm test`, `npm run build`; copiar `so
 Los controles táctiles usan la misma física y formato de guardado que el escritorio.
 
 Pantalla completa: al pulsar Jugar desde un dispositivo táctil se solicita la pantalla completa. El botón ⛶ permite entrar o salir; también está disponible desde el menú. Si el navegador no lo permite, el juego continúa en la vista normal.
+
+Agua 11.5.4: superficies conectadas con alturas y normales compartidas; transiciones de nivel y aparición/desaparición graduales. La representación no modifica los volúmenes ni el formato de las partidas.

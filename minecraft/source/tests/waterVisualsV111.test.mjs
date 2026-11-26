@@ -50,3 +50,15 @@ test('one shared animation uniform per frame and no per-chunk updates',()=>{
   assert.equal(b.uniforms.waterWaves.value,0);
   assert.equal(a.uniforms.waterClock.value,2.6);
 });
+
+test('water height and shoreline opacity interpolate on the GPU with one unwrapped clock',()=>{
+  const a=applyWaterMotion({},'river',true,true),b=applyWaterMotion({},'lake',true,true);
+  const source=()=>({uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <color_fragment>'});
+  const sa=source(),sb=source();a.onBeforeCompile(sa);b.onBeforeCompile(sb);
+  assert.equal(sa.uniforms.waterAnimationTime,sb.uniforms.waterAnimationTime);
+  assert.match(sa.vertexShader,/transformed.y=mix/);
+  assert.match(sa.fragmentShader,/diffuseColor.a\*=waterOpacityMix/);
+  assert.match(sa.vertexShader,/modelMatrix\*vec4\(transformed/);
+  updateWaterAnimation(9000000,'low',false);
+  assert.equal(sa.uniforms.waterAnimationTime.value,9000,'transition time never wraps at the wave animation period');
+});

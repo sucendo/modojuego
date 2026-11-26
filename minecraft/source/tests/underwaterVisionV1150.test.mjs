@@ -57,3 +57,26 @@ test('v11.5.1 adjacent underground cells share one top mesh with no internal fac
   assert.equal(flatTop,2,'one rectangle represented by two triangles');
   assert.equal(internal,0,'no transparent dividing wall between liquid cells');
 });
+
+test('uneven underground flow joins continuously while stacked cavities remain separate',()=>{
+  const scene=new THREE.Scene(),chunk={loaded:true,position:{x:0,z:0}};
+  const world={type:'classic',getChunk:()=>chunk,getBlockId:()=>0};
+  const model=new WaterEnvironment(world);world.hydrology={environment:model};
+  for(const x of [0,1]){
+    const cavities=[{x,z:0,bottom:.5,roof:4.5},{x,z:0,bottom:6.5,roof:9.5}];
+    model.columns.set(`${x},0`,{x,z:0,chunk,cavities});
+    model.water.set(`${x},0,0.5`,x?1.3:1.1);model.water.set(`${x},0,6.5`,x?1.3:1.1);
+  }
+  const visuals=new EnvironmentVisuals(scene,world);visuals.update(1);
+  const g=visuals.meshes[0].geometry,p=g.attributes.position;
+  const heights=[];
+  for(let i=0;i<p.count;i++)if(p.getX(i)===.5&&p.getY(i)>.6)heights.push(p.getY(i));
+  assert.ok(heights.some(y=>Math.abs(y-1.7)<1e-5));
+  assert.ok(heights.some(y=>Math.abs(y-7.7)<1e-5));
+  assert.ok(heights.every(y=>y<=4.5||y>=6.5));
+  assert.equal(g.attributes.waterHeightMotion.count,p.count);
+  const physical=[...model.water];
+  visuals.rebuild(model);assert.deepEqual([...model.water],physical);
+  model.clear();visuals.update(1);
+  assert.equal(visuals.transitions.records.size,0);
+});

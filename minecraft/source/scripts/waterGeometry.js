@@ -1,5 +1,5 @@
-// Water is voxel-shaped: every column is a full 1x1 horizontal tile.
-// Never interpolate corner heights: that makes translucent twisted triangles.
+// Legacy scalar helpers for physical columns and refresh thresholds.
+// Connected surface geometry and rendering transitions live in continuousWater.js.
 export const SURFACE_SMOOTHING_DROP = 0;
 export const WATER_VISUAL_EPSILON = .035;
 

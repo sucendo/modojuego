@@ -1,3 +1,4 @@
+import { continuousCorner, connectedWater, WaterTransitions, waterTime } from './continuousWater.js';
 import * as THREE from 'three';
 import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 import { RNG } from './rng.js';
@@ -533,15 +534,37 @@ export class WorldChunk extends THREE.Group {
           flowX:hydro.flowX??0,flowZ:hydro.flowZ??0};
     };
     const groups=new Map();
+    const now=waterTime();
+    const timeline=this.waterTransitions??(this.waterTransitions=new WaterTransitions());
+    const owner=this;
+    timeline.begin(owner);
+    const previous=this.presentedWaterCells||[];
+    const drySince=this.dryingWaterSince??(this.dryingWaterSince=new Map());
+    const renderCells=this.waterColumns.map((c,i)=>{
+      if(c){drySince.delete(i);return c;}
+      const old=previous[i];
+      if(!old||old.kind==='frozen'||old.kind==='lava')return null;
+      if(!drySince.has(i))drySince.set(i,now);
+      if(now-drySince.get(i)>.32){drySince.delete(i);return null;}
+      const bed=this.hydrologyGround?.[i];
+      if(!Number.isFinite(bed)||bed>old.bottom+.01)return null;
+      return {kind:old.kind,bed,depth:.026,y:bed+.026-.25,dynamic:true,drying:true};
+    });
+    this.presentedWaterCells=this.waterColumns.map((c,i)=>{
+      const v=voxelWaterColumn(c,this.hydrologyGround?.[i]);return v?{...v}:renderCells[i]?.drying?previous[i]:null;
+    });
+    const newGroup=()=>({verts:[],indices:[],colors:[],falls:[],motion:[]});
+
     const blockAt=(x,y,z)=>x>=0&&x<size&&z>=0&&z<size
       ?this.getBlockId(x,y,z):this.liquidBlockLookup?.(this.position.x+x,y,this.position.z+z)??0;
     const debugSources=typeof window!=='undefined'&&
       /(?:\?|&)waterDebug(?:=1|(?=&|$))/.test(window.location?.search||'');
     const voxelAt=(x,z)=>{
       const inside=x>=0&&x<size&&z>=0&&z<size;
-      const cell=inside?this.waterColumns[z*size+x]:boundary(x,z);
+      const cell=inside?renderCells[z*size+x]:boundary(x,z);
       const bed=inside?this.hydrologyGround?.[z*size+x]:cell?.bed;
-      return voxelWaterColumn(cell,bed);
+      const voxel=voxelWaterColumn(cell,bed);
+      return voxel?{...voxel,kind:cell.kind,dynamic:!!cell.dynamic,drying:!!cell.drying,open:exposedLiquidTop(voxel.top,y=>blockAt(x,y,z))}:null;
     };
     // Equal-height and equal-kind cells share both a tint and a single mesh
     // rectangle. Per-tile depth colors and transparent triangle edges used to
@@ -550,17 +573,37 @@ export class WorldChunk extends THREE.Group {
       ?[.025,.10,.42]:waterDepthColor(kind,this.type,1);
     const surfaces=new Array(size*size).fill(null),voxels=new Array(size*size).fill(null);
     for(let z=0;z<size;z++)for(let x=0;x<size;x++){
-      const i=z*size+x,cell=this.waterColumns[i],voxel=voxelAt(x,z);
+      const i=z*size+x,cell=renderCells[i],voxel=voxelAt(x,z);
       voxels[i]=voxel;
       if(voxel){
-        if(!groups.has(cell.kind))groups.set(cell.kind,{verts:[],indices:[],colors:[],falls:[]});
+        if(!groups.has(cell.kind))groups.set(cell.kind,newGroup());
         if(exposedLiquidTop(voxel.top,y=>blockAt(x,y,z)))
           surfaces[i]={kind:cell.kind,top:voxel.top,sourceDebug:debugSources&&!!cell.source};
       }
     }
-    for(const rect of mergeCoplanarWaterSurfaces(size,surfaces)){
+    const cornerCache=new Map();
+    const cornersAt=(x,z)=>{
+      const id=`${x},${z}`;if(cornerCache.has(id))return cornerCache.get(id);
+      const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sz])=>
+        continuousCorner(this.position.x+x,this.position.z+z,sx,sz,
+          (wx,wz)=>voxelAt(wx-this.position.x,wz-this.position.z)));
+      cornerCache.set(id,corners);return corners;
+    };
+    const motionFor=(x,z,corner,y)=>{
+      const i=z*size+x,cell=renderCells[i],voxel=voxels[i];
+      const initial=previous[i]?y:voxel.bottom+.001;
+      return {key:'surface:'+corner.key,initial,normal:corner.normal,fixed:!Number.isFinite(corner.top)||Math.abs(y-corner.top)>1e-6,alphaKey:`cell:${this.position.x+x},${this.position.z+z}`,
+        alpha:cell.drying?0:1,initialAlpha:previous[i]?1:0};
+    };
+    const flat=surfaces.map((cell,i)=>{
+      if(!cell)return null;
+      const x=i%size,z=Math.floor(i/size);
+      const cs=cornersAt(x,z);
+      return !renderCells[i].dynamic&&cs.every(c=>c&&Math.abs(c.top-cell.top)<1e-7)?cell:null;
+    });
+    for(const rect of mergeCoplanarWaterSurfaces(size,flat)){
       const {x,z,width,depth,top,kind,sourceDebug}=rect;
-      if(!groups.has(kind))groups.set(kind,{verts:[],indices:[],colors:[],falls:[]});
+      if(!groups.has(kind))groups.set(kind,newGroup());
       const group=groups.get(kind),base=group.verts.length/3;
       group.verts.push(
         x-.5,top,z-.5,
@@ -571,14 +614,29 @@ export class WorldChunk extends THREE.Group {
       const color=surfaceColor(kind,sourceDebug);
       group.colors.push(...color,...color,...color,...color);
       group.falls.push(0,0,0,0);
+      const locations=[[x,z,0],[x+width-1,z,1],[x+width-1,z+depth-1,2],[x,z+depth-1,3]];
+      for(const [cx,cz,k] of locations)group.motion.push(motionFor(cx,cz,cornersAt(cx,cz)[k],top));
     }
-    if(!groups.size)return;
+    // Varying levels keep a grid, but adjoining cells use identical corner
+    // heights instead of drawing overlapping stair-step walls.
+    for(let z=0;z<size;z++)for(let x=0;x<size;x++){
+      const i=z*size+x,cell=surfaces[i];if(!cell||flat[i])continue;
+      const group=groups.get(cell.kind),base=group.verts.length/3,cs=cornersAt(x,z);
+      for(let k=0;k<4;k++){
+        const sx=k===0||k===3?-.5:.5,sz=k<2?-.5:.5;
+        group.verts.push(x+sx,cs[k].top,z+sz);
+        group.colors.push(...surfaceColor(cell.kind,cell.sourceDebug));group.falls.push(0);
+        group.motion.push(motionFor(x,z,cs[k],cs[k].top));
+      }
+      group.indices.push(base,base+2,base+1,base,base+3,base+2);
+    }
+    if(!groups.size){timeline.end();return;}
     if(advancedWater){
       // The higher liquid owns the exposed edge. Its face reaches a lower
       // river only on the actual downstream side; lateral differences stop
       // at the upper voxel rather than making tall transparent curtains.
       for(let z=0;z<size;z++)for(let x=0;x<size;x++){
-        const i=z*size+x,cell=this.waterColumns[i];
+        const i=z*size+x,cell=renderCells[i];
         const voxel=voxels[i];
         if(!voxel)continue;
         const group=groups.get(cell.kind);
@@ -587,28 +645,44 @@ export class WorldChunk extends THREE.Group {
           const nx=x+dx,nz=z+dz;
           const inside=nx>=0&&nx<size&&nz>=0&&nz<size;
           const neighbor=inside?voxels[nz*size+nx]:voxelAt(nx,nz);
-          const neighborCell=inside?this.waterColumns[nz*size+nx]:boundary(nx,nz);
+          const neighborCell=inside?renderCells[nz*size+nx]:boundary(nx,nz);
           const dry=nx>=0&&nx<size&&nz>=0&&nz<size
             ?this.hydrologyGround?.[nz*size+nx]:boundary(nx,nz)?.bed;
           const cascades=freshCascades&&
             isDownstreamWaterfallEdge(cell,neighborCell,dx,dz);
           const cavities=this.cavityLiquidLookup?.(this.position.x+nx,this.position.z+nz)??[];
           const mouth=cavities.some(c=>c.bottom<voxel.top&&c.roof>voxel.bottom);
+          if(connectedWater(voxel,neighbor))continue;
           const edgeFace=exposedVoxelSide(voxel,neighbor,mouth?undefined:dry,cascades);
           if(!edgeFace)continue;
           const {waterfall}=edgeFace;
+          const cs=cornersAt(x,z),edgeCorners=dx>0?[cs[1],cs[2]]:dx<0?[cs[0],cs[3]]:
+            dz>0?[cs[3],cs[2]]:[cs[0],cs[1]];
           for(const {top,bottom} of exposedLiquidIntervals(edgeFace.bottom,edgeFace.top,
             [...(neighbor?[neighbor]:[]),...cavities],y=>blockAt(nx,y,nz))){
           const base=group.verts.length/3;
+          const topA=Math.min(top,edgeCorners[0].top),topB=Math.min(top,edgeCorners[1].top);
+          const joinsLower=waterfall&&cascades&&neighbor&&Math.abs(bottom-neighbor.top)<1e-6;
+          const lower=joinsLower?cornersAt(nx,nz):null;
+          const lowerCorners=!lower?null:dx>0?[lower[0],lower[3]]:dx<0?[lower[1],lower[2]]:
+            dz>0?[lower[0],lower[1]]:[lower[3],lower[2]];
+          const bottomA=lowerCorners?.[0]?.top??bottom,bottomB=lowerCorners?.[1]?.top??bottom;
+          if(topA<=bottom&&topB<=bottom)continue;
           if(dx){
             const edge=x+dx*.5;
-            group.verts.push(edge,top,z-.5,edge,top,z+.5,
-              edge,bottom,z+.5,edge,bottom,z-.5);
+            group.verts.push(edge,Math.max(bottom,topA),z-.5,edge,Math.max(bottom,topB),z+.5,
+              edge,bottomB,z+.5,edge,bottomA,z-.5);
           }else{
             const edge=z+dz*.5;
-            group.verts.push(x-.5,top,edge,x+.5,top,edge,
-              x+.5,bottom,edge,x-.5,bottom,edge);
+            group.verts.push(x-.5,Math.max(bottom,topA),edge,x+.5,Math.max(bottom,topB),edge,
+              x+.5,bottomB,edge,x-.5,bottomA,edge);
           }
+          group.motion.push({...motionFor(x,z,edgeCorners[0],Math.max(bottom,topA)),normal:null},
+            {...motionFor(x,z,edgeCorners[1],Math.max(bottom,topB)),normal:null},
+            lowerCorners?.[1]?{...motionFor(x,z,lowerCorners[1],bottomB),normal:null}:
+              {...motionFor(x,z,{key:`fixed:${x},${z},${dx},${dz},1,${bottom}`},bottom),fixed:true},
+            lowerCorners?.[0]?{...motionFor(x,z,lowerCorners[0],bottomA),normal:null}:
+              {...motionFor(x,z,{key:`fixed:${x},${z},${dx},${dz},0,${bottom}`},bottom),fixed:true});
           // Flip the winding for the two negative-facing normal directions.
           const front=dx>0||dz<0;
           group.indices.push(...(front
@@ -628,23 +702,47 @@ export class WorldChunk extends THREE.Group {
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(group.verts,3));
       geometry.setAttribute('color',new THREE.Float32BufferAttribute(group.colors,3));
+      const heightMotion=[],alphaMotion=[];
+      for(let v=0;v<group.motion.length;v++){
+        const m=group.motion[v],y=group.verts[v*3+1];
+        const r=m.fixed?{from:y,start:now,duration:0}:timeline.target(m.key,y,now,m.initial);
+        const a=timeline.target(m.alphaKey,m.alpha,now,m.initialAlpha);
+        heightMotion.push(r.from,r.start,r.duration);
+        alphaMotion.push(a.from,a.to,a.start,a.duration);
+      }
+      geometry.setAttribute('waterHeightMotion',new THREE.Float32BufferAttribute(heightMotion,3));
+      geometry.setAttribute('waterAlphaMotion',new THREE.Float32BufferAttribute(alphaMotion,4));
       if(this.terrainVersion===TERRAIN_V112||this.terrainVersion===TERRAIN_HYBRID_V112)
         geometry.setAttribute('waterFall',new THREE.Float32BufferAttribute(group.falls,1));
       geometry.setIndex(group.indices);geometry.computeVertexNormals();
+      const normals=geometry.getAttribute?.('normal');
+      if(normals)for(let v=0;v<group.motion.length;v++){
+        const n=group.motion[v].normal;if(n)normals.setXYZ(v,...n);
+      }
       const surfaceMat=applyWaterMotion(new THREE.MeshLambertMaterial({
         color:0xffffff,vertexColors:true,transparent:true,opacity:waterOpacity(kind,this.type),
         emissive:kind==='lava'?0x9c2200:0x000000,emissiveIntensity:kind==='lava'?.55:0,
         side:THREE.DoubleSide,depthWrite:false
-      }),kind,this.terrainVersion===TERRAIN_V112||this.terrainVersion===TERRAIN_HYBRID_V112);
+      }),kind,this.terrainVersion===TERRAIN_V112||this.terrainVersion===TERRAIN_HYBRID_V112,true);
       // Three.js otherwise draws transparent DoubleSide back faces in an
       // extra pass, amplifying dark translucent overlaps on waterfalls.
       surfaceMat.forceSinglePass=true;
       const surface=new THREE.Mesh(geometry,surfaceMat);
+      // Include both endpoints in culling bounds throughout a transition.
+      if(geometry.computeBoundingBox){
+      geometry.computeBoundingBox();
+      for(const m of heightMotion.filter((_,i)=>i%3===0)){
+        geometry.boundingBox.min.y=Math.min(geometry.boundingBox.min.y,m);
+        geometry.boundingBox.max.y=Math.max(geometry.boundingBox.max.y,m);
+      }
+      geometry.boundingSphere=geometry.boundingBox.getBoundingSphere(new THREE.Sphere());
+      }
       surface.layers.set(1);surface.userData.waterSurface=true;
       surface.userData.originalOpacity=surfaceMat.opacity;
       surfaceMat.opacity*=this.fade;
       this.add(surface);
     }
+    timeline.end();
   }
 
   /** Rebuild only the batched water meshes after a hydrology tick. Solid block
@@ -974,6 +1072,9 @@ export class WorldChunk extends THREE.Group {
   }
 
   disposeInstances() {
+    this.waterTransitions?.release(this);
+    this.presentedWaterCells=null;
+    this.dryingWaterSince=null;
     this.traverse((obj) => {
       if (obj.isInstancedMesh) obj.dispose();
       else { if (obj.geometry?.dispose) obj.geometry.dispose(); if (obj.material?.dispose) obj.material.dispose(); }

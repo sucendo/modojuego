@@ -1,3 +1,4 @@
+import { WaterTransitions } from '../scripts/continuousWater.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -112,7 +113,7 @@ function loadWorldWithStubs(){
     disposeInstances(){this.disposed=true;}
   }
   return vm.runInNewContext(fakeSource,{
-    THREE:{Group},WorldChunk:FakeChunk,DataStore:class {clear(){}},
+    WaterTransitions,THREE:{Group},WorldChunk:FakeChunk,DataStore:class {clear(){}},
     normalizeWorldType:x=>x,LEGACY_HEIGHT:32,V10_HEIGHT:80,
     TERRAIN_V10:2,TERRAIN_HYBRID:3,TERRAIN_HYBRID_V112:6,
     generatorForChunk:()=>1,protectionNearby:()=>null,
