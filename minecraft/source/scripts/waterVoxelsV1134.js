@@ -72,6 +72,9 @@ export function isDownstreamWaterfallEdge(cell,neighbor,dx,dz){
     !['river','lake','oasis'].includes(neighbor.kind))return false;
   const fx=Number(cell.flowX)||0,fz=Number(cell.flowZ)||0;
   if(!Number.isFinite(fx)||!Number.isFinite(fz))return false;
+  // Declared natural waterfall reaches can descend on both grid axes.
+  // Preserve the legacy dominant-axis guard for unmarked river banks.
+  if(cell.waterfall)return dx!==0?fx*dx>1e-7:fz*dz>1e-7;
   if(dx!==0)return fx*dx>0&&Math.abs(fx)>=Math.abs(fz);
   return fz*dz>0&&Math.abs(fz)>=Math.abs(fx);
 }

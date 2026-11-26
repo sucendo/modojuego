@@ -650,3 +650,44 @@ test('changing current updates velocity attributes without replacing aqueduct ge
  assert.ok(geometry.waterFlow.array.filter((_,i)=>i%2===0).every(v=>v<0));
  assert.equal(geometry.waterFlow.needsUpdate,true);
 });
+
+test('an untouched natural waterfall already reaches its lower river as a shaped sheet',()=>{
+ const c=syntheticSheet();c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;
+ c.waterColumns[5]={kind:'river',y:5.25,depth:1,flowX:1,flowZ:0,stable:true};c.hydrologyGround[5]=4.5;
+ c.waterColumns[6]={kind:'river',y:1.25,depth:1,flowX:1,flowZ:0,stable:true};
+ const before=JSON.stringify(c.waterColumns);c.generateWater();
+ const mesh=c.children.find(m=>m.geometry?.waterFall),f=mesh.geometry.waterFall.array,p=mesh.geometry.position.array;
+ let found=false;
+ for(let i=0;i<f.length;i+=4)if(f[i]===1&&p[i*3+1]-p[(i+2)*3+1]>3){
+  found=true;assert.ok(Math.abs(p[(i+2)*3+2]-p[(i+3)*3+2])<1,'an isolated natural curtain is not a full-width prism');
+ }
+ assert.ok(found,'the natural waterfall reaches the lower surface before any edit');
+ assert.equal(JSON.stringify(c.waterColumns),before,'rendering alone does not activate or change the natural water');
+});
+
+test('a wide untouched waterfall joins interior curtain seams instead of narrowing every tile',()=>{
+ const c=syntheticSheet();c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;
+ for(const z of [1,2]){
+  c.waterColumns[z*4+1]={kind:'river',y:5.25,depth:1,flowX:1,flowZ:0,stable:true,waterfall:true};c.hydrologyGround[z*4+1]=4.5;
+  c.waterColumns[z*4+2]={kind:'river',y:1.25,depth:1,flowX:1,flowZ:0,stable:true};
+ }
+ c.generateWater();const mesh=c.children.find(m=>m.geometry?.waterFall),p=mesh.geometry.position.array,f=mesh.geometry.waterFall.array;
+ const bottomEdges=[];
+ for(let i=0;i<f.length;i+=4)if(f[i]===1&&p[i*3+1]-p[(i+2)*3+1]>3)bottomEdges.push([p[(i+2)*3+2],p[(i+3)*3+2]].sort((a,b)=>a-b));
+ assert.equal(bottomEdges.length,2);bottomEdges.sort((a,b)=>a[0]-b[0]);
+ assert.equal(bottomEdges[0][1],1.5);assert.equal(bottomEdges[1][0],1.5,'neighbouring curtains share the lower seam without a gap');
+ assert.ok(bottomEdges[0][0]>.5&&bottomEdges[1][1]<2.5,'only the two outer edges taper');
+});
+
+test('natural and finite isolated cascades use the same curtain shape at equivalent discharge',()=>{
+ const render=finite=>{
+  const c=syntheticSheet();c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;
+  c.waterColumns[5]={kind:'river',bed:4.5,y:5.25,depth:1,flowX:1,flowZ:0,stable:!finite,
+   ...(finite?{finite:true,dynamic:true,fallRate:.3,fallEdges:[.3,0,0,0]}:{})};c.hydrologyGround[5]=4.5;
+  c.waterColumns[6]={kind:'river',bed:.5,y:1.25,depth:1,flowX:1,flowZ:0,...(finite?{finite:true,dynamic:true}:{})};
+  c.generateWater();const mesh=c.children.find(m=>m.geometry?.waterFall),p=mesh.geometry.position.array,f=mesh.geometry.waterFall.array;
+  const curtain=[];for(let i=0;i<f.length;i+=4)if(f[i]===1&&p[i*3+1]-p[(i+2)*3+1]>3)curtain.push(...p.slice(i*3,i*3+12));
+  return curtain;
+ };
+ assert.deepEqual(render(false),render(true),'no player edit is needed to get the shaped falling sheet');
+});

@@ -426,7 +426,7 @@ h1 span { color: #a2d57f; margin-left: 12px; font-size: .55em; }
 .touch-top{position:absolute;right:max(12px,env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));display:flex;gap:8px}
 .touch-look-hint{position:absolute;right:18px;bottom:250px;color:#fffd;font:11px system-ui;text-shadow:0 1px 3px #000}
 .touch-playing #toolbar.hotbar,.touch-playing #toolbar.hotbar .stack-slot{pointer-events:auto;touch-action:manipulation}
-.touch-playing #toolbar.hotbar{grid-template-columns:repeat(9,minmax(0,44px));max-width:calc(100vw - 12px);gap:2px;padding:3px}
+.touch-playing #toolbar.hotbar{grid-template-columns:repeat(10,minmax(0,1fr));width:min(430px,calc(100vw - 16px));max-width:calc(100vw - 16px);gap:2px;padding:3px;border-width:2px}
 .touch-playing #toolbar-container{bottom:calc(8px + env(safe-area-inset-bottom))}
 .touch-playing #menu-hint,.touch-playing #info{display:none}
 .touch-playing #mini-map-hud{width:90px;top:74px;right:10px;opacity:.75}
@@ -446,3 +446,27 @@ h1 span { color: #a2d57f; margin-left: 12px; font-size: .55em; }
 :fullscreen {background:#142b31}
 .touch-top button[data-touch="fullscreen"]{min-width:44px;font-size:23px;line-height:1;padding:6px}
 #fullscreen-game[hidden]{display:none}
+
+/* Landscape phone: keep ten slots on one row and clear the middle view. */
+.touch-playing .selected-extra{display:none}
+@media(orientation:landscape) and (max-height:600px){
+ .touch-playing #toolbar-container{bottom:calc(6px + env(safe-area-inset-bottom))}
+ .touch-playing #toolbar.hotbar .stack-slot{height:auto;min-height:0;padding:2px}
+ .touch-playing #playtime-hud{left:calc(84px + env(safe-area-inset-left));top:6px;transform:none;font-size:10px;gap:5px;padding:4px 6px;max-width:calc(100vw - 320px);flex-wrap:nowrap;white-space:nowrap}
+ .touch-playing #playtime-hud b{font-size:11px}
+ .touch-playing #playtime-hud .timer-world,.touch-playing #playtime-hud .timer-session{display:none}
+ .touch-playing #world-clock-hud{left:calc(84px + env(safe-area-inset-left));top:35px;transform:none;font-size:10px;padding:3px 6px;gap:5px}
+ .touch-playing #world-clock-hud b{font-size:11px}
+ .touch-playing #weather-hud{display:block;left:calc(84px + env(safe-area-inset-left));top:62px;transform:none;font-size:10px;padding:3px 6px}
+ #touch-controls .touch-top{top:calc(7px + env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));gap:5px}
+ #touch-controls .touch-top button{min-width:44px;min-height:40px;font-size:11px;padding:6px}
+ #touch-controls .touch-top button[data-touch="fullscreen"]{font-size:20px}
+ #touch-stick{width:96px;height:96px;left:max(14px,env(safe-area-inset-left));bottom:calc(64px + env(safe-area-inset-bottom))}
+ #touch-stick span{width:42px;height:42px}
+ .touch-actions{grid-template-columns:repeat(2,minmax(0,84px));gap:6px;right:max(12px,env(safe-area-inset-right));bottom:calc(64px + env(safe-area-inset-bottom))}
+ #touch-controls .touch-actions button{min-width:0;min-height:44px;font-size:11px;padding:6px;line-height:1.15}
+ .touch-look-hint,.touch-playing #mini-map-hud{display:none}
+}
+@media(orientation:landscape) and (max-height:600px) and (min-width:820px){
+ #touch-stick,.touch-actions{bottom:calc(18px + env(safe-area-inset-bottom))}
+}
