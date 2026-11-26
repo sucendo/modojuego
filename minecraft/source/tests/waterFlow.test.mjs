@@ -30,9 +30,17 @@ test('flow streaks use the shared unwrapped clock and waterfalls animate downwar
  const shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <color_fragment>'};
  const flowing=applyWaterMotion({},'river',true,true,true);flowing.onBeforeCompile(shader);
  assert.match(shader.vertexShader,/attribute vec2 waterFlow/);
- assert.match(shader.fragmentShader,/dot\(waterWorldPosition.xz,currentDirection\)-waterAnimationTime\*currentSpeed/);
+ assert.match(shader.fragmentShader,/dot\(waterWorldPosition.xz,currentDirection\)-waterAnimationTime\*visualSpeed/);
  assert.match(shader.fragmentShader,/waterWorldPosition.y\*5.2\+waterClock\*4.5/);
- assert.match(shader.fragmentShader,/currentSpeed>0.005&&waterSurfaceMix>0.6/);
+ assert.match(shader.fragmentShader,/currentSpeed>0.0005&&waterSurfaceMix>0.6/);
  updateWaterAnimation(8300000,'low',false);assert.equal(shader.uniforms.waterAnimationTime.value,8300);
  assert.notEqual(flowing.customProgramCacheKey(),applyWaterMotion({},'river',true,true).customProgramCacheKey());
+});
+
+
+test('slow current changes refresh their visual data and stopping clears them',()=>{
+ const c={kind:'lake',finite:true,volume:1,flowX:.006,flowZ:0,renderedFlow:[0,0]};
+ assert.equal(waterFlowChanged(c),true,'a slow but visible current must not keep a stale zero vector');
+ assert.equal(waterFlowChanged({...c,flowX:.0061,renderedFlow:[.006,0]}),false,'tiny changes do not churn geometry');
+ assert.equal(waterFlowChanged({...c,flowX:0,renderedFlow:[.002,0]}),true,'a stopped current clears its previous animation');
 });

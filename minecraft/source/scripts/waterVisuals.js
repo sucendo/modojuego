@@ -70,14 +70,21 @@ export function applyWaterMotion(material,kind,withFalls=false,withTransition=fa
         '}\n':'')+
       (withFlow?
         'float currentSpeed=length(waterCurrent);\n'+
-        'if(currentSpeed>0.005&&waterSurfaceMix>0.6){\n'+
+        'if(currentSpeed>0.0005&&waterSurfaceMix>0.6){\n'+
         ' vec2 currentDirection=waterCurrent/max(currentSpeed,0.0001);\n'+
-        ' float along=dot(waterWorldPosition.xz,currentDirection)-waterAnimationTime*currentSpeed;\n'+
+        // Visually amplify slow motion; direction still comes from physics.
+        ' float visualSpeed=max(currentSpeed,0.14+0.65*sqrt(currentSpeed));\n'+
+        ' float along=dot(waterWorldPosition.xz,currentDirection)-waterAnimationTime*visualSpeed;\n'+
         ' float across=dot(waterWorldPosition.xz,vec2(-currentDirection.y,currentDirection.x));\n'+
-        ' float lane=pow(max(0.0,sin(across*8.0)),8.0);\n'+
-        ' float fleck=pow(max(0.0,sin(along*5.5)),4.0);\n'+
-        ' float trace=lane*fleck*smoothstep(0.005,0.12,currentSpeed)*smoothstep(0.6,0.95,waterSurfaceMix);\n'+
-        ' diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.83,0.95,0.97),trace*(0.27+0.13*waterWaves));\n'+
+        ' float bend=sin(along*1.35+across*0.85);\n'+
+        ' float band=sin(along*2.8+sin(across*2.1)*2.0+bend*0.8);\n'+
+        ' float lane=smoothstep(-0.25,0.7,sin(across*7.0+bend*1.5));\n'+
+        ' float crest=pow(max(0.0,band),2.0);\n'+
+        ' float motion=smoothstep(0.0005,0.008,currentSpeed)*smoothstep(0.6,0.95,waterSurfaceMix);\n'+
+        ' float trace=lane*crest*motion;\n'+
+        ' diffuseColor.rgb*=1.0-0.16*lane*max(0.0,-band)*motion;\n'+
+        ' diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.88,0.98,1.0),trace*0.78);\n'+
+        ' diffuseColor.a=mix(diffuseColor.a,max(diffuseColor.a,0.76),trace*0.8);\n'+
         '}\n':'')+
       'if(waterWaves>0.001){\n'+
       ` float w1=sin(waterWorldPosition.x*.57+waterWorldPosition.z*.31+waterClock*${lava?'.42':'.74'});\n`+
@@ -91,7 +98,7 @@ export function applyWaterMotion(material,kind,withFalls=false,withTransition=fa
        ' diffuseColor.a*=1.0-waterWaves*.095*(1.0-fresnel);\n')+
       '}');
   };
-  material.customProgramCacheKey=()=>`minecraft-water-v112-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}-${withTransition?'transition':'fixed'}-${withFlow?'current':'still'}`;
+  material.customProgramCacheKey=()=>`minecraft-water-v1165-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}-${withTransition?'transition':'fixed'}-${withFlow?'current':'still'}`;
   return material;
 }
 
