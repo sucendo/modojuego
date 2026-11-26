@@ -4,6 +4,9 @@ import { voxelWaterColumn } from './waterVoxelsV1134.js';
 export const BASIN_COLUMNS = 4096;
 export const BASIN_NODES = 16384;
 export const BASIN_STEP = .1;
+export const BASIN_SAVED_COLUMNS = 65536;
+export const BASIN_SAVED_NODES = 262144;
+const DISCOVERY_RADIUS=12,ACTIVE_RADIUS=20;
 const SIDES=[[1,0],[-1,0],[0,1],[0,-1]];
 const ck=(x,z)=>`${x},${z}`;
 const nk=c=>`${c.x},${c.z},${c.bottom}`;
@@ -138,7 +141,7 @@ export function stepBasinWater(nodes,dt=BASIN_STEP,{evaporation=0,infiltration=0
  * boundary; inaccessible water is neither discarded nor replenished. */
 export class BasinHydrology {
   constructor(engine){this.engine=engine;this.world=engine.world;this.clear();}
-  clear(){this.columns=new Map();this.nodes=new Map();this.restored=new Map();this.displaced=new Map();this.dirty=new Set();this.accumulator=0;this.visualElapsed=0;this.meshQueue=new Set();this.active=null;this.topology=null;this.activeChunks=new Set();this.activation=[];this.ledger={initial:0,supplied:0,evaporated:0,infiltrated:0,exchangeIn:0,exchangeOut:0};}
+  clear(){this.columns=new Map();this.nodes=new Map();this.restored=new Map();this.displaced=new Map();this.dirty=new Set();this.accumulator=0;this.visualElapsed=0;this.meshQueue=new Set();this.active=null;this.topology=null;this.activeChunks=new Set();this.activation=[];this.focus=null;this.savedNodes=0;this.environmentIndex=null;this.ledger={initial:0,supplied:0,evaporated:0,infiltrated:0,exchangeIn:0,exchangeOut:0};}
   supported(){return typeof this.world?.getBlockId==='function'&&Number.isInteger(this.world.chunkSize?.height);}
   ownsColumn(x,z){return this.columns.has(ck(x,z))||this.restored.has(ck(x,z));}
   total(){let v=0;for(const c of this.nodes.values())v+=c.volume;for(const c of this.restored.values())for(const n of c)v+=n.volume;for(const n of this.displaced.values())v+=n;return v;}
@@ -155,10 +158,44 @@ export class BasinHydrology {
     for(const c of spans){const id=w.getBlockId(x,Math.round(c.bottom-.5),z);c.permeability=id===8?.0012:[1,2,10,14].includes(id)?.00035:0;}
     return {spans,top};
   }
+  nearFocus(x,z,radius=DISCOVERY_RADIUS){return !this.focus||Math.max(Math.abs(x-this.focus.x),Math.abs(z-this.focus.z))<=radius;}
+  setFocus(x,z){
+    this.focus={x:Math.floor(x),z:Math.floor(z)};
+    // Retire distant simulation, not its water. Parked records still own
+    // their columns, render their last levels and survive saving/reloading.
+    this.publish();
+    const crowded=this.columns.size>=2048||this.nodes.size>=BASIN_NODES-512;
+    for(const [id,column] of this.columns)if(!this.nearFocus(column.x,column.z,ACTIVE_RADIUS)&&(crowded||this.chunkAt(column.x,column.z)!==column.chunk)){
+      this.restored.set(id,column.nodes.map(c=>({bottom:c.bottom,volume:c.volume,kind:c.kind})));
+      for(const c of column.nodes)this.nodes.delete(nk(c));
+      this.columns.delete(id);this.dirty.delete(id);this.active=null;
+    }
+    const pending=new Map();
+    for(const point of this.activation)if(this.nearFocus(...point))pending.set(ck(...point),point);
+    for(const id of this.restored.keys()){
+      const [x,z]=id.split(',').map(Number);
+      if(this.nearFocus(x,z)&&this.chunkAt(x,z))pending.set(id,[x,z]);
+    }
+    this.activation=[...pending.values()].sort((a,b)=>Math.hypot(a[0]-x,a[1]-z)-Math.hypot(b[0]-x,b[1]-z));
+  }
+  environmentRecords(id){
+    if(!this.environmentIndex){
+      this.environmentIndex=new Map();
+      for(const [key,v] of this.engine.environment.water){
+        const column=key.slice(0,key.lastIndexOf(','));
+        if(!this.environmentIndex.has(column))this.environmentIndex.set(column,[]);
+        this.environmentIndex.get(column).push([key,v]);
+      }
+    }
+    return this.environmentIndex.get(id)||[];
+  }
   seedColumn(x,z){
     const id=ck(x,z);if(this.columns.has(id))return this.columns.get(id);
     const chunk=this.chunkAt(x,z);if(!chunk||this.columns.size>=BASIN_COLUMNS)return null;
     const {spans,top}=this.readSpans(x,z);if(this.nodes.size+spans.length>BASIN_NODES)return null;
+    const prior=this.restored.get(id);
+    const savedNodes=this.savedNodes-(prior?.length||0)+spans.length;
+    if((!prior&&this.columns.size+this.restored.size>=BASIN_SAVED_COLUMNS)||savedNodes>BASIN_SAVED_NODES)return null;
     const width=this.world.chunkSize.width,ix=x-chunk.position.x,iz=z-chunk.position.z,index=iz*width+ix;
     const wasRestored=this.restored.has(id),saved=this.restored.get(id);
     const current=chunk.waterColumns?.[index];
@@ -172,13 +209,14 @@ export class BasinHydrology {
       const volume=Math.max(0,water.top-water.bottom-ice);
       if(volume>0)existing.push({bottom:water.bottom,volume,kind:current.kind});
     }
-    for(const [key,v] of env.water)if(key.startsWith(id+',')){
+    for(const [key] of this.environmentRecords(id))if(env.water.has(key)){
+      const v=env.water.get(key);
       if(!wasRestored&&v>0)existing.push({bottom:Number(key.split(',')[2]),volume:v,kind:'river'});
       if(!env.columns.get(id)?.basinOwned)env.ledger.displaced+=v;env.water.delete(key);
     }
     const original=chunk.naturalWaterColumns?.[index]??current;
     const sourceWater=voxelWaterColumn(original,chunk.naturalWaterGround?.[index]??bed);
-    const column={x,z,chunk,index,top,nodes:[]};this.columns.set(id,column);
+    const column={x,z,chunk,index,top,nodes:[]};this.columns.set(id,column);this.savedNodes=savedNodes;
     for(const span of spans){
       const c={...span,finite:true,kind:current?.kind||original?.kind||'river',volume:0,sourceRate:0,sourceHead:0};
       // Only actual river springs, or a declared river inlet entering from an
@@ -208,13 +246,16 @@ export class BasinHydrology {
   }
   edit(x,y,z){
     if(!this.supported())return false;
+    this.environmentIndex=null;this.setFocus(x,z);
     const id=ck(x,z),old=this.columns.get(id);
     if(old){
       const records=old.nodes.map(c=>({bottom:c.bottom,volume:c.volume,kind:c.kind}));
       for(const c of old.nodes)this.nodes.delete(nk(c));this.columns.delete(id);this.active=null;
       this.restored.set(id,records);this.seedColumn(x,z);
     }
-    const queue=this.activation.splice(0),seen=new Set();
+    // The edited destination gets its slot before lake discovery does.
+    if(!old)this.seedColumn(x,z);
+    const queue=[],seen=new Set();
     for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
       const wx=x+dx,wz=z+dz,chunk=this.chunkAt(wx,wz);if(!chunk)continue;
       const width=this.world.chunkSize.width,index=(wz-chunk.position.z)*width+wx-chunk.position.x;
@@ -223,10 +264,11 @@ export class BasinHydrology {
     let i=0;const initialSize=this.columns.size;
     for(;i<queue.length&&this.columns.size<BASIN_COLUMNS;i++){
       if(this.columns.size-initialSize>=64)break;
-      const [wx,wz]=queue[i],k=ck(wx,wz);if(seen.has(k))continue;seen.add(k);
+      const [wx,wz]=queue[i],k=ck(wx,wz);if(!this.nearFocus(wx,wz)||seen.has(k))continue;seen.add(k);
       const c=this.seedColumn(wx,wz);if(!c)continue;
       if(!c.nodes.some(n=>n.volume>.00001))continue;
       for(const [dx,dz] of SIDES){
+        if(!this.nearFocus(wx+dx,wz+dz))continue;
         const next=this.seedColumn(wx+dx,wz+dz);
         if(next?.nodes.some(n=>n.volume>.00001))queue.push([wx+dx,wz+dz]);
       }
@@ -234,16 +276,18 @@ export class BasinHydrology {
     this.activation.push(...queue.slice(i));
     // The edited dry cell becomes a candidate as soon as its bank opens.
     if(queue.length)this.seedColumn(x,z);
-    this.publish();return true;
+    this.environmentIndex=null;this.publish();return true;
   }
   expand(){
+    this.environmentIndex=null;
     if(this.columns.size>=BASIN_COLUMNS){this.activation.length=0;return;}
     let added=0,processed=0;
     while(this.activation.length&&added<24&&processed++<64){
       const [x,z]=this.activation.shift(),before=this.columns.size;
+      if(!this.nearFocus(x,z))continue;
       const column=this.seedColumn(x,z);added+=this.columns.size-before;
       if(column?.nodes.some(c=>c.volume>.00001))for(const [dx,dz] of SIDES){
-        if(!this.ownsColumn(x+dx,z+dz))this.activation.push([x+dx,z+dz]);
+        if(this.nearFocus(x+dx,z+dz)&&!this.ownsColumn(x+dx,z+dz))this.activation.push([x+dx,z+dz]);
       }
     }
 
@@ -251,21 +295,24 @@ export class BasinHydrology {
       if(c.volume<.002||this.chunkAt(c.x,c.z)!==this.columns.get(ck(c.x,c.z))?.chunk)continue;
       const head=c.bottom+c.volume;
       for(const [dx,dz] of SIDES){
-        const x=c.x+dx,z=c.z+dz;if(this.ownsColumn(x,z))continue;
+        const x=c.x+dx,z=c.z+dz;if(!this.nearFocus(x,z,ACTIVE_RADIUS)||this.ownsColumn(x,z))continue;
         if(added>=24)return;
         const chunk=this.chunkAt(x,z);if(!chunk)continue;
+        const index=(z-chunk.position.z)*this.world.chunkSize.width+x-chunk.position.x;
+        if(chunk.waterColumns?.[index]&&!this.nearFocus(x,z))continue;
         const bed=chunk.hydrologyGround?.[(z-chunk.position.z)*this.world.chunkSize.width+x-chunk.position.x];
         if(Number.isFinite(bed)&&bed>=head&&c.outdoor)continue;
         if(this.seedColumn(x,z))added++;
       }
     }
   }
-  update(dt){
+  update(dt,position=null){
+    if(position&&Number.isFinite(position.x)&&Number.isFinite(position.z)&&(!this.focus||Math.max(Math.abs(position.x-this.focus.x),Math.abs(position.z-this.focus.z))>8))this.setFocus(position.x,position.z);
     this.flushMeshes();
-    if(!this.columns.size)return;
+    if(!this.columns.size&&!this.activation.length)return;
     this.accumulator=Math.min(.3,this.accumulator+Math.max(0,dt));
     if(this.accumulator>=BASIN_STEP){
-      this.expand();this.releaseDisplaced();
+      this.expand();this.environmentIndex=null;this.releaseDisplaced();
       const chunks=new Set();
       for(const column of this.columns.values())if(this.chunkAt(column.x,column.z)===column.chunk)chunks.add(column.chunk);
       if(!this.active||chunks.size!==this.activeChunks.size||[...chunks].some(c=>!this.activeChunks.has(c))){
@@ -295,30 +342,43 @@ export class BasinHydrology {
     const env=this.engine.environment,refresh=new Set();let caveChanged=false;
     for(const id of this.dirty){
       const column=this.columns.get(id);if(!column||this.chunkAt(column.x,column.z)!==column.chunk)continue;
-      const {chunk,index,x,z}=column;
-      // Delete only this column's old spans, never scan the whole water map.
-      const oldCavities=env.columns.get(id)?.cavities||[];
-      for(const c of oldCavities)env.water.delete(nk(c));
-      const outdoor=column.nodes.find(c=>c.outdoor),wet=outdoor?.volume>.00001?outdoor:null;
-      chunk.waterColumns[index]=wet?{kind:wet.kind,bed:wet.bottom,y:wet.bottom+wet.volume-.25,depth:wet.volume,
-        dynamic:true,finite:true,stable:false,source:wet.sourceRate>0,flowing:true,
-        flowX:wet.flowX||0,flowZ:wet.flowZ||0,fallRate:wet.fallRate||0,fallEdges:wet.fallEdges,fallWidth:fallWidth(wet.fallRate||0)}:null;
-      const cavities=column.nodes.filter(c=>!c.outdoor);
-      env.columns.set(id,{x,z,chunk,top:column.top,cavities,basinOwned:true});
-      if(oldCavities.some(c=>(c.renderedVolume||0)>.001)||cavities.some(c=>c.volume>.001))caveChanged=true;
-      for(const c of cavities)env.water.set(nk(c),c.volume);
-      for(const c of column.nodes){c.renderedVolume=c.volume;c.renderedFallRate=c.fallRate||0;}
-      const width=this.world.chunkSize.width;
-      // Only vertices on a shared border can affect a neighbouring mesh.
-      const lx=x-chunk.position.x,lz=z-chunk.position.z;
-      const xs=[0],zs=[0];if(lx===0)xs.push(-1);if(lx===width-1)xs.push(1);
-      if(lz===0)zs.push(-1);if(lz===width-1)zs.push(1);
-      for(const dz of zs)for(const dx of xs){
-        const n=this.world.getChunk(Math.floor(x/width)+dx,Math.floor(z/width)+dz);if(n?.loaded)refresh.add(n);
-      }
+      caveChanged=this.writeColumn(id,column,refresh)||caveChanged;
     }
     this.dirty.clear();if(caveChanged)env.revision++;
     for(const chunk of refresh)this.meshQueue.add(chunk);this.engine.onChange();
+  }
+  writeColumn(id,column,refresh=this.meshQueue){
+    const env=this.engine.environment;let caveChanged=false;
+    const {chunk,index,x,z}=column;
+    // Delete only this column's old spans, never scan the whole water map.
+    const oldCavities=env.columns.get(id)?.cavities||[];
+    for(const c of oldCavities)env.water.delete(nk(c));
+    const outdoor=column.nodes.find(c=>c.outdoor),wet=outdoor?.volume>.00001?outdoor:null;
+    chunk.waterColumns[index]=wet?{kind:wet.kind,bed:wet.bottom,y:wet.bottom+wet.volume-.25,depth:wet.volume,
+      dynamic:true,finite:true,stable:false,source:wet.sourceRate>0,flowing:true,
+      flowX:wet.flowX||0,flowZ:wet.flowZ||0,fallRate:wet.fallRate||0,fallEdges:wet.fallEdges,fallWidth:fallWidth(wet.fallRate||0)}:null;
+    const cavities=column.nodes.filter(c=>!c.outdoor);
+    env.columns.set(id,{x,z,chunk,top:column.top,cavities,basinOwned:true});
+    if(oldCavities.some(c=>(c.renderedVolume||0)>.001)||cavities.some(c=>c.volume>.001))caveChanged=true;
+    for(const c of cavities)env.water.set(nk(c),c.volume);
+    for(const c of column.nodes){c.renderedVolume=c.volume;c.renderedFallRate=c.fallRate||0;}
+    const width=this.world.chunkSize.width;
+    // Only vertices on a shared border can affect a neighbouring mesh.
+    const lx=x-chunk.position.x,lz=z-chunk.position.z;
+    const xs=[0],zs=[0];if(lx===0)xs.push(-1);if(lx===width-1)xs.push(1);
+    if(lz===0)zs.push(-1);if(lz===width-1)zs.push(1);
+    for(const dz of zs)for(const dx of xs){
+      const n=this.world.getChunk(Math.floor(x/width)+dx,Math.floor(z/width)+dz);if(n?.loaded)refresh.add(n);
+    }
+    return caveChanged;
+  }
+  presentRestored(x,z,chunk){
+    const id=ck(x,z),records=this.restored.get(id);if(!records)return;
+    const {spans,top}=this.readSpans(x,z),width=this.world.chunkSize.width;
+    const column={x,z,chunk,index:(z-chunk.position.z)*width+x-chunk.position.x,top,
+      nodes:spans.map(c=>({...c,finite:true,kind:'river',volume:0}))};
+    for(const r of records)this.assignVolume(column,r.bottom,r.volume,r.kind);
+    if(this.writeColumn(id,column))this.engine.environment.revision++;
   }
   flushMeshes(){
     // A slow frame must not trigger a burst of whole-chunk allocations, nor
@@ -335,21 +395,28 @@ export class BasinHydrology {
     node.volume+=moved;if(moved>0)this.ledger.exchangeIn+=moved;else this.ledger.exchangeOut-=moved;
     this.dirty.add(ck(x,z));return moved;
   }
-  snapshot(){return {columns:[...this.columns.values()].map(c=>[c.x,c.z,c.nodes.map(n=>[n.bottom,n.volume,n.kind])]).concat([...this.restored].map(([id,nodes])=>[...id.split(',').map(Number),nodes.map(n=>[n.bottom,n.volume,n.kind||'river'])])),displaced:[...this.displaced].map(([id,v])=>[...id.split(',').map(Number),v])};}
+  snapshot(){return {...(this.focus?{focus:[this.focus.x,this.focus.z]}:{}),columns:[...this.columns.values()].map(c=>[c.x,c.z,c.nodes.map(n=>[n.bottom,n.volume,n.kind])]).concat([...this.restored].map(([id,nodes])=>[...id.split(',').map(Number),nodes.map(n=>[n.bottom,n.volume,n.kind||'river'])])),displaced:[...this.displaced].map(([id,v])=>[...id.split(',').map(Number),v])};}
   restore(raw){
     for(const [x,z,nodes] of raw?.columns||[])this.restored.set(ck(x,z),nodes.map(([bottom,volume,kind])=>({bottom,volume,kind})));
     for(const [x,z,v] of raw?.displaced||[])this.displaced.set(ck(x,z),v);
+    this.savedNodes=[...this.restored.values()].reduce((n,rows)=>n+rows.length,0);
+    const origin=raw?.focus||raw?.columns?.[0];
+    if(origin)this.focus={x:origin[0],z:origin[1]};
     this.ledger.initial=this.total();
   }
   reconcileChunk(chunk){
+    this.environmentIndex=null;
     for(const id of [...this.restored.keys()]){
       const [x,z]=id.split(',').map(Number),width=this.world.chunkSize.width;
-      if(Math.floor(x/width)===chunk.position.x/width&&Math.floor(z/width)===chunk.position.z/width)this.seedColumn(x,z);
+      if(Math.floor(x/width)===chunk.position.x/width&&Math.floor(z/width)===chunk.position.z/width){
+        if(this.columns.size+this.restored.size<2048||this.nearFocus(x,z))this.seedColumn(x,z);
+        else this.presentRestored(x,z,chunk);
+      }
     }
     for(const [id,c] of [...this.columns])if(c.chunk!==this.chunkAt(c.x,c.z)&&this.chunkAt(c.x,c.z)===chunk){
       this.restored.set(id,c.nodes.map(n=>({bottom:n.bottom,volume:n.volume,kind:n.kind})));
       for(const n of c.nodes)this.nodes.delete(nk(n));this.columns.delete(id);this.active=null;this.seedColumn(c.x,c.z);
     }
-    this.publish();
+    this.environmentIndex=null;this.publish();
   }
 }
