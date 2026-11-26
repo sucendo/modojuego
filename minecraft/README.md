@@ -1,4 +1,4 @@
-# Minecraft.js 11.6.2
+# Minecraft.js 11.6.3
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -24,3 +24,5 @@ Se conservan las partidas anteriores. Las nuevas exportaciones usan el formato 1
 Rendimiento 11.6.1: conexiones hidráulicas reutilizadas, activación gradual de lagos grandes y reconstrucción de una sola malla de agua por fotograma. Solo se actualizan los chunks que comparten vértices afectados; las variaciones de superficie no fuerzan a regenerar todas las cuevas y la nieve.
 
 Canales 11.6.2: las excavaciones tienen prioridad frente a la activación de grandes lagos. Las zonas lejanas se conservan en reposo cuando hace falta liberar simulación, y la exploración automática del lago permanece cerca de la obra. Un canal elevado con fondo y paredes recibe agua por una abertura real y la conserva sobre el terreno vacío.
+
+Cascadas 11.6.3: se conserva el aporte del tramo natural de río situado aguas arriba cuando el manantial queda fuera del dominio local, incluso si ese terreno está cargado. Las entradas se recalculan después de cambiar el cauce; una presa real corta el aporte y su reapertura lo restablece. Los lagos continúan siendo reservas finitas.
