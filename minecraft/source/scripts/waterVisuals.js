@@ -73,20 +73,18 @@ export function applyWaterMotion(material,kind,withFalls=false,withTransition=fa
         'if(currentSpeed>0.0005&&waterSurfaceMix>0.6){\n'+
         ' vec2 currentDirection=waterCurrent/max(currentSpeed,0.0001);\n'+
         // Visually amplify slow motion; direction still comes from physics.
-        ' float visualSpeed=max(currentSpeed,0.14+0.65*sqrt(currentSpeed));\n'+
+        ' float visualSpeed=max(currentSpeed,0.12+currentSpeed*0.5);\n'+
         ' float along=dot(waterWorldPosition.xz,currentDirection)-waterAnimationTime*visualSpeed;\n'+
         ' float across=dot(waterWorldPosition.xz,vec2(-currentDirection.y,currentDirection.x));\n'+
-        ' float bend=sin(along*1.35+across*0.85);\n'+
-        ' float band=sin(along*2.8+sin(across*2.1)*2.0+bend*0.8);\n'+
-        ' float lane=smoothstep(-0.25,0.7,sin(across*7.0+bend*1.5));\n'+
-        ' float crest=pow(max(0.0,band),2.0);\n'+
+        ' float band=sin(along*2.8+across*0.6);\n'+
+        ' float lane=0.6+0.4*sin(across*5.5+along*1.2);\n'+
+        ' float crest=max(0.0,band);\n'+
         ' float motion=smoothstep(0.0005,0.008,currentSpeed)*smoothstep(0.6,0.95,waterSurfaceMix);\n'+
-        ' float trace=lane*crest*motion;\n'+
-        ' diffuseColor.rgb*=1.0-0.16*lane*max(0.0,-band)*motion;\n'+
-        ' diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.88,0.98,1.0),trace*0.78);\n'+
-        ' diffuseColor.a=mix(diffuseColor.a,max(diffuseColor.a,0.76),trace*0.8);\n'+
+        ' float trace=lane*crest*crest*motion;\n'+
+        ' diffuseColor.rgb*=1.0-0.10*max(0.0,-band)*motion;\n'+
+        ' diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.68,0.88,0.91),trace*0.58);\n'+
         '}\n':'')+
-      'if(waterWaves>0.001){\n'+
+      (withFlow?'if(waterWaves>0.001&&currentSpeed<0.003){\n':'if(waterWaves>0.001){\n')+
       ` float w1=sin(waterWorldPosition.x*.57+waterWorldPosition.z*.31+waterClock*${lava?'.42':'.74'});\n`+
       ` float w2=sin(waterWorldPosition.z*.84-waterWorldPosition.x*.17-waterClock*${lava?'.34':'.53'});\n`+
       ' float ripples=w1*.62+w2*.38;\n'+
@@ -98,7 +96,7 @@ export function applyWaterMotion(material,kind,withFalls=false,withTransition=fa
        ' diffuseColor.a*=1.0-waterWaves*.095*(1.0-fresnel);\n')+
       '}');
   };
-  material.customProgramCacheKey=()=>`minecraft-water-v1165-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}-${withTransition?'transition':'fixed'}-${withFlow?'current':'still'}`;
+  material.customProgramCacheKey=()=>`minecraft-water-v1166-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}-${withTransition?'transition':'fixed'}-${withFlow?'current':'still'}`;
   return material;
 }
 

@@ -1,4 +1,4 @@
-import { waterFlowVector } from './waterFlow.js';
+import { waterFlowVector, bindWaterFlow, refreshWaterFlowAttribute } from './waterFlow.js';
 import { continuousCorner, connectedWater, WaterTransitions, waterTime } from './continuousWater.js';
 import * as THREE from 'three';
 import { waterAtPoint, surfaceWater } from './waterEnvironment.js';
@@ -55,7 +55,7 @@ export class EnvironmentVisuals {
       transparent:true,opacity:.48,depthWrite:false,side:THREE.DoubleSide}),'river',false,true,true);
     this.waterMaterial.forceSinglePass=true;
     this.snowMaterial=new THREE.MeshLambertMaterial({color:0xf2f5fa,side:THREE.DoubleSide});
-    this.meshes=[];this.revision=-1;this.elapsed=0;
+    this.meshes=[];this.revision=-1;this.flowRevision=-1;this.elapsed=0;
     this.transitions=new WaterTransitions();this.previousWater=new Map();
   }
   rebuild(model){
@@ -86,7 +86,7 @@ export class EnvironmentVisuals {
     const metadata=(c,corner,y,normal=true)=>({key:'cave:'+corner.key,from:previous.has(c.id)?y:c.bottom,
       fixed:!Number.isFinite(corner.top)||Math.abs(y-corner.top)>1e-6,
       alphaKey:'cave-cell:'+c.id,alpha:c.drying?0:1,fromAlpha:previous.has(c.id)?1:0,
-      flow:corner.flow||waterFlowVector(c),normal:normal?corner.normal:null});
+      flow:corner.flow||waterFlowVector(c),flowSamples:corner.flowSamples||[[c.x,c.z,c.bottom]],normal:normal?corner.normal:null});
     for(const column of model.columns.values()){
       if(!column.chunk.loaded||this.world.getChunk(Math.floor(column.x/32),Math.floor(column.z/32))!==column.chunk)continue;
       for(const c of column.cavities){
@@ -168,6 +168,8 @@ export class EnvironmentVisuals {
         geometry.setAttribute('waterHeightMotion',new THREE.Float32BufferAttribute(heights,3));
         geometry.setAttribute('waterAlphaMotion',new THREE.Float32BufferAttribute(alphas,4));
         geometry.setAttribute('waterFlow',new THREE.Float32BufferAttribute(flow,2));
+        if(THREE.DynamicDrawUsage!==undefined)geometry.getAttribute?.('waterFlow')?.setUsage?.(THREE.DynamicDrawUsage);
+        bindWaterFlow(geometry,motion);
         geometry.computeBoundingBox();
         for(let i=0;i<heights.length;i+=3){
           geometry.boundingBox.min.y=Math.min(geometry.boundingBox.min.y,heights[i]);
@@ -185,7 +187,18 @@ export class EnvironmentVisuals {
     if(!model)return;
     this.group.visible=this.world.type!=='lava';
     this.elapsed+=dt;
-    if(this.elapsed<.15||this.revision===model.revision)return;
-    this.elapsed=0;this.revision=model.revision;this.rebuild(model);
+    if(this.elapsed<.15)return;
+    this.elapsed=0;
+    if(this.revision!==model.revision){this.revision=model.revision;this.flowRevision=model.flowRevision;this.rebuild(model);}
+    else if(this.flowRevision!==model.flowRevision){
+      this.flowRevision=model.flowRevision;
+      const sample=(x,z,bottom)=>{
+        const surface=surfaceWater(this.world,x,z);
+        if(surface&&Math.abs(surface.bottom-bottom)<.001)return waterFlowVector(surface.column);
+        const cell=model.columns.get(`${x},${z}`)?.cavities.find(c=>Math.abs(c.bottom-bottom)<.001);
+        return cell?waterFlowVector({...cell,volume:model.water.get(`${x},${z},${bottom}`)||0}):[0,0];
+      };
+      for(const mesh of this.meshes)if(mesh.material===this.waterMaterial)refreshWaterFlowAttribute(mesh.geometry,sample);
+    }
   }
 }

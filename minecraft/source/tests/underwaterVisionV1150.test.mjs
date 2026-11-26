@@ -95,3 +95,16 @@ test('surface water queries separate a suspended aqueduct from the water beneath
  const visuals=new EnvironmentVisuals(new THREE.Scene(),world);visuals.rebuild(model);
  assert.ok(visuals.meshes.some(m=>Array.from(m.geometry.attributes.position.array).filter((_,i)=>i%3===1).some(y=>Math.abs(y-1.5)<1e-6)),'lower water is not suppressed by the elevated surface');
 });
+
+test('cave current changes update attributes while retaining all cave and snow geometry',()=>{
+ const scene=new THREE.Scene(),chunk={loaded:true,position:{x:0,z:0},waterColumns:[]};
+ const world={type:'classic',chunkSize:{width:32},getChunk:()=>chunk,getBlockId:()=>0};
+ const model=new WaterEnvironment(world);world.hydrology={environment:model};
+ const c={x:1,z:1,bottom:7.5,roof:12.5,finite:true,kind:'river',volume:.5,flowX:.1,flowZ:0};
+ model.columns.set('1,1',{x:1,z:1,chunk,cavities:[c]});model.water.set('1,1,7.5',.5);
+ const visuals=new EnvironmentVisuals(scene,world);visuals.update(1);
+ const mesh=visuals.meshes[0],geometry=mesh.geometry,positions=geometry.getAttribute('position').array;
+ c.flowX=-.1;model.flowRevision=1;visuals.update(1);
+ assert.equal(visuals.meshes[0],mesh);assert.equal(mesh.geometry,geometry);assert.equal(geometry.getAttribute('position').array,positions);
+ const flow=geometry.getAttribute('waterFlow').array;assert.ok(Array.from(flow).filter((_,i)=>i%2===0).every(x=>x<0));
+});
