@@ -1,4 +1,4 @@
-# Minecraft.js 11.6.4
+# Minecraft.js 11.6.5
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -28,3 +28,5 @@ Canales 11.6.2: las excavaciones tienen prioridad frente a la activación de gra
 Cascadas 11.6.3: se conserva el aporte del tramo natural de río situado aguas arriba cuando el manantial queda fuera del dominio local, incluso si ese terreno está cargado. Las entradas se recalculan después de cambiar el cauce; una presa real corta el aporte y su reapertura lo restablece. Los lagos continúan siendo reservas finitas.
 
 Representación 11.6.4: el agua finita de un acueducto usa la altura de su propio fondo, sin desplazarse hacia el terreno o el agua inferiores. Se mantienen separadas las capas al dibujar y detectar inmersión. Las estelas superficiales muestran el sentido de la corriente calculada y las de las cascadas descienden.
+
+Corriente 11.6.5: estelas más largas y contrastadas, con movimiento visual amplificado para corrientes lentas y actualización de direcciones que antes quedaban bajo el umbral. Cuando cesa el flujo se borra su vector anterior. No modifica el caudal ni el volumen físicos.

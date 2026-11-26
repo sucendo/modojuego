@@ -20,5 +20,9 @@ export function waterFlowVector(cell){
 
 export function waterFlowChanged(cell){
   const now=waterFlowVector(cell),old=cell.renderedFlow||[0,0];
-  return Math.hypot(now[0]-old[0],now[1]-old[1])>Math.max(.025,Math.hypot(...old)*.2);
+  const speed=Math.hypot(...now),previous=Math.hypot(...old);
+  // A slow current can be visible before the level changes appreciably.
+  // Stopping must clear its last visible direction even below the tolerance.
+  if(speed<.0005&&previous>=.0005)return true;
+  return Math.hypot(now[0]-old[0],now[1]-old[1])>Math.max(.003,previous*.2);
 }
