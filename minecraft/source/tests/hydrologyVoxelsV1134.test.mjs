@@ -124,3 +124,11 @@ test('finite aqueduct water uses its own elevated bed above lower groundwater',(
  assert.equal(water.bottom,7.5,'the ground below the deck must not pull the aqueduct water down');
  assert.ok(Math.abs(water.top-8.1)<1e-9);
 });
+
+test('declared natural waterfall reaches keep both downstream axes when diagonal',()=>{
+ const river={kind:'river',waterfall:true,flowX:4,flowZ:3},next={kind:'river'};
+ assert.equal(isDownstreamWaterfallEdge(river,next,1,0),true);
+ assert.equal(isDownstreamWaterfallEdge(river,next,0,1),true);
+ assert.equal(isDownstreamWaterfallEdge(river,next,-1,0),false);
+ assert.equal(isDownstreamWaterfallEdge(river,next,0,-1),false);
+});

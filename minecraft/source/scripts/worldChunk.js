@@ -253,7 +253,7 @@ export class WorldChunk extends THREE.Group {
           // Rendering metadata only. Saved chunks still store their original
           // voxel edits; water surface depth is deterministically regenerated.
           water={y:hydro.waterY,kind:hydro.kind,depth:Math.max(0,hydro.waterY-height-.5),
-            stable:!!hydro.stable,source:!!hydro.source,
+            stable:!!hydro.stable,source:!!hydro.source,waterfall:!!hydro.waterfall,
             flowX:hydro.flowX??0,flowZ:hydro.flowZ??0};
           this.waterColumns[z*this.size.width+x]=water;
         }
@@ -466,8 +466,6 @@ export class WorldChunk extends THREE.Group {
   }
   generateWater() {
     const advancedWater=this.terrainVersion===TERRAIN_V112||this.terrainVersion===TERRAIN_HYBRID_V112;
-    const freshCascades=this.terrainVersion===TERRAIN_HYBRID_V112&&
-      this.hybridNearby?.hybrid?.hydrographyVersion===3;
     // The legacy blanket water plane used to overlap voxel rivers, creating
     // hovering transparent patches. New terrain has water ONLY where a
     // physical voxel column exists; keep the plane for pre-hydrology saves.
@@ -532,7 +530,7 @@ export class WorldChunk extends THREE.Group {
           bed:hydro.height+.5};
       return hydro.waterY===null?{bed:hydro.height+.5}:
         {y:hydro.waterY,kind:hydro.kind,bed:hydro.height+.5,
-          stable:!!hydro.stable,source:!!hydro.source,
+          stable:!!hydro.stable,source:!!hydro.source,waterfall:!!hydro.waterfall,
           flowX:hydro.flowX??0,flowZ:hydro.flowZ??0};
     };
     const boundary=(x,z)=>{
@@ -663,8 +661,11 @@ export class WorldChunk extends THREE.Group {
           const neighborCell=inside?renderCells[nz*size+nx]:boundary(nx,nz);
           const dry=nx>=0&&nx<size&&nz>=0&&nz<size
             ?this.hydrologyGround?.[nz*size+nx]:boundary(nx,nz)?.bed;
-          const cascades=(freshCascades||cell.fallRate>0)&&
-            isDownstreamWaterfallEdge(cell,neighborCell,dx,dz);
+          const naturalRiver=!cell.dynamic&&!cell.finite&&cell.kind==='river';
+          const directed=isDownstreamWaterfallEdge(cell,neighborCell,dx,dz);
+          const inferred=naturalRiver&&!Math.hypot(cell.flowX||0,cell.flowZ||0)&&
+            neighborCell&&['river','lake','oasis'].includes(neighborCell.kind)&&neighbor&&voxel.top-neighbor.top>1.05;
+          const cascades=(naturalRiver||cell.fallRate>0)&&(directed||inferred);
           const cavities=this.cavityLiquidLookup?.(this.position.x+nx,this.position.z+nz)??[];
           const mouth=cavities.some(c=>c.bottom<voxel.top&&c.roof>voxel.bottom);
           if(connectedWater(voxel,neighbor))continue;
@@ -682,17 +683,33 @@ export class WorldChunk extends THREE.Group {
           const lowerCorners=!lower?null:dx>0?[lower[0],lower[3]]:dx<0?[lower[1],lower[2]]:
             dz>0?[lower[0],lower[1]]:[lower[3],lower[2]];
           const bottomA=lowerCorners?.[0]?.top??bottom,bottomB=lowerCorners?.[1]?.top??bottom;
-          const edgeRate=cell.fallEdges?.[dx>0?0:dx<0?1:dz>0?2:3]??cell.fallRate;
-          const halfWidth=waterfall&&cell.finite?Math.max(.04,Math.min(.5,Math.sqrt(Math.max(0,edgeRate||0)/.6)*.5)):.5;
+          const flowLength=Math.hypot(cell.flowX||0,cell.flowZ||0);
+          // Outside simulation, use a nominal natural river discharge only
+          // for shaping the curtain; never create or activate physical water.
+          const nominal=.3*(voxel.top-voxel.bottom)*(flowLength?Math.abs(dx?cell.flowX:cell.flowZ)/flowLength:1);
+          const edgeRate=cell.finite?(cell.fallEdges?.[dx>0?0:dx<0?1:dz>0?2:3]??cell.fallRate):nominal;
+          const halfWidth=waterfall&&cascades?Math.max(.04,Math.min(.5,Math.sqrt(Math.max(0,edgeRate||0)/.6)*.5)):.5;
+          const continues=(side)=>{
+            if(!waterfall||!cascades||!neighbor)return false;
+            const tx=dx?0:side,tz=dx?side:0,up=voxelAt(x+tx,z+tz),down=voxelAt(nx+tx,nz+tz);
+            if(!connectedWater(voxel,up)||!connectedWater(neighbor,down)||up.top-down.top<=.05)return false;
+            const sx=x+tx,sz=z+tz;
+            const adjacent=sx>=0&&sx<size&&sz>=0&&sz<size?renderCells[sz*size+sx]:boundary(sx,sz);
+            return isDownstreamWaterfallEdge(adjacent,neighborCell,dx,dz)||
+              (!adjacent?.dynamic&&adjacent?.kind==='river'&&!Math.hypot(adjacent.flowX||0,adjacent.flowZ||0));
+          };
+          // Narrow only the outside edges of a curtain. Interior neighbours
+          // share the exact seam instead of tapering every tile separately.
+          const lowA=continues(-1)?-.5:-halfWidth,lowB=continues(1)?.5:halfWidth;
           if(topA<=bottom&&topB<=bottom)continue;
           if(dx){
             const edge=x+dx*.5;
             group.verts.push(edge,Math.max(bottom,topA),z-.5,edge,Math.max(bottom,topB),z+.5,
-              edge,bottomB,z+halfWidth,edge,bottomA,z-halfWidth);
+              edge,bottomB,z+lowB,edge,bottomA,z+lowA);
           }else{
             const edge=z+dz*.5;
             group.verts.push(x-.5,Math.max(bottom,topA),edge,x+.5,Math.max(bottom,topB),edge,
-              x+halfWidth,bottomB,edge,x-halfWidth,bottomA,edge);
+              x+lowB,bottomB,edge,x+lowA,bottomA,edge);
           }
           group.motion.push({...motionFor(x,z,edgeCorners[0],Math.max(bottom,topA)),normal:null},
             {...motionFor(x,z,edgeCorners[1],Math.max(bottom,topB)),normal:null},
@@ -707,7 +724,7 @@ export class WorldChunk extends THREE.Group {
             :[base,base+2,base+1,base,base+3,base+2]));
           const tint=surfaceColor(cell.kind,debugSources&&!!cell.source);
           group.colors.push(...tint,...tint,...tint,...tint);
-          const animateFall=waterfall&&(!freshCascades||cascades);
+          const animateFall=waterfall&&cascades;
           group.falls.push(animateFall?1:0,animateFall?1:0,
             animateFall?1:0,animateFall?1:0);
           }
