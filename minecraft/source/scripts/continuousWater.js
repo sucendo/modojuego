@@ -57,8 +57,10 @@ export function connectedWater(a,b){
 /** One deterministic height for a corner of a connected liquid sheet.
  * Only face-connected columns join: diagonal puddles, ice, ceilings and true
  * waterfalls remain separate. The component's world-space anchor is stable. */
-export function continuousCorner(x,z,sx,sz,sample){
+export function continuousCorner(x,z,sx,sz,sample,cache=null){
   const vx=x+sx*.5,vz=z+sz*.5;
+  const cacheKey=`${x},${z},${vx},${vz}`;
+  if(cache?.has(cacheKey))return cache.get(cacheKey);
   const cells=[];
   for(const cz of [Math.floor(vz),Math.ceil(vz)])for(const cx of [Math.floor(vx),Math.ceil(vx)]){
     const water=sample(cx,cz);if(water)cells.push({x:cx,z:cz,...water});
@@ -79,5 +81,7 @@ export function continuousCorner(x,z,sx,sz,sample){
   const dx=mean(sorted.filter(c=>c.x>vx))-mean(sorted.filter(c=>c.x<vx));
   const dz=mean(sorted.filter(c=>c.z>vz))-mean(sorted.filter(c=>c.z<vz));
   const length=Math.hypot(dx,1,dz);
-  return {top,normal:[-dx/length,1/length,-dz/length],key:`${vx},${vz}:${sorted.map(c=>`${c.x},${c.z}@${c.bottom}`).join(';')}`};
+  const result={top,normal:[-dx/length,1/length,-dz/length],key:`${vx},${vz}:${sorted.map(c=>`${c.x},${c.z}@${c.bottom}`).join(';')}`};
+  if(cache)for(const c of sorted)cache.set(`${c.x},${c.z},${vx},${vz}`,result);
+  return result;
 }

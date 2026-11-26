@@ -1,4 +1,4 @@
-# Minecraft.js 11.6.0
+# Minecraft.js 11.6.1
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -20,3 +20,5 @@ Agua 11.6.0: superficies conectadas con alturas y normales compartidas; transici
 Física del agua 11.6.0: lagos con reserva finita, canales ciegos que se nivelan, presas con aberturas reales, secado por material y cascadas de anchura variable según caudal.
 
 Se conservan las partidas anteriores. Las nuevas exportaciones usan el formato 16 para guardar los volúmenes finitos; las versiones antiguas del juego no pueden abrirlas.
+
+Rendimiento 11.6.1: conexiones hidráulicas reutilizadas, activación gradual de lagos grandes y reconstrucción de una sola malla de agua por fotograma. Solo se actualizan los chunks que comparten vértices afectados; las variaciones de superficie no fuerzan a regenerar todas las cuevas y la nieve.

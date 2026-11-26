@@ -606,3 +606,15 @@ test('finite lake discharge draws a narrow falling sheet rather than a full-widt
   assert.ok(found);
   assert.ok(voxelWaterColumn({kind:'river',bed:.5,y:.27,depth:.02,finite:true,dynamic:true},.5));
 });
+
+
+test('water meshing samples each external column once per rebuild',()=>{
+  const c=syntheticSheet();
+  for(let z=0;z<4;z++)for(let x=0;x<4;x++)fill(c,x,z,1);
+  const calls=new Map();
+  c.hydrologyLookup=(x,z)=>{const key=`${x},${z}`;calls.set(key,(calls.get(key)||0)+1);return null;};
+  c.hydrologyGroundLookup=()=>.5;c.generateWater();
+  assert.ok(calls.size>0);
+  assert.ok([...calls.values()].every(n=>n===1),'corner smoothing and side clipping share cached boundary samples');
+  c.generateWater();assert.ok([...calls.values()].every(n=>n===2),'cache expires between geometry rebuilds');
+});
