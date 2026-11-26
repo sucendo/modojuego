@@ -80,5 +80,5 @@ test('la cámara y el mundo no cambian el formato de partidas por los ajustes lo
   assert.match(cloud,/cellCache\.get/);
   assert.match(perf,/event\.code!=='F3'/);
   assert.match(perf,/setPixelRatio/);
-  assert.match(save,/const SAVE_VERSION = 15/);
+  assert.match(save,/const SAVE_VERSION = 16/);
 });

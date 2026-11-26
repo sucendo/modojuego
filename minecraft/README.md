@@ -1,4 +1,4 @@
-# Minecraft.js 11.5.4
+# Minecraft.js 11.6.0
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -15,4 +15,8 @@ Los controles táctiles usan la misma física y formato de guardado que el escri
 
 Pantalla completa: al pulsar Jugar desde un dispositivo táctil se solicita la pantalla completa. El botón ⛶ permite entrar o salir; también está disponible desde el menú. Si el navegador no lo permite, el juego continúa en la vista normal.
 
-Agua 11.5.4: superficies conectadas con alturas y normales compartidas; transiciones de nivel y aparición/desaparición graduales. La representación no modifica los volúmenes ni el formato de las partidas.
+Agua 11.6.0: superficies conectadas con alturas y normales compartidas; transiciones de nivel y aparición/desaparición graduales. La representación no modifica los volúmenes ni el formato de las partidas.
+
+Física del agua 11.6.0: lagos con reserva finita, canales ciegos que se nivelan, presas con aberturas reales, secado por material y cascadas de anchura variable según caudal.
+
+Se conservan las partidas anteriores. Las nuevas exportaciones usan el formato 16 para guardar los volúmenes finitos; las versiones antiguas del juego no pueden abrirlas.

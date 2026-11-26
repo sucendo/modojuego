@@ -1,3 +1,4 @@
+import { BasinHydrology } from './basinHydrology.js';
 import { needsWaterMeshRefresh } from './waterGeometry.js';
 import { voxelWaterColumn, sourceWaterBlocked, isWaterBlockingBlock } from './waterVoxelsV1134.js';
 import { hydraulicCeiling } from './hydraulicColumnV1147.js';
@@ -123,11 +124,13 @@ export class HydrologyEngine {
     this.editActivity = 0;
     this.onChange = () => {};
     this.environment = new WaterEnvironment(world,()=>this.onChange());
+    this.basins = new BasinHydrology(this);
     this.ledger = { initial: 0, springs: 0, boundaryIn: 0, boundaryOut: 0, evaporation: 0 };
   }
 
   clear() {
     this.environment.clear();
+    this.basins.clear();
     this.cells.clear();this.changedChunks.clear();this.accumulator = 0;
     this.flowCells.clear();
     this.suppressedNatural.clear();
@@ -428,12 +431,13 @@ export class HydrologyEngine {
   }
 
   onBlockEdit(x, y, z) {
-    this.environment.invalidate(x,z);
+    if(!this.basins.ownsColumn(x,z))this.environment.invalidate(x,z);
     const world = this.world;
     if (!world || world.type === 'lava') return;
     const editedChunk=world.getChunk?.(Math.floor(x/32),Math.floor(z/32));
     editedChunk?.hydraulicCeilings?.delete((((z%32)+32)%32)*32+(((x%32)+32)%32));
     if (world.hybrid?.hydrographyVersion >= 1) {
+      if(this.basins.supported()){this.basins.edit(x,y,z);return;}
       this.updateSourceFlow(x, z);
       this.updatePressureInlets(x,z);
       return;
@@ -622,6 +626,7 @@ export class HydrologyEngine {
     let changed = false;
     for (let z = 0; z < 32; z++) for (let x = 0; x < 32; x++) {
       const index = z * 32 + x, wx = chunk.position.x + x, wz = chunk.position.z + z;
+      if(this.basins.ownsColumn(wx,wz))continue;
       const natural = chunk.naturalWaterColumns[index], bed = chunk.hydrologyGround[index];
       const originalBed = chunk.naturalWaterGround?.[index] ?? bed;
       const blockAt = chunk.getBlockId ? (y => chunk.getBlockId(x,y,z)) : null;
@@ -686,6 +691,7 @@ export class HydrologyEngine {
   }
 
   pressureSample(x,z){
+    if(this.basins.ownsColumn(x,z))return null;
     const c=this.naturalColumn(x,z);
     if(!c)return null;
     const k=key(x,z);
@@ -764,6 +770,7 @@ export class HydrologyEngine {
 
   update(dt, playerPosition = null) {
     if (!this.world || this.world.type === 'lava') return;
+    this.basins.update(dt);
     const settledWorld=this.world.hybrid?.hydrographyVersion>=1;
     if(settledWorld){this.updatePressure(dt);return;}
     if(settledWorld&&this.editActivity<=0)return;
@@ -854,6 +861,7 @@ export class HydrologyEngine {
     const environment=this.environment.snapshot();
     if (this.world?.hybrid?.hydrographyVersion >= 1)
       return { version: HYDROLOGY_SCHEMA, cells: [], environment,
+        ...(this.basins.columns.size||this.basins.restored.size?{basins:this.basins.snapshot()}:{}),
         suppressed: [...this.suppressedNatural].slice(0, HYDROLOGY_LIMIT)
           .map(k => k.split(',').map(Number)),
         pressure:[...this.pressureVolumes].slice(0,PRESSURE_LIMIT)
@@ -873,6 +881,7 @@ export class HydrologyEngine {
     this.clear();
     if (!snapshot || !Array.isArray(snapshot.cells)) return;
     this.environment.restore(snapshot.environment);
+    this.basins.restore(snapshot.basins);
     if (this.world?.hybrid?.hydrographyVersion >= 1) {
       // Old conservative cells were transient and could contain the water
       // depletion bug. Player structures and natural rivers are not reset.
@@ -909,7 +918,18 @@ export class HydrologyEngine {
   reconcileChunk(chunk) {
     if (!chunk.loaded) return;
     if (this.world?.hybrid?.hydrographyVersion >= 1) {
+      this.basins.reconcileChunk(chunk);
       this.applySourceChunk(chunk);
+      // Old edited canals and reservoirs must adopt finite volumes on load,
+      // rather than retaining their permanent eight-level slope until edited.
+      if(this.basins.supported()){
+        const seeds=[...this.flowCells.values()].map(c=>[c.x,c.z])
+          .concat([...this.pressureVolumes.keys()].map(k=>k.split(',').map(Number)));
+        const width=this.world.chunkSize.width;
+        for(const [x,z] of seeds)if(!this.basins.ownsColumn(x,z)&&
+          Math.floor(x/width)===chunk.position.x/width&&Math.floor(z/width)===chunk.position.z/width)
+          this.basins.edit(x,0,z);
+      }
       return;
     }
     // A save stores only water/groundwater; solid blocks remain authoritative.

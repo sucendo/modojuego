@@ -21,7 +21,7 @@ const PREVIOUS_KEY = 'minecraftjs_save_v1';
 const OLD_PARAMS_KEY = 'minecraft_params';
 const OLD_DATA_KEY = 'minecraft_data';
 const SAVE_FORMAT = 'minecraftjs-save';
-const SAVE_VERSION = 15;
+const SAVE_VERSION = 16;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const MAX_EDITED_BLOCKS = 400000;
 const BLOCK_KEY = /^(-?\d+),(-?\d+),(\d+),(\d+),(\d+)$/;
@@ -117,11 +117,36 @@ function validateHydrology(raw) {
     };
     environment={water:validateRecords(source.water,false),snow:validateRecords(source.snow,true)};
   }
+  let basins;
+  if(raw.basins!==undefined){
+    const b=raw.basins;
+    if(!isObject(b)||!Array.isArray(b.columns)||b.columns.length>4096||
+      !Array.isArray(b.displaced)||b.displaced.length>4096)invalidFile();
+    const seenColumns=new Set();let count=0;
+    const columns=b.columns.map(c=>{
+      if(!Array.isArray(c)||c.length!==3||
+        c.slice(0,2).some(v=>!Number.isSafeInteger(v)||Math.abs(v)>100000)||!Array.isArray(c[2]))invalidFile();
+      const id=c.slice(0,2).join(',');if(seenColumns.has(id))invalidFile();seenColumns.add(id);
+      const floors=new Set();
+      const spans=c[2].map(n=>{
+        if(!Array.isArray(n)||n.length!==3||!validNumber(n[0],.5,255)||
+          !Number.isInteger(n[0]-.5)||!validNumber(n[1],0,255)||!WATER_TYPES.has(n[2])||floors.has(n[0]))invalidFile();
+        floors.add(n[0]);if(++count>16384)invalidFile();return [...n];
+      });
+      return [c[0],c[1],spans];
+    });
+    const ids=new Set();
+    const displaced=b.displaced.map(c=>{
+      if(!Array.isArray(c)||c.length!==3||c.slice(0,2).some(v=>!Number.isSafeInteger(v)||Math.abs(v)>100000)||!validNumber(c[2],0,4194304))invalidFile();
+      const id=c.slice(0,2).join(',');if(ids.has(id))invalidFile();ids.add(id);return [...c];
+    });
+    basins={columns,displaced};
+  }
   // Legacy v1 water volumes accumulated on camera approach and caused the
   // artificial flooding. Drop just those transient cells when opening an
   // older save; its player edits, terrain and exploration are preserved.
   return raw.version===1?{version:2,cells:[]}:
-    {version:2,cells,...(environment?{environment}:{}),...(raw.flows===undefined?{}:{flows:checkedFlows}),
+    {version:2,cells,...(basins?{basins}:{}),...(environment?{environment}:{}),...(raw.flows===undefined?{}:{flows:checkedFlows}),
       ...(raw.suppressed===undefined?{}:{suppressed:checkedSuppressed}),
       ...(raw.pressure===undefined?{}:{pressure:checkedPressure}),
       ...(raw.pressureInlets===undefined?{}:{pressureInlets:checkedInlets}),
@@ -359,7 +384,7 @@ export class SaveManager {
 
   decode(raw) {
     if (!isObject(raw) || raw.format !== SAVE_FORMAT) invalidFile();
-    if (![1,2,3,4,5,6,7,8,9,10,11,12,13,14,SAVE_VERSION].includes(raw.version)) throw new SaveFileError('unsupportedVersion');
+    if (![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,SAVE_VERSION].includes(raw.version)) throw new SaveFileError('unsupportedVersion');
     if (!isObject(raw.world)) invalidFile();
     if (raw.world.landmarksEnabled !== undefined && typeof raw.world.landmarksEnabled !== 'boolean')invalidFile();
     const terrainVersion = raw.world.terrainVersion === undefined ? 1 : raw.world.terrainVersion;

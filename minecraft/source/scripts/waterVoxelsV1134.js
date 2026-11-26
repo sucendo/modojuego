@@ -28,7 +28,8 @@ export function voxelWaterColumn(cell, bed) {
   const bottom = Math.round(physicalBed - .5) + .5;
   const actualDepth = Math.max(0, Number.isFinite(cell.depth)
     ? cell.depth : cell.y + .25 - physicalBed);
-  if (actualDepth <= WATER_MIN_VISIBLE_VOLUME) return null;
+  const minimum=cell.finite?.001:WATER_MIN_VISIBLE_VOLUME;
+  if (actualDepth <= minimum) return null;
   // Natural river channels have a *single* full water block, including in
   // legacy worlds with an over-deep procedural trough. A reservoir may stack
   // blocks when its pressure truly rises after a player edits the landscape.
@@ -36,8 +37,8 @@ export function voxelWaterColumn(cell, bed) {
   if(cell.dynamic){
     // Follow the actual stored volume. Rounding to eighths used to make a
     // filling reservoir jump between terraces and overstate shallow puddles.
-    const renderedDepth=Math.min(WATER_MAX_LAYERS,actualDepth);
-    if(renderedDepth<=WATER_MIN_VISIBLE_VOLUME)return null;
+    const renderedDepth=Math.min(cell.finite?256:WATER_MAX_LAYERS,actualDepth);
+    if(renderedDepth<=minimum)return null;
     return {kind:cell.kind,bottom,top:bottom+renderedDepth,layers:Math.ceil(renderedDepth)};
   }
   const layers = Math.max(1, Math.min(maxLayers, Math.ceil(actualDepth - 1e-8)));
@@ -50,7 +51,7 @@ export function exposedVoxelSide(here, next, bankBed, cascade=false) {
   if (next && next.top >= here.top - 1e-7) return null;
   // Older saves still classify a vertical step as a waterfall. Only the
   // explicit `cascade` flag lets the face extend below its own voxel.
-  const waterfall=!!next&&here.top-next.top>=1.05;
+  const waterfall=!!next&&(here.top-next.top>=1.05||cascade&&here.top-next.top>.05);
   const obstacle = next ? next.top : Number.isFinite(bankBed) ? bankBed : here.bottom;
   // New catchments: the exposed face of a waterfall reaches the LOWER
   // connected stream. It is a vertical, batched quad (no sloping geometry,
@@ -64,7 +65,8 @@ export function exposedVoxelSide(here, next, bankBed, cascade=false) {
  * waterfall face may only bridge two wet, downstream-connected columns.
  * Crossing a channel sideways must never create a curtain down a cliff. */
 export function isDownstreamWaterfallEdge(cell,neighbor,dx,dz){
-  if(!cell||!neighbor||cell.dynamic||cell.kind!=='river'||
+  if(cell?.finite&&neighbor&&cell.fallEdges)return (cell.fallEdges[dx>0?0:dx<0?1:dz>0?2:3]||0)>1e-7;
+  if(!cell||!neighbor||(cell.dynamic&&!cell.fallRate)||(cell.kind!=='river'&&!cell.finite)||
     !['river','lake','oasis'].includes(neighbor.kind))return false;
   const fx=Number(cell.flowX)||0,fz=Number(cell.flowZ)||0;
   if(!Number.isFinite(fx)||!Number.isFinite(fz))return false;
