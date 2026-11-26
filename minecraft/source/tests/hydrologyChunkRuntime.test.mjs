@@ -1,3 +1,4 @@
+import { continuousCorner, connectedWater, WaterTransitions, waterTime } from '../scripts/continuousWater.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -63,7 +64,7 @@ const blocks=Object.fromEntries(Object.entries(ids).map(([key,id])=>[key,{id,mat
 const resources=[{id:4,scarcity:.8,scale:{x:20,y:20,z:20}},{id:5,scarcity:.85,scale:{x:40,y:40,z:40}}];
 const raw=readFileSync(new URL('../scripts/worldChunk.js',import.meta.url),'utf8')
  .replace(/^import .*;\s*$/gm,'').replace('export class WorldChunk','class WorldChunk')+'\nWorldChunk;';
-const WorldChunk=vm.runInNewContext(raw,{THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
+const WorldChunk=vm.runInNewContext(raw,{continuousCorner,connectedWater,WaterTransitions,waterTime,THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
  makeFadeMaterial:()=>{},disposeFadeMaterial:()=>{},clampFade:a=>a,
  biomeForType,terrainHeight,advancedSurfaceHeight,isCave,geologyColumn,advancedUndergroundBlock,
  TERRAIN_V10,TERRAIN_HYBRID,TERRAIN_V11,TERRAIN_V112,TERRAIN_HYBRID_V112,LEGACY_HEIGHT,hybridSurfaceHeight,transitionWeight,hybridHydrologyColumn,makeHybridContext,
@@ -488,8 +489,9 @@ test('v11.3.4 real river chunk exposes only vertical indexed voxel sides',()=>{
       if(Math.max(...y)-Math.min(...y)<.9)continue;
       assert.ok(Math.max(...x)-Math.min(...x)<1e-6||Math.max(...z)-Math.min(...z)<1e-6,
         'voxel side face must be vertical, never tilted along the terrain');
-      assert.ok(y[0]===y[1]&&y[2]===y[3]&&y[0]>y[2],
-        'every face descends vertically from the upper level');
+      assert.ok(y[0]>=y[3]&&y[1]>=y[2]&&Math.max(y[0],y[1])>Math.min(y[2],y[3])&&
+        x[0]===x[3]&&z[0]===z[3]&&x[1]===x[2]&&z[1]===z[2],
+        'side vertices descend vertically from their continuous top edge');
       assert.ok(f[i]===f[i+1]&&f[i+1]===f[i+2]&&f[i+2]===f[i+3],
         'foam markers apply to whole faces, never individual corners');
       verticalSides++;
@@ -517,4 +519,74 @@ test('v11.5.1 a roofed, stone-lined full conduit draws only its open mouth',()=>
   c.loaded=true;c.refreshWater();
   assert.equal(c.children.filter(m=>m.userData?.waterSurface).length,0,
     'a flooded neighboring cave removes the surface/cave internal interface too');
+});
+
+function syntheticSheet(x0=0){
+  const c=new WorldChunk({width:4,height:16},{seed:1,terrain:{waterOffset:0}},new DataStore(),'classic',false,TERRAIN_V112);
+  c.position.x=x0;c.loaded=true;c.voxels=new VoxelData(4,16);
+  c.hydrologyGround=new Float32Array(16).fill(.5);c.waterColumns=Array(16).fill(null);
+  c.hybridNearby=null;
+  return c;
+}
+const fill=(c,x,z,depth)=>{c.waterColumns[z*4+x]={kind:'river',bed:.5,y:.5+depth-.25,depth,dynamic:true};};
+
+test('continuous dynamic sheet has identical shared vertices and no internal vertical wall',()=>{
+  const c=syntheticSheet();fill(c,1,1,.5);fill(c,2,1,.8);
+  const before=JSON.stringify(c.waterColumns);c.generateWater();
+  assert.equal(JSON.stringify(c.waterColumns),before,'presentation never changes physical water');
+  const mesh=c.children.find(m=>m.userData.waterSurface),p=mesh.geometry.position.array;
+  const topA=p.slice(0,12),topB=p.slice(12,24);
+  assert.equal(topA[4],topB[1]);assert.equal(topA[7],topB[10]);
+  assert.ok(Math.abs(topA[4]-1.15)<1e-6);
+  for(let i=24;i<p.length;i+=12){
+    const xs=[p[i],p[i+3],p[i+6],p[i+9]];
+    assert.ok(!xs.every(x=>x===1.5),'no transparent partition inside connected water');
+  }
+  assert.equal(mesh.geometry.waterHeightMotion.array.length,p.length);
+  assert.equal(mesh.geometry.waterAlphaMotion.array.length,p.length/3*4);
+  assert.ok(mesh.geometry.waterHeightMotion.array.every(Number.isFinite));
+});
+
+test('a visible waterfall shares its lower endpoint transition with the receiving river',()=>{
+  const c=syntheticSheet();c.hybridNearby={hybrid:{hydrographyVersion:3},protectedSet:new Set(),legacySet:new Set()};
+  c.terrainVersion=TERRAIN_HYBRID_V112;
+  c.waterColumns[5]={kind:'river',bed:4.5,y:5.25,depth:1,flowX:1,flowZ:0};c.hydrologyGround[5]=4.5;
+  c.waterColumns[6]={kind:'river',bed:.5,y:1.25,depth:1,flowX:1,flowZ:0};
+  c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;
+  c.generateWater();
+  const mesh=c.children.find(m=>m.geometry?.waterFall),f=mesh.geometry.waterFall.array;
+  const p=mesh.geometry.position.array,m=mesh.geometry.waterHeightMotion.array;
+  let falling=0;
+  for(let i=0;i<f.length;i+=4)if(f[i]===1){
+    falling++;assert.ok(p[(i+2)*3+1]<p[i*3+1]);
+    assert.ok(m[(i+2)*3+2]>0,'receiving level interpolates along with the waterfall');
+  }
+  assert.ok(falling>0);
+});
+
+test('neighboring chunks share the complete interpolation on rising and falling water',()=>{
+  const left=syntheticSheet(),right=syntheticSheet(4),timeline=new WaterTransitions();
+  left.waterTransitions=right.waterTransitions=timeline;
+  for(const c of [left,right]){
+    c.hydrologyLookup=(x,z)=>{
+      const other=x>=4?right:left,lx=x-other.position.x;
+      return lx>=0&&lx<4&&z>=0&&z<4?other.waterColumns[z*4+lx]:null;
+    };
+    c.hydrologyGroundLookup=()=>.5;
+  }
+  fill(left,3,1,.6);fill(right,0,1,.8);
+  const endpoints=c=>{
+    const g=c.children.find(m=>m.userData.waterSurface).geometry,p=g.position.array,h=g.waterHeightMotion.array;
+    const result=[];
+    for(let i=0;i<4;i++)if(p[i*3]+c.position.x===3.5)result.push([p[i*3+2],p[i*3+1],...h.slice(i*3,i*3+3)]);
+    return result.sort((a,b)=>a[0]-b[0]);
+  };
+  for(const [a,b] of [[.6,.8],[.9,.7],[.2,.4]]){
+    fill(left,3,1,a);fill(right,0,1,b);
+    const physical=JSON.stringify([left.waterColumns,right.waterColumns]);
+    left.refreshWater();right.refreshWater();
+    assert.deepEqual(endpoints(left),endpoints(right));
+    assert.equal(JSON.stringify([left.waterColumns,right.waterColumns]),physical);
+  }
+  timeline.release(left);timeline.release(right);assert.equal(timeline.records.size,0);
 });

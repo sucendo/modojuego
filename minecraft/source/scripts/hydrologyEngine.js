@@ -646,7 +646,7 @@ export class HydrologyEngine {
     if (changed||forceMesh) {
       chunk.refreshWater();
       // Adjacent chunk faces depend on our water level as well.
-      for (const [dx, dz] of NEIGHBORS) {
+      for (const [dx, dz] of [...NEIGHBORS,[1,1],[-1,1],[1,-1],[-1,-1]]) {
         const neighbor = this.world.getChunk(chunk.position.x / 32 + dx, chunk.position.z / 32 + dz);
         if (neighbor?.loaded) neighbor.refreshWater();
       }
@@ -736,7 +736,7 @@ export class HydrologyEngine {
         {evaporationRate:.0001,infiltrationScale:.4,deepDrainRate:.003});
       this.pressureVolumes=update.volumes;
       for(const k of new Set([...before.keys(),...this.pressureVolumes.keys()])){
-        if(Math.abs((before.get(k)||0)-(this.pressureVolumes.get(k)||0))<.008)continue;
+        if(Math.abs((before.get(k)||0)-(this.pressureVolumes.get(k)||0))<.00001)continue;
         const [x,z]=k.split(',').map(Number);
         this.pressureDirtyChunks.add(`${Math.floor(x/32)},${Math.floor(z/32)}`);
       }
@@ -744,7 +744,7 @@ export class HydrologyEngine {
       steps++;
     }
     this.pressureVisualElapsed+=dt;
-    if(this.pressureVisualElapsed>=.3&&this.pressureDirtyChunks.size){
+    if(this.pressureVisualElapsed>=.15&&this.pressureDirtyChunks.size){
       for(const k of this.pressureDirtyChunks){
         const [cx,cz]=k.split(',').map(Number);
         const chunk=this.world.getChunk(cx,cz);
@@ -789,12 +789,12 @@ export class HydrologyEngine {
       this.accumulator -= STEP;steps++;
     }
     this.visualElapsed += dt;
-    if (this.visualElapsed >= 1.25 && this.changedChunks.size) {
+    if (this.visualElapsed >= .15 && this.changedChunks.size) {
       this.visualElapsed = 0;this.flushVisuals();
     }
   }
 
-  applyChunk(chunk) {
+  applyChunk(chunk,deferMesh=false) {
     if (!chunk.loaded || !chunk.waterColumns) return;
     const x0 = chunk.position.x,z0 = chunk.position.z;
     const visual = chunk.hydrologyVisualState ?? (chunk.hydrologyVisualState = new Map());
@@ -814,23 +814,31 @@ export class HydrologyEngine {
       chunk.waterColumns[index] = next;
     }
     if (changed) {
-      chunk.refreshWater();
+      if(!deferMesh)chunk.refreshWater();
       for (const [index] of visual) {
         const rendered = chunk.waterColumns[index];
         visual.set(index, rendered ? { ...rendered } : null);
       }
     }
+    return changed;
   }
 
   flushVisuals() {
     if (!this.world) return;
     const keys = [...this.changedChunks];
     this.changedChunks.clear();
+    const refresh=new Set();
     for (const k of keys) {
       const [cx, cz] = k.split(',').map(Number);
       const chunk = this.world.getChunk(cx, cz);
-      if (chunk?.loaded) this.applyChunk(chunk);
+      if(chunk?.loaded&&this.applyChunk(chunk,true)){
+        for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){
+          const other=this.world.getChunk(cx+dx,cz+dz);if(other?.loaded)refresh.add(other);
+        }
+      }
     }
+    // Publish all levels before rebuilding shared boundary vertices.
+    for(const chunk of refresh)chunk.refreshWater();
   }
 
   springsNear(minX, minZ, maxX, maxZ) {

@@ -1,3 +1,4 @@
+import { WaterTransitions } from './continuousWater.js';
 import * as THREE from 'three';
 import { WorldChunk } from './worldChunk.js';
 import { DataStore } from './dataStore.js';
@@ -33,6 +34,7 @@ export class World extends THREE.Group {
   horizonQualityCap = 18;
   adaptiveHorizonDistance = null;
   terrainEpoch = 0;
+  waterTransitions = new WaterTransitions();
 
 
   chunkSize = {
@@ -293,6 +295,7 @@ export class World extends THREE.Group {
       : generator === TERRAIN_HYBRID
         ? protectionNearby(upgraded?this.hybridLegacySet:this.hybridProtectedSet,x,z):null;
     const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore, this.type, this.landmarksEnabled, generator, nearby);
+    chunk.waterTransitions=this.waterTransitions;
     chunk.liquidBlockLookup=(wx,y,wz)=>this.getBlockId(wx,y,wz);
     chunk.cavityLiquidLookup=(wx,wz)=>{
       const model=this.hydrology?.environment;
@@ -475,6 +478,7 @@ export class World extends THREE.Group {
     });
     this.clear();
     this.chunkIndex.clear();
+    this.waterTransitions.clear();
     this.lastVisibleKey=null;
   }
 
