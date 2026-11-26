@@ -32,15 +32,16 @@ export function waterOpacity(kind,type){
 }
 
 /** Shader-local highlights: no extra geometry, render passes or texture fetches. */
-export function applyWaterMotion(material,kind,withFalls=false,withTransition=false){
+export function applyWaterMotion(material,kind,withFalls=false,withTransition=false,withFlow=false){
   // Ice has a fixed surface. Its lighting and depth tint still respond to day/night.
   if(kind==='frozen')return material;
-  const lava=kind==='lava';
+  const lava=kind==='lava';withFlow=withFlow&&!lava;
   material.onBeforeCompile=shader=>{
     shader.uniforms.waterClock=waterClock;
     shader.uniforms.waterWaves=waterWaves;
-    if(withTransition)shader.uniforms.waterAnimationTime=waterAnimationTime;
+    if(withTransition||withFlow)shader.uniforms.waterAnimationTime=waterAnimationTime;
     shader.vertexShader=(withTransition?'attribute vec3 waterHeightMotion; attribute vec4 waterAlphaMotion; uniform float waterAnimationTime; varying float waterOpacityMix;\n':'')+'varying vec3 waterWorldPosition;\n'+
+      (withFlow?'attribute vec2 waterFlow; varying vec2 waterCurrent; varying float waterSurfaceMix;\n'+(!withTransition?'uniform float waterAnimationTime;\n':''):'')+
       (withFalls?'attribute float waterFall; varying float waterfallMix;\n':'')+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\n'+
@@ -52,18 +53,31 @@ export function applyWaterMotion(material,kind,withFalls=false,withTransition=fa
         'alphaProgress=alphaProgress*alphaProgress*(3.0-2.0*alphaProgress);\n'+
         'waterOpacityMix=mix(waterAlphaMotion.x,waterAlphaMotion.y,alphaProgress);\n':'')+
       'waterWorldPosition=(modelMatrix*vec4(transformed,1.0)).xyz;'+
+      (withFlow?'\nwaterCurrent=waterFlow; waterSurfaceMix=abs(normal.y);':'')+
       (withFalls?'\nwaterfallMix=waterFall;':''));
     shader.fragmentShader=(withTransition?'varying float waterOpacityMix;\n':'')+'varying vec3 waterWorldPosition; uniform float waterClock; uniform float waterWaves;\n'+
-      (withFalls?'varying float waterfallMix;\n':'')+shader.fragmentShader;
+      (withFalls?'varying float waterfallMix;\n':'')+
+      (withFlow?'varying vec2 waterCurrent; varying float waterSurfaceMix; uniform float waterAnimationTime;\n':'')+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
       '#include <color_fragment>\n'+
       (withTransition?'diffuseColor.a*=waterOpacityMix; if(diffuseColor.a<0.001)discard;\n':'')+
       (withFalls?
         'if(waterfallMix>0.01){\n'+
-        ' float streak=sin(waterWorldPosition.y*5.2-waterClock*4.5+waterWorldPosition.x*.8+waterWorldPosition.z*.8);\n'+
+        ' float streak=sin(waterWorldPosition.y*5.2+waterClock*4.5+waterWorldPosition.x*.8+waterWorldPosition.z*.8);\n'+
         (lava?
           ' diffuseColor.rgb=mix(diffuseColor.rgb,vec3(1.0,.48,.13),waterfallMix*(.07+.18*waterWaves*max(0.0,streak)));\n':
           ' diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.73,.90,.99),waterfallMix*(.13+.26*waterWaves*max(0.0,streak)));\n')+
+        '}\n':'')+
+      (withFlow?
+        'float currentSpeed=length(waterCurrent);\n'+
+        'if(currentSpeed>0.005&&waterSurfaceMix>0.6){\n'+
+        ' vec2 currentDirection=waterCurrent/max(currentSpeed,0.0001);\n'+
+        ' float along=dot(waterWorldPosition.xz,currentDirection)-waterAnimationTime*currentSpeed;\n'+
+        ' float across=dot(waterWorldPosition.xz,vec2(-currentDirection.y,currentDirection.x));\n'+
+        ' float lane=pow(max(0.0,sin(across*8.0)),8.0);\n'+
+        ' float fleck=pow(max(0.0,sin(along*5.5)),4.0);\n'+
+        ' float trace=lane*fleck*smoothstep(0.005,0.12,currentSpeed)*smoothstep(0.6,0.95,waterSurfaceMix);\n'+
+        ' diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.83,0.95,0.97),trace*(0.27+0.13*waterWaves));\n'+
         '}\n':'')+
       'if(waterWaves>0.001){\n'+
       ` float w1=sin(waterWorldPosition.x*.57+waterWorldPosition.z*.31+waterClock*${lava?'.42':'.74'});\n`+
@@ -77,7 +91,7 @@ export function applyWaterMotion(material,kind,withFalls=false,withTransition=fa
        ' diffuseColor.a*=1.0-waterWaves*.095*(1.0-fresnel);\n')+
       '}');
   };
-  material.customProgramCacheKey=()=>`minecraft-water-v112-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}-${withTransition?'transition':'fixed'}`;
+  material.customProgramCacheKey=()=>`minecraft-water-v112-${kind==='lava'?'lava':'liquid'}-${withFalls?'falls':'flat'}-${withTransition?'transition':'fixed'}-${withFlow?'current':'still'}`;
   return material;
 }
 

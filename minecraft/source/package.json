@@ -1,7 +1,7 @@
 {
   "name": "minecraft-test-2",
   "private": true,
-  "version": "11.6.3",
+  "version": "11.6.4",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",

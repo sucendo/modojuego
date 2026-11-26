@@ -1,3 +1,4 @@
+import { waterFlowVector } from './waterFlow.js';
 import { continuousCorner, connectedWater, WaterTransitions, waterTime } from './continuousWater.js';
 import * as THREE from 'three';
 import { waterAtPoint, surfaceWater } from './waterEnvironment.js';
@@ -51,7 +52,7 @@ export class EnvironmentVisuals {
   constructor(scene,world){
     this.world=world;this.group=new THREE.Group();scene.add(this.group);
     this.waterMaterial=applyWaterMotion(new THREE.MeshLambertMaterial({color:0x377d8b,
-      transparent:true,opacity:.48,depthWrite:false,side:THREE.DoubleSide}),'river',false,true);
+      transparent:true,opacity:.48,depthWrite:false,side:THREE.DoubleSide}),'river',false,true,true);
     this.waterMaterial.forceSinglePass=true;
     this.snowMaterial=new THREE.MeshLambertMaterial({color:0xf2f5fa,side:THREE.DoubleSide});
     this.meshes=[];this.revision=-1;this.elapsed=0;
@@ -71,21 +72,21 @@ export class EnvironmentVisuals {
       const values=[];
       for(const c of model.columns.get(`${x},${z}`)?.cavities??[]){
         const v=model.water.get(`${x},${z},${c.bottom}`)||0;
-        if(v>(c.finite?.001:.025))values.push({bottom:c.bottom,top:Math.min(c.roof,c.bottom+v),kind:'river',open:c.bottom+v<c.roof-.001});
+        if(v>(c.finite?.001:.025))values.push({bottom:c.bottom,top:Math.min(c.roof,c.bottom+v),kind:'river',flow:waterFlowVector({...c,volume:v}),open:c.bottom+v<c.roof-.001});
       }
-      const surface=surfaceWater(this.world,x,z);if(surface)values.push({...surface,kind:'river'});
+      const surface=surfaceWater(this.world,x,z);if(surface)values.push({...surface,kind:'river',flow:waterFlowVector(surface.column)});
       return values;
     };
     const cornersFor=c=>[[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sz])=>
       continuousCorner(c.x,c.z,sx,sz,(x,z)=>{
         const candidates=volumesAt(x,z).filter(v=>Math.min(v.top,c.top)>Math.max(v.bottom,c.bottom)+.001);
-        if(x===c.x&&z===c.z)return {...c,kind:'river',open:c.top<c.roof-.001};
+        if(x===c.x&&z===c.z)return {...c,kind:'river',flow:waterFlowVector(c),open:c.top<c.roof-.001};
         return candidates.sort((a,b)=>Math.abs(a.top-c.top)-Math.abs(b.top-c.top))[0]||null;
       }));
     const metadata=(c,corner,y,normal=true)=>({key:'cave:'+corner.key,from:previous.has(c.id)?y:c.bottom,
       fixed:!Number.isFinite(corner.top)||Math.abs(y-corner.top)>1e-6,
       alphaKey:'cave-cell:'+c.id,alpha:c.drying?0:1,fromAlpha:previous.has(c.id)?1:0,
-      normal:normal?corner.normal:null});
+      flow:corner.flow||waterFlowVector(c),normal:normal?corner.normal:null});
     for(const column of model.columns.values()){
       if(!column.chunk.loaded||this.world.getChunk(Math.floor(column.x/32),Math.floor(column.z/32))!==column.chunk)continue;
       for(const c of column.cavities){
@@ -98,7 +99,7 @@ export class EnvironmentVisuals {
         }
         nextPresented.set(id,{top:c.bottom+v,dryStart:drying?(old.dryStart??now):undefined});
         const top=Math.min(c.roof,c.bottom+v),x=c.x,z=c.z;
-        const draw={...c,id,top,drying},cs=cornersFor(draw);
+        const draw={...c,id,top,volume:v,drying},cs=cornersFor(draw);
         const surface=surfaceWater(this.world,x,z);
         if(surface&&surface.bottom<=c.bottom+.001&&surface.top>=top-.001)continue;
         if(top<c.roof-.001&&exposedLiquidTop(top,y=>this.world.getBlockId(x,y,z)))
@@ -123,7 +124,7 @@ export class EnvironmentVisuals {
       }
     }
     const byCell=new Map(tops.map(t=>[`${t.x},${t.z},${Math.round(t.top*10000)}`,t]));
-    const flat=tops.filter(t=>t.corners.every(c=>Math.abs(c.top-t.top)<1e-7)&&
+    const flat=tops.filter(t=>waterFlowVector(t.cell).every(v=>Math.abs(v)<1e-7)&&t.corners.every(c=>Math.abs(c.top-t.top)<1e-7)&&
       (!previous.size||t.corners.every(c=>{
         const r=timeline.records.get('cave:'+c.key);
         return !r||r.to===t.top&&now>=r.start+r.duration;
@@ -156,16 +157,17 @@ export class EnvironmentVisuals {
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
       if(layer===1){
-        const heights=[],alphas=[];
+        const heights=[],alphas=[],flow=[];
         for(let i=0;i<motion.length;i++){
           const m=motion[i],y=positions[i*3+1];
           const h=m.fixed?{from:y,start:now,duration:0}:timeline.target(m.key,y,now,m.from);
           const a=timeline.target(m.alphaKey,m.alpha,now,m.fromAlpha);
-          heights.push(h.from,h.start,h.duration);alphas.push(a.from,a.to,a.start,a.duration);
+          flow.push(...(m.flow||[0,0]));heights.push(h.from,h.start,h.duration);alphas.push(a.from,a.to,a.start,a.duration);
           if(m.normal)geometry.attributes.normal.setXYZ(i,...m.normal);
         }
         geometry.setAttribute('waterHeightMotion',new THREE.Float32BufferAttribute(heights,3));
         geometry.setAttribute('waterAlphaMotion',new THREE.Float32BufferAttribute(alphas,4));
+        geometry.setAttribute('waterFlow',new THREE.Float32BufferAttribute(flow,2));
         geometry.computeBoundingBox();
         for(let i=0;i<heights.length;i+=3){
           geometry.boundingBox.min.y=Math.min(geometry.boundingBox.min.y,heights[i]);

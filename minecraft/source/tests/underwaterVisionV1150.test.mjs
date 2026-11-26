@@ -80,3 +80,18 @@ test('uneven underground flow joins continuously while stacked cavities remain s
   model.clear();visuals.update(1);
   assert.equal(visuals.transitions.records.size,0);
 });
+
+test('surface water queries separate a suspended aqueduct from the water beneath it',async()=>{
+ const {surfaceWater,waterAtPoint}=await import('../scripts/waterEnvironment.js');
+ const chunk={loaded:true,position:{x:0,z:0},waterColumns:Array(1024).fill(null),hydrologyGround:new Float32Array(1024).fill(.5)};
+ chunk.waterColumns[33]={kind:'river',bed:7.5,depth:.6,y:7.85,finite:true,dynamic:true};
+ const world={chunkSize:{width:32},getChunk:()=>chunk,getBlockId:(x,y,z)=>y===7?3:0};
+ const model=new WaterEnvironment(world);world.hydrology={environment:model};
+ model.columns.set('1,1',{x:1,z:1,chunk,cavities:[{x:1,z:1,bottom:.5,roof:6.5}]});model.water.set('1,1,0.5',1);
+ assert.equal(surfaceWater(world,1,1).bottom,7.5);
+ assert.ok(Math.abs(waterAtPoint(world,{x:1,y:7.8,z:1}).depth-.3)<1e-6);
+ assert.equal(waterAtPoint(world,{x:1,y:1,z:1}).kind,'underground');
+ assert.equal(waterAtPoint(world,{x:1,y:4,z:1}),null,'air between the two water layers remains dry');
+ const visuals=new EnvironmentVisuals(new THREE.Scene(),world);visuals.rebuild(model);
+ assert.ok(visuals.meshes.some(m=>Array.from(m.geometry.attributes.position.array).filter((_,i)=>i%3===1).some(y=>Math.abs(y-1.5)<1e-6)),'lower water is not suppressed by the elevated surface');
+});

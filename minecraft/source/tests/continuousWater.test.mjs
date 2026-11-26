@@ -56,3 +56,11 @@ test('a per-sheet corner cache shares work only within a connected component',()
  const split=new Map(),diagonal=(x,z)=>(x===z?{bottom:.5,top:2,kind:'lake',open:true}:null);
  assert.notEqual(continuousCorner(0,0,1,1,diagonal,split).key,continuousCorner(1,1,-1,-1,diagonal,split).key);
 });
+
+test('connected water shares the current vector at its corners without mixing stacked layers',()=>{
+ const sample=grid([[31,0,wet(8,7.5,{flow:[.4,0]})],[32,0,wet(8,7.5,{flow:[0,.4]})]]);
+ const a=continuousCorner(31,0,1,1,sample),b=continuousCorner(32,0,-1,1,sample);
+ assert.deepEqual(a.flow,[.2,.2]);assert.deepEqual(a.flow,b.flow);
+ const split=grid([[31,0,wet(8,7.5,{flow:[.4,0]})],[32,0,wet(1,.5,{flow:[-.4,0]})]]);
+ assert.deepEqual(continuousCorner(31,0,1,1,split).flow,[.4,0]);
+});

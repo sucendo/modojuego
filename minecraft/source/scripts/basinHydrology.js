@@ -1,3 +1,4 @@
+import { waterFlowVector, waterFlowChanged } from './waterFlow.js';
 import { liquidOccluder } from './liquidShell.js';
 import { voxelWaterColumn } from './waterVoxelsV1134.js';
 
@@ -123,6 +124,7 @@ export function stepBasinWater(nodes,dt=BASIN_STEP,{evaporation=0,infiltration=0
     delta.set(r.from,(delta.get(r.from)||0)-r.amount);delta.set(r.to,(delta.get(r.to)||0)+r.amount);
     const c=nodes.get(r.from),n=nodes.get(r.to),rate=dt?r.amount/dt:0;
     c.flowX+=r.dx*rate;c.flowZ+=r.dz*rate;
+    n.flowX+=r.dx*rate;n.flowZ+=r.dz*rate;
     if(c.bottom>n.bottom+.5){c.fallRate+=rate;c.fallEdges[r.dx>0?0:r.dx<0?1:r.dz>0?2:3]+=rate;}
     if(r.amount>0&&volumes.get(r.to)<1e-7)n.kind=c.kind;
   }
@@ -131,7 +133,7 @@ export function stepBasinWater(nodes,dt=BASIN_STEP,{evaporation=0,infiltration=0
     // Do not remove tiny remainders by a visual visibility threshold.
     const dry=Math.min(v,c.outdoor?evaporation*dt:0);v-=dry;evaporated+=dry;
     const soak=Math.min(v,(c.permeability||0)*infiltration*dt);v-=soak;infiltrated+=soak;
-    c.volume=v;
+    c.volume=v;c.flowX*=.5;c.flowZ*=.5;
   }
   settleLakePools(nodes,edges,dt);
   return {supplied,evaporated,infiltrated,transferred:requests.reduce((s,r)=>s+r.amount,0)};
@@ -368,7 +370,7 @@ export class BasinHydrology {
       this.updateSources();
       const result=stepBasinWater(active,BASIN_STEP,{evaporation:.00008,infiltration:1,topology:this.topology});
       for(const k of ['supplied','evaporated','infiltrated'])this.ledger[k]+=result[k];
-      for(const c of active.values())if(Math.abs(c.volume-(c.renderedVolume??-1))>.002||Math.abs((c.fallRate||0)-(c.renderedFallRate||0))>Math.max(.0005,(c.renderedFallRate||0)*.15)||((c.fallRate||0)>1e-7)!==((c.renderedFallRate||0)>1e-7))this.dirty.add(ck(c.x,c.z));
+      for(const c of active.values())if(waterFlowChanged(c)||Math.abs(c.volume-(c.renderedVolume??-1))>.002||Math.abs((c.fallRate||0)-(c.renderedFallRate||0))>Math.max(.0005,(c.renderedFallRate||0)*.15)||((c.fallRate||0)>1e-7)!==((c.renderedFallRate||0)>1e-7))this.dirty.add(ck(c.x,c.z));
       this.accumulator-=BASIN_STEP;
     }
     this.visualElapsed+=dt;if(this.visualElapsed>=.25){this.publish();this.visualElapsed=0;}
@@ -406,7 +408,7 @@ export class BasinHydrology {
     env.columns.set(id,{x,z,chunk,top:column.top,cavities,basinOwned:true});
     if(oldCavities.some(c=>(c.renderedVolume||0)>.001)||cavities.some(c=>c.volume>.001))caveChanged=true;
     for(const c of cavities)env.water.set(nk(c),c.volume);
-    for(const c of column.nodes){c.renderedVolume=c.volume;c.renderedFallRate=c.fallRate||0;}
+    for(const c of column.nodes){c.renderedVolume=c.volume;c.renderedFallRate=c.fallRate||0;c.renderedFlow=waterFlowVector(c);}
     const width=this.world.chunkSize.width;
     // Only vertices on a shared border can affect a neighbouring mesh.
     const lx=x-chunk.position.x,lz=z-chunk.position.z;
