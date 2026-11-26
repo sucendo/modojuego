@@ -648,7 +648,7 @@ export class WorldChunk extends THREE.Group {
           const neighborCell=inside?renderCells[nz*size+nx]:boundary(nx,nz);
           const dry=nx>=0&&nx<size&&nz>=0&&nz<size
             ?this.hydrologyGround?.[nz*size+nx]:boundary(nx,nz)?.bed;
-          const cascades=freshCascades&&
+          const cascades=(freshCascades||cell.fallRate>0)&&
             isDownstreamWaterfallEdge(cell,neighborCell,dx,dz);
           const cavities=this.cavityLiquidLookup?.(this.position.x+nx,this.position.z+nz)??[];
           const mouth=cavities.some(c=>c.bottom<voxel.top&&c.roof>voxel.bottom);
@@ -667,15 +667,17 @@ export class WorldChunk extends THREE.Group {
           const lowerCorners=!lower?null:dx>0?[lower[0],lower[3]]:dx<0?[lower[1],lower[2]]:
             dz>0?[lower[0],lower[1]]:[lower[3],lower[2]];
           const bottomA=lowerCorners?.[0]?.top??bottom,bottomB=lowerCorners?.[1]?.top??bottom;
+          const edgeRate=cell.fallEdges?.[dx>0?0:dx<0?1:dz>0?2:3]??cell.fallRate;
+          const halfWidth=waterfall&&cell.finite?Math.max(.04,Math.min(.5,Math.sqrt(Math.max(0,edgeRate||0)/.6)*.5)):.5;
           if(topA<=bottom&&topB<=bottom)continue;
           if(dx){
             const edge=x+dx*.5;
             group.verts.push(edge,Math.max(bottom,topA),z-.5,edge,Math.max(bottom,topB),z+.5,
-              edge,bottomB,z+.5,edge,bottomA,z-.5);
+              edge,bottomB,z+halfWidth,edge,bottomA,z-halfWidth);
           }else{
             const edge=z+dz*.5;
             group.verts.push(x-.5,Math.max(bottom,topA),edge,x+.5,Math.max(bottom,topB),edge,
-              x+.5,bottomB,edge,x-.5,bottomA,edge);
+              x+halfWidth,bottomB,edge,x-halfWidth,bottomA,edge);
           }
           group.motion.push({...motionFor(x,z,edgeCorners[0],Math.max(bottom,topA)),normal:null},
             {...motionFor(x,z,edgeCorners[1],Math.max(bottom,topB)),normal:null},

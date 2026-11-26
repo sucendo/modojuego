@@ -20,7 +20,7 @@ test('v11 generator is a separate version: old worlds can retain their terrain',
  assert.match(save,/TERRAIN_V11/);
  assert.match(save,/\[1,TERRAIN_V10,TERRAIN_HYBRID,TERRAIN_V11,TERRAIN_V112,TERRAIN_HYBRID_V112\]/);
  assert.match(save,/world\.terrainVersion = normalized\.world\.terrainVersion \|\| 1/);
- assert.match(save,/const SAVE_VERSION = 15/);
+ assert.match(save,/const SAVE_VERSION = 16/);
 });
 
 test('hydrology is deterministic per seed and independent of chunk coordinates',()=>{

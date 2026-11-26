@@ -71,7 +71,7 @@ export class EnvironmentVisuals {
       const values=[];
       for(const c of model.columns.get(`${x},${z}`)?.cavities??[]){
         const v=model.water.get(`${x},${z},${c.bottom}`)||0;
-        if(v>.025)values.push({bottom:c.bottom,top:Math.min(c.roof,c.bottom+v),kind:'river',open:c.bottom+v<c.roof-.001});
+        if(v>(c.finite?.001:.025))values.push({bottom:c.bottom,top:Math.min(c.roof,c.bottom+v),kind:'river',open:c.bottom+v<c.roof-.001});
       }
       const surface=surfaceWater(this.world,x,z);if(surface)values.push({...surface,kind:'river'});
       return values;
@@ -92,9 +92,9 @@ export class EnvironmentVisuals {
         const id=`${c.x},${c.z},${c.bottom}`;
         let v=model.water.get(id)||0,drying=false;
         const old=previous.get(id);
-        if(v<.025){
+        if(v<(c.finite?.001:.025)){
           if(!old||now-(old.dryStart??now)>.32)continue;
-          v=.026;drying=true;
+          v=c.finite?.0011:.026;drying=true;
         }
         nextPresented.set(id,{top:c.bottom+v,dryStart:drying?(old.dryStart??now):undefined});
         const top=Math.min(c.roof,c.bottom+v),x=c.x,z=c.z;

@@ -119,7 +119,7 @@ export class WaterEnvironment {
   }
   invalidate(x,z){this.columns.delete(key(x,z));this.revision++;}
   balanceError(){
-    const total=[...this.water.values()].reduce((s,v)=>s+v,0),l=this.ledger;
+    const total=[...this.water].filter(([k])=>{const [x,z]=k.split(',').map(Number);return !this.world.hydrology?.basins?.ownsColumn(x,z);}).reduce((s,[,v])=>s+v,0),l=this.ledger;
     return total-(l.initial+l.inflow-l.drainage-l.displaced);
   }
   readColumn(x,z){
@@ -127,6 +127,13 @@ export class WaterEnvironment {
     const chunk=w.getChunk?.(Math.floor(x/width),Math.floor(z/width));
     if(!chunk?.loaded)return null;
     const old=this.columns.get(key(x,z));
+    const managed=w.hydrology?.basins?.columns.get(key(x,z));
+    if(managed?.chunk===chunk){
+      const result={x,z,chunk,top:managed.top,cavities:managed.nodes.filter(c=>!c.outdoor),basinOwned:true};
+      this.columns.set(key(x,z),result);
+      for(const c of result.cavities)this.water.set(nodeKey(c),c.volume);
+      return result;
+    }
     if(old?.chunk===chunk)return old;
     let cavities=[];const height=w.chunkSize.height;
     let start=null,top=-1;
@@ -182,14 +189,14 @@ export class WaterEnvironment {
   update(dt,position,weather={},active=true){
     if(!active||!position||this.world.type==='lava')return;
     this.seconds+=Math.max(0,dt);
-    if(this.epoch!==this.world.terrainEpoch){this.columns.clear();this.scanCenter='';this.epoch=this.world.terrainEpoch;this.revision++;}
+    if(this.epoch!==this.world.terrainEpoch){for(const [k,c] of this.columns)if(!this.world.hydrology?.basins?.ownsColumn(c.x,c.z))this.columns.delete(k);this.scanCenter='';this.epoch=this.world.terrainEpoch;this.revision++;}
     const cx=Math.round(position.x/8)*8,cz=Math.round(position.z/8)*8;
     if(this.scanCenter!==key(cx,cz)){
       this.scanCenter=key(cx,cz);this.scan=[];this.cursor=0;
       for(let dz=-20;dz<=20;dz++)for(let dx=-20;dx<=20;dx++)
         if(dx*dx+dz*dz<=400)this.scan.push([cx+dx,cz+dz]);
       this.scan.sort((a,b)=>(a[0]-cx)**2+(a[1]-cz)**2-((b[0]-cx)**2+(b[1]-cz)**2));
-      for(const [k,c] of this.columns)if(Math.abs(c.x-cx)>32||Math.abs(c.z-cz)>32)this.columns.delete(k);
+      for(const [k,c] of this.columns)if((Math.abs(c.x-cx)>32||Math.abs(c.z-cz)>32)&&!this.world.hydrology?.basins?.ownsColumn(c.x,c.z))this.columns.delete(k);
     }
     this.elapsed=Math.min(.5,this.elapsed+Math.max(0,dt));
     if(this.elapsed<CAVITY_STEP)return;
@@ -209,6 +216,7 @@ export class WaterEnvironment {
     const nodes=new Map();
     for(const column of this.columns.values()){
       if(!column.chunk.loaded||this.world.getChunk(Math.floor(column.x/32),Math.floor(column.z/32))!==column.chunk)continue;
+      if(this.world.hydrology?.basins?.ownsColumn(column.x,column.z))continue;
       for(const c of column.cavities)if(this.water.has(nodeKey(c)))nodes.set(nodeKey(c),c);
     }
     let inflow=0,inletBudget=.25*dt;
@@ -250,7 +258,9 @@ export class WaterEnvironment {
           c.boundaryHead=Math.max(c.boundaryHead??-Infinity,s.top);
         }else if(head>s.top+.01&&head>sill){
           const out=Math.min(v*.25,.12*dt,(head-Math.max(s.top,sill))*.22*dt);
-          v-=out;this.ledger.drainage+=out;
+          const returned=this.world.hydrology?.basins?.ownsColumn(s.x,s.z)
+            ?this.world.hydrology.basins.exchange(s.x,s.z,s.bottom,out):out;
+          v-=returned;this.ledger.drainage+=returned;
         }
       }
       for(const [source,wanted] of requests){
@@ -278,6 +288,7 @@ export class WaterEnvironment {
   takeSurface(source,requested){
     const engine=this.world.hydrology;
     if(!requested)return 0;
+    if(engine?.basins?.ownsColumn(source.x,source.z))return -engine.basins.exchange(source.x,source.z,source.bottom,-requested);
     // Legacy/synthetic worlds have only a prescribed surface reservoir.
     if(!(engine?.pressureVolumes instanceof Map))return requested;
     const k=key(source.x,source.z),extra=engine.pressureVolumes.get(k)||0;
@@ -312,7 +323,7 @@ export class WaterEnvironment {
     else this.snow.delete(k);
     this.revision++;this.onChange();
   }
-  snapshot(){return {water:[...this.water].map(([k,v])=>[...k.split(',').map(Number),v]),
+  snapshot(){return {water:[...this.water].filter(([k])=>{const [x,z]=k.split(',').map(Number);return !this.world.hydrology?.basins?.ownsColumn(x,z);}).map(([k,v])=>[...k.split(',').map(Number),v]),
     snow:[...this.snow.values()].map(c=>[c.x,c.z,c.y,c.depth])};}
   restore(raw){
     if(!raw)return;

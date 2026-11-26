@@ -590,3 +590,19 @@ test('neighboring chunks share the complete interpolation on rising and falling 
   }
   timeline.release(left);timeline.release(right);assert.equal(timeline.records.size,0);
 });
+
+test('finite lake discharge draws a narrow falling sheet rather than a full-width water cube',()=>{
+  const c=syntheticSheet();c.hybridNearby={hybrid:{hydrographyVersion:3},protectedSet:new Set(),legacySet:new Set()};
+  c.terrainVersion=TERRAIN_HYBRID_V112;
+  c.waterColumns[5]={kind:'lake',bed:4.5,y:4.35,depth:.1,finite:true,dynamic:true,flowX:.01,flowZ:0,fallRate:.01,fallEdges:[.01,0,0,0]};c.hydrologyGround[5]=4.5;
+  c.waterColumns[6]={kind:'lake',bed:.5,y:.45,depth:.2,finite:true,dynamic:true};
+  c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;c.generateWater();
+  const mesh=c.children.find(m=>m.geometry?.waterFall),f=mesh.geometry.waterFall.array,p=mesh.geometry.position.array;
+  let found=false;
+  for(let i=0;i<f.length;i+=4)if(f[i]===1){
+    found=true;assert.ok(Math.abs(p[(i+2)*3+2]-p[(i+3)*3+2])<.5);
+    assert.ok(p[i*3+1]-p[(i+2)*3+1]>1);
+  }
+  assert.ok(found);
+  assert.ok(voxelWaterColumn({kind:'river',bed:.5,y:.27,depth:.02,finite:true,dynamic:true},.5));
+});
