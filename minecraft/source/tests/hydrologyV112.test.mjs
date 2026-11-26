@@ -119,7 +119,7 @@ test('falling water has an animated vertical shader without another mesh pass',(
     fragmentShader:'#include <color_fragment>'};
   material.onBeforeCompile(shader);
   assert.match(shader.vertexShader,/waterfallMix=waterFall/);
-  assert.match(shader.fragmentShader,/waterWorldPosition\.y\*5\.2-waterClock\*4\.5/);
+  assert.match(shader.fragmentShader,/waterWorldPosition\.y\*5\.2\+waterClock\*4\.5/);
   assert.ok(shader.uniforms.waterClock);
   assert.match(source('worldChunk.js'),/geometry\.setAttribute\('waterFall'/);
   assert.match(source('worldChunk.js'),/group\.falls\.push\(animateFall\?1:0/);

@@ -1,3 +1,4 @@
+import {waterFlowVector} from '../scripts/waterFlow.js';
 import { continuousCorner, connectedWater, WaterTransitions, waterTime } from '../scripts/continuousWater.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -64,7 +65,7 @@ const blocks=Object.fromEntries(Object.entries(ids).map(([key,id])=>[key,{id,mat
 const resources=[{id:4,scarcity:.8,scale:{x:20,y:20,z:20}},{id:5,scarcity:.85,scale:{x:40,y:40,z:40}}];
 const raw=readFileSync(new URL('../scripts/worldChunk.js',import.meta.url),'utf8')
  .replace(/^import .*;\s*$/gm,'').replace('export class WorldChunk','class WorldChunk')+'\nWorldChunk;';
-const WorldChunk=vm.runInNewContext(raw,{continuousCorner,connectedWater,WaterTransitions,waterTime,THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
+const WorldChunk=vm.runInNewContext(raw,{waterFlowVector,continuousCorner,connectedWater,WaterTransitions,waterTime,THREE,SimplexNoise,RNG,VoxelData,blocks,resources,
  makeFadeMaterial:()=>{},disposeFadeMaterial:()=>{},clampFade:a=>a,
  biomeForType,terrainHeight,advancedSurfaceHeight,isCave,geologyColumn,advancedUndergroundBlock,
  TERRAIN_V10,TERRAIN_HYBRID,TERRAIN_V11,TERRAIN_V112,TERRAIN_HYBRID_V112,LEGACY_HEIGHT,hybridSurfaceHeight,transitionWeight,hybridHydrologyColumn,makeHybridContext,
@@ -617,4 +618,23 @@ test('water meshing samples each external column once per rebuild',()=>{
   assert.ok(calls.size>0);
   assert.ok([...calls.values()].every(n=>n===1),'corner smoothing and side clipping share cached boundary samples');
   c.generateWater();assert.ok([...calls.values()].every(n=>n===2),'cache expires between geometry rebuilds');
+});
+
+test('a suspended aqueduct keeps both upper water tiles above a lower water layer',()=>{
+ const c=syntheticSheet();c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;
+ for(const x of [1,2]){
+  c.setBlockId(x,7,1,3);
+  c.waterColumns[4+x]={kind:'river',bed:7.5,y:7.85,depth:.6,dynamic:true,finite:true,flowX:.1};
+  assert.equal(c.hydrologyGround[4+x],.5,'a suspended deck does not replace the terrain floor');
+ }
+ c.cavityLiquidLookup=()=>[{bottom:.5,top:1.5,roof:6.5}];
+ c.generateWater();const p=c.children.find(m=>m.userData.waterSurface).geometry.position.array;
+ const topQuads=[];
+ for(let i=0;i<p.length;i+=12)if([p[i+1],p[i+4],p[i+7],p[i+10]].every(y=>Math.abs(y-8.1)<1e-6))topQuads.push(p.slice(i,i+12));
+ assert.equal(topQuads.length,2,'both aqueduct cells retain a visible upper surface');
+ assert.ok(p.filter((_,i)=>i%3===1).every(y=>y>=7.5),'upper water is never drawn below its deck');
+ const attr=c.children.find(m=>m.userData.waterSurface).geometry.waterFlow;
+ assert.equal(attr.array.length,p.length/3*2);assert.ok(attr.array.every(Number.isFinite));
+ c.waterColumns[5]=null;c.refreshWater();
+ for(const mesh of c.children.filter(m=>m.userData.waterSurface))assert.ok(mesh.geometry.position.array.filter((_,i)=>i%3===1).every(y=>y>=7.5),'drying water stays at the upper deck while fading');
 });

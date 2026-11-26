@@ -118,3 +118,9 @@ test('existing explored v11.2 chunks remain precisely preserved while the unvisi
   assert.equal(newSample.height,independent.height);
   assert.equal(newSample.waterY,independent.waterY);
 });
+
+test('finite aqueduct water uses its own elevated bed above lower groundwater',()=>{
+ const water=voxelWaterColumn({kind:'river',finite:true,dynamic:true,bed:7.5,depth:.6,y:7.85},.5);
+ assert.equal(water.bottom,7.5,'the ground below the deck must not pull the aqueduct water down');
+ assert.ok(Math.abs(water.top-8.1)<1e-9);
+});

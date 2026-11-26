@@ -20,7 +20,9 @@ export function sourceWaterBlocked(cell, originalBed, currentBed, blockAt = null
 
 export function voxelWaterColumn(cell, bed) {
   if (!cell || !Number.isFinite(cell.y)) return null;
-  const physicalBed = Number.isFinite(bed)
+  // Finite spans already carry their physical floor. The terrain hydraulic
+  // bed can remain far below a suspended aqueduct or another stacked span.
+  const physicalBed = cell.finite&&Number.isFinite(cell.bed)?cell.bed:Number.isFinite(bed)
     ? bed : (Number.isFinite(cell.bed) ? cell.bed :
       cell.y + .25 - (Number(cell.depth) || 0));
   if (!Number.isFinite(physicalBed)) return null;
@@ -80,7 +82,7 @@ export function isDownstreamWaterfallEdge(cell,neighbor,dx,dz){
 export function mergeCoplanarWaterSurfaces(size,cells){
   const used=new Uint8Array(size*size),quads=[];
   const compatible=(a,b)=>!!b&&a.kind===b.kind&&
-    Math.abs(a.top-b.top)<1e-6&&!!a.sourceDebug===!!b.sourceDebug;
+    Math.abs(a.top-b.top)<1e-6&&!!a.sourceDebug===!!b.sourceDebug&&a.flowKey===b.flowKey;
   for(let z=0;z<size;z++)for(let x=0;x<size;x++){
     const i=z*size+x,first=cells[i];
     if(!first||used[i])continue;
