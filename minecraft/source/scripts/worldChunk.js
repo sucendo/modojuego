@@ -1,5 +1,5 @@
 import { waterFlowVector, bindWaterFlow, refreshWaterFlowAttribute } from './waterFlow.js';
-import { continuousCorner, connectedWater, WaterTransitions, waterTime } from './continuousWater.js';
+import { continuousCorner, connectedWater, WaterTransitions, WATER_TRANSITION_SECONDS, waterTime } from './continuousWater.js';
 import * as THREE from 'three';
 import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
 import { RNG } from './rng.js';
@@ -550,7 +550,7 @@ export class WorldChunk extends THREE.Group {
       const old=previous[i];
       if(!old||old.kind==='frozen'||old.kind==='lava')return null;
       if(!drySince.has(i))drySince.set(i,now);
-      if(now-drySince.get(i)>.32){drySince.delete(i);return null;}
+      if(now-drySince.get(i)>WATER_TRANSITION_SECONDS){drySince.delete(i);return null;}
       const ground=this.hydrologyGround?.[i];
       if(!Number.isFinite(ground)||ground>old.bottom+.01)return null;
       const bed=old.bottom,depth=old.finite?.0011:.026;
@@ -764,6 +764,9 @@ export class WorldChunk extends THREE.Group {
       // Three.js otherwise draws transparent DoubleSide back faces in an
       // extra pass, amplifying dark translucent overlaps on waterfalls.
       surfaceMat.forceSinglePass=true;
+      // Falling sheets touch cliff faces. A depth bias prevents coplanar
+      // flicker without moving the physical surface or adding geometry.
+      surfaceMat.polygonOffset=true;surfaceMat.polygonOffsetFactor=-1;surfaceMat.polygonOffsetUnits=-1;
       const surface=new THREE.Mesh(geometry,surfaceMat);
       // Include both endpoints in culling bounds throughout a transition.
       if(geometry.computeBoundingBox){

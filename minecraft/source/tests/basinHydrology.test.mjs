@@ -366,3 +366,37 @@ test('a newly visible thin film still changes geometry rather than only velocity
  assert.ok(f.b.dirty.has('11,10'),'crossing the visibility threshold needs a new surface');
  f.b.publish();assert.ok(f.b.meshQueue.size>0);
 });
+
+
+test('an open sea boundary discharges excess, preserves sea level and accounts every removed volume',()=>{
+ const c={...cell(0,0,4),oceanHead:2.5},nodes=new Map([['sea',c]]),initial=total(nodes);
+ let discharged=0;for(let i=0;i<100;i++)discharged+=stepBasinWater(nodes,.1).discharged;
+ assert.ok(c.volume>=2&&c.volume<2.000001);
+ assert.ok(Math.abs(total(nodes)+discharged-initial)<1e-10);
+ c.volume=1;assert.equal(stepBasinWater(nodes,.1).discharged,0);assert.equal(c.volume,1,'a sea outlet does not create replenishment');
+});
+
+test('only original unmarked sea water becomes an outlet; stable lakes stay finite after reload',()=>{
+ for(const sea of [false,true]){
+  const f=worldFixture();
+  if(sea)for(const rows of [f.chunk.waterColumns,f.chunk.naturalWaterColumns])for(let x=1;x<=3;x++)rows[32+x]={...rows[32+x],stable:false,source:false};
+  const b=f.world.hydrology.basins;b.edit(4,1,1);
+  const seaNodes=[...b.nodes.values()].filter(c=>Number.isFinite(c.oceanHead));
+  assert.equal(seaNodes.length,sea?3:0);assert.ok(seaNodes.every(c=>c.outdoor));
+  b.exchange(1,1,.5,3);for(let i=0;i<100;i++)b.update(.1);
+  assert.equal(b.ledger.discharged>0,sea);assert.ok(Math.abs(b.balanceError())<1e-8);
+  const snapshot=b.snapshot(),r=worldFixture();
+  if(sea)for(const rows of [r.chunk.waterColumns,r.chunk.naturalWaterColumns])for(let x=1;x<=3;x++)rows[32+x]={...rows[32+x],stable:false,source:false};
+  r.world.hydrology.basins.restore(snapshot);r.world.hydrology.reconcileChunk(r.chunk);
+  const restored=r.world.hydrology.basins;
+  assert.equal([...restored.nodes.values()].filter(c=>Number.isFinite(c.oceanHead)).length,sea?3:0);
+  assert.ok(Math.abs(restored.total()-b.total())<1e-8);assert.ok(Math.abs(restored.balanceError())<1e-8);
+ }
+});
+
+
+test('water spreading onto originally dry land never creates a new ocean outlet',()=>{
+ const f=worldFixture();f.chunk.waterColumns[36]={bed:.5,y:1.25,depth:1,kind:'lake',finite:true,dynamic:true,stable:false,source:false};
+ const b=f.world.hydrology.basins;b.edit(4,1,1);
+ assert.ok(b.columns.has('4,1'));assert.ok(b.columns.get('4,1').nodes.every(c=>!Number.isFinite(c.oceanHead)));
+});
