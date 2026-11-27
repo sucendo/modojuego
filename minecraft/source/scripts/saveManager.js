@@ -22,7 +22,7 @@ const PREVIOUS_KEY = 'minecraftjs_save_v1';
 const OLD_PARAMS_KEY = 'minecraft_params';
 const OLD_DATA_KEY = 'minecraft_data';
 const SAVE_FORMAT = 'minecraftjs-save';
-const SAVE_VERSION = 18;
+const SAVE_VERSION = 19;
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const MAX_EDITED_BLOCKS = 400000;
 const BLOCK_KEY = /^(-?\d+),(-?\d+),(\d+),(\d+),(\d+)$/;
@@ -109,8 +109,8 @@ function validateHydrology(raw) {
       return records.map(c=>{
         if(!Array.isArray(c)||!(snow?[4,6].includes(c.length):c.length===4)||
           c.slice(0,2).some(n=>!Number.isSafeInteger(n)||Math.abs(n)>100000)||
-          !validNumber(c[2],snow?0:.5,255)||
-          (snow?!Number.isInteger(c[2]):!Number.isInteger(c[2]-.5))||
+          !validNumber(c[2],0,255)||
+          (snow?!Number.isInteger(c[2]):!Number.isInteger(c[2]*2))||
           !validNumber(c[3],0,snow?.18:255))invalidFile();
         if(snow&&c.length===6&&(!validNumber(c[4],0,c[3])||!validNumber(c[5],0,120)))invalidFile();
         const k=c.slice(0,snow?2:3).join(',');
@@ -118,6 +118,13 @@ function validateHydrology(raw) {
       });
     };
     environment={water:validateRecords(source.water,false),snow:validateRecords(source.snow,true)};
+    if(source.soil!==undefined){
+      if(!Array.isArray(source.soil)||source.soil.length>16384)invalidFile();
+      const seen=new Set();environment.soil=source.soil.map(c=>{
+        if(!Array.isArray(c)||c.length!==6||c.slice(0,2).some(n=>!Number.isSafeInteger(n)||Math.abs(n)>100000)||!Number.isInteger(c[2])||!validNumber(c[2],0,255)||!validNumber(c[3],0,1)||!validNumber(c[4],0,1)||!validNumber(c[5],0,240))invalidFile();
+        const k=c.slice(0,2).join(',');if(seen.has(k))invalidFile();seen.add(k);return [...c];
+      });
+    }
   }
   let basins;
   if(raw.basins!==undefined){
@@ -131,8 +138,8 @@ function validateHydrology(raw) {
       const id=c.slice(0,2).join(',');if(seenColumns.has(id))invalidFile();seenColumns.add(id);
       const floors=new Set();
       const spans=c[2].map(n=>{
-        if(!Array.isArray(n)||n.length!==3||!validNumber(n[0],.5,255)||
-          !Number.isInteger(n[0]-.5)||!validNumber(n[1],0,255)||!WATER_TYPES.has(n[2])||floors.has(n[0]))invalidFile();
+        if(!Array.isArray(n)||n.length!==3||!validNumber(n[0],0,255)||
+          !Number.isInteger(n[0]*2)||!validNumber(n[1],0,255)||!WATER_TYPES.has(n[2])||floors.has(n[0]))invalidFile();
         floors.add(n[0]);if(++count>BASIN_SAVED_NODES)invalidFile();return [...n];
       });
       return [c[0],c[1],spans];
@@ -191,7 +198,7 @@ function validateBlocks(blocks, terrainVersion = 1) {
   if (entries.length > MAX_EDITED_BLOCKS) invalidFile();
   for (const [key, value] of entries) {
     const parts = BLOCK_KEY.exec(key);
-    if (!parts || !Number.isInteger(value) || value < 0 || value > 28) invalidFile();
+    if (!parts || !Number.isInteger(value) || value < 0 || value > 53) invalidFile();
     const nums = parts.slice(1).map(Number);
     if (!nums.every(Number.isSafeInteger)) invalidFile();
     if (Math.abs(nums[0]) > 100000 || Math.abs(nums[1]) > 100000 ||
@@ -391,7 +398,7 @@ export class SaveManager {
 
   decode(raw) {
     if (!isObject(raw) || raw.format !== SAVE_FORMAT) invalidFile();
-    if (![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,SAVE_VERSION].includes(raw.version)) throw new SaveFileError('unsupportedVersion');
+    if (![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,SAVE_VERSION].includes(raw.version)) throw new SaveFileError('unsupportedVersion');
     if (!isObject(raw.world)) invalidFile();
     if (raw.world.landmarksEnabled !== undefined && typeof raw.world.landmarksEnabled !== 'boolean')invalidFile();
     const terrainVersion = raw.world.terrainVersion === undefined ? 1 : raw.world.terrainVersion;
@@ -435,7 +442,7 @@ export class SaveManager {
       if(player.mineMode!==undefined && typeof player.mineMode!=='boolean') invalidFile();
       const equippedToolId = player.equippedToolId === undefined ? 'basic_pickaxe' : player.equippedToolId;
       const rightObjectId = player.rightObjectId === undefined ? 21 : player.rightObjectId;
-      if(!['basic_pickaxe','wood_pickaxe','stone_pickaxe','iron_pickaxe','saw','sword','broom'].includes(equippedToolId) ||
+      if(!['basic_pickaxe','wood_pickaxe','stone_pickaxe','iron_pickaxe','saw','sword','broom','spear'].includes(equippedToolId) ||
          ![18,21,22,23,24,25,26,null].includes(rightObjectId))invalidFile();
       normalized.player = { position, quaternion, respawnPoint, mineMode: player.mineMode===undefined ? player.activeBlockId===0 : player.mineMode, activeBlockId: player.activeBlockId, equippedToolId, rightObjectId,
         maxSpeed: player.maxSpeed, jumpSpeed: player.jumpSpeed, inventory: validateInventory(player.inventory) };

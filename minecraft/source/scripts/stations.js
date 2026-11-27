@@ -3,6 +3,7 @@ import { ITEM_BY_ID } from './inventory.js';
 
 export const FURNACE_RECIPES = Object.freeze({
   raw_iron: 'iron_ingot',
+  raw_gold: 'gold_ingot',
   '8': 17, // sand -> glass
   '6': 'charcoal', // wood -> charcoal
   '11': 'charcoal',

@@ -1,3 +1,4 @@
+import {canonicalBlock,placementVariant} from './constructionShapes.js';
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { World } from './world.js';
@@ -230,11 +231,12 @@ export class Player {
     this.raycaster.far = 7;
     this.raycaster.setFromCamera(CENTER_SCREEN, this.camera);
     const hit = pickVoxel(world, this.raycaster.ray.origin, this.raycaster.ray.direction, 7);
+    this.placementNormal=hit?.normal;
     this.mineCoords = hit ? new THREE.Vector3(hit.x,hit.y,hit.z) : null;
     this.mineAnimalId = null;
     this.placeCoords = null;
-    if (this.mineMode && this.animals) {
-      const animal = this.animals.raycast(this.raycaster,hit?.distance ?? Infinity);
+    if (this.mineMode && this.animals && this.equippedToolId!=='broom') {
+      const animal = this.animals.raycast(this.raycaster,Math.min(hit?.distance??Infinity,TOOL_PROFILES[this.equippedToolId]?.reach??2.6));
       if (animal) { this.mineAnimalId=animal.id; this.mineCoords=null; }
     }
     // Original behaviour: place only against an EXISTING face. This still
@@ -244,6 +246,8 @@ export class Player {
         world.getBlock(target.x,target.y,target.z)?.id === 0) {
       this.placeCoords = new THREE.Vector3(target.x,target.y,target.z);
     }
+    const slab=canonicalBlock(this.inventory.getSelected()?.id);
+    if(!this.mineMode&&hit&&[33,34].includes(slab)&&canonicalBlock(hit.id)===slab&&((hit.id<47&&hit.normal.y===1)||(hit.id>=47&&hit.normal.y===-1)))this.placeCoords=new THREE.Vector3(hit.x,hit.y,hit.z);
     this.selectedCoords = this.mineMode ? this.mineCoords : this.placeCoords;
     this.selectionHelper.visible = !!this.selectedCoords;
     if (this.selectedCoords) this.selectionHelper.position.copy(this.selectedCoords);
@@ -442,7 +446,11 @@ export class Player {
       this.onFeedback('notEnoughBlocks',true);return false;
     }
     if (!viaRight && this.inventory.mode==='survival' && !this.inventory.getSelected()) return false;
-    const changed=this.world.addBlock(x,y,z,blockId);
+    const canonical=canonicalBlock(blockId),target=this.mineCoords,old=target&&this.world.getBlock(target.x,target.y,target.z)?.id;
+    let changed;
+    if([33,34].includes(canonical)&&canonicalBlock(old)===canonical&&((old<47&&this.placementNormal?.y===1)||(old>=47&&this.placementNormal?.y===-1))){
+      changed=this.world.replaceBlock(target.x,target.y,target.z,canonical===33?3:15);
+    }else changed=this.world.addBlock(x,y,z,placementVariant(blockId,this.raycaster?.ray?.direction,this.placementNormal));
     if (changed) {
       this.progress?.increment('blocksPlaced');
       if (viaRight) this.inventory.consume(blockId,1);
@@ -462,7 +470,7 @@ export class Player {
     const required=requiredHarvestLevel(block.id);
     const canHarvest=this.inventory.mode==='creative' || level>=required;
     // Natural ice shatters without yielding an extra block in survival.
-    const dropId=block.id===28?null:block.id===4?'coal':block.id===5?'raw_iron':block.id;
+    const dropId=block.id===28?null:block.id===4?'coal':block.id===5?'raw_iron':block.id===29?'raw_gold':block.id===30?'emerald':block.id===31?'diamond':canonicalBlock(block.id);
     if(this.inventory.mode==='survival' && canHarvest && ITEM_BY_ID[dropId] && !this.inventory.canAccept(dropId)) {
       this.onFeedback('inventoryFull',true);return false;
     }

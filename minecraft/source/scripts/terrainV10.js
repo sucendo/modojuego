@@ -57,6 +57,14 @@ export function advancedUndergroundBlock(simplex, resources, type, wx, y, wz, su
   if (y <= 2) return 19; // Dense bottom layer (unbreakable bedrock is not introduced).
   const profile=column || geologyColumn(simplex,wx,wz);
   if(y >= surface-profile.soilDepth) return type==='desert'?8:type==='lava'?19:2;
+  // One extra field only in a quarter of coarse regions, below the soil.
+  // Coherent thresholds create small veins, independent of chunk order.
+  if(y<=24&&y<surface-6&&((((Math.floor(wx/8)*73)^(Math.floor(wz/8)*199))&3)===0)){
+    const vein=simplex.noise3d((wx+137)/9,(y-71)/7,(wz-89)/9);
+    if(y<=10&&vein>.87)return 31;
+    if(y<=16&&vein>.80)return 30;
+    if(vein>.72)return 29;
+  }
   const iron=Array.isArray(resources)?resources.find(r=>r.id===5):resources.iron;
   const coal=Array.isArray(resources)?resources.find(r=>r.id===4):resources.coal;
   // Ore occurrences depend on depth; keep the existing sliders meaningful.

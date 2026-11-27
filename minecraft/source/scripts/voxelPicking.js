@@ -1,3 +1,4 @@
+import {SHAPES,rayShape} from './constructionShapes.js';
 // Traverse the world voxel grid instead of raycasting every InstancedMesh.
 // Blocks are centred at integer coordinates, so grid boundaries are at +/-0.5.
 export function pickVoxel(world, origin, direction, maxDistance = 7) {
@@ -15,7 +16,9 @@ export function pickVoxel(world, origin, direction, maxDistance = 7) {
   for (let i = 0; i < 128 && distance <= maxDistance; i++) {
     const id=typeof world.getBlockId === 'function' ? world.getBlockId(cell[0],cell[1],cell[2]) : world.getBlock(cell[0],cell[1],cell[2])?.id;
     if (id && id !== 0) {
-      return {x:cell[0], y:cell[1], z:cell[2], id, normal:face, distance};
+      if(!SHAPES.has(id))return {x:cell[0],y:cell[1],z:cell[2],id,normal:face,distance};
+      const hit=rayShape(id,{x:origin.x-cell[0],y:origin.y-cell[1],z:origin.z-cell[2]},{x:d[0],y:d[1],z:d[2]});
+      if(hit&&hit.distance>=distance-1e-7&&hit.distance<=Math.min(...next,maxDistance)+1e-7)return {x:cell[0],y:cell[1],z:cell[2],id,...hit};
     }
     const axis = next[0] <= next[1] && next[0] <= next[2] ? 0 : next[1] <= next[2] ? 1 : 2;
     if (!Number.isFinite(next[axis]) || next[axis] > maxDistance) break;

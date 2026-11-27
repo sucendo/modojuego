@@ -107,7 +107,7 @@ export class Animals {
   harvest(id,inventory,toolId='basic_pickaxe'){
     const entry=this.entries.get(id);if(!entry)return false;
     const item=entry.type==='sheep'?'wool':'raw_meat';
-    const quantity=toolId==='sword' && item==='raw_meat' ? 2 : 1;
+    const quantity=['sword','spear'].includes(toolId) && item==='raw_meat' ? 2 : 1;
     if(inventory.mode==='survival' && !inventory.canAccept(item,quantity))return false;
     if(inventory.mode==='survival')inventory.add(item,quantity);
     this.world.removedAnimals ||= [];

@@ -502,6 +502,15 @@ export class World extends THREE.Group {
     return true;
   }
 
+  replaceBlock(x,y,z,id,physical=true){
+    const {chunk,block}=this.worldToChunkCoords(x,y,z),c=this.getChunk(chunk.x,chunk.z);
+    if(!c?.loaded||!c.getBlockId(block.x,y,block.z)||c.getBlockId(block.x,y,block.z)===id)return false;
+    c.deleteBlockInstance(block.x,y,block.z);c.setBlockId(block.x,y,block.z,id);c.addBlockInstance(block.x,y,block.z);
+    this.dataStore.set(c.position.x,c.position.z,block.x,y,block.z,id);
+    if(physical)this.hydrology?.onBlockEdit(x,y,z);
+    return true;
+  }
+
   addBlock(x, y, z, blockId) {
     const coords = this.worldToChunkCoords(x, y, z);
     const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
