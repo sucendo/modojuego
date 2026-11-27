@@ -62,3 +62,12 @@ test('actual input routing sweeps or breaks the crust before considering the und
  player.equippedToolId='basic_pickaxe';method.call(player,{button:0});assert.equal(broken,0);assert.equal(model.snow.size,0);
  method.call(player,{button:0});assert.equal(broken,1,'a second intentional pickaxe strike can mine the exposed ground');
 });
+
+
+test('subvisible snowfall accumulates at frame rate instead of disappearing between small steps',()=>{
+ const small=fixture().model,large=fixture().model,c={x:0,z:0,top:5},weather={snow:1,temperature:-4};
+ for(let i=0;i<480;i++)small.updateSnow(c,weather,1/60);
+ large.updateSnow(c,weather,8);
+ assert.ok(small.snow.get('0,0').depth>.0199);
+ assert.ok(Math.abs(small.snow.get('0,0').depth-large.snow.get('0,0').depth)<1e-10);
+});
