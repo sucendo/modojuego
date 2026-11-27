@@ -4,6 +4,12 @@ import {WaterEnvironment} from './waterEnvironment.js';
 import {EnvironmentVisuals} from './environmentVisuals.js';
 import {createToolModel} from './toolModels.js';
 import {viewPoseFor} from './toolPose.js';
+try { start3D(); }
+catch(error){
+ if(!/WebGL|context/i.test(error.message))throw error;
+ import('./snowPreview2D.js').then(({startSnowPreview2D})=>startSnowPreview2D());
+}
+function start3D(){
 const canvas=document.getElementById('scene'),renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(1.5,devicePixelRatio));
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9db4c1);
@@ -55,3 +61,5 @@ function frame(now){
  renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
+
+}

@@ -1,4 +1,4 @@
-# Minecraft.js 11.7.0
+# Minecraft.js 11.7.1
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -45,3 +45,5 @@ Evolución 11.7.0, primera entrega: nieve suelta y costra de hielo reversibles s
 Vista interactiva: `clima.html`. Usa el mismo modelo de capas y el mismo dibujo del juego; permite alternar nieve, helada y sol, seleccionar losetas y probar escoba/pico. El tiempo de esa vista avanza a ×8 y no modifica ninguna partida.
 
 Los guardados nuevos usan formato 18 para conservar hielo y exposición al frío; se siguen importando los formatos 1–17. Esta entrega aún no incluye crecimiento de hierba, escaleras/medios bloques, tejas, nuevos minerales ni lanza.
+
+Vista de prueba 11.7.1: si el navegador no puede crear WebGL, se abre una vista isométrica Canvas con el mismo modelo de nieve y las mismas acciones de escoba/pico. El juego completo mantiene su renderer WebGL.
