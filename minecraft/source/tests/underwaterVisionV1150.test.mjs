@@ -30,12 +30,12 @@ test('batched cave and snow meshes contain finite vertices and stay beneath thei
   model.columns.set('0,0',{x:0,z:0,chunk,cavities:[{x:0,z:0,bottom:2.5,roof:6.5}]});
   model.water.set('0,0,2.5',4);model.snow.set('0,0',{x:0,z:0,y:12,depth:.1});
   const visuals=new EnvironmentVisuals(scene,world);visuals.update(1);
-  assert.equal(visuals.meshes.length,2);
-  for(const mesh of visuals.meshes)assert.ok([...mesh.geometry.attributes.position.array].every(Number.isFinite));
+  assert.equal(visuals.meshes.length,1);assert.equal(visuals.snowMeshes.length,1);
+  for(const mesh of [...visuals.meshes,...visuals.snowMeshes])assert.ok([...mesh.geometry.attributes.position.array].every(Number.isFinite));
   const water=visuals.meshes.find(m=>m.material.transparent);
   const p=water.geometry.attributes.position.array;
   assert.ok([...p].filter((_,i)=>i%3===1).every(y=>y<=6.5));
-  model.clear();visuals.update(1);assert.equal(visuals.meshes.length,0,'old world meshes are removed');
+  model.clear();visuals.update(1);assert.equal(visuals.meshes.length,0,'old world meshes are removed');assert.equal(visuals.snowMeshes.length,0);
 });
 
 test('v11.5.1 adjacent underground cells share one top mesh with no internal face',()=>{
@@ -107,4 +107,20 @@ test('cave current changes update attributes while retaining all cave and snow g
  c.flowX=-.1;model.flowRevision=1;visuals.update(1);
  assert.equal(visuals.meshes[0],mesh);assert.equal(mesh.geometry,geometry);assert.equal(geometry.getAttribute('position').array,positions);
  const flow=geometry.getAttribute('waterFlow').array;assert.ok(Array.from(flow).filter((_,i)=>i%2===0).every(x=>x<0));
+});
+
+
+test('snow and frost rebuild independently without replacing cave water geometry',()=>{
+ const scene=new THREE.Scene(),chunk={loaded:true,position:{x:0,z:0}};
+ const world={type:'classic',chunkSize:{width:32},getChunk:()=>chunk,getBlockId:(x,y,z)=>y===12?2:0};
+ const model=new WaterEnvironment(world);world.hydrology={environment:model};
+ model.columns.set('0,0',{x:0,z:0,chunk,cavities:[{x:0,z:0,bottom:2.5,roof:6.5}]});model.water.set('0,0,2.5',1);
+ model.snow.set('0,0',{x:0,z:0,y:12,depth:.12,ice:.06,cold:55});
+ const visuals=new EnvironmentVisuals(scene,world);visuals.update(1);
+ const water=visuals.meshes[0];assert.equal(visuals.snowMeshes.length,2);
+ const ice=visuals.snowMeshes.find(m=>m.material===visuals.iceMaterial),snow=visuals.snowMeshes.find(m=>m.material===visuals.snowMaterial);
+ assert.ok(ice&&snow);assert.ok([...ice.geometry.attributes.position.array].every(Number.isFinite));
+ model.clearSurface(0,12,0,'broom');visuals.update(1);
+ assert.equal(visuals.meshes[0],water);assert.equal(visuals.snowMeshes.length,1);assert.equal(visuals.snowMeshes[0].material,visuals.iceMaterial);
+ model.clearSurface(0,12,0,'pickaxe');visuals.update(1);assert.equal(visuals.snowMeshes.length,0);assert.equal(visuals.meshes[0],water);
 });

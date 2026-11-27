@@ -57,5 +57,5 @@ test('estilo de nubes se valida, guarda y restaura sin cambiar formato JSON v9',
   assert.match(world,/cloudStyle = 'advanced'/);
   assert.match(save,/cloudStyle:world\.cloudStyle/);
   assert.match(save,/world\.cloudStyle=normalized\.settings\.cloudStyle \?\? 'advanced'/);
-  assert.match(save,/const SAVE_VERSION = 17/);
+  assert.match(save,/const SAVE_VERSION = 18/);
 });

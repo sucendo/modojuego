@@ -1,12 +1,13 @@
 // Local cavity water and snow. No renderer dependency; all rates use game
 // seconds. Solid geometry is authoritative, including player-built seals.
+import { evolveSnow } from './snowEvolution.js';
 import { voxelWaterColumn } from './waterVoxelsV1134.js';
 
 export const ENVIRONMENT_LIMIT = 16384;
 export const CAVITY_STEP = .25;
 const SIDES = [[1,0],[-1,0],[0,1],[0,-1]];
 const OPEN = new Set([0,9,21]);
-const SNOW_SUPPORT = new Set([1,2,3,4,5,8,10,14,15,16,17,18,19,26,27,28]);
+const SNOW_SUPPORT = new Set([1,2,3,4,5,6,7,8,10,11,12,14,15,16,17,18,19,20,26,27,28]);
 const key = (x,z) => `${x},${z}`;
 const nodeKey = c => `${c.x},${c.z},${c.bottom}`;
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -113,7 +114,7 @@ export function stepCavities(nodes,volumes,dt=CAVITY_STEP,drainScale=1) {
 export class WaterEnvironment {
   constructor(world,onChange=()=>{}){this.world=world;this.onChange=onChange;this.clear();}
   clear(){
-    this.water=new Map();this.snow=new Map();this.columns=new Map();
+    this.water=new Map();this.snow=new Map();this.columns=new Map();this.snowRevision=(this.snowRevision??0)+1;
     this.elapsed=0;this.seconds=0;this.cursor=0;this.scanCenter='';this.scan=[];this.revision=(this.revision??0)+1;
     this.epoch=-1;this.ledger={initial:0,inflow:0,drainage:0,displaced:0};
   }
@@ -306,29 +307,40 @@ export class WaterEnvironment {
     const {x,z}=c,w=this.world,k=key(x,z),y=c.top,id=w.getBlockId(x,y,z);
     const water=surfaceWater(w,x,z),wet=water&&water.top>y+.505&&water.bottom<=y+.51;
     let record=this.snow.get(k);
-    if(record&&record.y!==y){this.snow.delete(k);record=null;this.revision++;this.onChange();}
+    if(record&&record.y!==y){this.snow.delete(k);record=null;this.snowRevision++;this.onChange();}
     if(wet){
-      if(record){this.snow.delete(k);this.revision++;this.onChange();}
+      if(record){this.snow.delete(k);this.snowRevision++;this.onChange();}
       if(id===10){w.washSnowBlock?.(x,y,z);this.onChange();}
       return;
     }
     if(!SNOW_SUPPORT.has(id))return;
-    const snow=Math.max(0,weather.snow||0);
-    let depth=record?.depth||0;
-    const previous=depth;
-    if(snow>.12)depth=Math.min(.18,depth+snow*.0025*Math.min(dt,8));
-    else if(weather.rain>.1)depth=Math.max(0,depth-weather.rain*.005*Math.min(dt,8));
-    if(Math.abs(previous-depth)<1e-7)return;
-    if(depth>.001&&(record||this.snow.size<ENVIRONMENT_LIMIT))this.snow.set(k,{x,z,y,depth});
-    else this.snow.delete(k);
-    this.revision++;this.onChange();
+    const next=evolveSnow(record,weather,dt,w.type,y);
+    if(next.depth<=.001){
+      if(record){this.snow.delete(k);this.snowRevision++;this.onChange();}return;
+    }
+    if(!record&&this.snow.size>=ENVIRONMENT_LIMIT)return;
+    this.snow.set(k,{x,z,y,...next});
+    if(!record||Math.floor(next.depth/.004)!==Math.floor(record.depth/.004)||Math.floor(next.ice/.004)!==Math.floor((record.ice||0)/.004))this.snowRevision++;
+    if(!record||next.depth!==record.depth||next.ice!==(record.ice||0)||next.cold!==(record.cold||0))this.onChange();
+  }
+  clearSurface(x,y,z,tool='broom'){
+    const k=key(x,z),record=this.snow.get(k);
+    if(!record||record.y!==y||!this.world.getBlockId(x,y,z)||this.world.getBlockId(x,y+1,z)!==0)return false;
+    if(tool==='broom'){
+      const loose=record.depth-(record.ice||0);if(loose<=.001)return false;
+      record.depth=Math.max(record.ice||0,record.depth-.06);
+      if(record.depth<=.001)this.snow.delete(k);
+    }else if(tool==='pickaxe'&&(record.ice||0)>.001)this.snow.delete(k);
+    else return false;
+    this.snowRevision++;this.onChange();return true;
   }
   snapshot(){return {water:[...this.water].filter(([k])=>{const [x,z]=k.split(',').map(Number);return !this.world.hydrology?.basins?.ownsColumn(x,z);}).map(([k,v])=>[...k.split(',').map(Number),v]),
-    snow:[...this.snow.values()].map(c=>[c.x,c.z,c.y,c.depth])};}
+    snow:[...this.snow.values()].map(c=>[c.x,c.z,c.y,c.depth,...(c.ice||c.cold?[c.ice||0,c.cold||0]:[])])};}
   restore(raw){
     if(!raw)return;
     for(const [x,z,bottom,v] of raw.water??[])this.water.set(`${x},${z},${bottom}`,v);
-    for(const [x,z,y,depth] of raw.snow??[])this.snow.set(key(x,z),{x,z,y,depth});
+    for(const [x,z,y,depth,ice=0,cold=0] of raw.snow??[])this.snow.set(key(x,z),{x,z,y,depth,ice,cold});
+    this.snowRevision++;
     this.ledger.initial=[...this.water.values()].reduce((s,v)=>s+v,0);this.revision++;
   }
 }

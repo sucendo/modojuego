@@ -55,13 +55,15 @@ export class EnvironmentVisuals {
       transparent:true,opacity:.48,depthWrite:false,side:THREE.DoubleSide}),'river',false,true,true);
     this.waterMaterial.forceSinglePass=true;
     this.snowMaterial=new THREE.MeshLambertMaterial({color:0xf2f5fa,side:THREE.DoubleSide});
+    this.iceMaterial=new THREE.MeshLambertMaterial({color:0xa6cddd,side:THREE.DoubleSide});
+    this.snowMeshes=[];this.snowRevision=-1;
     this.meshes=[];this.revision=-1;this.flowRevision=-1;this.elapsed=0;
     this.transitions=new WaterTransitions();this.previousWater=new Map();
   }
   rebuild(model){
     for(const mesh of this.meshes){this.group.remove(mesh);mesh.geometry.dispose();}
     this.meshes=[];
-    const water=[],snow=[],tops=[],motion=[];
+    const water=[],tops=[],motion=[];
     const now=waterTime(),timeline=this.transitions;timeline.begin(this);
     const previous=this.previousWater,nextPresented=new Map();
     const pushWater=(a,b,c,d,meta)=>{
@@ -144,15 +146,7 @@ export class EnvironmentVisuals {
         [x+.5,cs[2].top,z+.5],[x+.5,cs[1].top,z-.5],
         [0,3,2,1].map(k=>metadata(cell,cs[k],cs[k].top)));
     }
-    for(const c of model.snow.values()){
-      const chunk=this.world.getChunk(Math.floor(c.x/32),Math.floor(c.z/32));
-      if(!chunk?.loaded||this.world.getBlockId(c.x,c.y,c.z)===0||this.world.getBlockId(c.x,c.y+1,c.z)!==0)continue;
-      const {x,z,y,depth}=c,bottom=y+.502,top=bottom+depth;
-      quad(snow,[x-.5,top,z-.5],[x-.5,top,z+.5],[x+.5,top,z+.5],[x+.5,top,z-.5]);
-      for(const dx of [-.5,.5])quad(snow,[x+dx,bottom,z-.5],[x+dx,top,z-.5],[x+dx,top,z+.5],[x+dx,bottom,z+.5]);
-      for(const dz of [-.5,.5])quad(snow,[x-.5,bottom,z+dz],[x-.5,top,z+dz],[x+.5,top,z+dz],[x+.5,bottom,z+dz]);
-    }
-    for(const [positions,material,layer] of [[water,this.waterMaterial,1],[snow,this.snowMaterial,0]]){
+    for(const [positions,material,layer] of [[water,this.waterMaterial,1]]){
       if(!positions.length)continue;
       const geometry=new THREE.BufferGeometry();
       geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
@@ -182,6 +176,29 @@ export class EnvironmentVisuals {
     }
     timeline.end();this.previousWater=nextPresented;
   }
+  rebuildSnow(model){
+    for(const mesh of this.snowMeshes){this.group.remove(mesh);mesh.geometry.dispose();}
+    this.snowMeshes=[];
+    const powder=[],ice=[];
+    const layer=(positions,x,z,bottom,top)=>{
+      if(top-bottom<.001)return;
+      quad(positions,[x-.5,top,z-.5],[x-.5,top,z+.5],[x+.5,top,z+.5],[x+.5,top,z-.5]);
+      for(const dx of [-.5,.5])quad(positions,[x+dx,bottom,z-.5],[x+dx,top,z-.5],[x+dx,top,z+.5],[x+dx,bottom,z+.5]);
+      for(const dz of [-.5,.5])quad(positions,[x-.5,bottom,z+dz],[x-.5,top,z+dz],[x+.5,top,z+dz],[x+.5,bottom,z+dz]);
+    };
+    for(const c of model.snow.values()){
+      const width=this.world.chunkSize?.width??32,chunk=this.world.getChunk(Math.floor(c.x/width),Math.floor(c.z/width));
+      if(!chunk?.loaded||!this.world.getBlockId(c.x,c.y,c.z)||this.world.getBlockId(c.x,c.y+1,c.z)!==0)continue;
+      const bottom=c.y+.502,frozen=Math.min(c.depth,c.ice||0);
+      layer(ice,c.x,c.z,bottom,bottom+frozen);
+      layer(powder,c.x,c.z,bottom+frozen,bottom+c.depth);
+    }
+    for(const [positions,material] of [[powder,this.snowMaterial],[ice,this.iceMaterial]])if(positions.length){
+      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
+      const mesh=new THREE.Mesh(geometry,material);mesh.layers.set(0);mesh.receiveShadow=true;
+      this.group.add(mesh);this.snowMeshes.push(mesh);
+    }
+  }
   update(dt){
     const model=this.world.hydrology?.environment;
     if(!model)return;
@@ -189,7 +206,7 @@ export class EnvironmentVisuals {
     this.elapsed+=dt;
     if(this.elapsed<.15)return;
     this.elapsed=0;
-    if(this.revision!==model.revision){this.revision=model.revision;this.flowRevision=model.flowRevision;this.rebuild(model);}
+    if(this.revision!==model.revision){this.revision=model.revision;this.flowRevision=model.flowRevision;this.rebuild(model);this.snowRevision=-1;}
     else if(this.flowRevision!==model.flowRevision){
       this.flowRevision=model.flowRevision;
       const sample=(x,z,bottom)=>{
@@ -200,5 +217,6 @@ export class EnvironmentVisuals {
       };
       for(const mesh of this.meshes)if(mesh.material===this.waterMaterial)refreshWaterFlowAttribute(mesh.geometry,sample);
     }
+    if(this.snowRevision!==model.snowRevision){this.snowRevision=model.snowRevision;this.rebuildSnow(model);}
   }
 }

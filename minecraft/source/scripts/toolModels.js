@@ -15,6 +15,10 @@ export function createToolModel(id='basic_pickaxe') {
     part(g,color,[1.18,.19,.22],[0,.45,0]);
     part(g,color,[.2,.23,.22],[-.51,.36,0]);
     part(g,color,[.2,.23,.22],[.51,.36,0]);
+  }else if(type.kind==='broom'){
+    part(g,wood,[.10,1.42,.10],[0,-.18,0]);
+    part(g,wood,[.65,.13,.16],[0,.48,0]);
+    for(let i=0;i<7;i++)part(g,color,[.085,.40,.17],[(i-3)*.09,.70,0]);
   }else if(type.kind==='saw'){
     part(g,wood,[.18,.66,.20],[0,-.42,0]);
     part(g,steel,[.19,1,.07],[0,.35,0]);

@@ -73,7 +73,7 @@ test('clouds use two instanced layers, no textures and limited particle counts',
 });
 test('weather toggle is persisted without changing saved world format v9',()=>{
   const saves=readFileSync(new URL('../scripts/saveManager.js',import.meta.url),'utf8');
-  assert.match(saves,/const SAVE_VERSION = 17;/);
+  assert.match(saves,/const SAVE_VERSION = 18;/);
   assert.match(saves,/weatherEnabled:world\.weatherEnabled/);
   assert.match(saves,/world\.weatherEnabled=normalized\.settings\.weatherEnabled \?\? true/);
   assert.match(saves,/typeof value\.weatherEnabled !== 'boolean'/);

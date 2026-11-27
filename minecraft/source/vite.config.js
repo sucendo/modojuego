@@ -4,6 +4,7 @@
 export default {
   base: './',
   build: {
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: { input: { index: 'index.html', clima: 'clima.html' } }
   }
 }
