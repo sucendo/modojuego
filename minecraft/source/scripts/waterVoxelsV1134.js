@@ -1,5 +1,5 @@
-// Water occupies exactly one voxel horizontally. Natural river water is a
-// full voxel; player-triggered flow uses the same eight levels as its solver.
+// Water occupies a voxel column horizontally, with a fractional liquid depth.
+// Natural rivers and finite flow use the same surface construction from birth.
 export const WATER_MIN_VISIBLE_VOLUME = .025;
 export const WATER_MAX_LAYERS = 24;
 const WATER_BLOCKERS = new Set([1,2,3,4,5,8,10,14,15,16,17,18,19,26,27]);
@@ -32,18 +32,16 @@ export function voxelWaterColumn(cell, bed) {
     ? cell.depth : cell.y + .25 - physicalBed);
   const minimum=cell.finite?.001:WATER_MIN_VISIBLE_VOLUME;
   if (actualDepth <= minimum) return null;
-  // Natural river channels have a *single* full water block, including in
-  // legacy worlds with an over-deep procedural trough. A reservoir may stack
-  // blocks when its pressure truly rises after a player edits the landscape.
-  const maxLayers = cell.kind === 'river' && !cell.dynamic ? 1 : WATER_MAX_LAYERS;
-  if(cell.dynamic){
-    // Follow the actual stored volume. Rounding to eighths used to make a
-    // filling reservoir jump between terraces and overstate shallow puddles.
-    const renderedDepth=Math.min(cell.finite?256:WATER_MAX_LAYERS,actualDepth);
+  // Unedited rivers used to round every positive depth up to a full cube.
+  // Keep their shallow generated layer, just as for simulated liquid. The
+  // one-metre cap still protects legacy rivers with over-deep troughs.
+  if(cell.dynamic||cell.kind==='river'){
+    const maxDepth=cell.dynamic?(cell.finite?256:WATER_MAX_LAYERS):1;
+    const renderedDepth=Math.min(maxDepth,actualDepth);
     if(renderedDepth<=minimum)return null;
     return {kind:cell.kind,bottom,top:bottom+renderedDepth,layers:Math.ceil(renderedDepth)};
   }
-  const layers = Math.max(1, Math.min(maxLayers, Math.ceil(actualDepth - 1e-8)));
+  const layers = Math.max(1, Math.min(WATER_MAX_LAYERS, Math.ceil(actualDepth - 1e-8)));
   return { kind: cell.kind, bottom, top: bottom + layers, layers };
 }
 

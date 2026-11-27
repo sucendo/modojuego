@@ -153,7 +153,7 @@ test('v11.3.4 ocean keeps sea water as physical voxels after removing the blanke
     'the sea is drawn from real voxel geometry, never an infinite flat plane');
 });
 
-test('v11.4 renders initially settled river voxels with a source and no sloping triangles',()=>{
+test('v11.4 rivers start with their fractional generated depth and preserve their sources',()=>{
   const p={seed:873,terrain:{scale:100,magnitude:8,offset:6,waterOffset:4},
     trees:{frequency:0,canopy:{density:.7}},clouds:{density:.3}};
   applyWorldPreset(p,'snow');
@@ -173,7 +173,7 @@ test('v11.4 renders initially settled river voxels with a source and no sloping 
     const cell=chunk.waterColumns[i];
     if(!cell?.stable)continue;
     const voxel=voxelWaterColumn(cell,chunk.hydrologyGround[i]);
-    assert.equal(voxel.top-voxel.bottom,1,'natural channels contain one complete cubic voxel');
+    assert.equal(voxel.top-voxel.bottom,cell.kind==='river'?Math.min(1,cell.depth):Math.ceil(cell.depth));
     assert.ok(voxel.bottom>=chunk.hydrologyGround[i]-.0001,'water sits on its solid floor');
   }
   chunk.generateWater();
@@ -189,7 +189,7 @@ test('v11.4 renders initially settled river voxels with a source and no sloping 
   }
 });
 
-test('v11.4.1 real 3D chunks paint the new precomputed rivers as full grounded cubes',()=>{
+test('v11.4.1 real chunks start with grounded fractional river sheets',()=>{
   const p={seed:873,terrain:{scale:100,magnitude:8,offset:6,waterOffset:4},
     trees:{frequency:0,canopy:{density:.7}},clouds:{density:.3}};
   applyWorldPreset(p,'snow');
@@ -209,7 +209,7 @@ test('v11.4.1 real 3D chunks paint the new precomputed rivers as full grounded c
     const cell=chunk.waterColumns[i];
     if(!cell?.stable)continue;
     const voxel=voxelWaterColumn(cell,chunk.hydrologyGround[i]);
-    assert.equal(voxel.top-voxel.bottom,1);
+    assert.equal(voxel.top-voxel.bottom,cell.kind==='river'?Math.min(1,cell.depth):Math.ceil(cell.depth));
     assert.ok(voxel.bottom>=chunk.hydrologyGround[i]-.0001);
   }
   chunk.generateWater();
@@ -225,7 +225,7 @@ test('v11.4.1 real 3D chunks paint the new precomputed rivers as full grounded c
   }
 });
 
-test('v11.4.2 3D chunks retain full cubic river and ice voxels while using waterfall meshes',()=>{
+test('v11.4.2 chunks retain fractional river sheets and solid ice while using waterfall meshes',()=>{
   const p={seed:873,terrain:{scale:100,magnitude:8,offset:6,waterOffset:4},
     trees:{frequency:0,canopy:{density:.7}},clouds:{density:.3}};
   applyWorldPreset(p,'snow');
@@ -244,7 +244,7 @@ test('v11.4.2 3D chunks retain full cubic river and ice voxels while using water
     const cell=chunk.waterColumns[i];
     if(!cell?.stable)continue;
     const v=voxelWaterColumn(cell,chunk.hydrologyGround[i]);
-    assert.equal(v.top-v.bottom,1);
+    assert.equal(v.top-v.bottom,cell.kind==='river'?Math.min(1,cell.depth):Math.ceil(cell.depth));
     assert.ok(v.bottom>=chunk.hydrologyGround[i]-.0001);
   }
   chunk.generateWater();
@@ -691,4 +691,22 @@ test('natural and finite isolated cascades use the same curtain shape at equival
   return curtain;
  };
  assert.deepEqual(render(false),render(true),'no player edit is needed to get the shaped falling sheet');
+});
+
+
+test('fractional untouched cascades have the same initial sheet as finite water at every tested depth',()=>{
+ for(const depth of [.1,.25,.75]){
+  const render=finite=>{
+   const c=syntheticSheet();c.hydrologyLookup=()=>null;c.hydrologyGroundLookup=()=>.5;
+   c.waterColumns[5]={kind:'river',y:4.5+depth-.25,depth,flowX:1,flowZ:0,waterfall:true,
+    ...(finite?{dynamic:true,finite:true,fallRate:.3*depth,fallEdges:[.3*depth,0,0,0]}:{})};c.hydrologyGround[5]=4.5;
+   c.waterColumns[6]={kind:'river',y:.5+depth-.25,depth,...(finite?{dynamic:true,finite:true}:{})};
+   const before=JSON.stringify(c.waterColumns);c.generateWater();assert.equal(JSON.stringify(c.waterColumns),before);
+   const g=c.children.find(m=>m.geometry?.waterFall).geometry;
+   assert.ok(g.waterFall.array.some(v=>v===1));
+   return [...g.position.array];
+  };
+  const natural=render(false),finite=render(true);assert.equal(natural.length,finite.length);
+  assert.ok(natural.every((value,i)=>Math.abs(value-finite[i])<1e-6),'natural and simulated liquid share the complete mesh, not just the falling face');
+ }
 });
