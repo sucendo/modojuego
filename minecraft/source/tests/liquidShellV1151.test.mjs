@@ -15,6 +15,11 @@ test('a changed cave boundary refreshes the adjoining surface mesh even at an un
   const world={hybrid:{hydrographyVersion:3},getChunk:(x,z)=>x===0&&z===0?chunk:null};
   const engine=new HydrologyEngine(world);
   engine.pressureDirtyChunks.add('0,0');engine.updatePressure(.5);
+  assert.equal(refreshed,0);
+  assert.ok(engine.basins.meshQueue.has(chunk));
+  engine.updatePressure(.5); // duplicate requests do not duplicate mesh work
+  assert.equal(engine.basins.meshQueue.size,1);
+  engine.basins.flushMeshes();
   assert.equal(refreshed,1);
 });
 

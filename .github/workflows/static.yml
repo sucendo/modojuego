@@ -25,6 +25,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node for Minecraft
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: minecraft/source/package-lock.json
+
+      - name: Verify and build Minecraft from source
+        working-directory: minecraft/source
+        run: |
+          npm ci
+          npm test
+          npm run build
+          cp -a dist/. ../
+          rm -rf node_modules dist
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

@@ -123,7 +123,10 @@ test('modifying the world activates a local river patch and updates its water me
   const engine=new HydrologyEngine(world);
   engine.onBlockEdit(16,5,16);
   assert.ok(engine.cells.size>300);
-  assert.ok(refreshed>0);
+  assert.equal(refreshed,0,'mesh work must be deferred');
+  assert.ok(engine.basins.meshQueue.has(chunk));
+  engine.basins.flushMeshes();
+  assert.equal(refreshed,1);
   assert.ok(engine.total()>0);
   assert.ok(Math.abs(engine.balanceError())<1e-8);
   engine.update(.5);

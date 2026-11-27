@@ -120,8 +120,12 @@ test('el agua atraviesa límites de chunks contiguos sin consumir la fuente', ()
   engine.onBlockEdit(32,4,16);
   assert.ok(env.at(32,16)?.flowing);
   assert.equal(env.at(31,16).source,true);
-  assert.ok(env.world.getChunk(0,0).refreshes>0);
-  assert.ok(env.world.getChunk(1,0).refreshes>0);
+  const a=env.world.getChunk(0,0),b=env.world.getChunk(1,0);
+  assert.ok(engine.basins.meshQueue.has(a));assert.ok(engine.basins.meshQueue.has(b));
+  const before=a.refreshes+b.refreshes;
+  engine.basins.flushMeshes();assert.equal(a.refreshes+b.refreshes,before+1);
+  while(engine.basins.meshQueue.size)engine.basins.flushMeshes();
+  assert.ok(a.refreshes>0);assert.ok(b.refreshes>0);
 });
 
 test('las celdas transitorias antiguas no se reactivan al cargar un mundo nuevo', () => {

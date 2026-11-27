@@ -89,8 +89,8 @@ test('F3 has an on/off switch and uses active in-game frame measurements',()=>{
   const perf=source('performanceUI.js');const main=source('main.js');
   assert.match(perf,/adaptive-visibility/);
   assert.match(perf,/autoCheck\.addEventListener\('change'/);
-  assert.match(perf,/adaptive\.sample\(dt,active,world\.drawDistance\)/);
-  assert.match(main,/performancePanel\.sample\(dt,player\.controls\.isLocked&&!document\.hidden\)/);
+  assert.match(perf,/adaptive\.sample\(dt,active,nearMaximum\(\)\)/);
+  assert.match(main,/performancePanel\.sample\(rawDt,player\.controls\.isLocked&&!document\.hidden\)/);
   assert.match(main,/world\.updateTransitions\(dt\)/);
 });
 

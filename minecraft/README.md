@@ -1,4 +1,4 @@
-# Minecraft.js 11.8.1
+# Minecraft.js 11.8.2
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -9,7 +9,7 @@ Publicado en GitHub Pages con controles táctiles para móviles.
 - Inventario y Menú: abren sus paneles y detienen el movimiento.
 - La barra inferior permite seleccionar objetos con un toque.
 
-Código editable en `source/`: `npm ci`, `npm test`, `npm run build`; copiar `source/dist/` a esta carpeta para actualizar la publicación.
+Código editable en `source/`: GitHub Pages compila y verifica el código antes de publicar. Para una compilación local: `npm ci`, `npm test`, `npm run build` en `source/`.
 
 Los controles táctiles usan la misma física y formato de guardado que el escritorio.
 
@@ -62,3 +62,5 @@ Optimización: se fusionan los planos de nieve y se eliminan caras interiores; e
 Formato 19, compatible con importaciones 1–18. La evolución del suelo y sus cambios de material se guardan. Los FPS y el aspecto final de las nuevas piezas se deben comprobar en el dispositivo.
 
 Minerales 11.8.1: oro con vetas irregulares y diamantes facetados incrustados en la textura de piedra original. Se mejoran también sus bloques refinados. Los minerales conservan un material y un lote por tipo; las caras se diferencian rotando las coordenadas de textura. Vista de las texturas en `menas.html`.
+
+Estabilidad 11.8.2: índice de aguas subterráneas persistente, cola deduplicada de mallas de agua, revisiones independientes de nieve y perfil de menor carga en móvil. Diagnóstico de tirones desde el menú. Se mantiene el formato 19 de partidas.
