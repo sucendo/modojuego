@@ -315,7 +315,7 @@ export class WaterEnvironment {
     }
     if(!SNOW_SUPPORT.has(id))return;
     const next=evolveSnow(record,weather,dt,w.type,y);
-    if(next.depth<=.001){
+    if(next.depth<=1e-9){
       if(record){this.snow.delete(k);this.snowRevision++;this.onChange();}return;
     }
     if(!record&&this.snow.size>=ENVIRONMENT_LIMIT)return;

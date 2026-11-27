@@ -1,4 +1,4 @@
-# Minecraft.js 11.7.1
+# Minecraft.js 11.7.2
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -47,3 +47,5 @@ Vista interactiva: `clima.html`. Usa el mismo modelo de capas y el mismo dibujo 
 Los guardados nuevos usan formato 18 para conservar hielo y exposición al frío; se siguen importando los formatos 1–17. Esta entrega aún no incluye crecimiento de hierba, escaleras/medios bloques, tejas, nuevos minerales ni lanza.
 
 Vista de prueba 11.7.1: si el navegador no puede crear WebGL, se abre una vista isométrica Canvas con el mismo modelo de nieve y las mismas acciones de escoba/pico. El juego completo mantiene su renderer WebGL.
+
+Nieve 11.7.2: las cantidades todavía invisibles se conservan entre actualizaciones, de modo que los copos se acumulan también con pasos pequeños.
