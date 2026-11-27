@@ -9,7 +9,7 @@ export const ITEM_CATALOG = Object.freeze([
     [16,'stone_bricks.png'],[17,'glass.png'],[18,'crafting_table.png'],
     [19,'basalt.png'],[20,'snow_leaves.png'],
     [21,'torch.png'],[22,'bookshelf.png'],[23,'bed.png'],[24,'table.png'],
-    [25,'chest.png'],[26,'furnace.png'],[27,'deepslate.png'],[28,'glass.png'],[29,'gold_ore.svg'],[30,'emerald_ore.svg'],[31,'diamond_ore.svg'],[32,'roof_tiles.svg'],[33,'stone_slab.svg'],[34,'wood_slab.svg'],[35,'stone_stairs.svg'],[39,'wood_stairs.svg'],[43,'roof_ramp.svg'],[49,'roof_ridge.svg'],[51,'gold_block.svg'],[52,'emerald_block.svg'],[53,'diamond_block.svg']
+    [25,'chest.png'],[26,'furnace.png'],[27,'deepslate.png'],[28,'glass.png'],[29,'gold_ore_v2.svg'],[30,'emerald_ore.svg'],[31,'diamond_ore_v2.svg'],[32,'roof_tiles.svg'],[33,'stone_slab.svg'],[34,'wood_slab.svg'],[35,'stone_stairs.svg'],[39,'wood_stairs.svg'],[43,'roof_ramp.svg'],[49,'roof_ridge.svg'],[51,'gold_block_v2.svg'],[52,'emerald_block.svg'],[53,'diamond_block_v2.svg']
   ].map(([id,icon]) => ({id, blockId:id, icon, maxStack:64, nameKey:`block${id}`})),
   ...[['raw_gold','raw_gold.svg','itemRawGold'],['gold_ingot','gold_ingot.svg','itemGoldIngot'],['emerald','emerald.svg','itemEmerald'],['diamond','diamond.svg','itemDiamond']].map(([id,icon,nameKey])=>({id,icon,nameKey,maxStack:64})),
   {id:'stick',icon:'stick.png',maxStack:64,nameKey:'itemStick'},

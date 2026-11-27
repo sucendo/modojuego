@@ -1,4 +1,4 @@
-# Minecraft.js 11.8.0
+# Minecraft.js 11.8.1
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -60,3 +60,5 @@ Colocación: las escaleras y las tejas se orientan hacia donde miras; coloca una
 Optimización: se fusionan los planos de nieve y se eliminan caras interiores; el agua subterránea tiene índice por columna. En una prueba uniforme de 32×32, la nieve pasa de 30.720 a 774 vértices y la reconstrucción local de unos 8,1 a 3,1 ms. Son medidas de componentes, no FPS de móvil.
 
 Formato 19, compatible con importaciones 1–18. La evolución del suelo y sus cambios de material se guardan. Los FPS y el aspecto final de las nuevas piezas se deben comprobar en el dispositivo.
+
+Minerales 11.8.1: oro con vetas irregulares y diamantes facetados incrustados en la textura de piedra original. Se mejoran también sus bloques refinados. Los minerales conservan un material y un lote por tipo; las caras se diferencian rotando las coordenadas de textura. Vista de las texturas en `menas.html`.
