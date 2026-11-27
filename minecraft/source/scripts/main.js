@@ -107,12 +107,17 @@ const performancePanel=setupPerformanceUI({renderer,world,sun,atmosphere});
 performancePanel.setDistantTerrain(distantTerrain);
 const orbitOffset=new THREE.Vector3(16,16,16);
 let previousTime = performance.now();
+let contextLost=false;
+renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;player.controls.unlock();});
+renderer.domElement.addEventListener('webglcontextrestored',()=>{contextLost=false;previousTime=performance.now();sun.shadow.needsUpdate=true;});
 function animate() {
   requestAnimationFrame(animate);
 
   const currentTime = performance.now();
+  if(contextLost||document.hidden){previousTime=currentTime;return;}
   underwaterVision.restore();
-  const dt = Math.min(Math.max(0,(currentTime - previousTime) / 1000),.25);
+  const rawDt = Math.max(0,(currentTime - previousTime) / 1000);
+  const dt = Math.min(rawDt,.25);
 
   // Only update physics when player controls are locked
   if (player.controls.isLocked) {
@@ -149,7 +154,7 @@ function animate() {
   underwaterVision.update(player.controls.isLocked ? player.camera : orbitCamera);
   renderer.render(scene, player.controls.isLocked ? player.camera : orbitCamera);
   stats.update();
-  performancePanel.sample(dt,player.controls.isLocked&&!document.hidden);
+  performancePanel.sample(rawDt,player.controls.isLocked&&!document.hidden);
 
   previousTime = currentTime;
 }

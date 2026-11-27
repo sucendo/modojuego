@@ -70,11 +70,16 @@ export function setupPerformanceUI({renderer,world,sun,atmosphere,distantTerrain
     lodReference?.setHazeMode(selectedHaze);
     try{localStorage.setItem(HAZE_KEY,selectedHaze);}catch{/* optional */}
   });
-  let selected='high';
-  try{ selected=normalizeGraphicsQuality(localStorage.getItem(STORAGE_KEY)); }catch { /* Private mode: no storage. */ }
-  const adaptive=new AdaptiveVisibility(world.drawDistance);
-  let maximumHorizon=12;
-  try{maximumHorizon=clampHorizonRadius(localStorage.getItem(HORIZON_KEY)||12);}catch{/* optional */}
+  const mobile=window.matchMedia('(pointer: coarse)').matches;
+  // Separate local defaults from desktop preferences; never modify saved terrain settings.
+  const qualityKey=mobile?STORAGE_KEY+'_touch_v1182':STORAGE_KEY;
+  const horizonKey=mobile?HORIZON_KEY+'_touch_v1182':HORIZON_KEY;
+  const nearMaximum=()=>mobile&&selected!=='high'?Math.min(2,world.drawDistance):world.drawDistance;
+  let selected=mobile?'low':'high';
+  try{const stored=localStorage.getItem(qualityKey);if(stored)selected=normalizeGraphicsQuality(stored);}catch { /* optional */ }
+  const adaptive=new AdaptiveVisibility(nearMaximum());
+  let maximumHorizon=mobile?6:12;
+  try{maximumHorizon=clampHorizonRadius(localStorage.getItem(horizonKey)||maximumHorizon);}catch{/* optional */}
   world.horizonDistance=maximumHorizon;
   horizonSelect.value=String(maximumHorizon);
   const horizon=new HorizonVisibility(maximumHorizon);
@@ -83,15 +88,15 @@ export function setupPerformanceUI({renderer,world,sun,atmosphere,distantTerrain
     world.horizonDistance=maximumHorizon;
     horizon.reset(Math.min(maximumHorizon,world.horizonQualityCap));
     world.setAdaptiveHorizonDistance(autoEnabled?horizon.radius:null);
-    try{localStorage.setItem(HORIZON_KEY,String(maximumHorizon));}catch{/* optional */}
+    try{localStorage.setItem(horizonKey,String(maximumHorizon));}catch{/* optional */}
   });
   let autoEnabled=true;
   try {autoEnabled=localStorage.getItem(AUTO_KEY)!=='false';}catch{/* optional */}
   function setAutoEnabled(enabled){
     autoEnabled=!!enabled;autoCheck.checked=autoEnabled;
-    adaptive.reset(world.drawDistance);
+    adaptive.reset(nearMaximum());
     horizon.reset(Math.min(maximumHorizon,world.horizonQualityCap));
-    world.setAdaptiveDrawDistance(autoEnabled?adaptive.radius:null);
+    world.setAdaptiveDrawDistance(autoEnabled?adaptive.radius:(mobile?nearMaximum():null));
     world.setAdaptiveHorizonDistance(autoEnabled?horizon.radius:null);
     try{localStorage.setItem(AUTO_KEY,String(autoEnabled));}catch{/* optional */}
   }
@@ -100,7 +105,7 @@ export function setupPerformanceUI({renderer,world,sun,atmosphere,distantTerrain
   const setQuality=name=>{
     selected=normalizeGraphicsQuality(name);select.value=selected;
     const profile=graphicsProfile(selected,window.devicePixelRatio);
-    renderer.setPixelRatio(profile.pixelRatio);
+    renderer.setPixelRatio(mobile&&selected==='low'?Math.min(.85,profile.pixelRatio):profile.pixelRatio);
     renderer.setSize(window.innerWidth,window.innerHeight);
     if(sun.shadow.mapSize.x!==profile.shadowMapSize){
       sun.shadow.mapSize.set(profile.shadowMapSize,profile.shadowMapSize);
@@ -110,10 +115,11 @@ export function setupPerformanceUI({renderer,world,sun,atmosphere,distantTerrain
     atmosphere.precipitation.setQualityFactor(profile.precipitation);
     world.shadowRadius=profile.shadowRadius;
     world.horizonQualityCap=QUALITY_HORIZON_CAP[selected];
+    adaptive.reset(nearMaximum());world.setAdaptiveDrawDistance(autoEnabled?adaptive.radius:(mobile?nearMaximum():null));
     horizon.reset(Math.min(maximumHorizon,world.horizonQualityCap));
     world.setAdaptiveHorizonDistance(autoEnabled?horizon.radius:null);
     world.refreshChunkShadows();
-    try{ localStorage.setItem(STORAGE_KEY,selected); }catch { /* optional */ }
+    try{ localStorage.setItem(qualityKey,selected); }catch { /* optional */ }
   };
   select.addEventListener('change',()=>setQuality(select.value));
   setQuality(selected);
@@ -123,25 +129,29 @@ export function setupPerformanceUI({renderer,world,sun,atmosphere,distantTerrain
     event.preventDefault();panel.hidden=!panel.hidden;
   });
   let frameTimeTotal=0,frames=0,elapsed=0;
-  let frameHistory=[];
+  let frameHistory=[],hitches=0,worstMs=0;
+  const toggle=()=>{panel.hidden=!panel.hidden;};
+  const close=html('small-button','button');close.type='button';close.textContent='×';close.setAttribute('aria-label','Close');close.addEventListener('click',toggle);panel.prepend(close);
+  document.getElementById('open-performance')?.addEventListener('click',toggle);
   return {
     sample(dt,active=false){
       if(!Number.isFinite(dt)||dt<=0)return;
       const gameplayActive=active;
+      if(gameplayActive&&dt>=.1){hitches++;worstMs=Math.max(worstMs,dt*1000);}
       if(autoEnabled){
         // Sacrifice the cheap far LOD first; preserve full nearby blocks.
         // After the horizon reaches 6, sustained low FPS may shrink near detail.
-        const canGrowFar=world.getRenderDistance()>=world.drawDistance;
+        const canGrowFar=world.getRenderDistance()>=nearMaximum();
         const farChange=horizon.sample(dt,active,Math.min(maximumHorizon,world.horizonQualityCap),canGrowFar);
         if(farChange!==null)world.setAdaptiveHorizonDistance(farChange);
         // Keep v10.3's near-radius controller but freeze it until far LOD is
         // already at its minimum: only then sacrifice close-up voxel detail.
         active=active && horizon.radius<=6;
-        const radius=adaptive.sample(dt,active,world.drawDistance);
+        const radius=adaptive.sample(dt,active,nearMaximum());
         if(radius!==null)world.setAdaptiveDrawDistance(radius);
       }
-      frameTimeTotal+=Math.min(dt,.25);frames++;elapsed+=dt;
-      if(gameplayActive&&dt<.35){frameHistory.push(dt*1000);if(frameHistory.length>120)frameHistory.shift();}
+      frameTimeTotal+=dt;frames++;elapsed+=dt;
+      if(gameplayActive){frameHistory.push(dt*1000);if(frameHistory.length>120)frameHistory.shift();}
       if(elapsed<.5)return;
       if(!panel.hidden){
         const avgMs=frameTimeTotal/Math.max(1,frames)*1000;
@@ -155,6 +165,9 @@ export function setupPerformanceUI({renderer,world,sun,atmosphere,distantTerrain
           `FPS                 ${fps.toFixed(0)}`,
           `${t('perfFrame')}      ${avgMs.toFixed(1)} ms`,
           `Frame p95           ${p95.toFixed(1)} ms`,
+          `Hitches ≥100 ms      ${hitches}`,
+          `Worst frame          ${worstMs.toFixed(0)} ms`,
+          `Water mesh queue     ${world.hydrology?.basins.meshQueue.size??0}`,
           `${t('perfChunks')}         ${loaded.length} / ${(2*world.getRenderDistance()+1)**2}`,
           `${t('perfViewRadius')}     ${world.getRenderDistance()} / ${world.drawDistance} ${t('perfChunksUnit')}`,
           `${t('perfAutoStatus')}       ${autoEnabled?t('perfAutoOn'):t('perfAutoOff')}`,

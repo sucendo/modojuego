@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WaterEnvironment,stepCavities,permeability,waterAtPoint} from '../scripts/waterEnvironment.js';
+import {WaterEnvironment,stepCavities,permeability,waterAtPoint,ColumnWaterMap} from '../scripts/waterEnvironment.js';
 import {stepPressureV1147} from '../scripts/pressureHydrologyV1147.js';
 const sum=m=>[...m.values()].reduce((s,v)=>s+v,0);
 
@@ -138,4 +138,21 @@ test('surface flood water transferred into a cave is debited from its actual pre
   assert.ok(Math.abs(sum(m.water)+sum(world.hydrology.pressureVolumes)+m.ledger.drainage-initial)<1e-10);
   world.hydrology.pressureVolumes.clear();
   assert.equal(m.takeSurface({x:0,z:0,chunk,index:0},1),0,'a stale flood mesh cannot become an infinite source');
+});
+
+
+test('11.8.2: el índice de agua persiste tras simular y explorar otra columna',()=>{
+  const {world}=worldFixture(),m=new WaterEnvironment(world);
+  m.readColumn(0,0);const index=m.water;
+  m.step(.25);assert.equal(m.water,index);assert.ok(m.water instanceof ColumnWaterMap);
+  assert.doesNotThrow(()=>m.readColumn(1,0));
+  m.water.set('1,0,2.5',.5);assert.ok(m.water.byColumn.get('1,0').has('1,0,2.5'));
+});
+
+test('11.8.2: el paso in situ conserva exactamente los volúmenes del paso puro',()=>{
+  const nodes=new Map([['0,0,0',{x:0,z:0,bottom:0,roof:3,drain:.01}],['1,0,0',{x:1,z:0,bottom:0,roof:3,drain:0}]]);
+  const input=new ColumnWaterMap([['0,0,0',2],['1,0,0',.1],['9,9,0',.7]]);
+  const expected=stepCavities(nodes,input,.25).volumes;
+  const actual=stepCavities(nodes,input,.25,1,true).volumes;
+  assert.equal(actual,input);assert.deepEqual([...actual],[...expected]);assert.ok(input.byColumn.has('9,9'));
 });

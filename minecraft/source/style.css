@@ -470,3 +470,7 @@ h1 span { color: #a2d57f; margin-left: 12px; font-size: .55em; }
 @media(orientation:landscape) and (max-height:600px) and (min-width:820px){
  #touch-stick,.touch-actions{bottom:calc(18px + env(safe-area-inset-bottom))}
 }
+
+/* 11.8.2: diagnostic overlay accessible from the touch menu. */
+#performance-panel { z-index: 10010; }
+#performance-panel > button:first-child { float:right; }

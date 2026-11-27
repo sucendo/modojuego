@@ -649,11 +649,11 @@ export class HydrologyEngine {
       chunk.waterColumns[index] = next;
     }
     if (changed||forceMesh) {
-      chunk.refreshWater();
+      this.basins.meshQueue.add(chunk);
       // Adjacent chunk faces depend on our water level as well.
       for (const [dx, dz] of [...NEIGHBORS,[1,1],[-1,1],[1,-1],[-1,-1]]) {
         const neighbor = this.world.getChunk(chunk.position.x / 32 + dx, chunk.position.z / 32 + dz);
-        if (neighbor?.loaded) neighbor.refreshWater();
+        if (neighbor?.loaded) this.basins.meshQueue.add(neighbor);
       }
     }
   }
@@ -845,7 +845,7 @@ export class HydrologyEngine {
       }
     }
     // Publish all levels before rebuilding shared boundary vertices.
-    for(const chunk of refresh)chunk.refreshWater();
+    for(const chunk of refresh)this.basins.meshQueue.add(chunk);
   }
 
   springsNear(minX, minZ, maxX, maxZ) {

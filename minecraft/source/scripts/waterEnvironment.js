@@ -49,7 +49,7 @@ export function waterAtPoint(world,position) {
 // Equal-sized 1x1 cavity columns, separated by their REAL floors and roofs.
 // A full tunnel transmits head from connected higher water without creating
 // extra volume or rendering water through its roof. No compressible springs.
-export function stepCavities(nodes,volumes,dt=CAVITY_STEP,drainScale=1) {
+export function stepCavities(nodes,volumes,dt=CAVITY_STEP,drainScale=1,inPlace=false) {
   dt=clamp(Number(dt)||0,0,CAVITY_STEP);
   const delta=new Map(),heads=new Map(),spent=new Map();
   const add=(k,v)=>delta.set(k,(delta.get(k)||0)+v);
@@ -101,7 +101,8 @@ export function stepCavities(nodes,volumes,dt=CAVITY_STEP,drainScale=1) {
     add(from,-moved);add(to,moved);spent.set(from,(spent.get(from)||0)+moved);
   }
   let drained=0;
-  const result=new Map(volumes);
+  // Proposals are complete; only each node's own original volume is read below.
+  const result=inPlace?volumes:new Map(volumes);
   for(const [k,c] of nodes){
     let v=Math.max(0,(volumes.get(k)||0)+(delta.get(k)||0));
     // Explicit off-domain drainage represents deeper aquifers, not another
@@ -146,7 +147,7 @@ export class WaterEnvironment {
     const old=this.columns.get(key(x,z));
     const managed=w.hydrology?.basins?.columns.get(key(x,z));
     if(managed?.chunk===chunk){
-      const result={x,z,chunk,top:managed.top,cavities:managed.nodes.filter(c=>!c.outdoor),basinOwned:true};
+      const result={x,z,chunk,top:managed.top,cavities:managed.nodes.filter(c=>!c.outdoor),basinOwned:true,snowTime:old?.chunk===chunk?old.snowTime:undefined};
       this.columns.set(key(x,z),result);
       for(const c of result.cavities)this.water.set(nodeKey(c),c.volume);
       return result;
@@ -291,8 +292,9 @@ export class WaterEnvironment {
       v+=incoming;inflow+=incoming;this.water.set(k,v);
     }
     const before=[...nodes.keys()].reduce((s,k)=>s+(this.water.get(k)||0),0);
-    const result=stepCavities(nodes,this.water,dt);
-    this.water=result.volumes;this.ledger.inflow+=inflow;this.ledger.drainage+=result.drained;
+    const result=stepCavities(nodes,this.water,dt,1,true);
+    // Retain ColumnWaterMap and its column index across simulation ticks.
+    this.ledger.inflow+=inflow;this.ledger.drainage+=result.drained;
     for(const [k,c] of nodes){
       const volume=this.water.get(k)||0;
       if(Math.abs(volume-(c.surfaceRenderVolume??-1))<.035)continue;

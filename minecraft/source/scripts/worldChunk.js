@@ -1125,6 +1125,7 @@ export class WorldChunk extends THREE.Group {
   }
 
   disposeInstances() {
+    this.loaded=false;
     this.waterTransitions?.release(this);
     this.presentedWaterCells=null;
     this.dryingWaterSince=null;

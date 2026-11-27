@@ -57,7 +57,7 @@ export class EnvironmentVisuals {
     this.waterMaterial.forceSinglePass=true;
     this.snowMaterial=new THREE.MeshLambertMaterial({color:0xf2f5fa,side:THREE.DoubleSide});
     this.iceMaterial=new THREE.MeshLambertMaterial({color:0xa6cddd,side:THREE.DoubleSide});
-    this.snowMeshes=[];this.snowRevision=-1;
+    this.snowMeshes=[];this.snowRevision=-1;this.snowChunkRevision=-1;
     this.meshes=[];this.revision=-1;this.flowRevision=-1;this.elapsed=0;
     this.transitions=new WaterTransitions();this.previousWater=new Map();
   }
@@ -201,7 +201,7 @@ export class EnvironmentVisuals {
     this.elapsed+=dt;
     if(this.elapsed<.15)return;
     this.elapsed=0;
-    if(this.revision!==model.revision){this.revision=model.revision;this.flowRevision=model.flowRevision;this.rebuild(model);this.snowRevision=-1;}
+    if(this.revision!==model.revision){this.revision=model.revision;this.flowRevision=model.flowRevision;this.rebuild(model);}
     else if(this.flowRevision!==model.flowRevision){
       this.flowRevision=model.flowRevision;
       const sample=(x,z,bottom)=>{
@@ -212,6 +212,8 @@ export class EnvironmentVisuals {
       };
       for(const mesh of this.meshes)if(mesh.material===this.waterMaterial)refreshWaterFlowAttribute(mesh.geometry,sample);
     }
-    if(this.snowRevision!==model.snowRevision){this.snowRevision=model.snowRevision;this.rebuildSnow(model);}
+    if(this.snowRevision!==model.snowRevision||this.snowChunkRevision!==this.world.snowChunkRevision){
+      this.snowRevision=model.snowRevision;this.snowChunkRevision=this.world.snowChunkRevision;this.rebuildSnow(model);
+    }
   }
 }

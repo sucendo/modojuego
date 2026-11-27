@@ -101,6 +101,7 @@ export class World extends THREE.Group {
   activeChunkZ = 0;
   generationMsLast = 0;
   generationCount = 0;
+  snowChunkRevision = 0;
   generationMsTotal = 0;
 
   constructor(seed = 0) {
@@ -150,7 +151,7 @@ export class World extends THREE.Group {
       // Retired terrain can remain visible briefly, then releases all GPU resources.
       if(target===0&&chunk.fade<=.001){
         this.cancelPendingGeneration(chunk);
-        chunk.disposeInstances();this.remove(chunk);
+        chunk.disposeInstances();this.remove(chunk);this.snowChunkRevision++;
         this.chunkIndex.delete(`${chunk.userData.x},${chunk.userData.z}`);
       }
     }
@@ -272,7 +273,7 @@ export class World extends THREE.Group {
     for (const chunk of chunksToRemove) {
       if(!chunk.loaded){
         this.cancelPendingGeneration(chunk);
-        chunk.disposeInstances();this.remove(chunk);
+        chunk.disposeInstances();this.remove(chunk);this.snowChunkRevision++;
         this.chunkIndex.delete(`${chunk.userData.x},${chunk.userData.z}`);
       }else chunk.fadeTarget=0;
     }
@@ -442,14 +443,15 @@ export class World extends THREE.Group {
     chunk.setFade(chunk.fade);
     this.generationMsLast=performance.now()-start;
     this.generationMsTotal+=this.generationMsLast;
-    this.generationCount++;
+    this.generationCount++;this.snowChunkRevision++;
   }
 
   scheduleChunkGeneration() {
     if(this.pendingIdleId!==null || !this.pendingChunks.length)return;
     // One chunk per idle window, with setTimeout fallback for Safari.
-    const generate=()=>{
+    const generate=(deadline)=>{
       this.pendingIdleId=null;
+      if(deadline&&!deadline.didTimeout&&deadline.timeRemaining()<4){this.scheduleChunkGeneration();return;}
       while(this.pendingChunks.length){
         const chunk=this.pendingChunks.shift();
         if(chunk.parent===this&&!chunk.loaded){this.buildChunk(chunk);break;}
@@ -458,7 +460,7 @@ export class World extends THREE.Group {
     };
     if(typeof requestIdleCallback==='function')
       this.pendingIdleId=requestIdleCallback(generate,{timeout:300});
-    else this.pendingIdleId=setTimeout(generate,0);
+    else this.pendingIdleId=setTimeout(generate,16);
   }
 
   cancelPendingGeneration(chunk) {
@@ -478,6 +480,8 @@ export class World extends THREE.Group {
     });
     this.clear();
     this.chunkIndex.clear();
+    this.hydrology?.basins.meshQueue.clear();
+    this.snowChunkRevision++;
     this.waterTransitions.clear();
     this.lastVisibleKey=null;
   }
