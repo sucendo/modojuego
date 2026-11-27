@@ -526,6 +526,13 @@ export class Player {
       if(id) this.placeSelected(id);
       return;
     }
+    if(this.equippedToolId==='broom'){
+      const p=this.mineCoords,model=this.world.hydrology?.environment;
+      const swept=p&&model?.clearSurface(p.x,p.y,p.z,'broom');
+      if(swept)this.animateSwing();
+      else if(p&&model?.snow.get(`${p.x},${p.z}`)?.ice>.001)this.onFeedback('frozenSnowNeedsPickaxe',true);
+      return;
+    }
     let changed=false;
     if(this.mineAnimalId && this.animals){
       changed=this.animals.harvest(this.mineAnimalId,this.inventory,this.equippedToolId);
@@ -533,7 +540,8 @@ export class Player {
       if(!changed)this.onFeedback('inventoryFull',true);
     }else if(this.mineCoords){
       const {x,y,z}=this.mineCoords;
-      changed=this.breakAt(x,y,z);
+      const iceRemoved=TOOL_PROFILES[this.equippedToolId]?.kind==='pickaxe'&&this.world.hydrology?.environment.clearSurface(x,y,z,'pickaxe');
+      changed=iceRemoved||this.breakAt(x,y,z);
       // The saw can fell an accessible, vertical trunk (max 8 sections).
       if(changed && this.equippedToolId==='saw') {
         for(let h=1;h<8;h++){

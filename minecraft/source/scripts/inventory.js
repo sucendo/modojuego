@@ -26,7 +26,8 @@ export const ITEM_CATALOG = Object.freeze([
   {id:'stone_pickaxe',icon:'stone_pickaxe.png',maxStack:1,nameKey:'itemStonePickaxe',toolLevel:2},
   {id:'iron_pickaxe',icon:'iron_pickaxe.png',maxStack:1,nameKey:'itemIronPickaxe',toolLevel:3},
   {id:'saw',icon:'saw.png',maxStack:1,nameKey:'itemSaw',toolLevel:0},
-  {id:'sword',icon:'sword.png',maxStack:1,nameKey:'itemSword',toolLevel:0}
+  {id:'sword',icon:'sword.png',maxStack:1,nameKey:'itemSword',toolLevel:0},
+  {id:'broom',icon:'broom.svg',maxStack:1,nameKey:'itemBroom',toolLevel:0}
 ]);
 export const ITEM_IDS = new Set(ITEM_CATALOG.map(item => String(item.id)));
 export const INVENTORY_BLOCK_IDS = Object.freeze(ITEM_CATALOG.filter(item => item.blockId).map(item => item.id));
@@ -64,6 +65,8 @@ export const RECIPES = Object.freeze([
   {id:'ironPickaxe',pattern:pattern(['iron_ingot','iron_ingot','iron_ingot'],[null,'stick',null],[null,'stick',null]),output:'iron_pickaxe',count:1},
   {id:'saw',pattern:pattern(['iron_ingot','iron_ingot'],['stick',null]),output:'saw',count:1},
   {id:'sword',pattern:pattern([null,'iron_ingot',null],[null,'iron_ingot',null],[null,'stick',null]),output:'sword',count:1},
+  {id:'broom',pattern:pattern([7,7,7],[null,'stick',null],[null,'stick',null]),output:'broom',count:1},
+  {id:'jungleBroom',pattern:pattern([12,12,12],[null,'stick',null],[null,'stick',null]),output:'broom',count:1},
   {id:'torches',pattern:pattern(['coal'],['stick']),output:21,count:4},
   // Accessible simplified recipes until sheep, sugar cane, and leather exist.
   {id:'fabric',pattern:pattern([7,7],[7,7]),output:'fabric',count:2},

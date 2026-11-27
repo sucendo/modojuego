@@ -1,4 +1,4 @@
-# Minecraft.js 11.6.9
+# Minecraft.js 11.7.0
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -38,3 +38,10 @@ Cascadas y móvil 11.6.7: las caídas naturales ya llegan al nivel inferior como
 Agua 11.6.8: se restaura la descarga del exceso de agua al mar, contabilizada en el balance. Los lagos estables y los canales siguen teniendo volumen finito. Se reducen las asignaciones temporales al unir superficies y se evita el parpadeo de las cortinas pegadas a las rocas.
 
 Cascadas 11.6.9: el río natural conserva su profundidad parcial desde la primera carga, en lugar de redondearla a cubos completos. El muestreo de las zonas vecinas utiliza la misma profundidad, sin esperar a editar el terreno ni activar simulación adicional.
+
+
+Evolución 11.7.0, primera entrega: nieve suelta y costra de hielo reversibles sobre el bloque, frío sostenido, deshielo con calor y lluvia, temperatura del clima en el HUD y escoba equipada. En creativo está en Inventario → Herramientas; en supervivencia se fabrica en la mesa con una fila de tres hojas y dos palos debajo del centro. El pico rompe primero la costra y conserva el suelo.
+
+Vista interactiva: `clima.html`. Usa el mismo modelo de capas y el mismo dibujo del juego; permite alternar nieve, helada y sol, seleccionar losetas y probar escoba/pico. El tiempo de esa vista avanza a ×8 y no modifica ninguna partida.
+
+Los guardados nuevos usan formato 18 para conservar hielo y exposición al frío; se siguen importando los formatos 1–17. Esta entrega aún no incluye crecimiento de hierba, escaleras/medios bloques, tejas, nuevos minerales ni lanza.

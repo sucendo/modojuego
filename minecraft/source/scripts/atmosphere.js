@@ -1,3 +1,4 @@
+import { surfaceTemperature } from './snowEvolution.js';
 import { sampleWeather } from './weather.js';
 import { CloudLayer } from './cloudLayer.js';
 import { Precipitation } from './precipitation.js';
@@ -13,6 +14,7 @@ export class Atmosphere {
     onLanguageChange(()=>{this.lastHud='';this.refreshHud();});
   }
   update(clock,position,dt,active,now){
+    this.height=position.y;
     if(now-this.lastUpdate>170){
       this.weather=sampleWeather(this.world.params.seed,this.world.type,clock);
       this.lastUpdate=now;
@@ -22,7 +24,7 @@ export class Atmosphere {
     const weather=this.world.weatherEnabled?this.weather:{...this.weather,rain:0,snow:0,dust:0,ash:0,storm:0,cloudCover:.35,lightning:0};
     this.clouds.update(clock,position,this.world,weather,dt,active,now);
     this.precipitation.update(weather,position,dt,active,now,this.world.weatherEnabled);
-    return weather;
+    return {...weather,hour:this.hour??8};
   }
   refreshHud(){
     if(!this.hud)return;
@@ -30,7 +32,8 @@ export class Atmosphere {
     const icons={clear:'☀',cloudy:'☁',rain:'🌧',storm:'⛈',snow:'❄',dust:'🌫',ash:'🌋'};
     const label=t(`weather_${weather.kind}`);
     const skyIcon=weather.kind==='clear' && (this.hour>=19||this.hour<6)?'☾':icons[weather.kind];
-    const signature=`${skyIcon} ${label}`;
+    const degrees=Math.round(surfaceTemperature(this.world.type,{...weather,hour:this.hour??8},this.height??12));
+    const signature=`${skyIcon} ${label} · ${degrees} °C`;
     if(this.lastHud!==signature){this.hud.textContent=signature;this.hud.title=t('weatherForecastHelp');this.lastHud=signature;}
   }
 }
