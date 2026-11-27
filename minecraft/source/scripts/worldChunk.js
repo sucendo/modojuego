@@ -529,7 +529,7 @@ export class WorldChunk extends THREE.Group {
         return {y:this.params.terrain.waterOffset+.25,kind:'lake',
           bed:hydro.height+.5};
       return hydro.waterY===null?{bed:hydro.height+.5}:
-        {y:hydro.waterY,kind:hydro.kind,bed:hydro.height+.5,
+        {y:hydro.waterY,kind:hydro.kind,bed:hydro.height+.5,depth:Math.max(0,hydro.waterY-hydro.height-.5),
           stable:!!hydro.stable,source:!!hydro.source,waterfall:!!hydro.waterfall,
           flowX:hydro.flowX??0,flowZ:hydro.flowZ??0};
     };

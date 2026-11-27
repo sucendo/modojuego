@@ -8,7 +8,7 @@ import { hybridHydrologyColumn, makeHybridContext, validateHydrologyHybrid } fro
 import { advancedSurfaceHeight } from '../scripts/terrainV10.js';
 import { applyWorldPreset } from '../scripts/worldTypes.js';
 
-test('a river is exactly one whole water voxel, resting on its ground', () => {
+test('legacy over-deep rivers stay within one layer, resting on their ground', () => {
   const river = voxelWaterColumn({ y: 19.1, depth: 4.3, kind: 'river' }, 16.5);
   assert.deepEqual(river, {kind:'river',bottom:16.5,top:17.5,layers:1});
   assert.equal(river.top-river.bottom,1);
@@ -86,14 +86,15 @@ const surface=(x,z)=>advancedSurfaceHeight(simplex,params,'snow',x,z,80);
 const original=(x,z)=>hydrologyColumnV112(simplex,params,'snow',x,z,params.seed,surface);
 const newColumn=(x,z)=>hydrologyColumnV1134(simplex,params,'snow',x,z,params.seed,surface);
 
-test('new river generation fills one voxel of water at every sampled active channel', () => {
+test('new river generation preserves its fractional layer at every sampled active channel', () => {
   let rivers=0,lakes=0;
   for(let z=-180;z<=180;z+=4)for(let x=-180;x<=180;x+=4){
     const c=newColumn(x,z);
     if(c.kind==='river'){
       rivers++;
       assert.equal(c.waterY,c.height+1.25);
-      assert.equal(voxelWaterColumn({y:c.waterY,depth:c.waterY-c.height-.5,kind:'river'},c.height+.5).layers,1);
+      const water=voxelWaterColumn({y:c.waterY,depth:c.waterY-c.height-.5,kind:'river'},c.height+.5);
+      assert.equal(water.layers,1);assert.equal(water.top-water.bottom,.75);
     }
     if(c.kind==='lake'){
       lakes++;
@@ -131,4 +132,15 @@ test('declared natural waterfall reaches keep both downstream axes when diagonal
  assert.equal(isDownstreamWaterfallEdge(river,next,0,1),true);
  assert.equal(isDownstreamWaterfallEdge(river,next,-1,0),false);
  assert.equal(isDownstreamWaterfallEdge(river,next,0,-1),false);
+});
+
+
+test('untouched rivers preserve fractional depths before any simulation or block edit',()=>{
+ for(const depth of [.04,.125,.25,.75,1]){
+  const natural={kind:'river',y:16.5+depth-.25,depth};
+  const before=JSON.stringify(natural),a=voxelWaterColumn(natural,16.5);
+  const b=voxelWaterColumn({...natural,dynamic:true,finite:true},16.5);
+  assert.deepEqual(a,b,'activating finite water must not be required to get fractional depth');
+  assert.equal(JSON.stringify(natural),before);
+ }
 });
