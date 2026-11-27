@@ -15,6 +15,10 @@ export function createToolModel(id='basic_pickaxe') {
     part(g,color,[1.18,.19,.22],[0,.45,0]);
     part(g,color,[.2,.23,.22],[-.51,.36,0]);
     part(g,color,[.2,.23,.22],[.51,.36,0]);
+  }else if(type.kind==='spear'){
+    part(g,wood,[.10,1.9,.10],[0,-.12,0]);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.14,.43,4),steel);tip.position.y=1.04;g.add(tip);
+    part(g,steel,[.16,.16,.16],[0,.80,0]);
   }else if(type.kind==='broom'){
     part(g,wood,[.10,1.42,.10],[0,-.18,0]);
     part(g,wood,[.65,.13,.16],[0,.48,0]);

@@ -1,13 +1,15 @@
 // Visible boundary of a liquid volume. Internal water/water and water/solid
 // interfaces are never transparent sheets. All coordinates remain voxel-aligned.
-const SOLIDS=new Set([1,2,3,4,5,6,8,10,11,13,14,15,16,18,19,26,27,28]);
+const SOLIDS=new Set([1,2,3,4,5,6,8,10,11,13,14,15,16,18,19,26,27,28,...Array.from({length:25},(_,i)=>i+29)]);
 export const liquidOccluder=id=>SOLIDS.has(id);
 
 export function exposedLiquidIntervals(bottom,top,covered=[],blockAt=null){
   if(!Number.isFinite(bottom)||!Number.isFinite(top)||top<=bottom)return [];
   const cuts=covered.map(c=>[c.bottom,c.top]);
   if(blockAt)for(let y=Math.floor(bottom+.5);y<top+.5;y++)
-    if(liquidOccluder(blockAt(y)))cuts.push([y-.5,y+.5]);
+    if(liquidOccluder(blockAt(y))){
+      const id=blockAt(y);cuts.push(id===33||id===34?[y-.5,y]:id===47||id===48?[y,y+.5]:[y-.5,y+.5]);
+    }
   let spans=[[bottom,top]];
   for(const [low,high] of cuts){
     const next=[];
@@ -24,8 +26,12 @@ export function exposedLiquidIntervals(bottom,top,covered=[],blockAt=null){
 export function exposedLiquidTop(top,blockAt){
   // Test both sides of a full-voxel interface, including ice occupying the
   // water voxel and a roof touching a completely full underground conduit.
-  return !blockAt||(!liquidOccluder(blockAt(Math.floor(top+.4999)))&&
-    !liquidOccluder(blockAt(Math.floor(top+.5001))));
+  if(!blockAt)return true;
+  const occupied=(y)=>{const id=blockAt(y);if(!liquidOccluder(id))return false;
+    if(id===33||id===34)return top-y<=.0001;
+    if(id===47||id===48)return top-y>=-.0001;
+    return true;};
+  return !occupied(Math.floor(top+.4999))&&!occupied(Math.floor(top+.5001));
 }
 
 export function mergeLiquidTiles(tiles){

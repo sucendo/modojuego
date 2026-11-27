@@ -167,6 +167,12 @@ export class BasinHydrology {
       }else if(start===null)start=y;
     }
     if(start!==null)spans.push({x,z,bottom:start-.5,roof:height-.5,outdoor:true});
+    for(const c of spans){
+      const floorY=Math.round(c.bottom-.5),floorId=w.getBlockId(x,floorY,z);
+      if(floorId===33||floorId===34)c.bottom=floorY;
+      const roofY=Math.round(c.roof+.5),roofId=w.getBlockId(x,roofY,z);
+      if(roofId===47||roofId===48)c.roof=roofY;
+    }
     for(const c of spans){const id=w.getBlockId(x,Math.round(c.bottom-.5),z);c.permeability=id===8?.0012:[1,2,10,14].includes(id)?.00035:0;}
     return {spans,top};
   }

@@ -52,14 +52,28 @@ export class Physics {
    * Main function for collision detection
    */
   detectCollisions(player, world) {
+    const wasGrounded=player.onGround;
     player.onGround = false;
     if(this.helpers.visible)this.helpers.clear();
 
     const candidates = this.broadPhase(player, world);
+    if(wasGrounded&&player.velocity.y<=.01)this.tryStep(candidates,player);
     const collisions = this.narrowPhase(candidates, player);
 
     if (collisions.length > 0) {
       this.resolveCollisions(collisions, player);
+    }
+  }
+
+  tryStep(candidates,player){
+    if(!player.input||Math.hypot(player.input.x,player.input.z)<.001)return;
+    const feet=player.position.y-player.height;
+    const overlaps=b=>{const h=b.hitbox||{halfX:.5,halfY:.5,halfZ:.5},x=b.x+(h.offsetX||0),z=b.z+(h.offsetZ||0);
+      return Math.max(0,Math.abs(player.position.x-x)-h.halfX)**2+Math.max(0,Math.abs(player.position.z-z)-h.halfZ)**2<player.radius**2-.00001;};
+    const tops=candidates.filter(b=>overlaps(b)).map(b=>b.y+(b.hitbox?.offsetY||0)+(b.hitbox?.halfY??.5)).filter(y=>y>feet+.01&&y-feet<=.505).sort((a,b)=>b-a);
+    for(const top of tops){
+      const blocked=candidates.some(b=>{const h=b.hitbox||{halfX:.5,halfY:.5,halfZ:.5},bottom=b.y+(h.offsetY||0)-h.halfY,upper=bottom+2*h.halfY;return upper>top+.001&&bottom<top+player.height-.001&&overlaps(b);});
+      if(!blocked){player.position.y=top+player.height+.001;player.velocity.y=0;player.onGround=true;break;}
     }
   }
 
@@ -86,10 +100,11 @@ export class Physics {
         for (let z = minZ; z <= maxZ; z++) {
           const blockId = world.getBlockId(x, y, z);
           if (blockId && blockId !== blocks.empty.id && blockTypes.get(blockId)?.solid !== false) {
-            const block = { x, y, z,
-              hitbox:world.getBlockHitbox?.(x,y,z,blockId)||blockTypes.get(blockId)?.hitbox };
-            candidates.push(block);
-            if(this.helpers.visible)this.addCollisionHelper(block);
+            const type=blockTypes.get(blockId),boxes=type?.hitboxes||[world.getBlockHitbox?.(x,y,z,blockId)||type?.hitbox];
+            for(const hitbox of boxes){
+              const block={x,y,z,id:blockId,hitbox,partial:!!type?.partial};candidates.push(block);
+              if(this.helpers.visible)this.addCollisionHelper(block);
+            }
           }
         }
       }
@@ -114,9 +129,9 @@ export class Physics {
       const box=block.hitbox || {halfX:.5,halfY:.5,halfZ:.5,offsetY:0};
       const cy=block.y+(box.offsetY||0);
       const closestPoint = {
-        x: Math.max(block.x-box.halfX,Math.min(player.position.x,block.x+box.halfX)),
+        x: Math.max(block.x+(box.offsetX||0)-box.halfX,Math.min(player.position.x,block.x+(box.offsetX||0)+box.halfX)),
         y: Math.max(cy-box.halfY,Math.min(player.position.y-(player.height/2),cy+box.halfY)),
-        z: Math.max(block.z-box.halfZ,Math.min(player.position.z,block.z+box.halfZ))
+        z: Math.max(block.z+(box.offsetZ||0)-box.halfZ,Math.min(player.position.z,block.z+(box.offsetZ||0)+box.halfZ))
       };
 
       // Get distance along each axis between closest point and the center
@@ -137,7 +152,7 @@ export class Physics {
         if (overlapY < overlapXZ) {
           normal = new THREE.Vector3(0, -Math.sign(dy), 0);
           overlap = overlapY;
-          player.onGround = true;
+          if(normal.y>0)player.onGround = true;
         } else {
           normal = new THREE.Vector3(-dx, 0, -dz).normalize();
           overlap = overlapXZ;

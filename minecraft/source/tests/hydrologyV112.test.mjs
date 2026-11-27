@@ -108,7 +108,7 @@ test('breaking ice is an ordinary saved 0 voxel and leaves the water surface int
   const block=source('worldChunk.js'),saved=source('saveManager.js'),player=source('player.js');
   assert.match(block,/blocks\.ice\.id/);
   assert.match(block,/this\.loadPlayerChanges\(\)/);
-  assert.match(saved,/value > 28/);
+  assert.match(saved,/value > 53/);
   assert.match(saved,/blocks: \{ \.\.\.world\.dataStore\.data \}/);
   assert.match(player,/block\.id===28\?null/);
 });

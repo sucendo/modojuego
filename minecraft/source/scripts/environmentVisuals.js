@@ -1,3 +1,4 @@
+import {snowSurfaces} from './snowSurfaces.js';
 import { waterFlowVector, bindWaterFlow, refreshWaterFlowAttribute } from './waterFlow.js';
 import { continuousCorner, connectedWater, WaterTransitions, waterTime } from './continuousWater.js';
 import * as THREE from 'three';
@@ -179,20 +180,14 @@ export class EnvironmentVisuals {
   rebuildSnow(model){
     for(const mesh of this.snowMeshes){this.group.remove(mesh);mesh.geometry.dispose();}
     this.snowMeshes=[];
-    const powder=[],ice=[];
-    const layer=(positions,x,z,bottom,top)=>{
-      if(top-bottom<.001)return;
-      quad(positions,[x-.5,top,z-.5],[x-.5,top,z+.5],[x+.5,top,z+.5],[x+.5,top,z-.5]);
-      for(const dx of [-.5,.5])quad(positions,[x+dx,bottom,z-.5],[x+dx,top,z-.5],[x+dx,top,z+.5],[x+dx,bottom,z+.5]);
-      for(const dz of [-.5,.5])quad(positions,[x-.5,bottom,z+dz],[x-.5,top,z+dz],[x+.5,top,z+dz],[x+.5,bottom,z+dz]);
-    };
+    const covers=[];
     for(const c of model.snow.values()){
       const width=this.world.chunkSize?.width??32,chunk=this.world.getChunk(Math.floor(c.x/width),Math.floor(c.z/width));
-      if(!chunk?.loaded||!this.world.getBlockId(c.x,c.y,c.z)||this.world.getBlockId(c.x,c.y+1,c.z)!==0)continue;
-      const bottom=c.y+.502,frozen=Math.min(c.depth,c.ice||0);
-      layer(ice,c.x,c.z,bottom,bottom+frozen);
-      layer(powder,c.x,c.z,bottom+frozen,bottom+c.depth);
+      const id=this.world.getBlockId(c.x,c.y,c.z);
+      if(!chunk?.loaded||!id||this.world.getBlockId(c.x,c.y+1,c.z)!==0)continue;
+      covers.push({...c,id});
     }
+    const {powder,ice}=snowSurfaces(covers);
     for(const [positions,material] of [[powder,this.snowMaterial],[ice,this.iceMaterial]])if(positions.length){
       const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
       const mesh=new THREE.Mesh(geometry,material);mesh.layers.set(0);mesh.receiveShadow=true;

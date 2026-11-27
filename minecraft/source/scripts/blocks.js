@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {SHAPES} from './constructionShapes.js';
+import {constructionGeometry} from './constructionGeometry.js';
 import { furnitureGeometry, furnitureMaterial, torchMaterial } from './furniture.js';
 
 const textureLoader = new THREE.TextureLoader();
@@ -187,6 +189,14 @@ export const blocks = {
     ]
   },
 };
+
+for(const [name,id,texture] of [['goldOre',29,'gold_ore.svg'],['emeraldOre',30,'emerald_ore.svg'],['diamondOre',31,'diamond_ore.svg'],['roofTiles',32,'roof_tiles.svg'],['goldBlock',51,'gold_block.svg'],['emeraldBlock',52,'emerald_block.svg'],['diamondBlock',53,'diamond_block.svg']]){
+ blocks[name]={id,name,material:new THREE.MeshLambertMaterial({map:loadTexture('textures/'+texture)})};
+}
+for(const [id,shape] of SHAPES){
+ const material=shape.material==='wood'?blocks.planks.material:shape.material==='tile'?blocks.roofTiles.material:blocks.stoneBricks.material;
+ blocks['construction'+id]={id,name:'construction'+id,geometry:constructionGeometry(id),material,partial:true,hitboxes:shape.boxes};
+}
 
 export const resources = [
   blocks.stone,

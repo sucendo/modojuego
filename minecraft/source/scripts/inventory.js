@@ -9,8 +9,9 @@ export const ITEM_CATALOG = Object.freeze([
     [16,'stone_bricks.png'],[17,'glass.png'],[18,'crafting_table.png'],
     [19,'basalt.png'],[20,'snow_leaves.png'],
     [21,'torch.png'],[22,'bookshelf.png'],[23,'bed.png'],[24,'table.png'],
-    [25,'chest.png'],[26,'furnace.png'],[27,'deepslate.png'],[28,'glass.png']
+    [25,'chest.png'],[26,'furnace.png'],[27,'deepslate.png'],[28,'glass.png'],[29,'gold_ore.svg'],[30,'emerald_ore.svg'],[31,'diamond_ore.svg'],[32,'roof_tiles.svg'],[33,'stone_slab.svg'],[34,'wood_slab.svg'],[35,'stone_stairs.svg'],[39,'wood_stairs.svg'],[43,'roof_ramp.svg'],[49,'roof_ridge.svg'],[51,'gold_block.svg'],[52,'emerald_block.svg'],[53,'diamond_block.svg']
   ].map(([id,icon]) => ({id, blockId:id, icon, maxStack:64, nameKey:`block${id}`})),
+  ...[['raw_gold','raw_gold.svg','itemRawGold'],['gold_ingot','gold_ingot.svg','itemGoldIngot'],['emerald','emerald.svg','itemEmerald'],['diamond','diamond.svg','itemDiamond']].map(([id,icon,nameKey])=>({id,icon,nameKey,maxStack:64})),
   {id:'stick',icon:'stick.png',maxStack:64,nameKey:'itemStick'},
   {id:'coal',icon:'coal.png',maxStack:64,nameKey:'itemCoal'},
   {id:'raw_iron',icon:'raw_iron.png',maxStack:64,nameKey:'itemRawIron'},
@@ -27,7 +28,8 @@ export const ITEM_CATALOG = Object.freeze([
   {id:'iron_pickaxe',icon:'iron_pickaxe.png',maxStack:1,nameKey:'itemIronPickaxe',toolLevel:3},
   {id:'saw',icon:'saw.png',maxStack:1,nameKey:'itemSaw',toolLevel:0},
   {id:'sword',icon:'sword.png',maxStack:1,nameKey:'itemSword',toolLevel:0},
-  {id:'broom',icon:'broom.svg',maxStack:1,nameKey:'itemBroom',toolLevel:0}
+  {id:'broom',icon:'broom.svg',maxStack:1,nameKey:'itemBroom',toolLevel:0},
+  {id:'spear',icon:'spear.svg',maxStack:1,nameKey:'itemSpear',toolLevel:0}
 ]);
 export const ITEM_IDS = new Set(ITEM_CATALOG.map(item => String(item.id)));
 export const INVENTORY_BLOCK_IDS = Object.freeze(ITEM_CATALOG.filter(item => item.blockId).map(item => item.id));
@@ -67,6 +69,18 @@ export const RECIPES = Object.freeze([
   {id:'sword',pattern:pattern([null,'iron_ingot',null],[null,'iron_ingot',null],[null,'stick',null]),output:'sword',count:1},
   {id:'broom',pattern:pattern([7,7,7],[null,'stick',null],[null,'stick',null]),output:'broom',count:1},
   {id:'jungleBroom',pattern:pattern([12,12,12],[null,'stick',null],[null,'stick',null]),output:'broom',count:1},
+  {id:'spear',pattern:pattern(['iron_ingot'],['stick'],['stick']),output:'spear',count:1},
+  {id:'stoneSlabs',pattern:pattern([3,3,3]),output:33,count:6},
+  {id:'woodSlabs',pattern:pattern([15,15,15]),output:34,count:6},
+  {id:'stoneStairs',pattern:pattern([3,null,null],[3,3,null],[3,3,3]),output:35,count:4},
+  {id:'woodStairs',pattern:pattern([15,null,null],[15,15,null],[15,15,15]),output:39,count:4},
+  {id:'roofTiles',pattern:pattern([8,8],[2,2]),output:32,count:4},
+  {id:'roofRamps',pattern:pattern([32,null,null],[32,32,null],[32,32,32]),output:43,count:4},
+  {id:'roofRidges',pattern:pattern([null,32,null],[32,null,32]),output:49,count:3},
+  ...[['gold','gold_ingot',51],['emerald','emerald',52],['diamond','diamond',53]].flatMap(([name,item,block])=>[
+    {id:name+'Block',pattern:pattern([item,item,item],[item,item,item],[item,item,item]),output:block,count:1},
+    {id:name+'Unpack',pattern:pattern([block]),output:item,count:9}
+  ]),
   {id:'torches',pattern:pattern(['coal'],['stick']),output:21,count:4},
   // Accessible simplified recipes until sheep, sugar cane, and leather exist.
   {id:'fabric',pattern:pattern([7,7],[7,7]),output:'fabric',count:2},

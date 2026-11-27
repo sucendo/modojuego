@@ -22,7 +22,7 @@ const geometry = new THREE.BoxGeometry();
 const BLOCK_TYPES = [...new Map(Object.values(blocks).map(b => [b.id, b])).values()];
 const BLOCK_BY_ID = new Map(BLOCK_TYPES.map(b => [b.id,b]));
 // Los bloques semitransparentes no ocultan por completo a sus vecinos.
-const NON_OCCLUDING = new Set([blocks.empty.id, blocks.leaves.id, blocks.jungleLeaves.id, blocks.glass.id, blocks.snowLeaves.id, blocks.torch.id, blocks.bookshelf.id, blocks.bed.id, blocks.table.id, blocks.chest.id]);
+const NON_OCCLUDING = new Set([blocks.empty.id, blocks.leaves.id, blocks.jungleLeaves.id, blocks.glass.id, blocks.snowLeaves.id, blocks.torch.id, blocks.bookshelf.id, blocks.bed.id, blocks.table.id, blocks.chest.id,...Object.values(blocks).filter(b=>b.partial).map(b=>b.id)]);
 const WATER_SOLID = new Set([1,2,3,4,5,8,10,14,15,16,17,18,19,26,27]);
 
 export class WorldChunk extends THREE.Group {

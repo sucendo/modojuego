@@ -1,3 +1,4 @@
+import {evolveSoil} from './soilEvolution.js';
 // Local cavity water and snow. No renderer dependency; all rates use game
 // seconds. Solid geometry is authoritative, including player-built seals.
 import { evolveSnow } from './snowEvolution.js';
@@ -7,7 +8,7 @@ export const ENVIRONMENT_LIMIT = 16384;
 export const CAVITY_STEP = .25;
 const SIDES = [[1,0],[-1,0],[0,1],[0,-1]];
 const OPEN = new Set([0,9,21]);
-const SNOW_SUPPORT = new Set([1,2,3,4,5,6,7,8,10,11,12,14,15,16,17,18,19,20,26,27,28]);
+const SNOW_SUPPORT = new Set([1,2,3,4,5,6,7,8,10,11,12,14,15,16,17,18,19,20,26,27,28,...Array.from({length:25},(_,i)=>i+29)]);
 const key = (x,z) => `${x},${z}`;
 const nodeKey = c => `${c.x},${c.z},${c.bottom}`;
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
@@ -111,10 +112,25 @@ export function stepCavities(nodes,volumes,dt=CAVITY_STEP,drainScale=1) {
   return {volumes:result,drained,heads};
 }
 
+// Keep the existing Map API, while locating saved cavity spans locally.
+// Existing-value updates allocate no new index entries.
+export class ColumnWaterMap extends Map {
+  byColumn=new Map();
+  constructor(entries){super();if(entries)for(const [k,v] of entries)this.set(k,v);}
+  set(k,v){
+    if(!this.has(k)){const column=k.slice(0,k.lastIndexOf(','));if(!this.byColumn.has(column))this.byColumn.set(column,new Set());this.byColumn.get(column).add(k);}
+    return super.set(k,v);
+  }
+  delete(k){
+    const removed=super.delete(k);if(removed){const column=k.slice(0,k.lastIndexOf(',')),keys=this.byColumn.get(column);keys?.delete(k);if(!keys?.size)this.byColumn.delete(column);}return removed;
+  }
+  clear(){super.clear();this.byColumn.clear();}
+}
+
 export class WaterEnvironment {
   constructor(world,onChange=()=>{}){this.world=world;this.onChange=onChange;this.clear();}
   clear(){
-    this.water=new Map();this.snow=new Map();this.columns=new Map();this.snowRevision=(this.snowRevision??0)+1;
+    this.water=new ColumnWaterMap();this.snow=new Map();this.soil=new Map();this.columns=new Map();this.snowRevision=(this.snowRevision??0)+1;
     this.elapsed=0;this.seconds=0;this.cursor=0;this.scanCenter='';this.scan=[];this.revision=(this.revision??0)+1;
     this.epoch=-1;this.ledger={initial:0,inflow:0,drainage:0,displaced:0};
   }
@@ -143,7 +159,8 @@ export class WaterEnvironment {
       if(!OPEN.has(id)){
         top=y;
         if(start!==null){
-          const bottom=start-.5,roof=y-.5;
+          const floorId=w.getBlockId(x,start-1,z);
+          const bottom=(floorId===33||floorId===34)?start-1:start-.5,roof=(id===47||id===48)?y:y-.5;
           cavities.push({x,z,bottom,roof,drain:permeability(w.getBlockId(x,start-1,z))*.9+
             ([3,4,5,19,27].includes(w.getBlockId(x,start-1,z))?.004:0)});
           start=null;
@@ -158,7 +175,7 @@ export class WaterEnvironment {
     const result={x,z,chunk,cavities,top};
     // Transfer saved volume into the surviving free space after an edit.
     // Solid placement displaces water explicitly rather than burying it.
-    const records=[...this.water].filter(([k])=>k.startsWith(`${x},${z},`));
+    const records=[...(this.water.byColumn.get(key(x,z))||[])].map(k=>[k,this.water.get(k)]);
     for(const [k,v] of records){
       if(cavities.some(c=>nodeKey(c)===k))continue;
       const bottom=Number(k.split(',')[2]);
@@ -207,7 +224,9 @@ export class WaterEnvironment {
       const [x,z]=this.scan[this.cursor++%this.scan.length];
       const c=this.readColumn(x,z);
       if(c){
-        this.updateSnow(c,weather,Math.max(0,this.seconds-(c.snowTime??this.seconds)));
+        const dtSnow=Math.max(0,this.seconds-(c.snowTime??this.seconds)),oldDepth=this.snow.get(key(x,z))?.depth||0;
+        this.updateSnow(c,weather,dtSnow);
+        this.updateSoil(c,weather,dtSnow,Math.max(0,oldDepth-(this.snow.get(key(x,z))?.depth||0)));
         c.snowTime=this.seconds;
       }
     }
@@ -305,7 +324,8 @@ export class WaterEnvironment {
   updateSnow(c,weather,dt){
     if(c.top<0)return;
     const {x,z}=c,w=this.world,k=key(x,z),y=c.top,id=w.getBlockId(x,y,z);
-    const water=surfaceWater(w,x,z),wet=water&&water.top>y+.505&&water.bottom<=y+.51;
+    const surfaceOffset=[33,34,49,50].includes(id)?0:.5;
+    const water=surfaceWater(w,x,z),wet=water&&water.top>y+surfaceOffset+.005&&water.bottom<=y+surfaceOffset+.01;
     let record=this.snow.get(k);
     if(record&&record.y!==y){this.snow.delete(k);record=null;this.snowRevision++;this.onChange();}
     if(wet){
@@ -323,6 +343,21 @@ export class WaterEnvironment {
     if(!record||Math.floor(next.depth/.004)!==Math.floor(record.depth/.004)||Math.floor(next.ice/.004)!==Math.floor((record.ice||0)/.004))this.snowRevision++;
     if(!record||next.depth!==record.depth||next.ice!==(record.ice||0)||next.cold!==(record.cold||0))this.onChange();
   }
+  updateSoil(c,weather,dt,melt=0){
+    const {x,z}=c,y=c.top,k=key(x,z),w=this.world,id=w.getBlockId(x,y,z),old=this.soil.get(k);
+    if(![1,2,14].includes(id)||w.getBlockId(x,y+1,z)!==0){if(old){this.soil.delete(k);this.onChange();}return;}
+    if(!old&&this.soil.size>=ENVIRONMENT_LIMIT)return;
+    const source=old?.y===y?old:{moisture:id===2?.15:.4,growth:0,dry:0};
+    const covered=(this.snow.get(k)?.depth||0)>.004,water=surfaceWater(w,x,z),wet=!!water&&water.top>y+.51;
+    let neighbor=false;
+    if(id===2)for(const [dx,dz] of SIDES)for(const dy of [-1,0,1])if([1,14].includes(w.getBlockId(x+dx,y+dy,z+dz)))neighbor=true;
+    const next=evolveSoil({...source,moisture:Math.min(1,source.moisture+melt)},weather,dt,{type:w.type,height:y,covered,wet,neighbor});
+    if(id===2&&next.growth>=1){if(w.replaceBlock?.(x,y,z,w.type==='jungle'?14:1,false))next.growth=0;}
+    else if(id!==2&&next.dry>=180){if(w.replaceBlock?.(x,y,z,2,false)){next.growth=0;next.dry=0;}}
+    if(id!==2)next.growth=0;
+    this.soil.set(k,{x,z,y,...next});
+    if(!old||next.moisture!==old.moisture||next.growth!==old.growth||next.dry!==old.dry)this.onChange();
+  }
   clearSurface(x,y,z,tool='broom'){
     const k=key(x,z),record=this.snow.get(k);
     if(!record||record.y!==y||!this.world.getBlockId(x,y,z)||this.world.getBlockId(x,y+1,z)!==0)return false;
@@ -335,11 +370,13 @@ export class WaterEnvironment {
     this.snowRevision++;this.onChange();return true;
   }
   snapshot(){return {water:[...this.water].filter(([k])=>{const [x,z]=k.split(',').map(Number);return !this.world.hydrology?.basins?.ownsColumn(x,z);}).map(([k,v])=>[...k.split(',').map(Number),v]),
+    ...(this.soil.size?{soil:[...this.soil.values()].map(c=>[c.x,c.z,c.y,c.moisture,c.growth,c.dry])}:{}),
     snow:[...this.snow.values()].map(c=>[c.x,c.z,c.y,c.depth,...(c.ice||c.cold?[c.ice||0,c.cold||0]:[])])};}
   restore(raw){
     if(!raw)return;
     for(const [x,z,bottom,v] of raw.water??[])this.water.set(`${x},${z},${bottom}`,v);
     for(const [x,z,y,depth,ice=0,cold=0] of raw.snow??[])this.snow.set(key(x,z),{x,z,y,depth,ice,cold});
+    for(const [x,z,y,moisture,growth,dry] of raw.soil??[])this.soil.set(key(x,z),{x,z,y,moisture,growth,dry});
     this.snowRevision++;
     this.ledger.initial=[...this.water.values()].reduce((s,v)=>s+v,0);this.revision++;
   }

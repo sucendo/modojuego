@@ -2,7 +2,7 @@
 // Natural rivers and finite flow use the same surface construction from birth.
 export const WATER_MIN_VISIBLE_VOLUME = .025;
 export const WATER_MAX_LAYERS = 24;
-const WATER_BLOCKERS = new Set([1,2,3,4,5,8,10,14,15,16,17,18,19,26,27]);
+const WATER_BLOCKERS = new Set([1,2,3,4,5,8,10,14,15,16,17,18,19,26,27,...Array.from({length:25},(_,i)=>i+29)]);
 export const isWaterBlockingBlock = id => WATER_BLOCKERS.has(id);
 
 /** A bridge or roof ABOVE a natural stream must not erase its water. Only a
@@ -27,7 +27,7 @@ export function voxelWaterColumn(cell, bed) {
       cell.y + .25 - (Number(cell.depth) || 0));
   if (!Number.isFinite(physicalBed)) return null;
   // Solid blocks are centered on integer Y; their top lies on Y + 0.5.
-  const bottom = Math.round(physicalBed - .5) + .5;
+  const bottom = cell.finite?physicalBed:Math.round(physicalBed - .5) + .5;
   const actualDepth = Math.max(0, Number.isFinite(cell.depth)
     ? cell.depth : cell.y + .25 - physicalBed);
   const minimum=cell.finite?.001:WATER_MIN_VISIBLE_VOLUME;

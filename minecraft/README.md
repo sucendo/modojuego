@@ -1,4 +1,4 @@
-# Minecraft.js 11.7.2
+# Minecraft.js 11.8.0
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -19,7 +19,7 @@ Agua 11.6.0: superficies conectadas con alturas y normales compartidas; transici
 
 Física del agua 11.6.0: lagos con reserva finita, canales ciegos que se nivelan, presas con aberturas reales, secado por material y cascadas de anchura variable según caudal.
 
-Se conservan las partidas anteriores. Las nuevas exportaciones usan el formato 17 para guardar los volúmenes finitos; las versiones antiguas del juego no pueden abrirlas. Los formatos anteriores, incluido el 16, siguen siendo legibles.
+Se conservan las partidas anteriores. Las nuevas exportaciones usan el formato 19 para guardar volúmenes finitos, nuevas formas y evolución del suelo; las versiones antiguas del juego no pueden abrirlas. Los formatos anteriores, incluidos el 17 y el 18, siguen siendo legibles.
 
 Rendimiento 11.6.1: conexiones hidráulicas reutilizadas, activación gradual de lagos grandes y reconstrucción de una sola malla de agua por fotograma. Solo se actualizan los chunks que comparten vértices afectados; las variaciones de superficie no fuerzan a regenerar todas las cuevas y la nieve.
 
@@ -49,3 +49,14 @@ Los guardados nuevos usan formato 18 para conservar hielo y exposición al frío
 Vista de prueba 11.7.1: si el navegador no puede crear WebGL, se abre una vista isométrica Canvas con el mismo modelo de nieve y las mismas acciones de escoba/pico. El juego completo mantiene su renderer WebGL.
 
 Nieve 11.7.2: las cantidades todavía invisibles se conservan entre actualizaciones, de modo que los copos se acumulan también con pasos pequeños.
+
+
+Evolución y construcción 11.8.0: tierra que desarrolla hierba con humedad y luz, losas de piedra y madera (inferiores y superiores), escaleras orientables de ambos materiales, bloques de teja, pendientes y cumbreras. La nieve y la escoba siguen las nuevas superficies. Dos losas compatibles se pueden unir para completar el bloque.
+
+Nuevos recursos: oro, esmeralda y diamante en vetas profundas; oro en bruto fundible y bloques de almacenamiento de oro/gemas. Nueva lanza equipada, de cuerpo a cuerpo y mayor alcance que la espada. Todo está disponible en el catálogo creativo y tiene recetas o extracción en supervivencia.
+
+Colocación: las escaleras y las tejas se orientan hacia donde miras; coloca una losa contra la cara inferior para obtener una losa superior. Una segunda losa del mismo material sobre su cara abierta completa el bloque. Las cumbreras se colocan una altura por encima de los extremos altos de las pendientes.
+
+Optimización: se fusionan los planos de nieve y se eliminan caras interiores; el agua subterránea tiene índice por columna. En una prueba uniforme de 32×32, la nieve pasa de 30.720 a 774 vértices y la reconstrucción local de unos 8,1 a 3,1 ms. Son medidas de componentes, no FPS de móvil.
+
+Formato 19, compatible con importaciones 1–18. La evolución del suelo y sus cambios de material se guardan. Los FPS y el aspecto final de las nuevas piezas se deben comprobar en el dispositivo.
