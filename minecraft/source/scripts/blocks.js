@@ -190,8 +190,19 @@ export const blocks = {
   },
 };
 
-for(const [name,id,texture] of [['goldOre',29,'gold_ore.svg'],['emeraldOre',30,'emerald_ore.svg'],['diamondOre',31,'diamond_ore.svg'],['roofTiles',32,'roof_tiles.svg'],['goldBlock',51,'gold_block.svg'],['emeraldBlock',52,'emerald_block.svg'],['diamondBlock',53,'diamond_block.svg']]){
- blocks[name]={id,name,material:new THREE.MeshLambertMaterial({map:loadTexture('textures/'+texture)})};
+for(const [name,id,texture] of [['goldOre',29,'gold_ore_v2.svg'],['emeraldOre',30,'emerald_ore.svg'],['diamondOre',31,'diamond_ore_v2.svg'],['roofTiles',32,'roof_tiles.svg'],['goldBlock',51,'gold_block_v2.svg'],['emeraldBlock',52,'emerald_block.svg'],['diamondBlock',53,'diamond_block_v2.svg']]){
+ const block={id,name,material:new THREE.MeshLambertMaterial({map:loadTexture('textures/'+texture)})};
+ if(id===29||id===31){
+  // Rotate face UVs instead of adding materials or separate mineral meshes.
+  const geometry=new THREE.BoxGeometry(1,1,1),uv=geometry.getAttribute('uv');
+  for(let face=0;face<6;face++)for(let vertex=face*4;vertex<face*4+4;vertex++){
+   let u=uv.getX(vertex),v=uv.getY(vertex);
+   for(let q=0;q<[0,1,2,3,1,2][face];q++)[u,v]=[v,1-u];
+   uv.setXY(vertex,u,v);
+  }
+  block.geometry=geometry;
+ }
+ blocks[name]=block;
 }
 for(const [id,shape] of SHAPES){
  const material=shape.material==='wood'?blocks.planks.material:shape.material==='tile'?blocks.roofTiles.material:blocks.stoneBricks.material;
