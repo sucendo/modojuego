@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#182d35" />
-  <title>Minecraft.js v11.8.2 · Estabilidad y rendimiento</title>
+  <title>Minecraft.js v11.8.3 · Controles móviles y relojes</title>
   
   <!-- Allows running this folder on a simple static web server without bundling. -->
 
@@ -16,9 +16,9 @@
       }
     }
   </script>
-  <script type="module" crossorigin src="./assets/index-8eac99a3.js"></script>
+  <script type="module" crossorigin src="./assets/index-a63b3143.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/environmentVisuals-458ac4b2.js">
-  <link rel="stylesheet" href="./assets/index-bf5946f6.css">
+  <link rel="stylesheet" href="./assets/index-6eb0a149.css">
 </head>
 <body>
   <div id="app"></div>
@@ -55,7 +55,7 @@
             <h1 id="menu-title">MINECRAFT<span>.JS</span></h1>
             <p class="subtitle" data-i18n="subtitle">Explora, construye y lleva tus mundos contigo.</p>
           </div>
-          <span class="menu-edition" aria-label="Versión 11.8.2">v11.8.2</span>
+          <span class="menu-edition" aria-label="Versión 11.8.3">v11.8.3</span>
         </div>
         <div class="menu-hero-bottom">
           <button id="start-game" class="game-button primary" type="button" data-i18n="resume">Jugar / Continuar</button>
@@ -75,6 +75,7 @@
           <label class="world-mode-field"><span data-i18n="startingMode">Modo inicial</span><select id="new-world-mode"><option value="creative" data-i18n="creativeMode">Creativo</option><option value="survival" data-i18n="survivalMode">Supervivencia</option></select></label>
           <label class="starter-kit-field"><input id="new-world-starter" type="checkbox" checked/><span data-i18n="starterKit">Kit inicial (herramientas y bloques)</span></label>
           <button id="create-world" type="button" class="game-button" data-i18n="createWorld">Crear mundo</button>
+          <div id="create-world-confirm" hidden><p data-i18n="confirmCreateWorld">¿Crear otro mundo? El mundo actual se guardará primero.</p><div class="button-grid"><button id="confirm-create-world" type="button" class="game-button" data-i18n="createWorld">Crear mundo</button><button id="cancel-create-world" type="button" class="game-button" data-i18n="cancelCreateWorld">Cancelar</button></div></div>
         </div>
         <p id="world-type-help" class="world-type-help"></p>
         <p class="autosave-note" data-i18n="worldStartHelp">Creativo: barra con 9 objetos. Supervivencia: comienza con un kit opcional y fabrica objetos con recursos.</p>
