@@ -1,4 +1,4 @@
-# Minecraft.js 11.8.2
+# Minecraft.js 11.8.3
 
 Publicado en GitHub Pages con controles táctiles para móviles.
 
@@ -64,3 +64,5 @@ Formato 19, compatible con importaciones 1–18. La evolución del suelo y sus c
 Minerales 11.8.1: oro con vetas irregulares y diamantes facetados incrustados en la textura de piedra original. Se mejoran también sus bloques refinados. Los minerales conservan un material y un lote por tipo; las caras se diferencian rotando las coordenadas de textura. Vista de las texturas en `menas.html`.
 
 Estabilidad 11.8.2: índice de aguas subterráneas persistente, cola deduplicada de mallas de agua, revisiones independientes de nieve y perfil de menor carga en móvil. Diagnóstico de tirones desde el menú. Se mantiene el formato 19 de partidas.
+
+Controles móviles 11.8.3: relojes sincronizados durante juego activo, confirmación de creación dentro del menú, botones táctiles y mundos nuevos independientes.
