@@ -12,7 +12,6 @@ export function setupPlaytimeUI(saves,player) {
   const overlay=document.getElementById('overlay');
 
   const draw = () => {
-    if (!saves.index) return;
     const snap=saves.playtime.snapshot();
     worldName.textContent=saves.currentWorld()?.name || '';
     total.textContent=formatDuration(snap.totalMs);

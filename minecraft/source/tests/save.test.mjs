@@ -1069,3 +1069,12 @@ test('format 19 retains integer-height water floors on half slabs',()=>{
  assert.deepEqual(restored.world.hydrology.basins.columns,snapshot.world.hydrology.basins.columns);
  assert.deepEqual(restored.world.hydrology.environment.water,[[0,0,7,.2]]);
 });
+
+ test('new worlds never inherit water or legacy ice from another world',()=>{
+  local.clear();const {saves,world}=fixture();saves.initialize();
+  const old={version:2,cells:[],environment:{water:[[0,0,2.5,.5]],snow:[]}};
+  world.hydrology={snapshot:()=>old,restore(v){this.restored=v;}};
+  assert.equal(saves.createWorld('Volcan',42,'lava'),true);
+  assert.deepEqual(world.hydrology.restored,{version:2,cells:[]});
+  assert.equal(world.type,'lava');assert.equal(saves.dayNight.day,1);assert.equal(saves.playtime.total(),0);
+ });

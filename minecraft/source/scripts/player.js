@@ -110,6 +110,7 @@ export class Player {
   onCameraLock() {
     this.debugCamera = false;
     this.inventoryVisible = false;
+    this.stationVisible = false;
     document.getElementById('inventory-overlay').hidden = true;
     document.getElementById('station-overlay').hidden = true;
     document.getElementById('world-map-overlay').hidden = true;

@@ -474,3 +474,24 @@ h1 span { color: #a2d57f; margin-left: 12px; font-size: .55em; }
 /* 11.8.2: diagnostic overlay accessible from the touch menu. */
 #performance-panel { z-index: 10010; }
 #performance-panel > button:first-child { float:right; }
+
+/* 11.8.3: keep the entire world selector and all menu actions reachable on touch. */
+#create-world-confirm{grid-column:1/-1;padding:10px;background:#142923;border:1px solid #91b69b}
+#create-world-confirm[hidden]{display:none}
+#create-world-confirm p{margin:0 0 8px;font-size:13px}
+@media(pointer:coarse){
+ #overlay{padding:6px;overflow:hidden;align-items:center;touch-action:pan-y}
+ #overlay .menu-panel{max-height:calc(100dvh - 12px);width:100%;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;scroll-padding-top:12px}
+ #overlay button,#overlay select,.inventory-overlay button,.inventory-overlay select{min-height:44px;touch-action:manipulation}
+ #overlay input:not([type=checkbox]),#overlay select{font-size:16px;min-height:44px}
+ .inventory-overlay{padding:6px;align-items:flex-start;touch-action:pan-y;overscroll-behavior:contain}
+ .touch-playing #playtime-hud,.touch-playing #world-clock-hud{font-variant-numeric:tabular-nums}
+ .touch-playing #playtime-hud .timer-session{display:inline}
+}
+@media(pointer:coarse) and (max-height:550px){
+ #overlay .menu-hero{position:relative;top:auto}
+ #overlay .menu-main{grid-template-columns:1fr}
+ .touch-playing #playtime-hud{left:6px;max-width:calc(100vw - 230px);flex-wrap:wrap;white-space:normal}
+ .touch-playing #world-clock-hud{left:6px;top:42px}
+ .touch-playing #weather-hud{left:6px;top:69px}
+}

@@ -27,12 +27,13 @@ function harness(coarse){
   win.matchMedia=()=>({matches:coarse});
   globalThis.document=doc;globalThis.window=win;
   const controls=new Element();controls.isLocked=false;
-  let nativeLocks=0,nativeUnlocks=0;
+  let nativeLocks=0,nativeUnlocks=0,disconnects=0;
+  controls.disconnect=()=>disconnects++;
   controls.lock=()=>nativeLocks++;controls.unlock=()=>nativeUnlocks++;
   const player={controls,maxSpeed:5,input:{x:0,z:0},camera:{rotation:{x:0,y:0,reorder(){}}},onMouseDown(){},onKeyDown(){},selectPickaxe(){},openInventory(){controls.unlock();}};
   const canvas=new Element(),orbit={enabled:true};
   setupTouchControls(player,canvas,orbit);
-  return {doc,win,player,controls,canvas,orbit,root:doc.body.child,native:()=>[nativeLocks,nativeUnlocks]};
+  return {doc,win,player,controls,canvas,orbit,root:doc.body.child,native:()=>[nativeLocks,nativeUnlocks],disconnects:()=>disconnects};
 }
 
 test('mobile play starts without pointer lock and pauses through the same control events',()=>{
@@ -46,10 +47,13 @@ test('mobile play starts without pointer lock and pauses through the same contro
   h.canvas.fire('pointerdown',{pointerType:'touch',pointerId:2,clientX:200,clientY:100});
   h.canvas.fire('pointermove',{pointerId:2,clientX:220,clientY:90});
   assert.equal(h.player.input.z,5);assert.equal(h.player.camera.rotation.y,-.08);
-  h.root.querySelector('[data-touch="inventory"]').fire('pointerdown',{pointerId:3});
+  const inventory=h.root.querySelector('[data-touch="inventory"]');
+  inventory.fire('pointerdown',{pointerId:3});assert.equal(h.controls.isLocked,true);
+  inventory.fire('click',{detail:1});
   assert.equal(h.controls.isLocked,false);assert.equal(h.player.input.z,0);
   assert.equal(h.root.hidden,true);assert.equal(h.orbit.enabled,true);assert.equal(unlocks,1);
-  h.controls.lock();h.win.fire('blur');assert.equal(h.controls.isLocked,false);
+  h.controls.lock();h.win.fire('blur');assert.equal(h.controls.isLocked,true);
+  assert.equal(h.disconnects(),1);h.doc.hidden=true;h.doc.fire('visibilitychange');assert.equal(h.controls.isLocked,false);
 });
 
 test('desktop keeps native pointer lock until the user actually touches the screen',()=>{
@@ -60,3 +64,12 @@ test('desktop keeps native pointer lock until the user actually touches the scre
   h.doc.hidden=true;h.doc.fire('visibilitychange');
   assert.equal(h.controls.isLocked,false);
 });
+
+ test('touch buttons use one click for one action and cancelled taps do nothing',()=>{
+  const h=harness(true);let jumps=0,uses=0,picks=0;h.player.onKeyDown=()=>jumps++;h.player.onMouseDown=e=>{if(e.button===2)uses++;};h.player.selectPickaxe=()=>picks++;h.controls.lock();
+  for(const action of ['jump','use','tool']){const button=h.root.querySelector(`[data-touch="${action}"]`);button.fire('pointerdown',{pointerId:1});button.fire('pointercancel',{pointerId:1});}
+  assert.deepEqual([jumps,uses,picks],[0,0,0]);
+  for(const action of ['jump','use','tool'])h.root.querySelector(`[data-touch="${action}"]`).fire('click',{detail:1});
+  assert.deepEqual([jumps,uses,picks],[1,1,1]);
+  h.root.querySelector('[data-touch="menu"]').fire('click',{detail:1});assert.equal(h.controls.isLocked,false);
+ });

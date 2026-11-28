@@ -801,6 +801,8 @@ export class SaveManager {
       applyWorldPreset(snapshot.world.params,type);
       snapshot.settings.weatherEnabled = true;
       snapshot.world.blocks = {};
+      snapshot.world.legacyIceEdits = [];
+      snapshot.world.hydrology = {version:2,cells:[]};
       snapshot.world.stations = {};
       snapshot.world.removedAnimals = [];
       snapshot.world.landmarksEnabled = true;

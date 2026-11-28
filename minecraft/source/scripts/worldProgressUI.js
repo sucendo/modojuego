@@ -23,7 +23,6 @@ export function setupWorldProgressUI(saves, player){
   });
   let lastWorld=null,lastStats='',lastTime='';
   const draw=()=>{
-    if(!saves.index)return;
     const clock=saves.dayNight.snapshot();
     dayNode.textContent=String(clock.day);
     const hour=formatGameTime(clock);

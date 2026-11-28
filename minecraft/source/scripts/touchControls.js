@@ -7,7 +7,10 @@ export function setupTouchControls(player, canvas, orbitControls) {
   const controls=player.controls;
   const nativeLock=controls.lock.bind(controls), nativeUnlock=controls.unlock.bind(controls);
   let touchMode=window.matchMedia('(pointer: coarse)').matches;
-  let repeat=null;
+  let repeat=null, detached=false;
+  // Native pointerlockchange must not clear the virtual lock on touch devices.
+  const detachNative=()=>{if(!detached){controls.disconnect?.();detached=true;}};
+  if(touchMode)detachNative();
   const root=document.createElement('div');
   root.id='touch-controls'; root.hidden=true;
   root.innerHTML=`<div id="touch-stick" role="group"><span></span></div>
@@ -48,9 +51,10 @@ export function setupTouchControls(player, canvas, orbitControls) {
   controls.lock=()=>{
     if(!touchMode)return nativeLock();
     if(controls.isLocked)return;
-    void enterFullscreen();
+    detachNative();
     player.camera.rotation.reorder('YXZ');
     controls.isLocked=true;controls.dispatchEvent({type:'lock'});show();
+    void enterFullscreen();
   };
   controls.unlock=()=>{
     if(!touchMode)return nativeUnlock();
@@ -61,7 +65,10 @@ export function setupTouchControls(player, canvas, orbitControls) {
   controls.addEventListener('unlock',()=>{stop();show();});
   // Hybrid laptops may start with a mouse and subsequently use the touchscreen.
   document.addEventListener('pointerdown',e=>{
-    if(e.pointerType==='touch')touchMode=true;
+    if(e.pointerType==='touch'&&!touchMode){
+      if(controls.isLocked)nativeUnlock();
+      touchMode=true;detachNative();
+    }
   },true);
   const consume=e=>{e.preventDefault();e.stopPropagation();};
   stick.addEventListener('pointerdown',e=>{
@@ -89,22 +96,23 @@ export function setupTouchControls(player, canvas, orbitControls) {
   const actions={fullscreen:()=>{void toggleFullscreen();},jump:()=>player.onKeyDown({code:'Space',repeat:false}),action:()=>act(0),use:()=>act(2),tool:()=>player.selectPickaxe(),inventory:()=>player.openInventory(),menu:()=>controls.unlock()};
   for(const button of root.querySelectorAll('button')){
     button.addEventListener('pointerdown',e=>{
-      if(button.dataset.touch==='fullscreen')return;
+      // Normal buttons use click so a cancelled gesture never opens a menu.
+      if(button.dataset.touch!=='action')return;
       consume(e);if(!controls.isLocked)return;
-      button.setPointerCapture(e.pointerId);
-      const action=button.dataset.touch;actions[action]();
-      if(action==='action'&&controls.isLocked){clearInterval(repeat);repeat=setInterval(()=>{if(controls.isLocked)act(0);},260);}
+      button.setPointerCapture(e.pointerId);act(0);
+      if(controls.isLocked){clearInterval(repeat);repeat=setInterval(()=>{if(controls.isLocked)act(0);},260);}
     });
     const release=()=>{if(button.dataset.touch==='action'){clearInterval(repeat);repeat=null;}};
     for(const name of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(name,release);
     // Keyboard and assistive technology can also activate the controls.
-    button.addEventListener('click',e=>{if(controls.isLocked&&(button.dataset.touch==='fullscreen'||e.detail===0))actions[button.dataset.touch]();});
+    button.addEventListener('click',e=>{if(controls.isLocked&&(button.dataset.touch!=='action'||e.detail===0))actions[button.dataset.touch]();});
   }
   document.getElementById('toolbar').addEventListener('pointerdown',e=>{
     if(touchMode&&controls.isLocked)e.stopPropagation();
   });
   document.addEventListener('keydown',e=>{if(e.code==='Escape'&&touchMode&&controls.isLocked)controls.unlock();});
-  window.addEventListener('blur',()=>{if(touchMode)controls.unlock();});
+  window.addEventListener('blur',()=>{if(touchMode){stop();if(document.hidden)controls.unlock();}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&touchMode)controls.unlock();});
+  window.addEventListener('pagehide',()=>{if(touchMode)controls.unlock();});
   return {input,stop};
 }

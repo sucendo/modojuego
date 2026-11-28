@@ -68,14 +68,29 @@ export function setupMenu(player, saves) {
   setLanguage(getLanguage());
   select.addEventListener('change', () => setLanguage(select.value));
   seedInput.value = String(Math.floor(Math.random() * 10001));
-  document.getElementById('create-world').addEventListener('click',() => {
+  const createButton=document.getElementById('create-world');
+  const createConfirm=document.getElementById('create-world-confirm');
+  const cancelCreate=document.getElementById('cancel-create-world');
+  const closeCreateConfirm=()=>{createConfirm.hidden=true;};
+  cancelCreate.addEventListener('click',closeCreateConfirm);
+  player.controls.addEventListener('lock',closeCreateConfirm);
+  for(const field of [nameInput,seedInput,typeSelect,modeSelect,starterSelect])field.addEventListener('change',closeCreateConfirm);
+  createButton.addEventListener('click',() => {
     const seed = Number(seedInput.value);
     if (seedInput.value.trim() === '' || !Number.isInteger(seed)) { saves.showStatus('invalidSeed',true); return; }
-    if (!window.confirm(t('confirmCreateWorld'))) return;
+    // Native confirm can be suppressed in fullscreen/embedded mobile browsers.
+    createConfirm.hidden=false;
+  });
+  document.getElementById('confirm-create-world').addEventListener('click',()=>{
+    if(createConfirm.hidden)return;
+    const seed=Number(seedInput.value);
+    if(seedInput.value.trim()===''||!Number.isInteger(seed)){saves.showStatus('invalidSeed',true);return;}
+    closeCreateConfirm();
     if (saves.createWorld(nameInput.value.trim() || t('worldDefault'),seed,typeSelect.value,modeSelect.value,starterSelect.checked)) {
       nameInput.value = '';
       seedInput.value = String(Math.floor(Math.random() * 10001));
       typeSelect.value='classic';modeSelect.value='creative';starterSelect.checked=true;starterSelect.disabled=true;updateTypeHelp();
+      document.getElementById('overlay').querySelector('.menu-panel')?.scrollTo?.({top:0,behavior:'auto'});
     }
   });
 

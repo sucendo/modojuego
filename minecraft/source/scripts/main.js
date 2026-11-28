@@ -114,19 +114,21 @@ function animate() {
   requestAnimationFrame(animate);
 
   const currentTime = performance.now();
-  if(contextLost||document.hidden){previousTime=currentTime;return;}
+  if(contextLost||document.hidden){saves.playtime.pause();previousTime=currentTime;return;}
   underwaterVision.restore();
   const rawDt = Math.max(0,(currentTime - previousTime) / 1000);
   const dt = Math.min(rawDt,.25);
 
   // Only update physics when player controls are locked
   if (player.controls.isLocked) {
+    // Synchronize every active frame, including after a world restore or a missed lock event.
+    saves.playtime.start();
+    saves.dayNight.tick(dt*1000);
     physics.update(dt, player, world);
     if(world.type==='lava' && player.position.y < world.params.terrain.waterOffset+1.7){
       player.respawn();saves.showStatus('lavaRespawn',true);
     }
     player.update(world);
-    if (!document.hidden) saves.dayNight.tick(dt*1000);
     saves.progress.observeMovement(player.position);
     animals.update(dt,player.position,currentTime);
     world.update(player);
@@ -135,7 +137,7 @@ function animate() {
     // Update positon of the orbit camera to track player 
     orbitCamera.position.copy(player.position).add(orbitOffset);
     controls.target.copy(player.position);
-  }
+  } else saves.playtime.pause();
 
   // Screen-door transitions use no world edits and never touch save data.
   world.updateTransitions(dt);
@@ -208,10 +210,12 @@ lighting.update(saves.dayNight,player.position,world.type,performance.now(),true
 fogAtmosphere.update(initialWeather,player.position,0,true,atmosphere.precipitation.underRoof);
 // Keep the world clock paused while navigating menus or the browser is hidden.
 player.controls.addEventListener('lock',()=>{
-  if (!document.hidden) saves.playtime.start();
+  if (!document.hidden&&!contextLost) saves.playtime.start();
+  const panel=document.getElementById('performance-panel');if(panel)panel.hidden=true;
 });
 player.controls.addEventListener('unlock',()=>saves.playtime.pause());
 document.addEventListener('visibilitychange',()=>{
+  previousTime=performance.now();
   if (document.hidden) saves.playtime.pause();
   else if (player.controls.isLocked) saves.playtime.start();
 });
