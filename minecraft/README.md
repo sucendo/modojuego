@@ -9,7 +9,7 @@ Publicado en GitHub Pages con controles táctiles para móviles.
 - Inventario y Menú: abren sus paneles y detienen el movimiento.
 - La barra inferior permite seleccionar objetos con un toque.
 
-Código editable en `source/`: GitHub Pages compila y verifica el código antes de publicar. Para una compilación local: `npm ci`, `npm test`, `npm run build` en `source/`.
+Código editable en `source/`: `npm ci`, `npm test`, `npm run build` en `source/`; copiar `source/dist/` a esta carpeta para actualizar la publicación. La versión 11.8.2 incluye los archivos estáticos verificados.
 
 Los controles táctiles usan la misma física y formato de guardado que el escritorio.
 
